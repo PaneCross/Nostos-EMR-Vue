@@ -1,0 +1,21 @@
+@import "tailwindcss";
+
+@layer base {
+    /* Global dark mode input text color — covers all inputs without per-element classes */
+    .dark input,
+    .dark select,
+    .dark textarea {
+        color: rgb(226 232 240); /* slate-200 */
+        color-scheme: dark;
+    }
+
+    .dark input::placeholder,
+    .dark textarea::placeholder {
+        color: rgb(100 116 139); /* slate-500 */
+    }
+
+    /* Consistent select padding prevents native arrow overlap */
+    select {
+        padding-right: 2rem;
+    }
+}
