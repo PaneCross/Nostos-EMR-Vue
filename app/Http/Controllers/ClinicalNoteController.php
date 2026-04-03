@@ -4,22 +4,28 @@
 // Manages clinical notes for a participant.
 // Notes start as 'draft' and become immutable once signed.
 // Addenda create a new child note (parent_note_id) against a signed note.
+//
+// Signing and addendum creation delegate to NoteSigningService, which owns the
+// business rules for immutability, event broadcasting, and audit logging.
+//
 // All routes are nested under /participants/{participant}/notes.
-// ──────────────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
 
 namespace App\Http\Controllers;
 
-use App\Events\ClinicalNoteSignedEvent;
 use App\Http\Requests\StoreClinicalNoteRequest;
 use App\Http\Requests\UpdateClinicalNoteRequest;
 use App\Models\AuditLog;
 use App\Models\ClinicalNote;
 use App\Models\Participant;
+use App\Services\NoteSigningService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class ClinicalNoteController extends Controller
 {
+    public function __construct(private NoteSigningService $noteSigning) {}
+
     // ── Tenant isolation ──────────────────────────────────────────────────────
 
     private function authorizeForTenant(Participant $participant, $user): void
@@ -70,12 +76,12 @@ class ClinicalNoteController extends Controller
         }
 
         AuditLog::record(
-            action: 'participant.notes.viewed',
-            tenantId: $user->tenant_id,
-            userId: $user->id,
+            action:       'participant.notes.viewed',
+            tenantId:     $user->tenant_id,
+            userId:       $user->id,
             resourceType: 'participant',
-            resourceId: $participant->id,
-            description: "Clinical notes viewed for {$participant->mrn}",
+            resourceId:   $participant->id,
+            description:  "Clinical notes viewed for {$participant->mrn}",
         );
 
         return response()->json($query->paginate(50));
@@ -99,13 +105,13 @@ class ClinicalNoteController extends Controller
         ]));
 
         AuditLog::record(
-            action: 'participant.note.created',
-            tenantId: $user->tenant_id,
-            userId: $user->id,
+            action:       'participant.note.created',
+            tenantId:     $user->tenant_id,
+            userId:       $user->id,
             resourceType: 'participant',
-            resourceId: $participant->id,
-            description: "Draft {$note->noteTypeLabel()} note created for {$participant->mrn}",
-            newValues: ['note_id' => $note->id, 'note_type' => $note->note_type],
+            resourceId:   $participant->id,
+            description:  "Draft {$note->noteTypeLabel()} note created for {$participant->mrn}",
+            newValues:    ['note_id' => $note->id, 'note_type' => $note->note_type],
         );
 
         return response()->json($note->load('author:id,first_name,last_name'), 201);
@@ -136,19 +142,18 @@ class ClinicalNoteController extends Controller
         $this->authorizeForTenant($participant, $user);
         $this->authorizeNoteForParticipant($note, $participant);
 
-        // Belt-and-suspenders: controller enforces editability even if FormRequest passes
         abort_unless($note->canEdit($user), 403, 'Only the note author can edit a draft note.');
 
         $note->update($request->validated());
 
         AuditLog::record(
-            action: 'participant.note.updated',
-            tenantId: $user->tenant_id,
-            userId: $user->id,
+            action:       'participant.note.updated',
+            tenantId:     $user->tenant_id,
+            userId:       $user->id,
             resourceType: 'participant',
-            resourceId: $participant->id,
-            description: "Draft note updated for {$participant->mrn}",
-            newValues: ['note_id' => $note->id],
+            resourceId:   $participant->id,
+            description:  "Draft note updated for {$participant->mrn}",
+            newValues:    ['note_id' => $note->id],
         );
 
         return response()->json($note->fresh('author:id,first_name,last_name'));
@@ -172,22 +177,7 @@ class ClinicalNoteController extends Controller
             'Only the original author may sign this note.'
         );
 
-        $note->sign($user);
-
-        AuditLog::record(
-            action: 'participant.note.signed',
-            tenantId: $user->tenant_id,
-            userId: $user->id,
-            resourceType: 'participant',
-            resourceId: $participant->id,
-            description: "{$note->noteTypeLabel()} note signed for {$participant->mrn}",
-            newValues: ['note_id' => $note->id, 'signed_at' => $note->signed_at],
-        );
-
-        // Phase 4: broadcast for real-time cross-dept chart tab refresh
-        broadcast(new ClinicalNoteSignedEvent($note->load('author:id,first_name,last_name,department')))->toOthers();
-
-        return response()->json($note->fresh('author:id,first_name,last_name', 'signedBy:id,first_name,last_name'));
+        return response()->json($this->noteSigning->signNote($note, $user, $participant));
     }
 
     /**
@@ -203,26 +193,6 @@ class ClinicalNoteController extends Controller
 
         abort_unless($note->isSigned(), 422, 'Addenda can only be added to signed notes.');
 
-        $addendum = ClinicalNote::create(array_merge($request->validated(), [
-            'participant_id'      => $participant->id,
-            'tenant_id'           => $user->tenant_id,
-            'site_id'             => $participant->site_id,
-            'authored_by_user_id' => $user->id,
-            'note_type'           => 'addendum',
-            'status'              => ClinicalNote::STATUS_DRAFT,
-            'parent_note_id'      => $note->id,
-        ]));
-
-        AuditLog::record(
-            action: 'participant.note.addendum_created',
-            tenantId: $user->tenant_id,
-            userId: $user->id,
-            resourceType: 'participant',
-            resourceId: $participant->id,
-            description: "Addendum created for note #{$note->id} on {$participant->mrn}",
-            newValues: ['addendum_id' => $addendum->id, 'parent_note_id' => $note->id],
-        );
-
-        return response()->json($addendum->load('author:id,first_name,last_name'), 201);
+        return response()->json($this->noteSigning->createAddendum($request, $note, $participant, $user), 201);
     }
 }

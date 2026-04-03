@@ -37,7 +37,9 @@ use App\Http\Controllers\IntegrationController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ThemePreferenceController;
 use App\Http\Controllers\ImpersonationController;
-use App\Http\Controllers\ItAdminController;
+use App\Http\Controllers\AuditLogController;
+use App\Http\Controllers\IntegrationStatusController;
+use App\Http\Controllers\UserProvisioningController;
 use App\Http\Controllers\MedReconciliationController;
 use App\Http\Controllers\MedicationController;
 use App\Http\Controllers\AlertController;
@@ -837,21 +839,21 @@ Route::middleware('auth')->group(function () {
 
     Route::prefix('it-admin')->group(function () {
         // Integrations monitoring
-        Route::get('/integrations',               [ItAdminController::class, 'integrations'])->name('it-admin.integrations');
-        Route::get('/integrations/log',           [ItAdminController::class, 'integrationLog'])->name('it-admin.integrations.log');
-        Route::post('/integrations/{log}/retry',  [ItAdminController::class, 'retryIntegration'])->name('it-admin.integrations.retry');
+        Route::get('/integrations',               [IntegrationStatusController::class, 'integrations'])->name('it-admin.integrations');
+        Route::get('/integrations/log',           [IntegrationStatusController::class, 'integrationLog'])->name('it-admin.integrations.log');
+        Route::post('/integrations/{log}/retry',  [IntegrationStatusController::class, 'retryIntegration'])->name('it-admin.integrations.retry');
         // User management
-        Route::get('/users',                        [ItAdminController::class, 'users'])->name('it-admin.users');
-        Route::post('/users',                       [ItAdminController::class, 'provisionUser'])->name('it-admin.users.provision');
-        Route::post('/users/{user}/deactivate',     [ItAdminController::class, 'deactivateUser'])->name('it-admin.users.deactivate');
-        Route::post('/users/{user}/reactivate',     [ItAdminController::class, 'reactivateUser'])->name('it-admin.users.reactivate');
-        Route::post('/users/{user}/reset-access',   [ItAdminController::class, 'resetAccess'])->name('it-admin.users.reset-access');
+        Route::get('/users',                        [UserProvisioningController::class, 'users'])->name('it-admin.users');
+        Route::post('/users',                       [UserProvisioningController::class, 'provisionUser'])->name('it-admin.users.provision');
+        Route::post('/users/{user}/deactivate',     [UserProvisioningController::class, 'deactivateUser'])->name('it-admin.users.deactivate');
+        Route::post('/users/{user}/reactivate',     [UserProvisioningController::class, 'reactivateUser'])->name('it-admin.users.reactivate');
+        Route::post('/users/{user}/reset-access',   [UserProvisioningController::class, 'resetAccess'])->name('it-admin.users.reset-access');
         // Designation management — assigns accountability roles for targeted alerting
-        Route::patch('/users/{user}/designations',  [ItAdminController::class, 'updateDesignations'])->name('it-admin.users.designations');
+        Route::patch('/users/{user}/designations',  [UserProvisioningController::class, 'updateDesignations'])->name('it-admin.users.designations');
         // Audit log viewer
-        Route::get('/audit',                      [ItAdminController::class, 'audit'])->name('it-admin.audit');
-        Route::get('/audit/log',                  [ItAdminController::class, 'auditLog'])->name('it-admin.audit.log');
-        Route::get('/audit/export',               [ItAdminController::class, 'exportAuditCsv'])->name('it-admin.audit.export');
+        Route::get('/audit',                      [AuditLogController::class, 'audit'])->name('it-admin.audit');
+        Route::get('/audit/log',                  [AuditLogController::class, 'auditLog'])->name('it-admin.audit.log');
+        Route::get('/audit/export',               [AuditLogController::class, 'exportAuditCsv'])->name('it-admin.audit.export');
         // State Medicaid Configuration — Phase 9C (DEBT-038)
         Route::get('/state-config',               [StateMedicaidConfigController::class, 'index'])->name('it-admin.state-config.index');
         Route::post('/state-config',              [StateMedicaidConfigController::class, 'store'])->name('it-admin.state-config.store');
