@@ -25,11 +25,11 @@ import IdleWarningModal from '@/Components/IdleWarningModal.vue'
 // ── Shared props ───────────────────────────────────────────────────────────────
 const page = usePage<PageProps>()
 const auth = computed(() => page.props.auth)
-const user = computed(() => auth.value.user)
+const user = computed(() => auth.value?.user ?? null)
 const impersonation = computed(() => page.props.impersonation)
 
 // ── Theme ──────────────────────────────────────────────────────────────────────
-const theme = ref<'light' | 'dark'>(user.value.theme_preference ?? 'light')
+const theme = ref<'light' | 'dark'>((user.value?.theme_preference as 'light' | 'dark' | undefined) ?? 'light')
 
 function applyTheme(t: 'light' | 'dark') {
     document.documentElement.classList.toggle('dark', t === 'dark')
@@ -61,9 +61,7 @@ function navigate(href: string) {
 const collapsed = ref(true)
 
 // ── Alerts ────────────────────────────────────────────────────────────────────
-const alerts = ref<Array<{ id: number; title: string; severity: string; source_module: string }>>(
-    [],
-)
+const alerts = ref<Array<{ id: number; title: string; severity: string; source_module: string }>>([])
 const alertCount = ref(0)
 const showAlerts = ref(false)
 
@@ -96,9 +94,7 @@ const showIdleWarning = ref(false)
 const idleCountdown = ref(60)
 
 const autoLogoutMinutes = computed(
-    () =>
-        (user.value as { tenant?: { auto_logout_minutes?: number } }).tenant?.auto_logout_minutes ??
-        15,
+    () => (user.value as { tenant?: { auto_logout_minutes?: number } } | null)?.tenant?.auto_logout_minutes ?? 15,
 )
 
 let warningTimer: ReturnType<typeof setTimeout> | null = null
@@ -161,7 +157,7 @@ onMounted(() => {
     loadChatUnread()
 
     // Real-time subscriptions via Reverb
-    if (window.Echo) {
+    if (window.Echo && user.value) {
         window.Echo.private(`tenant.${user.value.tenant_id}`).listen('AlertCreated', () => {
             loadAlerts()
         })
@@ -197,8 +193,8 @@ onUnmounted(() => {
         class="bg-amber-400 text-amber-900 px-4 py-2 flex items-center gap-2 text-sm font-semibold z-50"
     >
         <EyeIcon class="w-4 h-4" aria-hidden="true" />
-        Viewing as {{ impersonation.user.first_name }} {{ impersonation.user.last_name }} &middot;
-        {{ impersonation.user.department_label }}
+        Viewing as {{ impersonation.user.first_name }} {{ impersonation.user.last_name }}
+        &middot; {{ impersonation.user.department_label }}
         <button
             class="ml-auto px-3 py-0.5 bg-amber-700 text-white rounded text-xs hover:bg-amber-800 transition"
             aria-label="Exit impersonation"
@@ -217,9 +213,7 @@ onUnmounted(() => {
             ]"
         >
             <!-- Logo -->
-            <div
-                class="h-14 flex items-center justify-center border-b border-slate-700/50 shrink-0"
-            >
+            <div class="h-14 flex items-center justify-center border-b border-slate-700/50 shrink-0">
                 <span class="text-white font-bold text-lg tracking-tight">
                     {{ collapsed ? 'N' : 'NostosEMR' }}
                 </span>
@@ -248,9 +242,7 @@ onUnmounted(() => {
                         :aria-current="isActive(item.href) ? 'page' : undefined"
                         @click="navigate(item.href)"
                     >
-                        <span
-                            class="shrink-0 w-5 h-5 flex items-center justify-center text-xs font-bold"
-                        >
+                        <span class="shrink-0 w-5 h-5 flex items-center justify-center text-xs font-bold">
                             {{ item.label.charAt(0) }}
                         </span>
                         <span v-if="!collapsed" class="truncate">{{ item.label }}</span>
@@ -267,7 +259,7 @@ onUnmounted(() => {
 
             <!-- Sidebar footer -->
             <div class="border-t border-slate-700/50 p-2 shrink-0">
-                <div v-if="!collapsed" class="text-xs text-slate-400 px-2 pb-2 truncate">
+                <div v-if="!collapsed && user" class="text-xs text-slate-400 px-2 pb-2 truncate">
                     {{ user.first_name }} {{ user.last_name }}
                     <span class="block text-slate-500">{{ user.department_label }}</span>
                 </div>
@@ -289,7 +281,7 @@ onUnmounted(() => {
                 class="h-14 bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 flex items-center px-4 gap-3 shrink-0 z-30"
             >
                 <div class="flex-1 min-w-0">
-                    <slot name="header"></slot>
+                    <slot name="header" />
                 </div>
 
                 <div class="flex items-center gap-2 shrink-0">
@@ -334,9 +326,7 @@ onUnmounted(() => {
                             class="absolute right-0 top-full mt-1 w-80 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg shadow-lg z-50"
                             role="menu"
                         >
-                            <div
-                                class="p-3 border-b border-gray-100 dark:border-slate-700 text-sm font-semibold text-gray-700 dark:text-slate-200"
-                            >
+                            <div class="p-3 border-b border-gray-100 dark:border-slate-700 text-sm font-semibold text-gray-700 dark:text-slate-200">
                                 Active Alerts
                             </div>
                             <div
@@ -354,9 +344,7 @@ onUnmounted(() => {
                                 <div class="text-sm font-medium text-gray-800 dark:text-slate-200">
                                     {{ alert.title }}
                                 </div>
-                                <div
-                                    class="text-xs text-gray-500 dark:text-slate-400 mt-0.5 capitalize"
-                                >
+                                <div class="text-xs text-gray-500 dark:text-slate-400 mt-0.5 capitalize">
                                     {{ alert.severity }} - {{ alert.source_module }}
                                 </div>
                             </div>
@@ -366,9 +354,7 @@ onUnmounted(() => {
                     <!-- Theme toggle -->
                     <button
                         class="p-2 text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 transition"
-                        :aria-label="
-                            theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'
-                        "
+                        :aria-label="theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'"
                         @click="toggleTheme"
                     >
                         <SunIcon v-if="theme === 'dark'" class="w-5 h-5" aria-hidden="true" />
@@ -397,7 +383,7 @@ onUnmounted(() => {
 
             <!-- Page content -->
             <main class="flex-1 overflow-y-auto">
-                <slot></slot>
+                <slot />
             </main>
         </div>
     </div>
