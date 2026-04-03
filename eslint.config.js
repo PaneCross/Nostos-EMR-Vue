@@ -47,6 +47,10 @@ export default [
 
             // Allow <script setup> without explicit component name
             'vue/component-definition-name-casing': 'off',
+
+            // Allow v-html for server-generated content (Laravel paginator labels,
+            // sanitized API responses). Never use v-html on user-supplied input.
+            'vue/no-v-html': 'off',
         },
     },
 
