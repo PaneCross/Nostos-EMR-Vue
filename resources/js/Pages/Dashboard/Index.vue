@@ -4,14 +4,13 @@
 // Dept dashboards are lazy-loaded when the user's department is supported.
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { computed, defineAsyncComponent } from 'vue'
+import { computed } from 'vue'
 import { usePage, Head } from '@inertiajs/vue3'
 import AppShell from '@/Layouts/AppShell.vue'
 import type { PageProps } from '@/types'
 
 const page = usePage<PageProps>()
 const user = computed(() => page.props.auth.user)
-const department = computed(() => page.props.department as string)
 const departmentLabel = computed(() => page.props.department_label as string)
 </script>
 
@@ -26,7 +25,9 @@ const departmentLabel = computed(() => page.props.department_label as string)
         </template>
 
         <div class="p-6">
-            <div class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-8 text-center">
+            <div
+                class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-8 text-center"
+            >
                 <p class="text-gray-500 dark:text-slate-400 text-sm">
                     Welcome, {{ user.first_name }}. Dashboard widgets are being migrated to Vue.
                 </p>

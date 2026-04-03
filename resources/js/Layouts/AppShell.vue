@@ -5,7 +5,7 @@
 //           impersonation banner, and slot for page content.
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { usePage, router } from '@inertiajs/vue3'
 import axios from 'axios'
 import {
@@ -18,13 +18,12 @@ import {
     ChevronDownIcon,
     ChatBubbleLeftRightIcon,
 } from '@heroicons/vue/24/outline'
-import type { PageProps, NavItem } from '@/types'
+import type { PageProps } from '@/types'
 
 // ── Shared props ───────────────────────────────────────────────────────────────
 const page = usePage<PageProps>()
 const auth = computed(() => page.props.auth)
 const user = computed(() => auth.value.user)
-const realUser = computed(() => auth.value.real_user)
 const impersonation = computed(() => page.props.impersonation)
 
 // ── Theme ──────────────────────────────────────────────────────────────────────
@@ -54,9 +53,9 @@ const navGroups = computed(() => user.value.nav_groups ?? [])
 const currentPath = computed(() => window.location.pathname)
 
 function isActive(href: string): boolean {
-    const all = navGroups.value.flatMap(g => g.items.map(i => i.href))
-    const longer = all.filter(h => h !== href && h.startsWith(href) && h.length > href.length)
-    if (longer.some(h => currentPath.value.startsWith(h))) return false
+    const all = navGroups.value.flatMap((g) => g.items.map((i) => i.href))
+    const longer = all.filter((h) => h !== href && h.startsWith(href) && h.length > href.length)
+    if (longer.some((h) => currentPath.value.startsWith(h))) return false
     return currentPath.value === href || currentPath.value.startsWith(href + '/')
 }
 
@@ -68,7 +67,9 @@ function navigate(href: string) {
 const collapsed = ref(true) // sidebar is icon-only by default
 
 // ── Alerts ────────────────────────────────────────────────────────────────────
-const alerts = ref<Array<{ id: number; title: string; severity: string; source_module: string }>>([])
+const alerts = ref<Array<{ id: number; title: string; severity: string; source_module: string }>>(
+    [],
+)
 const alertCount = ref(0)
 const showAlerts = ref(false)
 
@@ -86,10 +87,9 @@ onMounted(() => {
     loadAlerts()
     // Subscribe to real-time alert updates via Reverb
     if (window.Echo) {
-        window.Echo.private(`tenant.${user.value.tenant_id}`)
-            .listen('AlertCreated', () => {
-                loadAlerts()
-            })
+        window.Echo.private(`tenant.${user.value.tenant_id}`).listen('AlertCreated', () => {
+            loadAlerts()
+        })
     }
 })
 
@@ -119,10 +119,9 @@ async function loadChatUnread() {
 onMounted(() => {
     loadChatUnread()
     if (window.Echo) {
-        window.Echo.private(`user.${user.value.id}`)
-            .listen('ChatActivity', () => {
-                loadChatUnread()
-            })
+        window.Echo.private(`user.${user.value.id}`).listen('ChatActivity', () => {
+            loadChatUnread()
+        })
     }
 })
 </script>
@@ -134,11 +133,11 @@ onMounted(() => {
         class="bg-amber-400 text-amber-900 px-4 py-2 flex items-center gap-2 text-sm font-semibold z-50"
     >
         <EyeIcon class="w-4 h-4" />
-        Viewing as {{ impersonation.user.first_name }} {{ impersonation.user.last_name }}
-        &middot; {{ impersonation.user.department_label }}
+        Viewing as {{ impersonation.user.first_name }} {{ impersonation.user.last_name }} &middot;
+        {{ impersonation.user.department_label }}
         <button
-            @click="stopImpersonation"
             class="ml-auto px-3 py-0.5 bg-amber-700 text-white rounded text-xs hover:bg-amber-800 transition"
+            @click="stopImpersonation"
         >
             Exit Impersonation
         </button>
@@ -153,7 +152,9 @@ onMounted(() => {
             ]"
         >
             <!-- Logo / brand -->
-            <div class="h-14 flex items-center justify-center border-b border-slate-700/50 shrink-0">
+            <div
+                class="h-14 flex items-center justify-center border-b border-slate-700/50 shrink-0"
+            >
                 <span class="text-white font-bold text-lg tracking-tight">
                     {{ collapsed ? 'N' : 'NostosEMR' }}
                 </span>
@@ -171,7 +172,6 @@ onMounted(() => {
                     <button
                         v-for="item in group.items"
                         :key="item.module"
-                        @click="navigate(item.href)"
                         :class="[
                             'w-full flex items-center gap-3 px-2 py-2 rounded text-sm transition',
                             isActive(item.href)
@@ -180,8 +180,11 @@ onMounted(() => {
                             collapsed ? 'justify-center' : '',
                         ]"
                         :title="collapsed ? item.label : undefined"
+                        @click="navigate(item.href)"
                     >
-                        <span class="shrink-0 w-5 h-5 flex items-center justify-center text-xs font-bold">
+                        <span
+                            class="shrink-0 w-5 h-5 flex items-center justify-center text-xs font-bold"
+                        >
                             {{ item.label.charAt(0) }}
                         </span>
                         <span v-if="!collapsed" class="truncate">{{ item.label }}</span>
@@ -202,12 +205,15 @@ onMounted(() => {
                     <span class="block text-slate-500">{{ user.department_label }}</span>
                 </div>
                 <button
-                    @click="collapsed = !collapsed"
                     class="w-full flex items-center justify-center py-1.5 text-slate-400 hover:text-white hover:bg-slate-700/50 rounded transition"
                     title="Toggle sidebar"
+                    @click="collapsed = !collapsed"
                 >
                     <ChevronDownIcon
-                        :class="['w-4 h-4 transition-transform', collapsed ? '-rotate-90' : 'rotate-90']"
+                        :class="[
+                            'w-4 h-4 transition-transform',
+                            collapsed ? '-rotate-90' : 'rotate-90',
+                        ]"
                     />
                 </button>
             </div>
@@ -216,19 +222,21 @@ onMounted(() => {
         <!-- ── Main area ──────────────────────────────────────────────────────── -->
         <div class="flex flex-col flex-1 min-w-0 overflow-hidden">
             <!-- Top bar -->
-            <header class="h-14 bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 flex items-center px-4 gap-3 shrink-0 z-30">
+            <header
+                class="h-14 bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 flex items-center px-4 gap-3 shrink-0 z-30"
+            >
                 <!-- Breadcrumb / page title via slot -->
                 <div class="flex-1 min-w-0">
-                    <slot name="header" />
+                    <slot name="header"></slot>
                 </div>
 
                 <!-- Right controls -->
                 <div class="flex items-center gap-2 shrink-0">
                     <!-- Chat -->
                     <button
-                        @click="navigate('/chat')"
                         class="relative p-2 text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 transition"
                         title="Chat"
+                        @click="navigate('/chat')"
                     >
                         <ChatBubbleLeftRightIcon class="w-5 h-5" />
                         <span
@@ -242,9 +250,9 @@ onMounted(() => {
                     <!-- Alert bell -->
                     <div class="relative">
                         <button
-                            @click="showAlerts = !showAlerts"
                             class="relative p-2 text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 transition"
                             title="Alerts"
+                            @click="showAlerts = !showAlerts"
                         >
                             <BellIcon class="w-5 h-5" />
                             <span
@@ -259,24 +267,39 @@ onMounted(() => {
                             v-if="showAlerts"
                             class="absolute right-0 top-full mt-1 w-80 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg shadow-lg z-50"
                         >
-                            <div class="p-3 border-b border-gray-100 dark:border-slate-700 text-sm font-semibold text-gray-700 dark:text-slate-200">
+                            <div
+                                class="p-3 border-b border-gray-100 dark:border-slate-700 text-sm font-semibold text-gray-700 dark:text-slate-200"
+                            >
                                 Active Alerts
                             </div>
-                            <div v-if="alerts.length === 0" class="p-4 text-sm text-gray-500 dark:text-slate-400 text-center">
+                            <div
+                                v-if="alerts.length === 0"
+                                class="p-4 text-sm text-gray-500 dark:text-slate-400 text-center"
+                            >
                                 No active alerts
                             </div>
-                            <div v-for="alert in alerts" :key="alert.id" class="p-3 border-b border-gray-50 dark:border-slate-700 last:border-0">
-                                <div class="text-sm font-medium text-gray-800 dark:text-slate-200">{{ alert.title }}</div>
-                                <div class="text-xs text-gray-500 dark:text-slate-400 mt-0.5 capitalize">{{ alert.severity }} - {{ alert.source_module }}</div>
+                            <div
+                                v-for="alert in alerts"
+                                :key="alert.id"
+                                class="p-3 border-b border-gray-50 dark:border-slate-700 last:border-0"
+                            >
+                                <div class="text-sm font-medium text-gray-800 dark:text-slate-200">
+                                    {{ alert.title }}
+                                </div>
+                                <div
+                                    class="text-xs text-gray-500 dark:text-slate-400 mt-0.5 capitalize"
+                                >
+                                    {{ alert.severity }} - {{ alert.source_module }}
+                                </div>
                             </div>
                         </div>
                     </div>
 
                     <!-- Theme toggle -->
                     <button
-                        @click="toggleTheme"
                         class="p-2 text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 transition"
                         :title="theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'"
+                        @click="toggleTheme"
                     >
                         <SunIcon v-if="theme === 'dark'" class="w-5 h-5" />
                         <MoonIcon v-else class="w-5 h-5" />
@@ -284,18 +307,18 @@ onMounted(() => {
 
                     <!-- Profile -->
                     <button
-                        @click="navigate('/profile')"
                         class="p-2 text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 transition"
                         title="Profile"
+                        @click="navigate('/profile')"
                     >
                         <UserIcon class="w-5 h-5" />
                     </button>
 
                     <!-- Logout -->
                     <button
-                        @click="logout"
                         class="p-2 text-gray-500 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 transition"
                         title="Sign out"
+                        @click="logout"
                     >
                         <ArrowRightOnRectangleIcon class="w-5 h-5" />
                     </button>
@@ -304,7 +327,7 @@ onMounted(() => {
 
             <!-- Page content -->
             <main class="flex-1 overflow-y-auto">
-                <slot />
+                <slot></slot>
             </main>
         </div>
     </div>
