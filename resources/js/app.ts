@@ -17,7 +17,7 @@ window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest'
 import './echo'
 
 createInertiaApp({
-    title: (title) => title ? `${title} | NostosEMR` : 'NostosEMR',
+    title: (title) => (title ? `${title} | NostosEMR` : 'NostosEMR'),
 
     resolve: (name) =>
         resolvePageComponent(
