@@ -1,11 +1,11 @@
 <script setup lang="ts">
 // ─── AppShell.vue ─────────────────────────────────────────────────────────────
 // Root layout for all authenticated NostosEMR pages.
-// Provides: dark-mode toggle, collapsed sidebar nav, top bar, alert bell,
-//           impersonation banner, and slot for page content.
+// Provides: collapsed sidebar nav, dark-mode toggle, alert bell, chat badge,
+//           impersonation banner, HIPAA idle-timeout modal, and page content slot.
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { usePage, router } from '@inertiajs/vue3'
 import axios from 'axios'
 import {
@@ -15,10 +15,12 @@ import {
     UserIcon,
     ArrowRightOnRectangleIcon,
     EyeIcon,
-    ChevronDownIcon,
+    ChevronDoubleLeftIcon,
+    ChevronDoubleRightIcon,
     ChatBubbleLeftRightIcon,
 } from '@heroicons/vue/24/outline'
 import type { PageProps } from '@/types'
+import IdleWarningModal from '@/Components/IdleWarningModal.vue'
 
 // ── Shared props ───────────────────────────────────────────────────────────────
 const page = usePage<PageProps>()
@@ -30,11 +32,7 @@ const impersonation = computed(() => page.props.impersonation)
 const theme = ref<'light' | 'dark'>(user.value.theme_preference ?? 'light')
 
 function applyTheme(t: 'light' | 'dark') {
-    if (t === 'dark') {
-        document.documentElement.classList.add('dark')
-    } else {
-        document.documentElement.classList.remove('dark')
-    }
+    document.documentElement.classList.toggle('dark', t === 'dark')
     localStorage.setItem('nostos_theme', t)
 }
 
@@ -43,10 +41,6 @@ function toggleTheme() {
     applyTheme(theme.value)
     axios.post('/user/theme', { theme: theme.value })
 }
-
-onMounted(() => {
-    applyTheme(theme.value)
-})
 
 // ── Nav ────────────────────────────────────────────────────────────────────────
 const navGroups = computed(() => user.value.nav_groups ?? [])
@@ -63,8 +57,8 @@ function navigate(href: string) {
     router.visit(href)
 }
 
-// ── Sidebar collapsed state ────────────────────────────────────────────────────
-const collapsed = ref(true) // sidebar is icon-only by default
+// ── Sidebar ────────────────────────────────────────────────────────────────────
+const collapsed = ref(true)
 
 // ── Alerts ────────────────────────────────────────────────────────────────────
 const alerts = ref<Array<{ id: number; title: string; severity: string; source_module: string }>>(
@@ -79,29 +73,8 @@ async function loadAlerts() {
         alerts.value = res.data.alerts ?? []
         alertCount.value = res.data.total_unread ?? 0
     } catch {
-        // Non-blocking
+        // Non-blocking — alert badge just won't update
     }
-}
-
-onMounted(() => {
-    loadAlerts()
-    // Subscribe to real-time alert updates via Reverb
-    if (window.Echo) {
-        window.Echo.private(`tenant.${user.value.tenant_id}`).listen('AlertCreated', () => {
-            loadAlerts()
-        })
-    }
-})
-
-// ── Impersonation stop ─────────────────────────────────────────────────────────
-async function stopImpersonation() {
-    await axios.delete('/super-admin/impersonate')
-    router.reload()
-}
-
-// ── Logout ─────────────────────────────────────────────────────────────────────
-function logout() {
-    router.post('/auth/logout')
 }
 
 // ── Chat unread badge ──────────────────────────────────────────────────────────
@@ -116,27 +89,119 @@ async function loadChatUnread() {
     }
 }
 
+// ── HIPAA idle timeout ─────────────────────────────────────────────────────────
+// Shows a warning modal 60s before auto-logout. Resets on any user activity.
+// autoLogoutMinutes comes from the tenant config (default 15 min).
+const showIdleWarning = ref(false)
+const idleCountdown = ref(60)
+
+const autoLogoutMinutes = computed(
+    () =>
+        (user.value as { tenant?: { auto_logout_minutes?: number } }).tenant?.auto_logout_minutes ??
+        15,
+)
+
+let warningTimer: ReturnType<typeof setTimeout> | null = null
+let countdownInterval: ReturnType<typeof setInterval> | null = null
+const ACTIVITY_EVENTS = ['mousemove', 'mousedown', 'keydown', 'scroll', 'touchstart'] as const
+
+function clearIdleTimers() {
+    if (warningTimer) clearTimeout(warningTimer)
+    if (countdownInterval) clearInterval(countdownInterval)
+}
+
+function startIdleTimers() {
+    clearIdleTimers()
+
+    // Fire warning 1 minute before the configured auto-logout time
+    const warnAfterMs = (autoLogoutMinutes.value - 1) * 60 * 1000
+
+    warningTimer = setTimeout(() => {
+        showIdleWarning.value = true
+        idleCountdown.value = 60
+
+        countdownInterval = setInterval(() => {
+            idleCountdown.value--
+            if (idleCountdown.value <= 0) {
+                clearInterval(countdownInterval!)
+                router.post('/auth/logout', { timeout: true })
+            }
+        }, 1000)
+    }, warnAfterMs)
+}
+
+function handleActivity() {
+    // Only reset the timer when the warning modal is NOT showing;
+    // once the modal is up the user must click "Stay Logged In" explicitly.
+    if (!showIdleWarning.value) startIdleTimers()
+}
+
+function stayLoggedIn() {
+    showIdleWarning.value = false
+    idleCountdown.value = 60
+    startIdleTimers()
+}
+
+// ── Impersonation ──────────────────────────────────────────────────────────────
+async function stopImpersonation() {
+    await axios.delete('/super-admin/impersonate')
+    router.reload()
+}
+
+// ── Logout ─────────────────────────────────────────────────────────────────────
+function logout() {
+    router.post('/auth/logout')
+}
+
+// ── Lifecycle ──────────────────────────────────────────────────────────────────
 onMounted(() => {
+    applyTheme(theme.value)
+
+    loadAlerts()
     loadChatUnread()
+
+    // Real-time subscriptions via Reverb
     if (window.Echo) {
+        window.Echo.private(`tenant.${user.value.tenant_id}`).listen('AlertCreated', () => {
+            loadAlerts()
+        })
         window.Echo.private(`user.${user.value.id}`).listen('ChatActivity', () => {
             loadChatUnread()
         })
     }
+
+    // Start idle timer and attach activity listeners
+    startIdleTimers()
+    ACTIVITY_EVENTS.forEach((evt) =>
+        window.addEventListener(evt, handleActivity, { passive: true }),
+    )
+})
+
+onUnmounted(() => {
+    clearIdleTimers()
+    ACTIVITY_EVENTS.forEach((evt) => window.removeEventListener(evt, handleActivity))
 })
 </script>
 
 <template>
+    <!-- HIPAA idle timeout warning -->
+    <IdleWarningModal
+        v-if="showIdleWarning"
+        :countdown="idleCountdown"
+        @stay-logged-in="stayLoggedIn"
+    />
+
     <!-- Impersonation banner -->
     <div
         v-if="impersonation.active && impersonation.user"
         class="bg-amber-400 text-amber-900 px-4 py-2 flex items-center gap-2 text-sm font-semibold z-50"
     >
-        <EyeIcon class="w-4 h-4" />
+        <EyeIcon class="w-4 h-4" aria-hidden="true" />
         Viewing as {{ impersonation.user.first_name }} {{ impersonation.user.last_name }} &middot;
         {{ impersonation.user.department_label }}
         <button
             class="ml-auto px-3 py-0.5 bg-amber-700 text-white rounded text-xs hover:bg-amber-800 transition"
+            aria-label="Exit impersonation"
             @click="stopImpersonation"
         >
             Exit Impersonation
@@ -151,7 +216,7 @@ onMounted(() => {
                 collapsed ? 'w-16' : 'w-56',
             ]"
         >
-            <!-- Logo / brand -->
+            <!-- Logo -->
             <div
                 class="h-14 flex items-center justify-center border-b border-slate-700/50 shrink-0"
             >
@@ -161,7 +226,7 @@ onMounted(() => {
             </div>
 
             <!-- Nav items -->
-            <nav class="flex-1 overflow-y-auto py-2 space-y-1 px-1">
+            <nav class="flex-1 overflow-y-auto py-2 space-y-1 px-1" aria-label="Main navigation">
                 <template v-for="group in navGroups" :key="group.label">
                     <div
                         v-if="!collapsed"
@@ -179,7 +244,8 @@ onMounted(() => {
                                 : 'text-slate-300 hover:bg-slate-700/50 hover:text-white',
                             collapsed ? 'justify-center' : '',
                         ]"
-                        :title="collapsed ? item.label : undefined"
+                        :aria-label="collapsed ? item.label : undefined"
+                        :aria-current="isActive(item.href) ? 'page' : undefined"
                         @click="navigate(item.href)"
                     >
                         <span
@@ -191,6 +257,7 @@ onMounted(() => {
                         <span
                             v-if="item.badge && item.badge > 0 && !collapsed"
                             class="ml-auto bg-red-500 text-white text-xs font-bold rounded-full px-1.5 py-0.5 min-w-[1.25rem] text-center"
+                            :aria-label="`${item.badge} unread`"
                         >
                             {{ item.badge }}
                         </span>
@@ -198,7 +265,7 @@ onMounted(() => {
                 </template>
             </nav>
 
-            <!-- Sidebar footer: user info + toggle -->
+            <!-- Sidebar footer -->
             <div class="border-t border-slate-700/50 p-2 shrink-0">
                 <div v-if="!collapsed" class="text-xs text-slate-400 px-2 pb-2 truncate">
                     {{ user.first_name }} {{ user.last_name }}
@@ -206,15 +273,11 @@ onMounted(() => {
                 </div>
                 <button
                     class="w-full flex items-center justify-center py-1.5 text-slate-400 hover:text-white hover:bg-slate-700/50 rounded transition"
-                    title="Toggle sidebar"
+                    :aria-label="collapsed ? 'Expand sidebar' : 'Collapse sidebar'"
                     @click="collapsed = !collapsed"
                 >
-                    <ChevronDownIcon
-                        :class="[
-                            'w-4 h-4 transition-transform',
-                            collapsed ? '-rotate-90' : 'rotate-90',
-                        ]"
-                    />
+                    <ChevronDoubleRightIcon v-if="collapsed" class="w-4 h-4" aria-hidden="true" />
+                    <ChevronDoubleLeftIcon v-else class="w-4 h-4" aria-hidden="true" />
                 </button>
             </div>
         </aside>
@@ -225,23 +288,22 @@ onMounted(() => {
             <header
                 class="h-14 bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 flex items-center px-4 gap-3 shrink-0 z-30"
             >
-                <!-- Breadcrumb / page title via slot -->
                 <div class="flex-1 min-w-0">
                     <slot name="header"></slot>
                 </div>
 
-                <!-- Right controls -->
                 <div class="flex items-center gap-2 shrink-0">
                     <!-- Chat -->
                     <button
                         class="relative p-2 text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 transition"
-                        title="Chat"
+                        aria-label="Open chat"
                         @click="navigate('/chat')"
                     >
-                        <ChatBubbleLeftRightIcon class="w-5 h-5" />
+                        <ChatBubbleLeftRightIcon class="w-5 h-5" aria-hidden="true" />
                         <span
                             v-if="chatUnread > 0"
                             class="absolute top-1 right-1 bg-red-500 text-white text-xs font-bold rounded-full w-4 h-4 flex items-center justify-center"
+                            :aria-label="`${chatUnread} unread messages`"
                         >
                             {{ chatUnread > 9 ? '9+' : chatUnread }}
                         </span>
@@ -251,21 +313,26 @@ onMounted(() => {
                     <div class="relative">
                         <button
                             class="relative p-2 text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 transition"
-                            title="Alerts"
+                            :aria-label="`Alerts${alertCount > 0 ? ` — ${alertCount} active` : ''}`"
+                            :aria-expanded="showAlerts"
+                            aria-haspopup="true"
                             @click="showAlerts = !showAlerts"
                         >
-                            <BellIcon class="w-5 h-5" />
+                            <BellIcon class="w-5 h-5" aria-hidden="true" />
                             <span
                                 v-if="alertCount > 0"
                                 class="absolute top-1 right-1 bg-red-500 text-white text-xs font-bold rounded-full w-4 h-4 flex items-center justify-center"
+                                aria-hidden="true"
                             >
                                 {{ alertCount > 9 ? '9+' : alertCount }}
                             </span>
                         </button>
+
                         <!-- Alert dropdown -->
                         <div
                             v-if="showAlerts"
                             class="absolute right-0 top-full mt-1 w-80 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg shadow-lg z-50"
+                            role="menu"
                         >
                             <div
                                 class="p-3 border-b border-gray-100 dark:border-slate-700 text-sm font-semibold text-gray-700 dark:text-slate-200"
@@ -282,6 +349,7 @@ onMounted(() => {
                                 v-for="alert in alerts"
                                 :key="alert.id"
                                 class="p-3 border-b border-gray-50 dark:border-slate-700 last:border-0"
+                                role="menuitem"
                             >
                                 <div class="text-sm font-medium text-gray-800 dark:text-slate-200">
                                     {{ alert.title }}
@@ -298,29 +366,31 @@ onMounted(() => {
                     <!-- Theme toggle -->
                     <button
                         class="p-2 text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 transition"
-                        :title="theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'"
+                        :aria-label="
+                            theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'
+                        "
                         @click="toggleTheme"
                     >
-                        <SunIcon v-if="theme === 'dark'" class="w-5 h-5" />
-                        <MoonIcon v-else class="w-5 h-5" />
+                        <SunIcon v-if="theme === 'dark'" class="w-5 h-5" aria-hidden="true" />
+                        <MoonIcon v-else class="w-5 h-5" aria-hidden="true" />
                     </button>
 
                     <!-- Profile -->
                     <button
                         class="p-2 text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 transition"
-                        title="Profile"
+                        aria-label="Go to your profile"
                         @click="navigate('/profile')"
                     >
-                        <UserIcon class="w-5 h-5" />
+                        <UserIcon class="w-5 h-5" aria-hidden="true" />
                     </button>
 
                     <!-- Logout -->
                     <button
                         class="p-2 text-gray-500 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 transition"
-                        title="Sign out"
+                        aria-label="Sign out"
                         @click="logout"
                     >
-                        <ArrowRightOnRectangleIcon class="w-5 h-5" />
+                        <ArrowRightOnRectangleIcon class="w-5 h-5" aria-hidden="true" />
                     </button>
                 </div>
             </header>
