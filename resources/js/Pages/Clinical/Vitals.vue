@@ -37,7 +37,7 @@ const search = ref('')
 const filtered = computed(() => {
     const q = search.value.trim().toLowerCase()
     if (!q) return props.vitals
-    return props.vitals.filter(v => {
+    return props.vitals.filter((v) => {
         if (!v.participant) return false
         const name = `${v.participant.first_name} ${v.participant.last_name}`.toLowerCase()
         const mrn = v.participant.mrn.toLowerCase()
@@ -101,11 +101,11 @@ function painClass(pain: number | null): string {
 }
 
 // Counts
-const freshCount = computed(() =>
-    props.vitals.filter(v => v.participant && freshSet.value.has(v.participant.id)).length,
+const freshCount = computed(
+    () => props.vitals.filter((v) => v.participant && freshSet.value.has(v.participant.id)).length,
 )
 const uniqueParticipants = computed(() => {
-    const ids = new Set(props.vitals.map(v => v.participant?.id).filter(Boolean))
+    const ids = new Set(props.vitals.map((v) => v.participant?.id).filter(Boolean))
     return ids.size
 })
 </script>
@@ -126,14 +126,19 @@ const uniqueParticipants = computed(() => {
         <div class="px-6 py-5">
             <!-- ── Page header ── -->
             <div class="flex flex-wrap items-center gap-3 mb-5">
-                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/60 text-green-800 dark:text-green-300">
+                <span
+                    class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/60 text-green-800 dark:text-green-300"
+                >
                     {{ freshCount }} current
                 </span>
-                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-300">
+                <span
+                    class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-300"
+                >
                     {{ uniqueParticipants - freshCount }} overdue
                 </span>
                 <span class="text-sm text-gray-500 dark:text-slate-400">
-                    {{ uniqueParticipants }} participant{{ uniqueParticipants !== 1 ? 's' : '' }} total
+                    {{ uniqueParticipants }} participant{{ uniqueParticipants !== 1 ? 's' : '' }}
+                    total
                 </span>
             </div>
 
@@ -153,12 +158,26 @@ const uniqueParticipants = computed(() => {
             </div>
 
             <!-- ── Table ── -->
-            <div class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 overflow-hidden shadow-sm">
-                <table class="min-w-full divide-y divide-gray-200 dark:divide-slate-700" aria-label="Vitals overview">
+            <div
+                class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 overflow-hidden shadow-sm"
+            >
+                <table
+                    class="min-w-full divide-y divide-gray-200 dark:divide-slate-700"
+                    aria-label="Vitals overview"
+                >
                     <thead class="bg-gray-50 dark:bg-slate-700/50">
                         <tr>
                             <th
-                                v-for="col in ['Participant', 'Last Recorded', 'BP', 'Pulse', 'O2 Sat', 'Weight', 'Pain', 'Status']"
+                                v-for="col in [
+                                    'Participant',
+                                    'Last Recorded',
+                                    'BP',
+                                    'Pulse',
+                                    'O2 Sat',
+                                    'Weight',
+                                    'Pain',
+                                    'Status',
+                                ]"
                                 :key="col"
                                 scope="col"
                                 class="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide"
@@ -169,7 +188,10 @@ const uniqueParticipants = computed(() => {
                     </thead>
                     <tbody class="divide-y divide-gray-100 dark:divide-slate-700">
                         <tr v-if="filtered.length === 0">
-                            <td colspan="8" class="px-4 py-10 text-center text-gray-400 dark:text-slate-500">
+                            <td
+                                colspan="8"
+                                class="px-4 py-10 text-center text-gray-400 dark:text-slate-500"
+                            >
                                 No vitals records found.
                             </td>
                         </tr>
@@ -179,21 +201,32 @@ const uniqueParticipants = computed(() => {
                             :key="row.id"
                             class="bg-white dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-blue-900/20 cursor-pointer transition-colors"
                             tabindex="0"
-                            :aria-label="row.participant ? `Open chart for ${row.participant.last_name}, ${row.participant.first_name}` : 'Open participant chart'"
+                            :aria-label="
+                                row.participant
+                                    ? `Open chart for ${row.participant.last_name}, ${row.participant.first_name}`
+                                    : 'Open participant chart'
+                            "
                             @click="row.participant && router.visit(`/participants/${row.participant.id}`)"
                             @keydown.enter="row.participant && router.visit(`/participants/${row.participant.id}`)"
                         >
                             <!-- Participant -->
                             <td class="px-4 py-3">
                                 <template v-if="row.participant">
-                                    <div class="font-medium text-blue-600 dark:text-blue-400 hover:underline text-sm">
-                                        {{ row.participant.last_name }}, {{ row.participant.first_name }}
+                                    <div
+                                        class="font-medium text-blue-600 dark:text-blue-400 hover:underline text-sm"
+                                    >
+                                        {{ row.participant.last_name }},
+                                        {{ row.participant.first_name }}
                                     </div>
-                                    <div class="font-mono text-xs text-gray-400 dark:text-slate-500 mt-0.5">
+                                    <div
+                                        class="font-mono text-xs text-gray-400 dark:text-slate-500 mt-0.5"
+                                    >
                                         {{ row.participant.mrn }}
                                     </div>
                                 </template>
-                                <span v-else class="text-gray-400 dark:text-slate-500 text-sm">-</span>
+                                <span v-else class="text-gray-400 dark:text-slate-500 text-sm"
+                                    >-</span
+                                >
                             </td>
 
                             <!-- Last recorded -->

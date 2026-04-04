@@ -158,7 +158,7 @@ async function submitNote() {
       </div>
       <div class="mb-3">
         <label class="block text-xs font-medium text-gray-700 dark:text-slate-300 mb-1">Visit Date</label>
-        <input type="date" v-model="noteForm.visit_date" class="text-sm border border-gray-300 dark:border-slate-600 rounded-md px-2 py-1.5 bg-white dark:bg-slate-700" />
+        <input v-model="noteForm.visit_date" type="date" class="text-sm border border-gray-300 dark:border-slate-600 rounded-md px-2 py-1.5 bg-white dark:bg-slate-700" />
       </div>
       <div v-for="field in ['subjective', 'objective', 'assessment', 'plan']" :key="field" class="mb-3">
         <label class="block text-xs font-medium text-gray-700 dark:text-slate-300 mb-1 capitalize">{{ field }}</label>
@@ -166,7 +166,7 @@ async function submitNote() {
           v-model="(noteForm as Record<string, string>)[field]"
           rows="2"
           class="w-full text-sm border border-gray-300 dark:border-slate-600 rounded-md px-2 py-1.5 bg-white dark:bg-slate-700"
-        />
+        ></textarea>
       </div>
       <p v-if="noteError" class="text-red-600 dark:text-red-400 text-xs mb-2">{{ noteError }}</p>
       <div class="flex gap-2">

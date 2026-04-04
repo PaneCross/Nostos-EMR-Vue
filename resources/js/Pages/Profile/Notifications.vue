@@ -34,33 +34,33 @@ const PREF_KEYS: string[] = [
 
 const PREF_LABELS: Record<string, string> = {
     alert_critical: 'Critical Alerts',
-    alert_warning:  'Warning Alerts',
-    alert_info:     'Informational Alerts',
-    sdr_overdue:    'SDR Overdue Notifications',
-    new_message:    'Chat Messages',
+    alert_warning: 'Warning Alerts',
+    alert_info: 'Informational Alerts',
+    sdr_overdue: 'SDR Overdue Notifications',
+    new_message: 'Chat Messages',
 }
 
 const VALUE_LABELS: Record<PrefValue, string> = {
-    in_app_only:     'In-App Only',
+    in_app_only: 'In-App Only',
     email_immediate: 'Email Immediate',
-    email_digest:    'Email Digest (every 2h)',
-    off:             'Off',
+    email_digest: 'Email Digest (every 2h)',
+    off: 'Off',
 }
 
 const VALUE_DESCRIPTIONS: Record<PrefValue, string> = {
-    in_app_only:     'Shows in the notification bell only. No email.',
+    in_app_only: 'Shows in the notification bell only. No email.',
     email_immediate: 'Sends an email as soon as the notification is generated. No PHI included.',
-    email_digest:    'Batched into a single digest email every 2 hours. No PHI included.',
-    off:             'No notification delivered.',
+    email_digest: 'Batched into a single digest email every 2 hours. No PHI included.',
+    off: 'No notification delivered.',
 }
 
 const ALL_VALUES: PrefValue[] = ['in_app_only', 'email_immediate', 'email_digest', 'off']
 
 // ── State ──────────────────────────────────────────────────────────────────────
 
-const prefs  = ref<Record<string, PrefValue>>({ ...props.preferences })
+const prefs = ref<Record<string, PrefValue>>({ ...props.preferences })
 const saving = ref(false)
-const saved  = ref(false)
+const saved = ref(false)
 
 // ── Methods ────────────────────────────────────────────────────────────────────
 
@@ -74,7 +74,9 @@ async function handleSave() {
     try {
         await axios.patch('/profile/notifications', { preferences: prefs.value })
         saved.value = true
-        setTimeout(() => { saved.value = false }, 3000)
+        setTimeout(() => {
+            saved.value = false
+        }, 3000)
     } catch {
         // ignore
     } finally {
@@ -88,10 +90,11 @@ async function handleSave() {
         <Head title="Notification Preferences" />
 
         <div class="max-w-2xl mx-auto px-6 py-8">
-
             <!-- Header -->
             <div class="mb-6">
-                <h1 class="text-xl font-semibold text-slate-900 dark:text-slate-100">Notification Preferences</h1>
+                <h1 class="text-xl font-semibold text-slate-900 dark:text-slate-100">
+                    Notification Preferences
+                </h1>
                 <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
                     Control how you receive notifications. Emails contain no patient or clinical
                     information in compliance with HIPAA.
@@ -112,7 +115,6 @@ async function handleSave() {
                         <button
                             v-for="val in ALL_VALUES"
                             :key="val"
-                            @click="handleChange(key, val)"
                             :title="VALUE_DESCRIPTIONS[val]"
                             :aria-label="`Set ${PREF_LABELS[key] ?? key} to ${VALUE_LABELS[val]}`"
                             :aria-pressed="prefs[key] === val"
@@ -120,8 +122,9 @@ async function handleSave() {
                                 'rounded-lg border px-3 py-2.5 text-left transition-colors',
                                 prefs[key] === val
                                     ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300'
-                                    : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:border-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'
+                                    : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:border-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700',
                             ]"
+                            @click="handleChange(key, val)"
                         >
                             <p class="text-xs font-medium">{{ VALUE_LABELS[val] }}</p>
                             <p class="text-[10px] mt-0.5 opacity-70 leading-snug">
@@ -135,10 +138,10 @@ async function handleSave() {
             <!-- Save button -->
             <div class="mt-6 flex items-center gap-3">
                 <button
-                    @click="handleSave"
                     :disabled="saving"
                     class="rounded-lg bg-blue-600 px-5 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-500"
                     aria-label="Save notification preferences"
+                    @click="handleSave"
                 >
                     {{ saving ? 'Saving...' : 'Save Preferences' }}
                 </button>
@@ -152,7 +155,6 @@ async function handleSave() {
                     Saved
                 </span>
             </div>
-
         </div>
     </AppShell>
 </template>

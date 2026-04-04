@@ -144,7 +144,7 @@ function submitReferral() {
 
             <!-- ── Kanban board ── -->
             <div class="overflow-x-auto pb-4">
-                <div class="flex gap-4" style="min-width: max-content;">
+                <div class="flex gap-4" style="min-width: max-content">
                     <div
                         v-for="statusKey in pipelineOrder"
                         :key="statusKey"
@@ -154,19 +154,24 @@ function submitReferral() {
                         <div
                             :class="[
                                 'flex items-center justify-between px-3 py-2 rounded-t-lg border border-b-0 border-gray-200 dark:border-slate-700',
-                                COLUMN_COLORS[statusKey] ?? 'bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-slate-300',
+                                COLUMN_COLORS[statusKey] ??
+                                    'bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-slate-300',
                             ]"
                         >
                             <span class="text-xs font-semibold uppercase tracking-wide truncate">
                                 {{ statuses[statusKey] ?? statusKey }}
                             </span>
-                            <span class="ml-2 inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-white/60 dark:bg-black/20 text-xs font-bold">
+                            <span
+                                class="ml-2 inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-white/60 dark:bg-black/20 text-xs font-bold"
+                            >
                                 {{ columnReferrals(statusKey).length }}
                             </span>
                         </div>
 
                         <!-- Card list -->
-                        <div class="flex-1 border border-gray-200 dark:border-slate-700 rounded-b-lg bg-gray-50 dark:bg-slate-800/50 overflow-y-auto max-h-[calc(100vh-220px)] divide-y divide-gray-100 dark:divide-slate-700">
+                        <div
+                            class="flex-1 border border-gray-200 dark:border-slate-700 rounded-b-lg bg-gray-50 dark:bg-slate-800/50 overflow-y-auto max-h-[calc(100vh-220px)] divide-y divide-gray-100 dark:divide-slate-700"
+                        >
                             <!-- Empty state -->
                             <div
                                 v-if="columnReferrals(statusKey).length === 0"
@@ -187,7 +192,9 @@ function submitReferral() {
                             >
                                 <!-- Name + priority badge -->
                                 <div class="flex items-start justify-between gap-1 mb-1">
-                                    <span class="text-sm font-semibold text-gray-800 dark:text-slate-100 leading-tight">
+                                    <span
+                                        class="text-sm font-semibold text-gray-800 dark:text-slate-100 leading-tight"
+                                    >
                                         {{ referral.referred_by_name }}
                                     </span>
                                     <span
@@ -206,7 +213,10 @@ function submitReferral() {
 
                                 <!-- Source -->
                                 <p class="text-xs text-gray-500 dark:text-slate-400 mb-1 truncate">
-                                    {{ sources[referral.referral_source] ?? referral.referral_source }}
+                                    {{
+                                        sources[referral.referral_source] ??
+                                        referral.referral_source
+                                    }}
                                 </p>
 
                                 <!-- Referral date -->
@@ -219,9 +229,15 @@ function submitReferral() {
                                     v-if="referral.assigned_to"
                                     class="flex items-center gap-1 mt-1.5"
                                 >
-                                    <UserIcon class="w-3.5 h-3.5 text-gray-400 dark:text-slate-500 shrink-0" aria-hidden="true" />
-                                    <span class="text-xs text-gray-500 dark:text-slate-400 truncate">
-                                        {{ referral.assigned_to.first_name }} {{ referral.assigned_to.last_name }}
+                                    <UserIcon
+                                        class="w-3.5 h-3.5 text-gray-400 dark:text-slate-500 shrink-0"
+                                        aria-hidden="true"
+                                    />
+                                    <span
+                                        class="text-xs text-gray-500 dark:text-slate-400 truncate"
+                                    >
+                                        {{ referral.assigned_to.first_name }}
+                                        {{ referral.assigned_to.last_name }}
                                     </span>
                                 </div>
                             </div>
@@ -241,15 +257,16 @@ function submitReferral() {
                 aria-labelledby="modal-title"
             >
                 <!-- Backdrop -->
-                <div
-                    class="absolute inset-0 bg-black/50"
-                    @click="closeModal"
-                />
+                <div class="absolute inset-0 bg-black/50" @click="closeModal"></div>
 
                 <!-- Panel -->
-                <div class="relative w-full max-w-md bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-gray-200 dark:border-slate-700 z-10">
+                <div
+                    class="relative w-full max-w-md bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-gray-200 dark:border-slate-700 z-10"
+                >
                     <!-- Header -->
-                    <div class="flex items-center justify-between px-5 py-4 border-b border-gray-200 dark:border-slate-700">
+                    <div
+                        class="flex items-center justify-between px-5 py-4 border-b border-gray-200 dark:border-slate-700"
+                    >
                         <h2
                             id="modal-title"
                             class="text-sm font-semibold text-gray-800 dark:text-slate-100"
@@ -305,11 +322,7 @@ function submitReferral() {
                                 class="w-full text-sm border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-slate-100"
                             >
                                 <option value="">Select a source</option>
-                                <option
-                                    v-for="(label, key) in sources"
-                                    :key="key"
-                                    :value="key"
-                                >
+                                <option v-for="(label, key) in sources" :key="key" :value="key">
                                     {{ label }}
                                 </option>
                             </select>
@@ -375,7 +388,7 @@ function submitReferral() {
                                 rows="3"
                                 class="w-full text-sm border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-700 dark:text-slate-100 dark:placeholder-slate-400 resize-none"
                                 placeholder="Optional notes"
-                            />
+                            ></textarea>
                         </div>
 
                         <!-- Actions -->

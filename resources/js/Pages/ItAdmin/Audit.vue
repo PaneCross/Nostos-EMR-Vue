@@ -95,16 +95,18 @@ onMounted(() => load())
                 <div class="flex items-center gap-3">
                     <DocumentMagnifyingGlassIcon class="w-7 h-7 text-blue-600 dark:text-blue-400" />
                     <div>
-                        <h1 class="text-2xl font-bold text-gray-900 dark:text-slate-100">HIPAA Audit Log</h1>
+                        <h1 class="text-2xl font-bold text-gray-900 dark:text-slate-100">
+                            HIPAA Audit Log
+                        </h1>
                         <p class="text-sm text-gray-500 dark:text-slate-400">
                             {{ totalCount.toLocaleString() }} total entries - 6-year retention
                         </p>
                     </div>
                 </div>
                 <button
-                    @click="exportCsv"
                     class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-300 dark:border-slate-600 text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700 text-sm transition-colors"
                     aria-label="Export audit log as CSV"
+                    @click="exportCsv"
                 >
                     <ArrowDownTrayIcon class="w-4 h-4" />
                     Export CSV
@@ -112,9 +114,15 @@ onMounted(() => load())
             </div>
 
             <!-- Filter bar -->
-            <div class="flex flex-wrap gap-3 mb-5 p-4 bg-gray-50 dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700">
+            <div
+                class="flex flex-wrap gap-3 mb-5 p-4 bg-gray-50 dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700"
+            >
                 <div>
-                    <label class="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1" for="filter-action">Action</label>
+                    <label
+                        class="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1"
+                        for="filter-action"
+                        >Action</label
+                    >
                     <input
                         id="filter-action"
                         v-model="filterAction"
@@ -124,7 +132,11 @@ onMounted(() => load())
                     />
                 </div>
                 <div>
-                    <label class="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1" for="filter-res">Resource Type</label>
+                    <label
+                        class="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1"
+                        for="filter-res"
+                        >Resource Type</label
+                    >
                     <input
                         id="filter-res"
                         v-model="filterResType"
@@ -134,7 +146,11 @@ onMounted(() => load())
                     />
                 </div>
                 <div>
-                    <label class="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1" for="filter-from">From</label>
+                    <label
+                        class="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1"
+                        for="filter-from"
+                        >From</label
+                    >
                     <input
                         id="filter-from"
                         v-model="filterDateFrom"
@@ -143,7 +159,11 @@ onMounted(() => load())
                     />
                 </div>
                 <div>
-                    <label class="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1" for="filter-to">To</label>
+                    <label
+                        class="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1"
+                        for="filter-to"
+                        >To</label
+                    >
                     <input
                         id="filter-to"
                         v-model="filterDateTo"
@@ -153,8 +173,8 @@ onMounted(() => load())
                 </div>
                 <div class="flex items-end">
                     <button
-                        @click="applyFilters"
                         class="px-4 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition-colors"
+                        @click="applyFilters"
                     >
                         Apply
                     </button>
@@ -162,31 +182,86 @@ onMounted(() => load())
             </div>
 
             <!-- Table -->
-            <div class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 overflow-hidden shadow-sm">
-                <div v-if="loading" class="py-16 text-center text-gray-500 dark:text-slate-400 text-sm">Loading...</div>
+            <div
+                class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 overflow-hidden shadow-sm"
+            >
+                <div
+                    v-if="loading"
+                    class="py-16 text-center text-gray-500 dark:text-slate-400 text-sm"
+                >
+                    Loading...
+                </div>
                 <table v-else class="w-full text-sm">
                     <thead class="bg-gray-50 dark:bg-slate-700/50">
                         <tr>
-                            <th class="text-left px-4 py-3 font-semibold text-gray-700 dark:text-slate-300">Action</th>
-                            <th class="text-left px-4 py-3 font-semibold text-gray-700 dark:text-slate-300">Resource</th>
-                            <th class="text-left px-4 py-3 font-semibold text-gray-700 dark:text-slate-300">User</th>
-                            <th class="text-left px-4 py-3 font-semibold text-gray-700 dark:text-slate-300">IP Address</th>
-                            <th class="text-left px-4 py-3 font-semibold text-gray-700 dark:text-slate-300">Time</th>
+                            <th
+                                class="text-left px-4 py-3 font-semibold text-gray-700 dark:text-slate-300"
+                            >
+                                Action
+                            </th>
+                            <th
+                                class="text-left px-4 py-3 font-semibold text-gray-700 dark:text-slate-300"
+                            >
+                                Resource
+                            </th>
+                            <th
+                                class="text-left px-4 py-3 font-semibold text-gray-700 dark:text-slate-300"
+                            >
+                                User
+                            </th>
+                            <th
+                                class="text-left px-4 py-3 font-semibold text-gray-700 dark:text-slate-300"
+                            >
+                                IP Address
+                            </th>
+                            <th
+                                class="text-left px-4 py-3 font-semibold text-gray-700 dark:text-slate-300"
+                            >
+                                Time
+                            </th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100 dark:divide-slate-700">
-                        <tr v-for="entry in entries" :key="entry.id" class="hover:bg-gray-50 dark:hover:bg-slate-700/50">
-                            <td class="px-4 py-3 font-mono text-xs text-gray-800 dark:text-slate-200">{{ entry.action }}</td>
+                        <tr
+                            v-for="entry in entries"
+                            :key="entry.id"
+                            class="hover:bg-gray-50 dark:hover:bg-slate-700/50"
+                        >
+                            <td
+                                class="px-4 py-3 font-mono text-xs text-gray-800 dark:text-slate-200"
+                            >
+                                {{ entry.action }}
+                            </td>
                             <td class="px-4 py-3 text-gray-600 dark:text-slate-400">
-                                <span v-if="entry.resource_type">{{ entry.resource_type }}<span v-if="entry.resource_id"> #{{ entry.resource_id }}</span></span>
+                                <span v-if="entry.resource_type"
+                                    >{{ entry.resource_type
+                                    }}<span v-if="entry.resource_id">
+                                        #{{ entry.resource_id }}</span
+                                    ></span
+                                >
                                 <span v-else class="text-gray-400 dark:text-slate-500">-</span>
                             </td>
-                            <td class="px-4 py-3 text-gray-600 dark:text-slate-400">{{ entry.user_name ?? '-' }}</td>
-                            <td class="px-4 py-3 font-mono text-xs text-gray-500 dark:text-slate-400">{{ entry.ip_address ?? '-' }}</td>
-                            <td class="px-4 py-3 whitespace-nowrap text-gray-600 dark:text-slate-400">{{ formatDate(entry.created_at) }}</td>
+                            <td class="px-4 py-3 text-gray-600 dark:text-slate-400">
+                                {{ entry.user_name ?? '-' }}
+                            </td>
+                            <td
+                                class="px-4 py-3 font-mono text-xs text-gray-500 dark:text-slate-400"
+                            >
+                                {{ entry.ip_address ?? '-' }}
+                            </td>
+                            <td
+                                class="px-4 py-3 whitespace-nowrap text-gray-600 dark:text-slate-400"
+                            >
+                                {{ formatDate(entry.created_at) }}
+                            </td>
                         </tr>
                         <tr v-if="entries.length === 0">
-                            <td colspan="5" class="py-12 text-center text-gray-500 dark:text-slate-400">No entries found.</td>
+                            <td
+                                colspan="5"
+                                class="py-12 text-center text-gray-500 dark:text-slate-400"
+                            >
+                                No entries found.
+                            </td>
                         </tr>
                     </tbody>
                 </table>
@@ -199,19 +274,19 @@ onMounted(() => load())
                 </p>
                 <div class="flex gap-2">
                     <button
-                        @click="goPage(page - 1)"
                         :disabled="page <= 1"
                         class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-gray-300 dark:border-slate-600 text-sm text-gray-700 dark:text-slate-300 disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
                         aria-label="Previous page"
+                        @click="goPage(page - 1)"
                     >
                         <ChevronLeftIcon class="w-4 h-4" />
                         Previous
                     </button>
                     <button
-                        @click="goPage(page + 1)"
                         :disabled="page >= totalPages"
                         class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-gray-300 dark:border-slate-600 text-sm text-gray-700 dark:text-slate-300 disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
                         aria-label="Next page"
+                        @click="goPage(page + 1)"
                     >
                         Next
                         <ChevronRightIcon class="w-4 h-4" />

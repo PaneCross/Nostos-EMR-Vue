@@ -41,7 +41,9 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
         aria-labelledby="idle-title"
         aria-describedby="idle-desc"
     >
-        <div class="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+        <div
+            class="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-md mx-4 overflow-hidden"
+        >
             <!-- Amber warning header -->
             <div class="bg-amber-500 px-6 py-4 flex items-center gap-3">
                 <ExclamationTriangleIcon class="w-6 h-6 text-white shrink-0" aria-hidden="true" />
@@ -56,9 +58,17 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
                 </p>
 
                 <!-- Countdown ring -->
-                <div class="flex items-center justify-center my-6" aria-live="polite" aria-atomic="true">
-                    <div class="w-24 h-24 rounded-full border-4 border-amber-400 flex items-center justify-center">
-                        <span class="text-4xl font-bold text-amber-600 dark:text-amber-400 tabular-nums">
+                <div
+                    class="flex items-center justify-center my-6"
+                    aria-live="polite"
+                    aria-atomic="true"
+                >
+                    <div
+                        class="w-24 h-24 rounded-full border-4 border-amber-400 flex items-center justify-center"
+                    >
+                        <span
+                            class="text-4xl font-bold text-amber-600 dark:text-amber-400 tabular-nums"
+                        >
                             {{ countdown }}
                         </span>
                     </div>

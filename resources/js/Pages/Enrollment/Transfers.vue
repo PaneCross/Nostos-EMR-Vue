@@ -50,11 +50,7 @@ const statusFilter = ref(props.filters.status ?? '')
 function applyStatusFilter(e: Event) {
     const val = (e.target as HTMLSelectElement).value
     statusFilter.value = val
-    router.get(
-        '/enrollment/transfers',
-        { status: val },
-        { preserveState: true, replace: true },
-    )
+    router.get('/enrollment/transfers', { status: val }, { preserveState: true, replace: true })
 }
 
 // ── Pagination ─────────────────────────────────────────────────────────────────
@@ -134,9 +130,13 @@ const STATUS_LABELS: Record<string, string> = {
             </div>
 
             <!-- ── Table ── -->
-            <div class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 overflow-hidden shadow-sm">
+            <div
+                class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 overflow-hidden shadow-sm"
+            >
                 <table class="w-full text-sm" aria-label="Site transfers">
-                    <thead class="bg-gray-50 dark:bg-slate-700/50 border-b border-gray-200 dark:border-slate-700">
+                    <thead
+                        class="bg-gray-50 dark:bg-slate-700/50 border-b border-gray-200 dark:border-slate-700"
+                    >
                         <tr>
                             <th
                                 scope="col"
@@ -205,7 +205,9 @@ const STATUS_LABELS: Record<string, string> = {
                         >
                             <!-- Participant: MRN + name -->
                             <td class="px-4 py-3">
-                                <div class="font-mono text-xs font-semibold text-gray-500 dark:text-slate-400">
+                                <div
+                                    class="font-mono text-xs font-semibold text-gray-500 dark:text-slate-400"
+                                >
                                     {{ transfer.participant.mrn }}
                                 </div>
                                 <div class="font-medium text-gray-900 dark:text-slate-100 text-sm">
@@ -215,11 +217,16 @@ const STATUS_LABELS: Record<string, string> = {
 
                             <!-- From site + arrow + To site -->
                             <td class="px-4 py-3">
-                                <div class="flex items-center gap-1.5 text-sm text-gray-700 dark:text-slate-300">
+                                <div
+                                    class="flex items-center gap-1.5 text-sm text-gray-700 dark:text-slate-300"
+                                >
                                     <span class="truncate max-w-[100px]">
                                         {{ transfer.from_site?.name ?? '-' }}
                                     </span>
-                                    <ArrowRightIcon class="w-3.5 h-3.5 text-gray-400 dark:text-slate-500 shrink-0" aria-hidden="true" />
+                                    <ArrowRightIcon
+                                        class="w-3.5 h-3.5 text-gray-400 dark:text-slate-500 shrink-0"
+                                        aria-hidden="true"
+                                    />
                                     <span class="truncate max-w-[100px]">
                                         {{ transfer.to_site?.name ?? '-' }}
                                     </span>
@@ -236,7 +243,8 @@ const STATUS_LABELS: Record<string, string> = {
                                 <span
                                     :class="[
                                         'inline-flex px-2 py-0.5 rounded-full text-xs font-medium',
-                                        STATUS_COLORS[transfer.status] ?? 'bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-400',
+                                        STATUS_COLORS[transfer.status] ??
+                                            'bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-400',
                                     ]"
                                 >
                                     {{ STATUS_LABELS[transfer.status] ?? transfer.status }}

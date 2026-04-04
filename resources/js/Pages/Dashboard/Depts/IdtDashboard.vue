@@ -32,35 +32,38 @@ onMounted(() => {
         axios.get('/dashboards/idt/alerts'),
         axios.get('/dashboards/idt/idt-review-overdue'),
         axios.get('/dashboards/idt/significant-changes'),
-    ]).then(([r1, r2, r3, r4, r5, r6]) => {
-        meetings.value = r1.data.meetings ?? []
-        sdrDepartments.value = r2.data.departments ?? []
-        carePlans.value = r3.data.care_plans ?? []
-        alerts.value = r4.data.alerts ?? r4.data ?? []
-        overdueParticipants.value = r5.data.participants ?? []
-        significantEvents.value = r6.data.events ?? []
-    }).finally(() => loading.value = false)
+    ])
+        .then(([r1, r2, r3, r4, r5, r6]) => {
+            meetings.value = r1.data.meetings ?? []
+            sdrDepartments.value = r2.data.departments ?? []
+            carePlans.value = r3.data.care_plans ?? []
+            alerts.value = r4.data.alerts ?? r4.data ?? []
+            overdueParticipants.value = r5.data.participants ?? []
+            significantEvents.value = r6.data.events ?? []
+        })
+        .finally(() => (loading.value = false))
 })
 
 const meetingItems = computed<ActionItem[]>(() =>
-    meetings.value.map(m => {
+    meetings.value.map((m) => {
         const sublabelParts = [m.meeting_time, m.site, m.facilitator].filter(Boolean)
         return {
             label: m.type_label ?? '-',
             sublabel: sublabelParts.join(' | ') || undefined,
             badge: m.status === 'in_progress' ? 'In Progress' : 'Scheduled',
-            badgeColor: m.status === 'in_progress'
-                ? 'bg-green-100 dark:bg-green-900/60 text-green-700 dark:text-green-300'
-                : 'bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300',
+            badgeColor:
+                m.status === 'in_progress'
+                    ? 'bg-green-100 dark:bg-green-900/60 text-green-700 dark:text-green-300'
+                    : 'bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300',
         }
-    })
+    }),
 )
 
 const escalatedSdrItems = computed<ActionItem[]>(() => {
     const items: ActionItem[] = []
-    sdrDepartments.value.forEach(dept => {
+    sdrDepartments.value.forEach((dept) => {
         const sdrs: any[] = dept.sdrs ?? []
-        sdrs.forEach(s => {
+        sdrs.forEach((s) => {
             items.push({
                 label: `${s.participant?.name ?? '-'} : ${s.type_label ?? '-'}`,
                 sublabel: dept.department?.replace(/_/g, ' ') ?? undefined,
@@ -73,7 +76,7 @@ const escalatedSdrItems = computed<ActionItem[]>(() => {
 })
 
 const carePlanItems = computed<ActionItem[]>(() =>
-    carePlans.value.map(cp => {
+    carePlans.value.map((cp) => {
         const days = cp.days ?? 0
         const isOverdue = cp.is_overdue === true
         const absDays = Math.abs(days)
@@ -85,39 +88,50 @@ const carePlanItems = computed<ActionItem[]>(() =>
                 ? 'bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300'
                 : 'bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300',
         }
-    })
+    }),
 )
 
 const alertItems = computed<ActionItem[]>(() =>
-    alerts.value.map(a => ({
+    alerts.value.map((a) => ({
         label: a.title ?? '-',
-        sublabel: [a.participant?.name ?? 'System', a.created_at].filter(Boolean).join(' | ') || undefined,
+        sublabel:
+            [a.participant?.name ?? 'System', a.created_at].filter(Boolean).join(' | ') ||
+            undefined,
         badge: a.severity ?? '-',
-        badgeColor: a.severity === 'critical'
-            ? 'bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300'
-            : a.severity === 'warning'
-            ? 'bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300'
-            : 'bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300',
-    }))
+        badgeColor:
+            a.severity === 'critical'
+                ? 'bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300'
+                : a.severity === 'warning'
+                  ? 'bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300'
+                  : 'bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300',
+    })),
 )
 
 const idtReviewItems = computed<ActionItem[]>(() =>
-    overdueParticipants.value.map(p => {
-        const sublabelParts = [`MRN: ${p.mrn ?? '-'}`, p.site, `Last: ${p.last_reviewed_at ?? 'Never'}`].filter(Boolean)
+    overdueParticipants.value.map((p) => {
+        const sublabelParts = [
+            `MRN: ${p.mrn ?? '-'}`,
+            p.site,
+            `Last: ${p.last_reviewed_at ?? 'Never'}`,
+        ].filter(Boolean)
         return {
             label: p.name ?? '-',
             sublabel: sublabelParts.join(' | ') || undefined,
             badge: p.days_overdue != null ? `${p.days_overdue}d overdue` : 'No review on record',
             badgeColor: 'bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300',
         }
-    })
+    }),
 )
 
 const significantChangeItems = computed<ActionItem[]>(() =>
-    significantEvents.value.map(e => {
+    significantEvents.value.map((e) => {
         const days = e.days ?? 0
         const absDays = Math.abs(days)
-        const sublabelParts = [e.trigger_type_label, e.trigger_date ? `Trigger: ${e.trigger_date}` : null, e.site].filter(Boolean)
+        const sublabelParts = [
+            e.trigger_type_label,
+            e.trigger_date ? `Trigger: ${e.trigger_date}` : null,
+            e.site,
+        ].filter(Boolean)
         let badge: string
         let badgeColor: string
         if (e.urgency === 'overdue') {
@@ -136,7 +150,7 @@ const significantChangeItems = computed<ActionItem[]>(() =>
             badge,
             badgeColor,
         }
-    })
+    }),
 )
 </script>
 
@@ -146,8 +160,8 @@ const significantChangeItems = computed<ActionItem[]>(() =>
             title="Today's IDT Meetings"
             description="Interdisciplinary team meetings scheduled today."
             :items="meetingItems"
-            emptyMessage="No IDT meetings scheduled today."
-            viewAllHref="/idt/meetings"
+            empty-message="No IDT meetings scheduled today."
+            view-all-href="/idt/meetings"
             :loading="loading"
         />
 
@@ -155,8 +169,8 @@ const significantChangeItems = computed<ActionItem[]>(() =>
             title="Escalated SDRs"
             description="Significant departure reports past due across departments."
             :items="escalatedSdrItems"
-            emptyMessage="No escalated SDRs."
-            viewAllHref="/sdrs"
+            empty-message="No escalated SDRs."
+            view-all-href="/sdrs"
             :loading="loading"
         />
 
@@ -164,8 +178,8 @@ const significantChangeItems = computed<ActionItem[]>(() =>
             title="Care Plans Due Within 30 Days"
             description="Care plans approaching or past their review deadline."
             :items="carePlanItems"
-            emptyMessage="No care plans due within 30 days."
-            viewAllHref="/clinical/care-plans"
+            empty-message="No care plans due within 30 days."
+            view-all-href="/clinical/care-plans"
             :loading="loading"
         />
 
@@ -173,8 +187,8 @@ const significantChangeItems = computed<ActionItem[]>(() =>
             title="Alerts: Last 24 Hours"
             description="System and clinical alerts from the past 24 hours."
             :items="alertItems"
-            emptyMessage="No alerts in the past 24 hours."
-            viewAllHref="/qa/dashboard"
+            empty-message="No alerts in the past 24 hours."
+            view-all-href="/qa/dashboard"
             :loading="loading"
         />
 
@@ -182,8 +196,8 @@ const significantChangeItems = computed<ActionItem[]>(() =>
             title="IDT Reassessment Overdue (42 CFR §460.104(c))"
             description="Participants overdue for their IDT reassessment."
             :items="idtReviewItems"
-            emptyMessage="No reassessments overdue."
-            viewAllHref="/participants"
+            empty-message="No reassessments overdue."
+            view-all-href="/participants"
             :loading="loading"
         />
 
@@ -191,8 +205,8 @@ const significantChangeItems = computed<ActionItem[]>(() =>
             title="Significant Change Reviews Due (42 CFR §460.104(b))"
             description="Significant change events requiring IDT review."
             :items="significantChangeItems"
-            emptyMessage="No significant change reviews pending."
-            viewAllHref="/idt"
+            empty-message="No significant change reviews pending."
+            view-all-href="/idt"
             :loading="loading"
         />
     </div>

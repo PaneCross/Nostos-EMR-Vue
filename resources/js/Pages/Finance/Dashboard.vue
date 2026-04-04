@@ -89,17 +89,22 @@ function statusClass(status: string | null): string {
         </template>
 
         <div class="px-6 py-5 space-y-8">
-
             <!-- ── KPI grid ── -->
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-
                 <!-- Current Month Capitation -->
-                <div class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-4 flex items-start gap-3">
+                <div
+                    class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-4 flex items-start gap-3"
+                >
                     <div class="shrink-0 p-2 rounded-lg bg-blue-50 dark:bg-blue-900/30">
-                        <BanknotesIcon class="w-5 h-5 text-blue-600 dark:text-blue-400" aria-hidden="true" />
+                        <BanknotesIcon
+                            class="w-5 h-5 text-blue-600 dark:text-blue-400"
+                            aria-hidden="true"
+                        />
                     </div>
                     <div class="min-w-0">
-                        <p class="text-xs text-gray-500 dark:text-slate-400 truncate">Current Month Capitation</p>
+                        <p class="text-xs text-gray-500 dark:text-slate-400 truncate">
+                            Current Month Capitation
+                        </p>
                         <p class="text-xl font-bold text-gray-800 dark:text-slate-100 mt-0.5">
                             {{ fmtCurrency(kpis.current_month_capitation) }}
                         </p>
@@ -107,12 +112,19 @@ function statusClass(status: string | null): string {
                 </div>
 
                 <!-- YTD Capitation -->
-                <div class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-4 flex items-start gap-3">
+                <div
+                    class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-4 flex items-start gap-3"
+                >
                     <div class="shrink-0 p-2 rounded-lg bg-indigo-50 dark:bg-indigo-900/30">
-                        <BanknotesIcon class="w-5 h-5 text-indigo-600 dark:text-indigo-400" aria-hidden="true" />
+                        <BanknotesIcon
+                            class="w-5 h-5 text-indigo-600 dark:text-indigo-400"
+                            aria-hidden="true"
+                        />
                     </div>
                     <div class="min-w-0">
-                        <p class="text-xs text-gray-500 dark:text-slate-400 truncate">YTD Capitation</p>
+                        <p class="text-xs text-gray-500 dark:text-slate-400 truncate">
+                            YTD Capitation
+                        </p>
                         <p class="text-xl font-bold text-gray-800 dark:text-slate-100 mt-0.5">
                             {{ fmtCurrency(kpis.ytd_capitation) }}
                         </p>
@@ -120,12 +132,19 @@ function statusClass(status: string | null): string {
                 </div>
 
                 <!-- Open Encounters -->
-                <div class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-4 flex items-start gap-3">
+                <div
+                    class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-4 flex items-start gap-3"
+                >
                     <div class="shrink-0 p-2 rounded-lg bg-slate-50 dark:bg-slate-700/50">
-                        <ClipboardDocumentListIcon class="w-5 h-5 text-slate-600 dark:text-slate-400" aria-hidden="true" />
+                        <ClipboardDocumentListIcon
+                            class="w-5 h-5 text-slate-600 dark:text-slate-400"
+                            aria-hidden="true"
+                        />
                     </div>
                     <div class="min-w-0">
-                        <p class="text-xs text-gray-500 dark:text-slate-400 truncate">Open Encounters</p>
+                        <p class="text-xs text-gray-500 dark:text-slate-400 truncate">
+                            Open Encounters
+                        </p>
                         <p class="text-xl font-bold text-gray-800 dark:text-slate-100 mt-0.5">
                             {{ kpis.open_encounters.toLocaleString() }}
                         </p>
@@ -133,12 +152,19 @@ function statusClass(status: string | null): string {
                 </div>
 
                 <!-- Pending Authorizations -->
-                <div class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-4 flex items-start gap-3">
+                <div
+                    class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-4 flex items-start gap-3"
+                >
                     <div class="shrink-0 p-2 rounded-lg bg-amber-50 dark:bg-amber-900/30">
-                        <ShieldCheckIcon class="w-5 h-5 text-amber-600 dark:text-amber-400" aria-hidden="true" />
+                        <ShieldCheckIcon
+                            class="w-5 h-5 text-amber-600 dark:text-amber-400"
+                            aria-hidden="true"
+                        />
                     </div>
                     <div class="min-w-0">
-                        <p class="text-xs text-gray-500 dark:text-slate-400 truncate">Pending Authorizations</p>
+                        <p class="text-xs text-gray-500 dark:text-slate-400 truncate">
+                            Pending Authorizations
+                        </p>
                         <p class="text-xl font-bold text-gray-800 dark:text-slate-100 mt-0.5">
                             {{ kpis.pending_authorizations.toLocaleString() }}
                         </p>
@@ -146,27 +172,37 @@ function statusClass(status: string | null): string {
                 </div>
 
                 <!-- Open Denials -->
-                <div class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-4 flex items-start gap-3">
+                <div
+                    class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-4 flex items-start gap-3"
+                >
                     <div
                         :class="[
                             'shrink-0 p-2 rounded-lg',
-                            kpis.open_denials > 0 ? 'bg-red-50 dark:bg-red-900/30' : 'bg-slate-50 dark:bg-slate-700/50',
+                            kpis.open_denials > 0
+                                ? 'bg-red-50 dark:bg-red-900/30'
+                                : 'bg-slate-50 dark:bg-slate-700/50',
                         ]"
                     >
                         <ExclamationTriangleIcon
                             :class="[
                                 'w-5 h-5',
-                                kpis.open_denials > 0 ? 'text-red-600 dark:text-red-400' : 'text-slate-400 dark:text-slate-500',
+                                kpis.open_denials > 0
+                                    ? 'text-red-600 dark:text-red-400'
+                                    : 'text-slate-400 dark:text-slate-500',
                             ]"
                             aria-hidden="true"
                         />
                     </div>
                     <div class="min-w-0">
-                        <p class="text-xs text-gray-500 dark:text-slate-400 truncate">Open Denials</p>
+                        <p class="text-xs text-gray-500 dark:text-slate-400 truncate">
+                            Open Denials
+                        </p>
                         <p
                             :class="[
                                 'text-xl font-bold mt-0.5',
-                                kpis.open_denials > 0 ? 'text-red-600 dark:text-red-400' : 'text-gray-800 dark:text-slate-100',
+                                kpis.open_denials > 0
+                                    ? 'text-red-600 dark:text-red-400'
+                                    : 'text-gray-800 dark:text-slate-100',
                             ]"
                         >
                             {{ kpis.open_denials.toLocaleString() }}
@@ -175,27 +211,37 @@ function statusClass(status: string | null): string {
                 </div>
 
                 <!-- Revenue at Risk -->
-                <div class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-4 flex items-start gap-3">
+                <div
+                    class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-4 flex items-start gap-3"
+                >
                     <div
                         :class="[
                             'shrink-0 p-2 rounded-lg',
-                            kpis.revenue_at_risk > 0 ? 'bg-red-50 dark:bg-red-900/30' : 'bg-slate-50 dark:bg-slate-700/50',
+                            kpis.revenue_at_risk > 0
+                                ? 'bg-red-50 dark:bg-red-900/30'
+                                : 'bg-slate-50 dark:bg-slate-700/50',
                         ]"
                     >
                         <BanknotesIcon
                             :class="[
                                 'w-5 h-5',
-                                kpis.revenue_at_risk > 0 ? 'text-red-600 dark:text-red-400' : 'text-slate-400 dark:text-slate-500',
+                                kpis.revenue_at_risk > 0
+                                    ? 'text-red-600 dark:text-red-400'
+                                    : 'text-slate-400 dark:text-slate-500',
                             ]"
                             aria-hidden="true"
                         />
                     </div>
                     <div class="min-w-0">
-                        <p class="text-xs text-gray-500 dark:text-slate-400 truncate">Revenue at Risk</p>
+                        <p class="text-xs text-gray-500 dark:text-slate-400 truncate">
+                            Revenue at Risk
+                        </p>
                         <p
                             :class="[
                                 'text-xl font-bold mt-0.5',
-                                kpis.revenue_at_risk > 0 ? 'text-red-600 dark:text-red-400' : 'text-gray-800 dark:text-slate-100',
+                                kpis.revenue_at_risk > 0
+                                    ? 'text-red-600 dark:text-red-400'
+                                    : 'text-gray-800 dark:text-slate-100',
                             ]"
                         >
                             {{ fmtCurrency(kpis.revenue_at_risk) }}
@@ -205,24 +251,51 @@ function statusClass(status: string | null): string {
             </div>
 
             <!-- ── Recent Encounters ── -->
-            <div class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700">
+            <div
+                class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700"
+            >
                 <div class="px-5 py-3.5 border-b border-gray-200 dark:border-slate-700">
-                    <h2 class="text-sm font-semibold text-gray-800 dark:text-slate-100">Recent Encounters</h2>
+                    <h2 class="text-sm font-semibold text-gray-800 dark:text-slate-100">
+                        Recent Encounters
+                    </h2>
                 </div>
                 <div class="overflow-x-auto">
                     <table class="min-w-full text-sm">
                         <thead class="bg-gray-50 dark:bg-slate-700/50">
                             <tr>
-                                <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">Participant</th>
-                                <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">Service Date</th>
-                                <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">Type</th>
-                                <th class="px-4 py-2.5 text-right text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">Amount</th>
-                                <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">Status</th>
+                                <th
+                                    class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide"
+                                >
+                                    Participant
+                                </th>
+                                <th
+                                    class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide"
+                                >
+                                    Service Date
+                                </th>
+                                <th
+                                    class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide"
+                                >
+                                    Type
+                                </th>
+                                <th
+                                    class="px-4 py-2.5 text-right text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide"
+                                >
+                                    Amount
+                                </th>
+                                <th
+                                    class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide"
+                                >
+                                    Status
+                                </th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-100 dark:divide-slate-700">
                             <tr v-if="recentEncounters.length === 0">
-                                <td colspan="5" class="px-4 py-8 text-center text-sm text-gray-400 dark:text-slate-500">
+                                <td
+                                    colspan="5"
+                                    class="px-4 py-8 text-center text-sm text-gray-400 dark:text-slate-500"
+                                >
                                     No recent encounters.
                                 </td>
                             </tr>
@@ -231,16 +304,27 @@ function statusClass(status: string | null): string {
                                 :key="enc.id"
                                 class="hover:bg-gray-50 dark:hover:bg-slate-700/30 transition-colors"
                             >
-                                <td class="px-4 py-3 text-gray-800 dark:text-slate-200">{{ enc.participant_name }}</td>
-                                <td class="px-4 py-3 text-gray-600 dark:text-slate-400">{{ fmtDate(enc.service_date) }}</td>
-                                <td class="px-4 py-3 text-gray-600 dark:text-slate-400">{{ enc.service_type ?? '-' }}</td>
-                                <td class="px-4 py-3 text-right text-gray-800 dark:text-slate-200 tabular-nums">
+                                <td class="px-4 py-3 text-gray-800 dark:text-slate-200">
+                                    {{ enc.participant_name }}
+                                </td>
+                                <td class="px-4 py-3 text-gray-600 dark:text-slate-400">
+                                    {{ fmtDate(enc.service_date) }}
+                                </td>
+                                <td class="px-4 py-3 text-gray-600 dark:text-slate-400">
+                                    {{ enc.service_type ?? '-' }}
+                                </td>
+                                <td
+                                    class="px-4 py-3 text-right text-gray-800 dark:text-slate-200 tabular-nums"
+                                >
                                     {{ enc.amount != null ? fmtCurrency(enc.amount) : '-' }}
                                 </td>
                                 <td class="px-4 py-3">
                                     <span
                                         v-if="enc.status"
-                                        :class="['inline-flex px-2 py-0.5 rounded text-xs font-medium capitalize', statusClass(enc.status)]"
+                                        :class="[
+                                            'inline-flex px-2 py-0.5 rounded text-xs font-medium capitalize',
+                                            statusClass(enc.status),
+                                        ]"
                                     >
                                         {{ enc.status }}
                                     </span>
@@ -253,23 +337,46 @@ function statusClass(status: string | null): string {
             </div>
 
             <!-- ── Pending Authorizations ── -->
-            <div class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700">
+            <div
+                class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700"
+            >
                 <div class="px-5 py-3.5 border-b border-gray-200 dark:border-slate-700">
-                    <h2 class="text-sm font-semibold text-gray-800 dark:text-slate-100">Pending Authorizations</h2>
+                    <h2 class="text-sm font-semibold text-gray-800 dark:text-slate-100">
+                        Pending Authorizations
+                    </h2>
                 </div>
                 <div class="overflow-x-auto">
                     <table class="min-w-full text-sm">
                         <thead class="bg-gray-50 dark:bg-slate-700/50">
                             <tr>
-                                <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">Participant</th>
-                                <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">Service</th>
-                                <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">Requested Date</th>
-                                <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">Status</th>
+                                <th
+                                    class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide"
+                                >
+                                    Participant
+                                </th>
+                                <th
+                                    class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide"
+                                >
+                                    Service
+                                </th>
+                                <th
+                                    class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide"
+                                >
+                                    Requested Date
+                                </th>
+                                <th
+                                    class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide"
+                                >
+                                    Status
+                                </th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-100 dark:divide-slate-700">
                             <tr v-if="pendingAuths.length === 0">
-                                <td colspan="4" class="px-4 py-8 text-center text-sm text-gray-400 dark:text-slate-500">
+                                <td
+                                    colspan="4"
+                                    class="px-4 py-8 text-center text-sm text-gray-400 dark:text-slate-500"
+                                >
                                     No pending authorizations.
                                 </td>
                             </tr>
@@ -278,13 +385,22 @@ function statusClass(status: string | null): string {
                                 :key="auth.id"
                                 class="hover:bg-gray-50 dark:hover:bg-slate-700/30 transition-colors"
                             >
-                                <td class="px-4 py-3 text-gray-800 dark:text-slate-200">{{ auth.participant_name }}</td>
-                                <td class="px-4 py-3 text-gray-600 dark:text-slate-400">{{ auth.service ?? '-' }}</td>
-                                <td class="px-4 py-3 text-gray-600 dark:text-slate-400">{{ fmtDate(auth.requested_date) }}</td>
+                                <td class="px-4 py-3 text-gray-800 dark:text-slate-200">
+                                    {{ auth.participant_name }}
+                                </td>
+                                <td class="px-4 py-3 text-gray-600 dark:text-slate-400">
+                                    {{ auth.service ?? '-' }}
+                                </td>
+                                <td class="px-4 py-3 text-gray-600 dark:text-slate-400">
+                                    {{ fmtDate(auth.requested_date) }}
+                                </td>
                                 <td class="px-4 py-3">
                                     <span
                                         v-if="auth.status"
-                                        :class="['inline-flex px-2 py-0.5 rounded text-xs font-medium capitalize', statusClass(auth.status)]"
+                                        :class="[
+                                            'inline-flex px-2 py-0.5 rounded text-xs font-medium capitalize',
+                                            statusClass(auth.status),
+                                        ]"
                                     >
                                         {{ auth.status }}
                                     </span>
@@ -295,7 +411,6 @@ function statusClass(status: string | null): string {
                     </table>
                 </div>
             </div>
-
         </div>
     </AppShell>
 </template>

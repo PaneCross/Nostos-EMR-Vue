@@ -8,7 +8,11 @@
 
 import { ref, computed } from 'vue'
 import { Head, router } from '@inertiajs/vue3'
-import { MagnifyingGlassIcon, ClipboardDocumentListIcon, ExclamationTriangleIcon } from '@heroicons/vue/24/outline'
+import {
+    MagnifyingGlassIcon,
+    ClipboardDocumentListIcon,
+    ExclamationTriangleIcon,
+} from '@heroicons/vue/24/outline'
 import AppShell from '@/Layouts/AppShell.vue'
 
 // ── Types ──────────────────────────────────────────────────────────────────────
@@ -63,7 +67,10 @@ const counts = computed(() => {
     let under_review = 0
     let no_plan = 0
     for (const p of props.participants) {
-        if (!p.care_plan) { no_plan++; continue }
+        if (!p.care_plan) {
+            no_plan++
+            continue
+        }
         if (p.care_plan.status === 'active') active++
         else if (p.care_plan.status === 'draft') draft++
         else if (p.care_plan.status === 'under_review') under_review++
@@ -83,7 +90,9 @@ function parseDate(val: string | null | undefined): Date | null {
 
 function fmtDate(val: string | null | undefined): string {
     const d = parseDate(val)
-    return d ? d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : '-'
+    return d
+        ? d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
+        : '-'
 }
 
 function isOverdue(val: string | null | undefined): boolean {
@@ -114,8 +123,13 @@ const STATUS_LABEL: Record<string, string> = {
     <AppShell>
         <template #header>
             <div class="flex items-center gap-2">
-                <ClipboardDocumentListIcon class="w-5 h-5 text-gray-500 dark:text-slate-400" aria-hidden="true" />
-                <h1 class="text-base font-semibold text-gray-800 dark:text-slate-200">Care Plans</h1>
+                <ClipboardDocumentListIcon
+                    class="w-5 h-5 text-gray-500 dark:text-slate-400"
+                    aria-hidden="true"
+                />
+                <h1 class="text-base font-semibold text-gray-800 dark:text-slate-200">
+                    Care Plans
+                </h1>
             </div>
         </template>
 
@@ -123,24 +137,56 @@ const STATUS_LABEL: Record<string, string> = {
             <!-- ── Summary counts ── -->
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
                 <!-- Active -->
-                <div class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 px-4 py-3 shadow-sm">
-                    <p class="text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wide mb-1">Active</p>
-                    <p class="text-2xl font-bold text-green-600 dark:text-green-400">{{ counts.active }}</p>
+                <div
+                    class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 px-4 py-3 shadow-sm"
+                >
+                    <p
+                        class="text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wide mb-1"
+                    >
+                        Active
+                    </p>
+                    <p class="text-2xl font-bold text-green-600 dark:text-green-400">
+                        {{ counts.active }}
+                    </p>
                 </div>
                 <!-- Draft -->
-                <div class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 px-4 py-3 shadow-sm">
-                    <p class="text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wide mb-1">Draft</p>
-                    <p class="text-2xl font-bold text-gray-500 dark:text-slate-400">{{ counts.draft }}</p>
+                <div
+                    class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 px-4 py-3 shadow-sm"
+                >
+                    <p
+                        class="text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wide mb-1"
+                    >
+                        Draft
+                    </p>
+                    <p class="text-2xl font-bold text-gray-500 dark:text-slate-400">
+                        {{ counts.draft }}
+                    </p>
                 </div>
                 <!-- Under Review -->
-                <div class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 px-4 py-3 shadow-sm">
-                    <p class="text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wide mb-1">Under Review</p>
-                    <p class="text-2xl font-bold text-amber-600 dark:text-amber-400">{{ counts.under_review }}</p>
+                <div
+                    class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 px-4 py-3 shadow-sm"
+                >
+                    <p
+                        class="text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wide mb-1"
+                    >
+                        Under Review
+                    </p>
+                    <p class="text-2xl font-bold text-amber-600 dark:text-amber-400">
+                        {{ counts.under_review }}
+                    </p>
                 </div>
                 <!-- No Plan -->
-                <div class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 px-4 py-3 shadow-sm">
-                    <p class="text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wide mb-1">No Plan</p>
-                    <p class="text-2xl font-bold text-red-600 dark:text-red-400">{{ counts.no_plan }}</p>
+                <div
+                    class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 px-4 py-3 shadow-sm"
+                >
+                    <p
+                        class="text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wide mb-1"
+                    >
+                        No Plan
+                    </p>
+                    <p class="text-2xl font-bold text-red-600 dark:text-red-400">
+                        {{ counts.no_plan }}
+                    </p>
                 </div>
             </div>
 
@@ -160,12 +206,23 @@ const STATUS_LABEL: Record<string, string> = {
             </div>
 
             <!-- ── Table ── -->
-            <div class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 overflow-hidden shadow-sm">
+            <div
+                class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 overflow-hidden shadow-sm"
+            >
                 <table class="w-full text-sm" aria-label="Care plans list">
-                    <thead class="bg-gray-50 dark:bg-slate-700/50 border-b border-gray-200 dark:border-slate-700">
+                    <thead
+                        class="bg-gray-50 dark:bg-slate-700/50 border-b border-gray-200 dark:border-slate-700"
+                    >
                         <tr>
                             <th
-                                v-for="col in ['Participant', 'Status', 'Version', 'Goals', 'Effective Date', 'Review Due']"
+                                v-for="col in [
+                                    'Participant',
+                                    'Status',
+                                    'Version',
+                                    'Goals',
+                                    'Effective Date',
+                                    'Review Due',
+                                ]"
                                 :key="col"
                                 scope="col"
                                 class="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide"
@@ -211,7 +268,8 @@ const STATUS_LABEL: Record<string, string> = {
                                     v-if="ppt.care_plan"
                                     :class="[
                                         'inline-flex px-2 py-0.5 rounded-full text-xs font-medium',
-                                        STATUS_BADGE[ppt.care_plan.status] ?? 'bg-gray-100 text-gray-600',
+                                        STATUS_BADGE[ppt.care_plan.status] ??
+                                            'bg-gray-100 text-gray-600',
                                     ]"
                                 >
                                     {{ STATUS_LABEL[ppt.care_plan.status] ?? ppt.care_plan.status }}

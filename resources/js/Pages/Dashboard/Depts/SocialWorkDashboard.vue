@@ -26,40 +26,44 @@ onMounted(() => {
         axios.get('/dashboards/social-work/alerts'),
         axios.get('/dashboards/social-work/sdrs'),
         axios.get('/dashboards/social-work/assessments'),
-    ]).then(([r1, r2, r3, r4]) => {
-        participants.value = r1.data.participants ?? r1.data ?? []
-        alerts.value = r2.data.alerts ?? r2.data ?? []
-        sdrs.value = r3.data.sdrs ?? []
-        overdueAssessments.value = r4.data.overdue_assessments ?? []
-    }).finally(() => loading.value = false)
+    ])
+        .then(([r1, r2, r3, r4]) => {
+            participants.value = r1.data.participants ?? r1.data ?? []
+            alerts.value = r2.data.alerts ?? r2.data ?? []
+            sdrs.value = r3.data.sdrs ?? []
+            overdueAssessments.value = r4.data.overdue_assessments ?? []
+        })
+        .finally(() => (loading.value = false))
 })
 
 const caseloadItems = computed<ActionItem[]>(() =>
-    participants.value.map(p => ({
+    participants.value.map((p) => ({
         label: p.name ?? '-',
         sublabel: [`MRN: ${p.mrn ?? '-'}`, p.site].filter(Boolean).join(' | ') || undefined,
         badge: p.enrollment_status === 'enrolled' ? 'Enrolled' : (p.enrollment_status ?? '-'),
-        badgeColor: p.enrollment_status === 'enrolled'
-            ? 'bg-green-100 dark:bg-green-900/60 text-green-700 dark:text-green-300'
-            : 'bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300',
-    }))
+        badgeColor:
+            p.enrollment_status === 'enrolled'
+                ? 'bg-green-100 dark:bg-green-900/60 text-green-700 dark:text-green-300'
+                : 'bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300',
+    })),
 )
 
 const alertItems = computed<ActionItem[]>(() =>
-    alerts.value.map(a => ({
+    alerts.value.map((a) => ({
         label: `${a.participant?.name ?? 'System'} — ${a.type_label ?? '-'}`,
         sublabel: a.created_at ?? undefined,
         badge: a.severity ?? '-',
-        badgeColor: a.severity === 'critical'
-            ? 'bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300'
-            : a.severity === 'warning'
-            ? 'bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300'
-            : 'bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300',
-    }))
+        badgeColor:
+            a.severity === 'critical'
+                ? 'bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300'
+                : a.severity === 'warning'
+                  ? 'bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300'
+                  : 'bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300',
+    })),
 )
 
 const sdrItems = computed<ActionItem[]>(() =>
-    sdrs.value.map(s => {
+    sdrs.value.map((s) => {
         const isOverdue = s.hours_overdue != null && s.hours_overdue > 0
         return {
             label: `${s.participant?.name ?? '-'} — ${s.type_label ?? '-'}`,
@@ -69,16 +73,16 @@ const sdrItems = computed<ActionItem[]>(() =>
                 ? 'bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300'
                 : 'bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300',
         }
-    })
+    }),
 )
 
 const assessmentItems = computed<ActionItem[]>(() =>
-    overdueAssessments.value.map(a => ({
+    overdueAssessments.value.map((a) => ({
         label: `${a.participant?.name ?? '-'} — ${a.type_label ?? '-'}`,
         sublabel: a.next_due_date ? `Due ${a.next_due_date}` : undefined,
         badge: `${a.days_overdue ?? 0}d overdue`,
         badgeColor: 'bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300',
-    }))
+    })),
 )
 </script>
 
@@ -88,8 +92,8 @@ const assessmentItems = computed<ActionItem[]>(() =>
             title="Active Caseload"
             description="Participants currently assigned to Social Work."
             :items="caseloadItems"
-            emptyMessage="No participants in active caseload."
-            viewAllHref="/participants"
+            empty-message="No participants in active caseload."
+            view-all-href="/participants"
             :loading="loading"
         />
 
@@ -97,8 +101,8 @@ const assessmentItems = computed<ActionItem[]>(() =>
             title="Active Alerts"
             description="Alerts requiring social work attention."
             :items="alertItems"
-            emptyMessage="No active alerts."
-            viewAllHref="/participants"
+            empty-message="No active alerts."
+            view-all-href="/participants"
             :loading="loading"
         />
 
@@ -106,8 +110,8 @@ const assessmentItems = computed<ActionItem[]>(() =>
             title="Open SDRs"
             description="Significant departure reports requiring action."
             :items="sdrItems"
-            emptyMessage="No open SDRs."
-            viewAllHref="/sdrs"
+            empty-message="No open SDRs."
+            view-all-href="/sdrs"
             :loading="loading"
         />
 
@@ -115,8 +119,8 @@ const assessmentItems = computed<ActionItem[]>(() =>
             title="Overdue Assessments"
             description="Assessments past their due date."
             :items="assessmentItems"
-            emptyMessage="No overdue assessments."
-            viewAllHref="/clinical/assessments"
+            empty-message="No overdue assessments."
+            view-all-href="/clinical/assessments"
             :loading="loading"
         />
     </div>

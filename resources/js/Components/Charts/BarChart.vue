@@ -44,7 +44,8 @@ const chartData = computed<ChartData<'bar'>>(() => ({
     labels: props.labels,
     datasets: props.data.datasets.map((ds, i) => ({
         ...ds,
-        backgroundColor: ds.backgroundColor ?? palette.value.backgrounds[i % palette.value.backgrounds.length],
+        backgroundColor:
+            ds.backgroundColor ?? palette.value.backgrounds[i % palette.value.backgrounds.length],
         borderColor: ds.borderColor ?? palette.value.borders[i % palette.value.borders.length],
         borderWidth: 1,
     })),

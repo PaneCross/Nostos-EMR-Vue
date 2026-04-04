@@ -64,6 +64,18 @@ import {
 import type { PageProps, SiteContext } from '@/types'
 import IdleWarningModal from '@/Components/IdleWarningModal.vue'
 
+// ── Nav types (mirrors PermissionService output) ───────────────────────────────
+interface NavItem {
+    label: string
+    href: string
+    module: string
+}
+interface NavGroup {
+    label: string
+    icon: string
+    items: NavItem[]
+}
+
 // ── Shared props ───────────────────────────────────────────────────────────────
 const page = usePage<PageProps>()
 const auth = computed(() => page.props.auth)
@@ -218,18 +230,18 @@ function navIcon(module: string): Component {
 }
 
 // ── Nav helpers ────────────────────────────────────────────────────────────────
-const navGroups = computed(() => (page.props.nav_groups as any[]) ?? [])
+const navGroups = computed(() => (page.props.nav_groups as NavGroup[]) ?? [])
 const currentPath = computed(() => window.location.pathname)
 
 function isActive(href: string): boolean {
-    const all: string[] = navGroups.value.flatMap((g: any) => g.items.map((i: any) => i.href))
+    const all: string[] = navGroups.value.flatMap((g: NavGroup) => g.items.map((i: NavItem) => i.href))
     const longer = all.filter((h) => h !== href && h.startsWith(href) && h.length > href.length)
     if (longer.some((h) => currentPath.value.startsWith(h))) return false
     return currentPath.value === href || currentPath.value.startsWith(href + '/')
 }
 
-function isGroupActive(group: any): boolean {
-    return group.items.some((item: any) => isActive(item.href))
+function isGroupActive(group: NavGroup): boolean {
+    return group.items.some((item: NavItem) => isActive(item.href))
 }
 
 function navigate(href: string) {
@@ -270,11 +282,11 @@ function isGroupExpanded(label: string): boolean {
 }
 
 // ── Flyout panel (collapsed sidebar hover) ─────────────────────────────────────
-const hoveredGroup = ref<any>(null)
+const hoveredGroup = ref<NavGroup | null>(null)
 const flyoutTop = ref(0)
 let flyoutHideTimer: ReturnType<typeof setTimeout> | null = null
 
-function showFlyout(group: any, evt: MouseEvent) {
+function showFlyout(group: NavGroup, evt: MouseEvent) {
     if (!collapsed.value) return
     if (flyoutHideTimer) { clearTimeout(flyoutHideTimer); flyoutHideTimer = null }
     hoveredGroup.value = group
@@ -346,7 +358,7 @@ function startIdleTimers() {
             idleCountdown.value--
             if (idleCountdown.value <= 0) {
                 clearInterval(countdownInterval!)
-                router.post('/auth/logout', { timeout: true } as any)
+                router.post('/auth/logout', { timeout: true })
             }
         }, 1000)
     }, warnAfterMs)
@@ -382,8 +394,8 @@ onMounted(() => {
     collapsed.value = saved === 'collapsed'
 
     // Auto-expand groups containing the active route
-    navGroups.value.forEach((group: any) => {
-        if (isGroupActive(group)) expandedGroups.value.add(group.label)
+    navGroups.value.forEach((group: NavGroup) => {
+        if (isGroupActive(group)) expandedGroups.value.push(group.label)
     })
 
     loadAlerts()

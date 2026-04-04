@@ -28,60 +28,70 @@ onMounted(() => {
         axios.get('/dashboards/it-admin/integrations'),
         axios.get('/dashboards/it-admin/audit'),
         axios.get('/dashboards/it-admin/break-glass'),
-    ]).then(([r1, r2, r3, r4]) => {
-        users.value = r1.data.users ?? []
-        integrations.value = r2.data.integrations ?? []
-        auditEntries.value = r3.data.entries ?? r3.data.audit ?? []
-        breakGlassEvents.value = r4.data.events ?? []
-        unreviewedCount.value = r4.data.unreviewed_count ?? 0
-    }).catch(() => {
-        // Non-blocking — widgets will show empty state
-    }).finally(() => loading.value = false)
+    ])
+        .then(([r1, r2, r3, r4]) => {
+            users.value = r1.data.users ?? []
+            integrations.value = r2.data.integrations ?? []
+            auditEntries.value = r3.data.entries ?? r3.data.audit ?? []
+            breakGlassEvents.value = r4.data.events ?? []
+            unreviewedCount.value = r4.data.unreviewed_count ?? 0
+        })
+        .catch(() => {
+            // Non-blocking — widgets will show empty state
+        })
+        .finally(() => (loading.value = false))
 })
 
 const userItems = computed<ActionItem[]>(() =>
-    users.value.map(u => ({
+    users.value.map((u) => ({
         label: `${u.first_name ?? ''} ${u.last_name ?? ''}`.trim() || '-',
-        sublabel: [u.department_label, `Last: ${u.last_login_at ?? 'Never'}`].filter(Boolean).join(' | ') || undefined,
+        sublabel:
+            [u.department_label, `Last: ${u.last_login_at ?? 'Never'}`]
+                .filter(Boolean)
+                .join(' | ') || undefined,
         badge: u.is_active ? 'Active' : 'Inactive',
         badgeColor: u.is_active
             ? 'bg-green-100 dark:bg-green-900/60 text-green-700 dark:text-green-300'
             : 'bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300',
-    }))
+    })),
 )
 
 const integrationItems = computed<ActionItem[]>(() =>
-    integrations.value.map(i => ({
+    integrations.value.map((i) => ({
         label: i.connector_type ?? '-',
         sublabel: [i.direction, i.created_at].filter(Boolean).join(' | ') || undefined,
         badge: i.status ?? '-',
-        badgeColor: i.status === 'processed'
-            ? 'bg-green-100 dark:bg-green-900/60 text-green-700 dark:text-green-300'
-            : i.status === 'failed'
-            ? 'bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300'
-            : 'bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300',
-    }))
+        badgeColor:
+            i.status === 'processed'
+                ? 'bg-green-100 dark:bg-green-900/60 text-green-700 dark:text-green-300'
+                : i.status === 'failed'
+                  ? 'bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300'
+                  : 'bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300',
+    })),
 )
 
 const auditItems = computed<ActionItem[]>(() =>
-    auditEntries.value.map(e => ({
+    auditEntries.value.map((e) => ({
         label: e.action ?? '-',
         sublabel: [e.user_name, e.created_at].filter(Boolean).join(' | ') || undefined,
         badge: e.resource_type ?? undefined,
         badgeColor: 'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300',
         href: '/it-admin/audit',
-    }))
+    })),
 )
 
 const breakGlassItems = computed<ActionItem[]>(() =>
-    breakGlassEvents.value.map(e => ({
+    breakGlassEvents.value.map((e) => ({
         label: `${e.participant?.name ?? '-'} — ${e.user?.name ?? '-'}`,
-        sublabel: [e.access_granted_at, (e.justification ?? '').slice(0, 40)].filter(Boolean).join(' | ') || undefined,
+        sublabel:
+            [e.access_granted_at, (e.justification ?? '').slice(0, 40)]
+                .filter(Boolean)
+                .join(' | ') || undefined,
         badge: e.acknowledged_at ? 'Reviewed' : 'Unreviewed',
         badgeColor: e.acknowledged_at
             ? 'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300'
             : 'bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300',
-    }))
+    })),
 )
 </script>
 
@@ -91,8 +101,8 @@ const breakGlassItems = computed<ActionItem[]>(() =>
             title="Recent User Activity"
             description="User accounts and their recent login activity."
             :items="userItems"
-            emptyMessage="No user activity found."
-            viewAllHref="/it-admin/users"
+            empty-message="No user activity found."
+            view-all-href="/it-admin/users"
             :loading="loading"
         />
 
@@ -100,8 +110,8 @@ const breakGlassItems = computed<ActionItem[]>(() =>
             title="Integration Status"
             description="Recent inbound and outbound integration events."
             :items="integrationItems"
-            emptyMessage="No integration events found."
-            viewAllHref="/it-admin/integrations"
+            empty-message="No integration events found."
+            view-all-href="/it-admin/integrations"
             :loading="loading"
         />
 
@@ -109,8 +119,8 @@ const breakGlassItems = computed<ActionItem[]>(() =>
             title="Recent Audit Log"
             description="Recent system audit events."
             :items="auditItems"
-            emptyMessage="No audit entries found."
-            viewAllHref="/it-admin/audit"
+            empty-message="No audit entries found."
+            view-all-href="/it-admin/audit"
             :loading="loading"
             class="lg:col-span-2"
         />
@@ -119,8 +129,8 @@ const breakGlassItems = computed<ActionItem[]>(() =>
             :title="`Break-Glass Events (${unreviewedCount} Unreviewed)`"
             description="Emergency record access events requiring review."
             :items="breakGlassItems"
-            emptyMessage="No break-glass events on record."
-            viewAllHref="/it-admin/break-glass"
+            empty-message="No break-glass events on record."
+            view-all-href="/it-admin/break-glass"
             :loading="loading"
             class="lg:col-span-2"
         />

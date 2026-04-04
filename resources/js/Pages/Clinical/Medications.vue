@@ -48,9 +48,7 @@ const filtered = computed(() => {
     const q = search.value.trim().toLowerCase()
     if (!q) return props.participants
     return props.participants.filter(
-        (p) =>
-            p.name.toLowerCase().includes(q) ||
-            p.mrn.toLowerCase().includes(q),
+        (p) => p.name.toLowerCase().includes(q) || p.mrn.toLowerCase().includes(q),
     )
 })
 </script>
@@ -62,7 +60,9 @@ const filtered = computed(() => {
         <template #header>
             <div class="flex items-center gap-2">
                 <BeakerIcon class="w-5 h-5 text-gray-500 dark:text-slate-400" aria-hidden="true" />
-                <h1 class="text-base font-semibold text-gray-800 dark:text-slate-200">Medications Overview</h1>
+                <h1 class="text-base font-semibold text-gray-800 dark:text-slate-200">
+                    Medications Overview
+                </h1>
             </div>
         </template>
 
@@ -70,12 +70,21 @@ const filtered = computed(() => {
             <!-- ── KPI cards ── -->
             <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
                 <!-- Total Active -->
-                <div class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 px-4 py-3 shadow-sm flex items-start gap-3">
+                <div
+                    class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 px-4 py-3 shadow-sm flex items-start gap-3"
+                >
                     <div class="p-2 bg-blue-50 dark:bg-blue-900/40 rounded-lg mt-0.5 flex-shrink-0">
-                        <BeakerIcon class="w-4 h-4 text-blue-600 dark:text-blue-400" aria-hidden="true" />
+                        <BeakerIcon
+                            class="w-4 h-4 text-blue-600 dark:text-blue-400"
+                            aria-hidden="true"
+                        />
                     </div>
                     <div>
-                        <p class="text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wide">Total Active Meds</p>
+                        <p
+                            class="text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wide"
+                        >
+                            Total Active Meds
+                        </p>
                         <p class="text-2xl font-bold text-gray-900 dark:text-slate-100 mt-0.5">
                             {{ kpis.total_active.toLocaleString() }}
                         </p>
@@ -83,12 +92,23 @@ const filtered = computed(() => {
                 </div>
 
                 <!-- PRN Meds -->
-                <div class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 px-4 py-3 shadow-sm flex items-start gap-3">
-                    <div class="p-2 bg-purple-50 dark:bg-purple-900/40 rounded-lg mt-0.5 flex-shrink-0">
-                        <BeakerIcon class="w-4 h-4 text-purple-600 dark:text-purple-400" aria-hidden="true" />
+                <div
+                    class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 px-4 py-3 shadow-sm flex items-start gap-3"
+                >
+                    <div
+                        class="p-2 bg-purple-50 dark:bg-purple-900/40 rounded-lg mt-0.5 flex-shrink-0"
+                    >
+                        <BeakerIcon
+                            class="w-4 h-4 text-purple-600 dark:text-purple-400"
+                            aria-hidden="true"
+                        />
                     </div>
                     <div>
-                        <p class="text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wide">PRN Meds</p>
+                        <p
+                            class="text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wide"
+                        >
+                            PRN Meds
+                        </p>
                         <p class="text-2xl font-bold text-gray-900 dark:text-slate-100 mt-0.5">
                             {{ kpis.total_prn.toLocaleString() }}
                         </p>
@@ -123,7 +143,11 @@ const filtered = computed(() => {
                         />
                     </div>
                     <div>
-                        <p class="text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wide">Interaction Alerts</p>
+                        <p
+                            class="text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wide"
+                        >
+                            Interaction Alerts
+                        </p>
                         <p
                             :class="[
                                 'text-2xl font-bold mt-0.5',
@@ -138,12 +162,23 @@ const filtered = computed(() => {
                 </div>
 
                 <!-- Participants on Meds -->
-                <div class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 px-4 py-3 shadow-sm flex items-start gap-3">
-                    <div class="p-2 bg-green-50 dark:bg-green-900/40 rounded-lg mt-0.5 flex-shrink-0">
-                        <UserGroupIcon class="w-4 h-4 text-green-600 dark:text-green-400" aria-hidden="true" />
+                <div
+                    class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 px-4 py-3 shadow-sm flex items-start gap-3"
+                >
+                    <div
+                        class="p-2 bg-green-50 dark:bg-green-900/40 rounded-lg mt-0.5 flex-shrink-0"
+                    >
+                        <UserGroupIcon
+                            class="w-4 h-4 text-green-600 dark:text-green-400"
+                            aria-hidden="true"
+                        />
                     </div>
                     <div>
-                        <p class="text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wide">Participants on Meds</p>
+                        <p
+                            class="text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wide"
+                        >
+                            Participants on Meds
+                        </p>
                         <p class="text-2xl font-bold text-gray-900 dark:text-slate-100 mt-0.5">
                             {{ kpis.participants_with_meds.toLocaleString() }}
                         </p>
@@ -167,12 +202,22 @@ const filtered = computed(() => {
             </div>
 
             <!-- ── Table ── -->
-            <div class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 overflow-hidden shadow-sm">
+            <div
+                class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 overflow-hidden shadow-sm"
+            >
                 <table class="w-full text-sm" aria-label="Participant medication list">
-                    <thead class="bg-gray-50 dark:bg-slate-700/50 border-b border-gray-200 dark:border-slate-700">
+                    <thead
+                        class="bg-gray-50 dark:bg-slate-700/50 border-b border-gray-200 dark:border-slate-700"
+                    >
                         <tr>
                             <th
-                                v-for="col in ['Participant', 'Active Meds', 'PRN', 'Controlled', 'Drug Alerts']"
+                                v-for="col in [
+                                    'Participant',
+                                    'Active Meds',
+                                    'PRN',
+                                    'Controlled',
+                                    'Drug Alerts',
+                                ]"
                                 :key="col"
                                 scope="col"
                                 class="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide"
@@ -209,8 +254,12 @@ const filtered = computed(() => {
                         >
                             <!-- Participant -->
                             <td class="px-4 py-3">
-                                <div class="font-medium text-gray-900 dark:text-slate-100">{{ ppt.name }}</div>
-                                <div class="text-xs font-mono text-gray-400 dark:text-slate-500">{{ ppt.mrn }}</div>
+                                <div class="font-medium text-gray-900 dark:text-slate-100">
+                                    {{ ppt.name }}
+                                </div>
+                                <div class="text-xs font-mono text-gray-400 dark:text-slate-500">
+                                    {{ ppt.mrn }}
+                                </div>
                             </td>
 
                             <!-- Active count -->
@@ -244,10 +293,7 @@ const filtered = computed(() => {
                                     <ExclamationTriangleIcon class="w-3 h-3" aria-hidden="true" />
                                     {{ ppt.open_alerts }}
                                 </span>
-                                <span
-                                    v-else
-                                    class="text-gray-400 dark:text-slate-500 text-xs"
-                                >
+                                <span v-else class="text-gray-400 dark:text-slate-500 text-xs">
                                     -
                                 </span>
                             </td>
