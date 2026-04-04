@@ -8,17 +8,20 @@
 import { ref, computed, onMounted, onUnmounted, type Component } from 'vue'
 import { usePage, router } from '@inertiajs/vue3'
 import axios from 'axios'
+import GlobalSearch from '@/Components/GlobalSearch.vue'
 import {
     BellIcon,
     MoonIcon,
     SunIcon,
-    UserIcon,
     ArrowRightOnRectangleIcon,
     EyeIcon,
     ChatBubbleLeftRightIcon,
     Bars3Icon,
     HomeIcon,
     ChevronRightIcon,
+    ChevronDownIcon,
+    MagnifyingGlassIcon as SearchIcon,
+    QuestionMarkCircleIcon as HelpIcon,
     // Group-level icons (mapped from PermissionService icon strings)
     UsersIcon,
     ClipboardDocumentListIcon,
@@ -56,8 +59,9 @@ import {
     PresentationChartBarIcon,
     CpuChipIcon,
     QuestionMarkCircleIcon,
+    ArrowTopRightOnSquareIcon,
 } from '@heroicons/vue/24/outline'
-import type { PageProps } from '@/types'
+import type { PageProps, SiteContext } from '@/types'
 import IdleWarningModal from '@/Components/IdleWarningModal.vue'
 
 // ── Shared props ───────────────────────────────────────────────────────────────
@@ -65,6 +69,72 @@ const page = usePage<PageProps>()
 const auth = computed(() => page.props.auth)
 const user = computed(() => auth.value?.user ?? null)
 const impersonation = computed(() => page.props.impersonation ?? { active: false, user: null, viewing_as_dept: null })
+const siteContext = computed(() => page.props.site_context as SiteContext | null)
+const availableSites = computed(() => (page.props.available_sites as SiteContext[]) ?? [])
+const canSwitchSite = computed(() =>
+    (user.value?.is_super_admin || user.value?.department === 'executive') && availableSites.value.length > 1
+)
+
+// ── Global search ──────────────────────────────────────────────────────────────
+const showSearch = ref(false)
+
+// ── Help popover ───────────────────────────────────────────────────────────────
+const showHelp = ref(false)
+
+// ── User chip dropdown ─────────────────────────────────────────────────────────
+const showUserMenu = ref(false)
+
+// ── Site switcher dropdown ─────────────────────────────────────────────────────
+const showSiteSwitcher = ref(false)
+const switchingSite = ref<number | null>(null)
+
+function switchSite(siteId: number) {
+    switchingSite.value = siteId
+    axios.post('/site-context/switch', { site_id: siteId })
+        .then(() => { showSiteSwitcher.value = false; router.reload() })
+        .catch(() => { switchingSite.value = null })
+}
+
+// ── Imitate User dropdown ──────────────────────────────────────────────────────
+const showImitate = ref(false)
+const imitateUsers = ref<Array<{ id: number; first_name: string; last_name: string; department_label: string; role: string }>>([])
+const imitateQuery = ref('')
+const imitateLoading = ref(false)
+const imitateStarting = ref<number | null>(null)
+
+const imitateFiltered = computed(() => {
+    const q = imitateQuery.value.toLowerCase()
+    if (!q) return imitateUsers.value
+    return imitateUsers.value.filter(u =>
+        `${u.first_name} ${u.last_name}`.toLowerCase().includes(q) ||
+        u.department_label.toLowerCase().includes(q) ||
+        u.role.toLowerCase().includes(q)
+    )
+})
+
+async function openImitate() {
+    showImitate.value = !showImitate.value
+    if (showImitate.value && imitateUsers.value.length === 0) {
+        imitateLoading.value = true
+        try {
+            const res = await axios.get('/super-admin/users')
+            imitateUsers.value = res.data.users ?? []
+        } finally {
+            imitateLoading.value = false
+        }
+    }
+}
+
+async function startImpersonation(userId: number) {
+    imitateStarting.value = userId
+    try {
+        await axios.post(`/super-admin/impersonate/${userId}`)
+        showImitate.value = false
+        router.reload()
+    } catch {
+        imitateStarting.value = null
+    }
+}
 
 // ── Theme ──────────────────────────────────────────────────────────────────────
 const theme = ref<'light' | 'dark'>((user.value?.theme_preference as 'light' | 'dark' | undefined) ?? 'light')
@@ -324,6 +394,9 @@ onMounted(() => {
         window.Echo.private(`user.${user.value.id}`).listen('ChatActivity', () => loadChatUnread())
     }
 
+    // Cmd+K / Ctrl+K → open global search
+    window.addEventListener('keydown', handleGlobalKey)
+
     startIdleTimers()
     ACTIVITY_EVENTS.forEach((evt) => window.addEventListener(evt, handleActivity, { passive: true }))
 })
@@ -332,7 +405,22 @@ onUnmounted(() => {
     clearIdleTimers()
     if (flyoutHideTimer) clearTimeout(flyoutHideTimer)
     ACTIVITY_EVENTS.forEach((evt) => window.removeEventListener(evt, handleActivity))
+    window.removeEventListener('keydown', handleGlobalKey)
 })
+
+function handleGlobalKey(e: KeyboardEvent) {
+    if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault()
+        showSearch.value = true
+    }
+    // Close dropdowns on Escape
+    if (e.key === 'Escape') {
+        showHelp.value = false
+        showUserMenu.value = false
+        showSiteSwitcher.value = false
+        showImitate.value = false
+    }
+}
 </script>
 
 <template>
@@ -571,91 +659,84 @@ onUnmounted(() => {
 
         <!-- ── Main area ──────────────────────────────────────────────────────── -->
         <div class="flex flex-col flex-1 min-w-0 overflow-hidden">
-            <!-- Top bar -->
-            <header
-                class="h-14 bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 flex items-center px-3 gap-2 shrink-0 z-30"
-            >
-                <!-- Hamburger: toggles sidebar collapse -->
+            <!-- ── Top bar ──────────────────────────────────────────────────── -->
+            <header class="h-14 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex items-center px-4 gap-3 shrink-0 z-30">
+
+                <!-- Hamburger -->
                 <button
-                    class="p-2 text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 transition shrink-0"
+                    class="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 transition-colors shrink-0"
                     :aria-label="collapsed ? 'Expand sidebar' : 'Collapse sidebar'"
                     @click="toggleSidebar"
                 >
                     <Bars3Icon class="w-5 h-5" aria-hidden="true" />
                 </button>
 
-                <div class="flex-1 min-w-0">
-                    <slot name="header" />
+                <!-- Tenant + site display -->
+                <div class="flex-1 min-w-0 flex items-center gap-2 text-sm">
+                    <span class="font-semibold text-slate-800 dark:text-slate-100 truncate">
+                        {{ user?.tenant?.name }}
+                    </span>
+                    <template v-if="siteContext || user?.site">
+                        <span class="text-slate-300 dark:text-slate-600">·</span>
+                        <span class="text-slate-500 dark:text-slate-400 truncate">
+                            {{ (siteContext ?? user?.site)?.name }}
+                        </span>
+                    </template>
                 </div>
 
-                <div class="flex items-center gap-1 shrink-0">
-                    <!-- Chat -->
+                <!-- Site switcher dropdown -->
+                <div v-if="canSwitchSite" class="relative shrink-0">
                     <button
-                        class="relative p-2 text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 transition"
-                        aria-label="Open chat"
-                        @click="navigate('/chat')"
+                        class="flex items-center gap-1.5 px-3 py-1.5 text-xs text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-lg transition-colors"
+                        @click="showSiteSwitcher = !showSiteSwitcher"
                     >
-                        <ChatBubbleLeftRightIcon class="w-5 h-5" aria-hidden="true" />
-                        <span
-                            v-if="chatUnread > 0"
-                            class="absolute top-1 right-1 bg-red-500 text-white text-xs font-bold rounded-full w-4 h-4 flex items-center justify-center"
-                            :aria-label="`${chatUnread} unread messages`"
-                        >
-                            {{ chatUnread > 9 ? '9+' : chatUnread }}
-                        </span>
+                        <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
+                        </svg>
+                        {{ (siteContext ?? user?.site)?.name ?? 'Select Site' }}
+                        <ChevronDownIcon class="w-3.5 h-3.5 text-slate-400" aria-hidden="true" />
                     </button>
-
-                    <!-- Alert bell -->
-                    <div class="relative">
+                    <div
+                        v-if="showSiteSwitcher"
+                        class="absolute left-0 top-full mt-1 w-52 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg z-50 py-1 overflow-hidden"
+                    >
                         <button
-                            class="relative p-2 text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 transition"
-                            :aria-label="`Alerts${alertCount > 0 ? ` - ${alertCount} active` : ''}`"
-                            :aria-expanded="showAlerts"
-                            aria-haspopup="true"
-                            @click="showAlerts = !showAlerts"
+                            v-for="site in availableSites"
+                            :key="site.id"
+                            :class="[
+                                'w-full flex items-center gap-2 px-3 py-2 text-sm text-left transition-colors',
+                                site.id === (siteContext ?? user?.site)?.id
+                                    ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300 font-medium'
+                                    : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700',
+                            ]"
+                            :disabled="switchingSite === site.id"
+                            @click="switchSite(site.id)"
                         >
-                            <BellIcon class="w-5 h-5" aria-hidden="true" />
-                            <span
-                                v-if="alertCount > 0"
-                                class="absolute top-1 right-1 bg-red-500 text-white text-xs font-bold rounded-full w-4 h-4 flex items-center justify-center"
-                                aria-hidden="true"
-                            >
-                                {{ alertCount > 9 ? '9+' : alertCount }}
-                            </span>
+                            {{ site.name }}
+                            <span v-if="switchingSite === site.id" class="ml-auto text-[10px] text-slate-400">Switching...</span>
                         </button>
-
-                        <!-- Alert dropdown -->
-                        <div
-                            v-if="showAlerts"
-                            class="absolute right-0 top-full mt-1 w-80 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg shadow-lg z-50"
-                            role="menu"
-                        >
-                            <div class="p-3 border-b border-gray-100 dark:border-slate-700 text-sm font-semibold text-gray-700 dark:text-slate-200">
-                                Active Alerts
-                            </div>
-                            <div
-                                v-if="alerts.length === 0"
-                                class="p-4 text-sm text-gray-500 dark:text-slate-400 text-center"
-                            >
-                                No active alerts
-                            </div>
-                            <div
-                                v-for="alert in alerts"
-                                :key="alert.id"
-                                class="p-3 border-b border-gray-50 dark:border-slate-700 last:border-0"
-                                role="menuitem"
-                            >
-                                <div class="text-sm font-medium text-gray-800 dark:text-slate-200">{{ alert.title }}</div>
-                                <div class="text-xs text-gray-500 dark:text-slate-400 mt-0.5 capitalize">
-                                    {{ alert.severity }} - {{ alert.source_module }}
-                                </div>
-                            </div>
-                        </div>
                     </div>
+                </div>
+
+                <!-- Global search -->
+                <button
+                    class="hidden sm:flex items-center gap-2 px-3 py-1.5 text-sm text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-lg transition-colors shrink-0"
+                    aria-label="Open global search"
+                    @click="showSearch = true"
+                >
+                    <SearchIcon class="w-4 h-4" aria-hidden="true" />
+                    <span>Search participants...</span>
+                    <kbd class="ml-1 px-1.5 py-0.5 text-[10px] font-medium bg-white dark:bg-slate-600 border border-slate-200 dark:border-slate-500 rounded">
+                        ⌘K
+                    </kbd>
+                </button>
+
+                <!-- Right-side controls -->
+                <div class="flex items-center gap-1 shrink-0">
 
                     <!-- Theme toggle -->
                     <button
-                        class="p-2 text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 transition"
+                        class="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 transition-colors"
                         :aria-label="theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'"
                         @click="toggleTheme"
                     >
@@ -663,14 +744,186 @@ onUnmounted(() => {
                         <MoonIcon v-else class="w-5 h-5" aria-hidden="true" />
                     </button>
 
-                    <!-- Profile -->
-                    <button
-                        class="p-2 text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 transition"
-                        aria-label="Go to your profile"
-                        @click="navigate('/profile')"
-                    >
-                        <UserIcon class="w-5 h-5" aria-hidden="true" />
-                    </button>
+                    <!-- Imitate User (super_admin only) -->
+                    <div v-if="user?.is_super_admin" class="relative">
+                        <button
+                            :class="[
+                                'p-1.5 rounded-lg transition-colors',
+                                impersonation.active
+                                    ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 ring-2 ring-amber-400'
+                                    : 'hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400',
+                            ]"
+                            :aria-label="impersonation.active ? 'Currently impersonating a user' : 'Imitate user'"
+                            @click="openImitate"
+                        >
+                            <!-- User-switch icon -->
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.6" viewBox="0 0 24 24" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M17.25 12l2.25 2.25-2.25 2.25M21 14.25h-6" />
+                            </svg>
+                        </button>
+                        <!-- Imitate dropdown -->
+                        <div
+                            v-if="showImitate"
+                            class="absolute right-0 top-10 w-80 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700 z-50 overflow-hidden"
+                        >
+                            <div class="px-3 py-2.5 border-b border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80">
+                                <p class="text-xs font-semibold text-slate-700 dark:text-slate-200 mb-2">Imitate User</p>
+                                <input
+                                    v-model="imitateQuery"
+                                    type="text"
+                                    placeholder="Search by name or department..."
+                                    autofocus
+                                    class="w-full text-xs px-2.5 py-1.5 border border-slate-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-400 bg-white dark:bg-slate-700 dark:text-slate-100 dark:placeholder-slate-400"
+                                />
+                            </div>
+                            <div class="max-h-64 overflow-y-auto">
+                                <p v-if="imitateLoading" class="text-xs text-slate-500 dark:text-slate-400 px-4 py-3 text-center">Loading users...</p>
+                                <p v-else-if="imitateFiltered.length === 0" class="text-xs text-slate-500 dark:text-slate-400 px-4 py-3 text-center">No users found</p>
+                                <button
+                                    v-for="u in imitateFiltered"
+                                    :key="u.id"
+                                    class="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-blue-50 dark:hover:bg-slate-700 text-left transition-colors disabled:opacity-50"
+                                    :disabled="imitateStarting === u.id"
+                                    @click="startImpersonation(u.id)"
+                                >
+                                    <div class="w-7 h-7 rounded-full bg-slate-200 dark:bg-slate-600 text-slate-600 dark:text-slate-300 flex items-center justify-center text-[10px] font-semibold shrink-0">
+                                        {{ u.first_name[0] }}{{ u.last_name[0] }}
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <p class="text-xs font-medium text-slate-800 dark:text-slate-100 truncate">{{ u.first_name }} {{ u.last_name }}</p>
+                                        <p class="text-[10px] text-slate-500 dark:text-slate-400 truncate">{{ u.department_label }} · {{ u.role }}</p>
+                                    </div>
+                                    <span v-if="imitateStarting === u.id" class="text-[10px] text-blue-500">Starting...</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Notification bell -->
+                    <div class="relative">
+                        <button
+                            class="relative p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 transition-colors"
+                            :aria-label="`Alerts${alertCount > 0 ? ` - ${alertCount} active` : ''}`"
+                            :aria-expanded="showAlerts"
+                            @click="showAlerts = !showAlerts"
+                        >
+                            <BellIcon class="w-5 h-5" aria-hidden="true" />
+                            <span
+                                v-if="alertCount > 0"
+                                class="absolute top-0.5 right-0.5 bg-red-500 text-white text-[9px] font-bold rounded-full w-4 h-4 flex items-center justify-center"
+                                aria-hidden="true"
+                            >
+                                {{ alertCount > 9 ? '9+' : alertCount }}
+                            </span>
+                        </button>
+                        <div
+                            v-if="showAlerts"
+                            class="absolute right-0 top-full mt-1 w-80 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-lg z-50 overflow-hidden"
+                        >
+                            <div class="px-4 py-2.5 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
+                                <span class="text-sm font-semibold text-slate-800 dark:text-slate-100">Active Alerts</span>
+                                <button
+                                    class="text-xs text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1"
+                                    @click="showAlerts = false; navigate('/alerts')"
+                                >
+                                    View all
+                                    <ArrowTopRightOnSquareIcon class="w-3 h-3" aria-hidden="true" />
+                                </button>
+                            </div>
+                            <div v-if="alerts.length === 0" class="px-4 py-6 text-sm text-slate-500 dark:text-slate-400 text-center">
+                                No active alerts
+                            </div>
+                            <div
+                                v-for="alert in alerts"
+                                :key="alert.id"
+                                class="px-4 py-2.5 border-b border-slate-50 dark:border-slate-700/50 last:border-0"
+                            >
+                                <div class="text-sm font-medium text-slate-800 dark:text-slate-200 truncate">{{ alert.title }}</div>
+                                <div class="text-xs text-slate-500 dark:text-slate-400 mt-0.5 capitalize">
+                                    {{ alert.severity }} · {{ alert.source_module }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Help -->
+                    <div class="relative">
+                        <button
+                            class="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 transition-colors"
+                            aria-label="Help"
+                            @click="showHelp = !showHelp"
+                        >
+                            <HelpIcon class="w-5 h-5" aria-hidden="true" />
+                        </button>
+                        <div
+                            v-if="showHelp"
+                            class="absolute right-0 top-9 w-72 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700 p-4 z-50"
+                        >
+                            <div class="flex items-center justify-between mb-2">
+                                <h3 class="text-sm font-semibold text-slate-800 dark:text-slate-100">Need Help?</h3>
+                                <button class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 text-lg leading-none" @click="showHelp = false">&#x2715;</button>
+                            </div>
+                            <p class="text-xs text-slate-600 dark:text-slate-400 mb-2">
+                                If you are experiencing an issue with NostosEMR, please contact our support team:
+                            </p>
+                            <a href="mailto:support@nostos-emr.com" class="text-xs text-blue-600 dark:text-blue-400 hover:underline font-medium block mb-3">
+                                support@nostos-emr.com
+                            </a>
+                            <p class="text-xs text-slate-500 dark:text-slate-400">
+                                For urgent clinical system issues outside of business hours, contact your site IT Administrator.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- User chip -->
+                    <div class="relative flex items-center gap-2 pl-2 border-l border-slate-200 dark:border-slate-600">
+                        <button
+                            class="flex items-center gap-2 rounded-lg px-1 py-0.5 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                            aria-label="Account menu"
+                            @click="showUserMenu = !showUserMenu"
+                        >
+                            <div
+                                :class="[
+                                    'w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-semibold shrink-0',
+                                    impersonation.active ? 'bg-amber-500 ring-2 ring-amber-300' : 'bg-blue-600',
+                                ]"
+                            >
+                                {{ user?.first_name?.[0] }}{{ user?.last_name?.[0] }}
+                            </div>
+                            <div class="hidden sm:block text-right">
+                                <p class="text-xs font-medium text-slate-800 dark:text-slate-100 leading-none">{{ user?.first_name }} {{ user?.last_name }}</p>
+                                <p class="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">{{ user?.department_label }}</p>
+                            </div>
+                            <ChevronDownIcon class="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 hidden sm:block" :class="{ 'rotate-180': showUserMenu }" aria-hidden="true" />
+                        </button>
+                        <!-- User dropdown -->
+                        <div
+                            v-if="showUserMenu"
+                            class="absolute right-0 top-full mt-2 w-52 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-lg z-50 overflow-hidden"
+                        >
+                            <div class="px-4 py-3 border-b border-slate-100 dark:border-slate-700">
+                                <p class="text-xs font-semibold text-slate-900 dark:text-slate-100 truncate">{{ user?.first_name }} {{ user?.last_name }}</p>
+                                <p class="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">{{ user?.department_label }}</p>
+                            </div>
+                            <button
+                                class="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors text-left"
+                                @click="showUserMenu = false; navigate('/profile/notifications')"
+                            >
+                                <BellIcon class="w-4 h-4 shrink-0 text-slate-400 dark:text-slate-500" aria-hidden="true" />
+                                Notification Preferences
+                            </button>
+                            <div class="border-t border-slate-100 dark:border-slate-700">
+                                <button
+                                    class="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors text-left"
+                                    @click="showUserMenu = false; logout()"
+                                >
+                                    <ArrowRightOnRectangleIcon class="w-4 h-4 shrink-0" aria-hidden="true" />
+                                    Sign Out
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </header>
 
@@ -680,4 +933,7 @@ onUnmounted(() => {
             </main>
         </div>
     </div>
+
+    <!-- Global search modal (Cmd+K) -->
+    <GlobalSearch :open="showSearch" @close="showSearch = false" />
 </template>
