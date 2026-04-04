@@ -1,58 +1,60 @@
 <script setup lang="ts">
 // ─── Finance/Dashboard.vue ────────────────────────────────────────────────────
-// Finance department overview: 6 KPI cards, recent encounters table, and
-// pending authorizations table.  All data is injected as Inertia props from
-// FinanceDashboardController.
+// Finance department overview: KPI cards, recent capitation table, and
+// expiring authorizations table. Data injected from FinanceDashboardController.
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { ref, computed } from 'vue'
-import { Head, router } from '@inertiajs/vue3'
+import { Head } from '@inertiajs/vue3'
 import {
     BanknotesIcon,
     ClipboardDocumentListIcon,
     ShieldCheckIcon,
-    ExclamationTriangleIcon,
+    UsersIcon,
 } from '@heroicons/vue/24/outline'
 import AppShell from '@/Layouts/AppShell.vue'
-import axios from 'axios'
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
 interface KPIs {
-    current_month_capitation: number
-    ytd_capitation: number
-    open_encounters: number
-    pending_authorizations: number
-    open_denials: number
-    revenue_at_risk: number
+    capitation_this_month: number
+    auths_expiring_30d: number
+    encounters_this_month: number
+    active_participants: number
 }
 
-interface Encounter {
+interface CapitationRow {
+    month_year: string
+    total: number
+    participant_count: number
+}
+
+interface ParticipantStub {
     id: number
-    participant_name: string
-    service_date: string | null
+    mrn: string
+    first_name: string
+    last_name: string
+}
+
+interface ExpiringAuth {
+    id: number
     service_type: string | null
-    amount: number | null
+    authorized_end: string | null
     status: string | null
-}
-
-interface Auth {
-    id: number
-    participant_name: string
-    service: string | null
-    requested_date: string | null
-    status: string | null
+    participant: ParticipantStub | null
 }
 
 const props = defineProps<{
     kpis: KPIs
-    recentEncounters: Encounter[]
-    pendingAuths: Auth[]
+    recentCapitation: CapitationRow[]
+    expiringAuths: ExpiringAuth[]
+    currentMonthYear: string
+    serviceTypeLabels: Record<string, string>
 }>()
 
 // ── Formatting helpers ─────────────────────────────────────────────────────────
 
-function fmtCurrency(cents: number): string {
+function fmtCurrency(cents: number | null | undefined): string {
+    if (cents == null) return '-'
     return '$' + Number(cents).toLocaleString()
 }
 
@@ -62,19 +64,15 @@ function fmtDate(val: string | null | undefined): string {
     return d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
 }
 
-// ── Status badge ───────────────────────────────────────────────────────────────
+function fmtMonth(ym: string): string {
+    const [year, month] = ym.split('-')
+    const d = new Date(Number(year), Number(month) - 1, 1)
+    return d.toLocaleDateString('en-US', { year: 'numeric', month: 'long' })
+}
 
-function statusClass(status: string | null): string {
-    switch (status) {
-        case 'approved':
-            return 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300'
-        case 'pending':
-            return 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300'
-        case 'denied':
-            return 'bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300'
-        default:
-            return 'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-400'
-    }
+function participantName(auth: ExpiringAuth): string {
+    if (!auth.participant) return '-'
+    return `${auth.participant.last_name}, ${auth.participant.first_name}`
 }
 </script>
 
@@ -89,317 +87,136 @@ function statusClass(status: string | null): string {
         </template>
 
         <div class="px-6 py-5 space-y-8">
+
             <!-- ── KPI grid ── -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+
                 <!-- Current Month Capitation -->
-                <div
-                    class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-4 flex items-start gap-3"
-                >
+                <div class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-4 flex items-start gap-3">
                     <div class="shrink-0 p-2 rounded-lg bg-blue-50 dark:bg-blue-900/30">
-                        <BanknotesIcon
-                            class="w-5 h-5 text-blue-600 dark:text-blue-400"
-                            aria-hidden="true"
-                        />
+                        <BanknotesIcon class="w-5 h-5 text-blue-600 dark:text-blue-400" aria-hidden="true" />
                     </div>
                     <div class="min-w-0">
-                        <p class="text-xs text-gray-500 dark:text-slate-400 truncate">
-                            Current Month Capitation
-                        </p>
+                        <p class="text-xs text-gray-500 dark:text-slate-400 truncate">Capitation This Month</p>
                         <p class="text-xl font-bold text-gray-800 dark:text-slate-100 mt-0.5">
-                            {{ fmtCurrency(kpis.current_month_capitation) }}
+                            {{ fmtCurrency(kpis.capitation_this_month) }}
                         </p>
                     </div>
                 </div>
 
-                <!-- YTD Capitation -->
-                <div
-                    class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-4 flex items-start gap-3"
-                >
-                    <div class="shrink-0 p-2 rounded-lg bg-indigo-50 dark:bg-indigo-900/30">
-                        <BanknotesIcon
-                            class="w-5 h-5 text-indigo-600 dark:text-indigo-400"
-                            aria-hidden="true"
-                        />
-                    </div>
-                    <div class="min-w-0">
-                        <p class="text-xs text-gray-500 dark:text-slate-400 truncate">
-                            YTD Capitation
-                        </p>
-                        <p class="text-xl font-bold text-gray-800 dark:text-slate-100 mt-0.5">
-                            {{ fmtCurrency(kpis.ytd_capitation) }}
-                        </p>
-                    </div>
-                </div>
-
-                <!-- Open Encounters -->
-                <div
-                    class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-4 flex items-start gap-3"
-                >
+                <!-- Encounters This Month -->
+                <div class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-4 flex items-start gap-3">
                     <div class="shrink-0 p-2 rounded-lg bg-slate-50 dark:bg-slate-700/50">
-                        <ClipboardDocumentListIcon
-                            class="w-5 h-5 text-slate-600 dark:text-slate-400"
-                            aria-hidden="true"
-                        />
+                        <ClipboardDocumentListIcon class="w-5 h-5 text-slate-600 dark:text-slate-400" aria-hidden="true" />
                     </div>
                     <div class="min-w-0">
-                        <p class="text-xs text-gray-500 dark:text-slate-400 truncate">
-                            Open Encounters
-                        </p>
+                        <p class="text-xs text-gray-500 dark:text-slate-400 truncate">Encounters This Month</p>
                         <p class="text-xl font-bold text-gray-800 dark:text-slate-100 mt-0.5">
-                            {{ kpis.open_encounters.toLocaleString() }}
+                            {{ (kpis.encounters_this_month ?? 0).toLocaleString() }}
                         </p>
                     </div>
                 </div>
 
-                <!-- Pending Authorizations -->
-                <div
-                    class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-4 flex items-start gap-3"
-                >
+                <!-- Auths Expiring 30d -->
+                <div class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-4 flex items-start gap-3">
                     <div class="shrink-0 p-2 rounded-lg bg-amber-50 dark:bg-amber-900/30">
-                        <ShieldCheckIcon
-                            class="w-5 h-5 text-amber-600 dark:text-amber-400"
-                            aria-hidden="true"
-                        />
+                        <ShieldCheckIcon class="w-5 h-5 text-amber-600 dark:text-amber-400" aria-hidden="true" />
                     </div>
                     <div class="min-w-0">
-                        <p class="text-xs text-gray-500 dark:text-slate-400 truncate">
-                            Pending Authorizations
-                        </p>
+                        <p class="text-xs text-gray-500 dark:text-slate-400 truncate">Auths Expiring (30d)</p>
                         <p class="text-xl font-bold text-gray-800 dark:text-slate-100 mt-0.5">
-                            {{ kpis.pending_authorizations.toLocaleString() }}
+                            {{ (kpis.auths_expiring_30d ?? 0).toLocaleString() }}
                         </p>
                     </div>
                 </div>
 
-                <!-- Open Denials -->
-                <div
-                    class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-4 flex items-start gap-3"
-                >
-                    <div
-                        :class="[
-                            'shrink-0 p-2 rounded-lg',
-                            kpis.open_denials > 0
-                                ? 'bg-red-50 dark:bg-red-900/30'
-                                : 'bg-slate-50 dark:bg-slate-700/50',
-                        ]"
-                    >
-                        <ExclamationTriangleIcon
-                            :class="[
-                                'w-5 h-5',
-                                kpis.open_denials > 0
-                                    ? 'text-red-600 dark:text-red-400'
-                                    : 'text-slate-400 dark:text-slate-500',
-                            ]"
-                            aria-hidden="true"
-                        />
+                <!-- Active Participants -->
+                <div class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-4 flex items-start gap-3">
+                    <div class="shrink-0 p-2 rounded-lg bg-green-50 dark:bg-green-900/30">
+                        <UsersIcon class="w-5 h-5 text-green-600 dark:text-green-400" aria-hidden="true" />
                     </div>
                     <div class="min-w-0">
-                        <p class="text-xs text-gray-500 dark:text-slate-400 truncate">
-                            Open Denials
-                        </p>
-                        <p
-                            :class="[
-                                'text-xl font-bold mt-0.5',
-                                kpis.open_denials > 0
-                                    ? 'text-red-600 dark:text-red-400'
-                                    : 'text-gray-800 dark:text-slate-100',
-                            ]"
-                        >
-                            {{ kpis.open_denials.toLocaleString() }}
-                        </p>
-                    </div>
-                </div>
-
-                <!-- Revenue at Risk -->
-                <div
-                    class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-4 flex items-start gap-3"
-                >
-                    <div
-                        :class="[
-                            'shrink-0 p-2 rounded-lg',
-                            kpis.revenue_at_risk > 0
-                                ? 'bg-red-50 dark:bg-red-900/30'
-                                : 'bg-slate-50 dark:bg-slate-700/50',
-                        ]"
-                    >
-                        <BanknotesIcon
-                            :class="[
-                                'w-5 h-5',
-                                kpis.revenue_at_risk > 0
-                                    ? 'text-red-600 dark:text-red-400'
-                                    : 'text-slate-400 dark:text-slate-500',
-                            ]"
-                            aria-hidden="true"
-                        />
-                    </div>
-                    <div class="min-w-0">
-                        <p class="text-xs text-gray-500 dark:text-slate-400 truncate">
-                            Revenue at Risk
-                        </p>
-                        <p
-                            :class="[
-                                'text-xl font-bold mt-0.5',
-                                kpis.revenue_at_risk > 0
-                                    ? 'text-red-600 dark:text-red-400'
-                                    : 'text-gray-800 dark:text-slate-100',
-                            ]"
-                        >
-                            {{ fmtCurrency(kpis.revenue_at_risk) }}
+                        <p class="text-xs text-gray-500 dark:text-slate-400 truncate">Active Participants</p>
+                        <p class="text-xl font-bold text-gray-800 dark:text-slate-100 mt-0.5">
+                            {{ (kpis.active_participants ?? 0).toLocaleString() }}
                         </p>
                     </div>
                 </div>
             </div>
 
-            <!-- ── Recent Encounters ── -->
-            <div
-                class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700"
-            >
+            <!-- ── Recent Capitation ── -->
+            <div class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700">
                 <div class="px-5 py-3.5 border-b border-gray-200 dark:border-slate-700">
-                    <h2 class="text-sm font-semibold text-gray-800 dark:text-slate-100">
-                        Recent Encounters
-                    </h2>
+                    <h2 class="text-sm font-semibold text-gray-800 dark:text-slate-100">Recent Capitation</h2>
                 </div>
                 <div class="overflow-x-auto">
                     <table class="min-w-full text-sm">
                         <thead class="bg-gray-50 dark:bg-slate-700/50">
                             <tr>
-                                <th
-                                    class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide"
-                                >
-                                    Participant
-                                </th>
-                                <th
-                                    class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide"
-                                >
-                                    Service Date
-                                </th>
-                                <th
-                                    class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide"
-                                >
-                                    Type
-                                </th>
-                                <th
-                                    class="px-4 py-2.5 text-right text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide"
-                                >
-                                    Amount
-                                </th>
-                                <th
-                                    class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide"
-                                >
-                                    Status
-                                </th>
+                                <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">Month</th>
+                                <th class="px-4 py-2.5 text-right text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">Total</th>
+                                <th class="px-4 py-2.5 text-right text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">Participants</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-100 dark:divide-slate-700">
-                            <tr v-if="recentEncounters.length === 0">
-                                <td
-                                    colspan="5"
-                                    class="px-4 py-8 text-center text-sm text-gray-400 dark:text-slate-500"
-                                >
-                                    No recent encounters.
+                            <tr v-if="recentCapitation.length === 0">
+                                <td colspan="3" class="px-4 py-8 text-center text-sm text-gray-400 dark:text-slate-500">
+                                    No capitation records found.
                                 </td>
                             </tr>
                             <tr
-                                v-for="enc in recentEncounters"
-                                :key="enc.id"
+                                v-for="row in recentCapitation"
+                                :key="row.month_year"
                                 class="hover:bg-gray-50 dark:hover:bg-slate-700/30 transition-colors"
                             >
-                                <td class="px-4 py-3 text-gray-800 dark:text-slate-200">
-                                    {{ enc.participant_name }}
-                                </td>
-                                <td class="px-4 py-3 text-gray-600 dark:text-slate-400">
-                                    {{ fmtDate(enc.service_date) }}
-                                </td>
-                                <td class="px-4 py-3 text-gray-600 dark:text-slate-400">
-                                    {{ enc.service_type ?? '-' }}
-                                </td>
-                                <td
-                                    class="px-4 py-3 text-right text-gray-800 dark:text-slate-200 tabular-nums"
-                                >
-                                    {{ enc.amount != null ? fmtCurrency(enc.amount) : '-' }}
-                                </td>
-                                <td class="px-4 py-3">
-                                    <span
-                                        v-if="enc.status"
-                                        :class="[
-                                            'inline-flex px-2 py-0.5 rounded text-xs font-medium capitalize',
-                                            statusClass(enc.status),
-                                        ]"
-                                    >
-                                        {{ enc.status }}
-                                    </span>
-                                    <span v-else class="text-gray-400 dark:text-slate-500">-</span>
-                                </td>
+                                <td class="px-4 py-3 text-gray-800 dark:text-slate-200">{{ fmtMonth(row.month_year) }}</td>
+                                <td class="px-4 py-3 text-right text-gray-800 dark:text-slate-200 tabular-nums">{{ fmtCurrency(row.total) }}</td>
+                                <td class="px-4 py-3 text-right text-gray-600 dark:text-slate-400 tabular-nums">{{ row.participant_count }}</td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
             </div>
 
-            <!-- ── Pending Authorizations ── -->
-            <div
-                class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700"
-            >
+            <!-- ── Expiring Authorizations ── -->
+            <div class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700">
                 <div class="px-5 py-3.5 border-b border-gray-200 dark:border-slate-700">
-                    <h2 class="text-sm font-semibold text-gray-800 dark:text-slate-100">
-                        Pending Authorizations
-                    </h2>
+                    <h2 class="text-sm font-semibold text-gray-800 dark:text-slate-100">Authorizations Expiring Soon</h2>
                 </div>
                 <div class="overflow-x-auto">
                     <table class="min-w-full text-sm">
                         <thead class="bg-gray-50 dark:bg-slate-700/50">
                             <tr>
-                                <th
-                                    class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide"
-                                >
-                                    Participant
-                                </th>
-                                <th
-                                    class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide"
-                                >
-                                    Service
-                                </th>
-                                <th
-                                    class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide"
-                                >
-                                    Requested Date
-                                </th>
-                                <th
-                                    class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide"
-                                >
-                                    Status
-                                </th>
+                                <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">Participant</th>
+                                <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">Service Type</th>
+                                <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">Expires</th>
+                                <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">Status</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-100 dark:divide-slate-700">
-                            <tr v-if="pendingAuths.length === 0">
-                                <td
-                                    colspan="4"
-                                    class="px-4 py-8 text-center text-sm text-gray-400 dark:text-slate-500"
-                                >
-                                    No pending authorizations.
+                            <tr v-if="expiringAuths.length === 0">
+                                <td colspan="4" class="px-4 py-8 text-center text-sm text-gray-400 dark:text-slate-500">
+                                    No authorizations expiring within 30 days.
                                 </td>
                             </tr>
                             <tr
-                                v-for="auth in pendingAuths"
+                                v-for="auth in expiringAuths"
                                 :key="auth.id"
                                 class="hover:bg-gray-50 dark:hover:bg-slate-700/30 transition-colors"
                             >
-                                <td class="px-4 py-3 text-gray-800 dark:text-slate-200">
-                                    {{ auth.participant_name }}
-                                </td>
+                                <td class="px-4 py-3 text-gray-800 dark:text-slate-200">{{ participantName(auth) }}</td>
                                 <td class="px-4 py-3 text-gray-600 dark:text-slate-400">
-                                    {{ auth.service ?? '-' }}
+                                    {{ serviceTypeLabels[auth.service_type ?? ''] ?? auth.service_type ?? '-' }}
                                 </td>
-                                <td class="px-4 py-3 text-gray-600 dark:text-slate-400">
-                                    {{ fmtDate(auth.requested_date) }}
-                                </td>
+                                <td class="px-4 py-3 text-gray-600 dark:text-slate-400">{{ fmtDate(auth.authorized_end) }}</td>
                                 <td class="px-4 py-3">
                                     <span
                                         v-if="auth.status"
                                         :class="[
                                             'inline-flex px-2 py-0.5 rounded text-xs font-medium capitalize',
-                                            statusClass(auth.status),
+                                            auth.status === 'approved' ? 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300' :
+                                            auth.status === 'pending'  ? 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300' :
+                                            'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-400'
                                         ]"
                                     >
                                         {{ auth.status }}
@@ -411,6 +228,7 @@ function statusClass(status: string | null): string {
                     </table>
                 </div>
             </div>
+
         </div>
     </AppShell>
 </template>
