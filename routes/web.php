@@ -58,6 +58,7 @@ use App\Http\Controllers\TransportController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\IdtMeetingController;
 use App\Http\Controllers\LocationController;
+use App\Http\Controllers\AddressController;
 use App\Http\Controllers\ParticipantContactController;
 use App\Http\Controllers\ParticipantController;
 use App\Http\Controllers\ParticipantFlagController;
@@ -284,6 +285,10 @@ Route::middleware('auth')->group(function () {
     Route::post('/participants/{participant}/flags',             [ParticipantFlagController::class, 'store'])->name('participants.flags.store');
     Route::put('/participants/{participant}/flags/{flag}',       [ParticipantFlagController::class, 'update'])->name('participants.flags.update');
     Route::post('/participants/{participant}/flags/{flag}/resolve', [ParticipantFlagController::class, 'resolve'])->name('participants.flags.resolve');
+
+    // Participant Addresses
+    Route::post('/participants/{participant}/addresses',              [AddressController::class, 'store'])->name('participants.addresses.store');
+    Route::put('/participants/{participant}/addresses/{address}',     [AddressController::class, 'update'])->name('participants.addresses.update');
 
     // Participant Contacts
     Route::get('/participants/{participant}/contacts',            [ParticipantContactController::class, 'index'])->name('participants.contacts.index');

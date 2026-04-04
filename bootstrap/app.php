@@ -14,6 +14,11 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->web(append: [
             \App\Http\Middleware\HandleInertiaRequests::class,
         ]);
+
+        $middleware->alias([
+            'department.access' => \App\Http\Middleware\CheckDepartmentAccess::class,
+            'fhir.auth'         => \App\Http\Middleware\FhirAuthMiddleware::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

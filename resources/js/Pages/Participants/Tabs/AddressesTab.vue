@@ -1,8 +1,8 @@
 <script setup lang="ts">
 // ─── AddressesTab.vue ─────────────────────────────────────────────────────────
-// Participant addresses: home, mailing, emergency_shelter, nursing_facility.
-// Add/edit in modal. Primary address shown with badge. Status active/inactive.
-// Address validation done server-side; client shows returned errors.
+// Participant addresses: home, center (nursing/ALF), emergency, other.
+// Add/edit in modal. Primary address shown with badge. Validates server-side.
+// Field names match the emr_participant_addresses table columns directly.
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { ref } from 'vue'
@@ -12,15 +12,12 @@ import { PlusIcon, HomeIcon } from '@heroicons/vue/24/outline'
 interface Address {
     id: number
     address_type: string
-    street_1: string
-    street_2: string | null
+    street: string
+    unit: string | null
     city: string
     state: string
-    zip_code: string
-    county: string | null
-    country: string
+    zip: string
     is_primary: boolean
-    is_active: boolean
     effective_date: string | null
     notes: string | null
 }
@@ -35,12 +32,10 @@ const props = defineProps<{
 }>()
 
 const ADDRESS_TYPE_LABELS: Record<string, string> = {
-    home: 'Home',
-    mailing: 'Mailing',
-    emergency_shelter: 'Emergency Shelter',
-    nursing_facility: 'Nursing Facility',
-    assisted_living: 'Assisted Living',
-    other: 'Other',
+    home:      'Home',
+    center:    'Day Center / Facility',
+    emergency: 'Emergency Shelter',
+    other:     'Other',
 }
 
 const addresses = ref<Address[]>(props.addresses)
@@ -51,13 +46,11 @@ const editingId = ref<number | null>(null)
 
 const blankForm = () => ({
     address_type: 'home',
-    street_1: '',
-    street_2: '',
+    street: '',
+    unit: '',
     city: '',
     state: '',
-    zip_code: '',
-    county: '',
-    country: 'US',
+    zip: '',
     is_primary: false,
     notes: '',
 })
@@ -74,13 +67,11 @@ function openEdit(address: Address) {
     editingId.value = address.id
     form.value = {
         address_type: address.address_type,
-        street_1: address.street_1,
-        street_2: address.street_2 ?? '',
+        street: address.street,
+        unit: address.unit ?? '',
         city: address.city,
         state: address.state,
-        zip_code: address.zip_code,
-        county: address.county ?? '',
-        country: address.country,
+        zip: address.zip,
         is_primary: address.is_primary,
         notes: address.notes ?? '',
     }
@@ -89,7 +80,7 @@ function openEdit(address: Address) {
 }
 
 async function submit() {
-    if (!form.value.street_1.trim() || !form.value.city.trim()) {
+    if (!form.value.street.trim() || !form.value.city.trim()) {
         error.value = 'Street and city are required.'
         return
     }
@@ -97,8 +88,7 @@ async function submit() {
     error.value = ''
     const payload = {
         ...form.value,
-        street_2: form.value.street_2 || null,
-        county: form.value.county || null,
+        unit: form.value.unit || null,
         notes: form.value.notes || null,
     }
     try {
@@ -129,6 +119,7 @@ async function submit() {
             <h2 class="text-base font-semibold text-gray-900 dark:text-slate-100">Addresses</h2>
             <button
                 class="inline-flex items-center gap-1 text-xs px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                aria-label="Add new address"
                 @click="openAdd"
             >
                 <PlusIcon class="w-3 h-3" />
@@ -146,12 +137,7 @@ async function submit() {
             <div
                 v-for="address in addresses"
                 :key="address.id"
-                :class="[
-                    'flex items-start gap-3 rounded-lg px-4 py-3 border',
-                    address.is_active
-                        ? 'bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-700'
-                        : 'bg-gray-50 dark:bg-slate-800/50 border-gray-100 dark:border-slate-700 opacity-60',
-                ]"
+                class="flex items-start gap-3 rounded-lg px-4 py-3 border bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-700"
             >
                 <div
                     class="shrink-0 w-8 h-8 rounded-full bg-gray-100 dark:bg-slate-700 flex items-center justify-center"
@@ -160,37 +146,29 @@ async function submit() {
                 </div>
                 <div class="flex-1 min-w-0">
                     <div class="flex items-center gap-2 flex-wrap">
-                        <span class="text-sm font-semibold text-gray-900 dark:text-slate-100">{{
-                            ADDRESS_TYPE_LABELS[address.address_type] ?? address.address_type
-                        }}</span>
+                        <span class="text-sm font-semibold text-gray-900 dark:text-slate-100">
+                            {{ ADDRESS_TYPE_LABELS[address.address_type] ?? address.address_type }}
+                        </span>
                         <span
                             v-if="address.is_primary"
                             class="text-xs bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 px-1.5 py-0.5 rounded"
-                            >Primary</span
                         >
-                        <span
-                            v-if="!address.is_active"
-                            class="text-xs bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-400 px-1.5 py-0.5 rounded"
-                            >Inactive</span
-                        >
+                            Primary
+                        </span>
                     </div>
                     <div class="text-sm text-gray-700 dark:text-slate-300 mt-0.5">
-                        {{ address.street_1
-                        }}<span v-if="address.street_2">, {{ address.street_2 }}</span>
+                        {{ address.street }}<span v-if="address.unit">, {{ address.unit }}</span>
                     </div>
                     <div class="text-xs text-gray-500 dark:text-slate-400">
-                        {{ address.city }}, {{ address.state }} {{ address.zip_code }}
-                        <span v-if="address.county"> · {{ address.county }} County</span>
+                        {{ address.city }}, {{ address.state }} {{ address.zip }}
                     </div>
-                    <p
-                        v-if="address.notes"
-                        class="text-xs text-gray-400 dark:text-slate-500 mt-0.5"
-                    >
+                    <p v-if="address.notes" class="text-xs text-gray-400 dark:text-slate-500 mt-0.5">
                         {{ address.notes }}
                     </p>
                 </div>
                 <button
                     class="text-xs px-2 py-1 border border-gray-300 dark:border-slate-600 text-gray-600 dark:text-slate-400 rounded hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors shrink-0"
+                    :aria-label="`Edit ${ADDRESS_TYPE_LABELS[address.address_type] ?? address.address_type} address`"
                     @click="openEdit(address)"
                 >
                     Edit
@@ -202,6 +180,9 @@ async function submit() {
         <div
             v-if="showModal"
             class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+            role="dialog"
+            aria-modal="true"
+            :aria-label="editingId ? 'Edit address' : 'Add address'"
         >
             <div
                 class="bg-white dark:bg-slate-800 rounded-xl shadow-xl max-w-lg w-full p-5 max-h-[90vh] overflow-y-auto"
@@ -212,10 +193,13 @@ async function submit() {
                 <div class="grid grid-cols-2 gap-3 mb-3">
                     <div>
                         <label
+                            for="address-type"
                             class="block text-xs font-medium text-gray-700 dark:text-slate-300 mb-1"
-                            >Address Type</label
                         >
+                            Address Type
+                        </label>
                         <select
+                            id="address-type"
                             v-model="form.address_type"
                             class="w-full text-sm border border-gray-300 dark:border-slate-600 rounded-md px-2 py-1.5 bg-white dark:bg-slate-700"
                         >
@@ -230,27 +214,35 @@ async function submit() {
                     </div>
                     <div class="col-span-2">
                         <label
+                            for="street"
                             class="block text-xs font-medium text-gray-700 dark:text-slate-300 mb-1"
-                            >Street *</label
                         >
+                            Street *
+                        </label>
                         <input
-                            v-model="form.street_1"
+                            id="street"
+                            v-model="form.street"
                             type="text"
+                            aria-label="Street address"
                             class="w-full text-sm border border-gray-300 dark:border-slate-600 rounded-md px-2 py-1.5 bg-white dark:bg-slate-700 mb-2"
                         />
                         <input
-                            v-model="form.street_2"
+                            v-model="form.unit"
                             type="text"
                             placeholder="Apt, Suite, etc."
+                            aria-label="Unit or apartment number"
                             class="w-full text-sm border border-gray-300 dark:border-slate-600 rounded-md px-2 py-1.5 bg-white dark:bg-slate-700"
                         />
                     </div>
                     <div>
                         <label
+                            for="city"
                             class="block text-xs font-medium text-gray-700 dark:text-slate-300 mb-1"
-                            >City *</label
                         >
+                            City *
+                        </label>
                         <input
+                            id="city"
                             v-model="form.city"
                             type="text"
                             class="w-full text-sm border border-gray-300 dark:border-slate-600 rounded-md px-2 py-1.5 bg-white dark:bg-slate-700"
@@ -258,10 +250,13 @@ async function submit() {
                     </div>
                     <div>
                         <label
+                            for="state"
                             class="block text-xs font-medium text-gray-700 dark:text-slate-300 mb-1"
-                            >State</label
                         >
+                            State
+                        </label>
                         <input
+                            id="state"
                             v-model="form.state"
                             type="text"
                             maxlength="2"
@@ -271,36 +266,21 @@ async function submit() {
                     </div>
                     <div>
                         <label
+                            for="zip"
                             class="block text-xs font-medium text-gray-700 dark:text-slate-300 mb-1"
-                            >ZIP Code</label
                         >
+                            ZIP Code
+                        </label>
                         <input
-                            v-model="form.zip_code"
+                            id="zip"
+                            v-model="form.zip"
                             type="text"
-                            class="w-full text-sm border border-gray-300 dark:border-slate-600 rounded-md px-2 py-1.5 bg-white dark:bg-slate-700"
-                        />
-                    </div>
-                    <div>
-                        <label
-                            class="block text-xs font-medium text-gray-700 dark:text-slate-300 mb-1"
-                            >County</label
-                        >
-                        <input
-                            v-model="form.county"
-                            type="text"
-                            placeholder="Optional"
                             class="w-full text-sm border border-gray-300 dark:border-slate-600 rounded-md px-2 py-1.5 bg-white dark:bg-slate-700"
                         />
                     </div>
                 </div>
-                <label
-                    class="flex items-center gap-2 text-xs text-gray-700 dark:text-slate-300 mb-3 cursor-pointer"
-                >
-                    <input
-                        v-model="form.is_primary"
-                        type="checkbox"
-                        class="rounded border-gray-300"
-                    />
+                <label class="flex items-center gap-2 text-xs text-gray-700 dark:text-slate-300 mb-3 cursor-pointer">
+                    <input v-model="form.is_primary" type="checkbox" class="rounded border-gray-300" />
                     Set as primary address
                 </label>
                 <p v-if="error" class="text-red-600 dark:text-red-400 text-xs mb-2">{{ error }}</p>
