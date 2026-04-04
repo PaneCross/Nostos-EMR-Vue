@@ -1,8 +1,8 @@
 <script setup lang="ts">
 // ─── AppShell.vue ─────────────────────────────────────────────────────────────
 // Root layout for all authenticated NostosEMR pages.
-// Provides: collapsed sidebar nav, dark-mode toggle, alert bell, chat badge,
-//           impersonation banner, HIPAA idle-timeout modal, and page content slot.
+// Sidebar: collapsible via hamburger, default expanded, per-user localStorage.
+// Nav: group accordion (expanded) + flyout on hover (collapsed).
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { ref, computed, onMounted, onUnmounted, type Component } from 'vue'
@@ -15,22 +15,28 @@ import {
     UserIcon,
     ArrowRightOnRectangleIcon,
     EyeIcon,
-    ChevronDoubleLeftIcon,
-    ChevronDoubleRightIcon,
     ChatBubbleLeftRightIcon,
+    Bars3Icon,
+    HomeIcon,
+    ChevronRightIcon,
+    // Group-level icons (mapped from PermissionService icon strings)
     UsersIcon,
-    ClipboardDocumentCheckIcon,
     ClipboardDocumentListIcon,
+    UserGroupIcon,
+    CalendarDaysIcon,
+    TruckIcon,
+    CurrencyDollarIcon,
+    ChartBarIcon,
+    Cog6ToothIcon,
+    // Item-level icons
+    ClipboardDocumentCheckIcon,
     DocumentTextIcon,
     HeartIcon,
     BeakerIcon,
     DocumentCheckIcon,
-    UserGroupIcon,
     ExclamationTriangleIcon,
     ExclamationCircleIcon,
-    CalendarDaysIcon,
     BuildingOfficeIcon,
-    TruckIcon,
     ClockIcon,
     MapIcon,
     XCircleIcon,
@@ -39,16 +45,13 @@ import {
     IdentificationIcon,
     AdjustmentsHorizontalIcon,
     PhoneIcon,
-    CurrencyDollarIcon,
     QueueListIcon,
     BanknotesIcon,
     TableCellsIcon,
     CloudArrowUpIcon,
     ShieldCheckIcon,
-    ChartBarIcon,
     MagnifyingGlassIcon,
     MapPinIcon,
-    Cog6ToothIcon,
     LockClosedIcon,
     PresentationChartBarIcon,
     CpuChipIcon,
@@ -57,8 +60,40 @@ import {
 import type { PageProps } from '@/types'
 import IdleWarningModal from '@/Components/IdleWarningModal.vue'
 
-// ── Nav icon map ───────────────────────────────────────────────────────────────
-// Maps PermissionService module keys → Heroicon components for the sidebar.
+// ── Shared props ───────────────────────────────────────────────────────────────
+const page = usePage<PageProps>()
+const auth = computed(() => page.props.auth)
+const user = computed(() => auth.value?.user ?? null)
+const impersonation = computed(() => page.props.impersonation ?? { active: false, user: null, viewing_as_dept: null })
+
+// ── Theme ──────────────────────────────────────────────────────────────────────
+const theme = ref<'light' | 'dark'>((user.value?.theme_preference as 'light' | 'dark' | undefined) ?? 'light')
+
+function applyTheme(t: 'light' | 'dark') {
+    document.documentElement.classList.toggle('dark', t === 'dark')
+    localStorage.setItem('nostos_theme', t)
+}
+
+function toggleTheme() {
+    theme.value = theme.value === 'light' ? 'dark' : 'light'
+    applyTheme(theme.value)
+    axios.post('/user/theme', { theme: theme.value })
+}
+
+// ── Nav icon maps ──────────────────────────────────────────────────────────────
+// Maps PermissionService group.icon strings → Heroicons
+const groupIconMap: Record<string, Component> = {
+    users:     UsersIcon,
+    clipboard: ClipboardDocumentListIcon,
+    team:      UserGroupIcon,
+    calendar:  CalendarDaysIcon,
+    truck:     TruckIcon,
+    dollar:    CurrencyDollarIcon,
+    chart:     ChartBarIcon,
+    settings:  Cog6ToothIcon,
+}
+
+// Maps PermissionService item.module → Heroicons
 const moduleIconMap: Record<string, Component> = {
     participants:          UsersIcon,
     enrollment:            ClipboardDocumentCheckIcon,
@@ -104,47 +139,85 @@ const moduleIconMap: Record<string, Component> = {
     tenant_management:     CpuChipIcon,
 }
 
+function groupIcon(iconKey: string): Component {
+    return groupIconMap[iconKey] ?? QuestionMarkCircleIcon
+}
+
 function navIcon(module: string): Component {
     return moduleIconMap[module] ?? QuestionMarkCircleIcon
 }
 
-// ── Shared props ───────────────────────────────────────────────────────────────
-const page = usePage<PageProps>()
-const auth = computed(() => page.props.auth)
-const user = computed(() => auth.value?.user ?? null)
-const impersonation = computed(() => page.props.impersonation ?? { active: false, user: null, viewing_as_dept: null })
-
-// ── Theme ──────────────────────────────────────────────────────────────────────
-const theme = ref<'light' | 'dark'>((user.value?.theme_preference as 'light' | 'dark' | undefined) ?? 'light')
-
-function applyTheme(t: 'light' | 'dark') {
-    document.documentElement.classList.toggle('dark', t === 'dark')
-    localStorage.setItem('nostos_theme', t)
-}
-
-function toggleTheme() {
-    theme.value = theme.value === 'light' ? 'dark' : 'light'
-    applyTheme(theme.value)
-    axios.post('/user/theme', { theme: theme.value })
-}
-
-// ── Nav ────────────────────────────────────────────────────────────────────────
-const navGroups = computed(() => page.props.nav_groups ?? [])
+// ── Nav helpers ────────────────────────────────────────────────────────────────
+const navGroups = computed(() => (page.props.nav_groups as any[]) ?? [])
 const currentPath = computed(() => window.location.pathname)
 
 function isActive(href: string): boolean {
-    const all = navGroups.value.flatMap((g) => g.items.map((i) => i.href))
+    const all: string[] = navGroups.value.flatMap((g: any) => g.items.map((i: any) => i.href))
     const longer = all.filter((h) => h !== href && h.startsWith(href) && h.length > href.length)
     if (longer.some((h) => currentPath.value.startsWith(h))) return false
     return currentPath.value === href || currentPath.value.startsWith(href + '/')
 }
 
-function navigate(href: string) {
-    router.visit(href)
+function isGroupActive(group: any): boolean {
+    return group.items.some((item: any) => isActive(item.href))
 }
 
-// ── Sidebar ────────────────────────────────────────────────────────────────────
-const collapsed = ref(true)
+function navigate(href: string) {
+    router.visit(href)
+    hoveredGroup.value = null
+}
+
+// ── Sidebar collapse ───────────────────────────────────────────────────────────
+// Default: expanded. Persisted per-user in localStorage.
+const collapsed = ref(false)
+
+function sidebarKey(): string {
+    return `nostos_sidebar_${user.value?.id ?? 'guest'}`
+}
+
+function toggleSidebar() {
+    collapsed.value = !collapsed.value
+    localStorage.setItem(sidebarKey(), collapsed.value ? 'collapsed' : 'expanded')
+    if (collapsed.value) hoveredGroup.value = null
+}
+
+// ── Group accordion ────────────────────────────────────────────────────────────
+const expandedGroups = ref<Set<string>>(new Set())
+
+function toggleGroup(label: string) {
+    if (expandedGroups.value.has(label)) {
+        expandedGroups.value.delete(label)
+    } else {
+        expandedGroups.value.add(label)
+    }
+}
+
+function isGroupExpanded(label: string): boolean {
+    return expandedGroups.value.has(label)
+}
+
+// ── Flyout panel (collapsed sidebar hover) ─────────────────────────────────────
+const hoveredGroup = ref<any>(null)
+const flyoutTop = ref(0)
+let flyoutHideTimer: ReturnType<typeof setTimeout> | null = null
+
+function showFlyout(group: any, evt: MouseEvent) {
+    if (!collapsed.value) return
+    if (flyoutHideTimer) { clearTimeout(flyoutHideTimer); flyoutHideTimer = null }
+    hoveredGroup.value = group
+    flyoutTop.value = (evt.currentTarget as HTMLElement).getBoundingClientRect().top
+}
+
+function scheduleFlyoutHide() {
+    flyoutHideTimer = setTimeout(() => {
+        hoveredGroup.value = null
+        flyoutHideTimer = null
+    }, 80)
+}
+
+function keepFlyoutOpen() {
+    if (flyoutHideTimer) { clearTimeout(flyoutHideTimer); flyoutHideTimer = null }
+}
 
 // ── Alerts ────────────────────────────────────────────────────────────────────
 const alerts = ref<Array<{ id: number; title: string; severity: string; source_module: string }>>([])
@@ -156,9 +229,7 @@ async function loadAlerts() {
         const res = await axios.get('/alerts?unread=1&limit=5')
         alerts.value = res.data.alerts ?? []
         alertCount.value = res.data.total_unread ?? 0
-    } catch {
-        // Non-blocking — alert badge just won't update
-    }
+    } catch { /* non-blocking */ }
 }
 
 // ── Chat unread badge ──────────────────────────────────────────────────────────
@@ -167,17 +238,15 @@ const chatUnread = ref(0)
 async function loadChatUnread() {
     try {
         const res = await axios.get('/chat/channels')
-        // Sum unread counts across all channels
         const channels = res.data?.channels ?? []
-        chatUnread.value = channels.reduce((sum: number, c: { unread_count?: number }) => sum + (c.unread_count ?? 0), 0)
-    } catch {
-        // Non-blocking — chat badge just won't update
-    }
+        chatUnread.value = channels.reduce(
+            (sum: number, c: { unread_count?: number }) => sum + (c.unread_count ?? 0),
+            0,
+        )
+    } catch { /* non-blocking */ }
 }
 
 // ── HIPAA idle timeout ─────────────────────────────────────────────────────────
-// Shows a warning modal 60s before auto-logout. Resets on any user activity.
-// autoLogoutMinutes comes from the tenant config (default 15 min).
 const showIdleWarning = ref(false)
 const idleCountdown = ref(60)
 
@@ -196,27 +265,21 @@ function clearIdleTimers() {
 
 function startIdleTimers() {
     clearIdleTimers()
-
-    // Fire warning 1 minute before the configured auto-logout time
     const warnAfterMs = (autoLogoutMinutes.value - 1) * 60 * 1000
-
     warningTimer = setTimeout(() => {
         showIdleWarning.value = true
         idleCountdown.value = 60
-
         countdownInterval = setInterval(() => {
             idleCountdown.value--
             if (idleCountdown.value <= 0) {
                 clearInterval(countdownInterval!)
-                router.post('/auth/logout', { timeout: true })
+                router.post('/auth/logout', { timeout: true } as any)
             }
         }, 1000)
     }, warnAfterMs)
 }
 
 function handleActivity() {
-    // Only reset the timer when the warning modal is NOT showing;
-    // once the modal is up the user must click "Stay Logged In" explicitly.
     if (!showIdleWarning.value) startIdleTimers()
 }
 
@@ -241,28 +304,30 @@ function logout() {
 onMounted(() => {
     applyTheme(theme.value)
 
+    // Restore per-user sidebar preference (default: expanded)
+    const saved = localStorage.getItem(sidebarKey())
+    collapsed.value = saved === 'collapsed'
+
+    // Auto-expand groups containing the active route
+    navGroups.value.forEach((group: any) => {
+        if (isGroupActive(group)) expandedGroups.value.add(group.label)
+    })
+
     loadAlerts()
     loadChatUnread()
 
-    // Real-time subscriptions via Reverb
     if (window.Echo && user.value) {
-        window.Echo.private(`tenant.${user.value.tenant_id}`).listen('AlertCreated', () => {
-            loadAlerts()
-        })
-        window.Echo.private(`user.${user.value.id}`).listen('ChatActivity', () => {
-            loadChatUnread()
-        })
+        window.Echo.private(`tenant.${user.value.tenant_id}`).listen('AlertCreated', () => loadAlerts())
+        window.Echo.private(`user.${user.value.id}`).listen('ChatActivity', () => loadChatUnread())
     }
 
-    // Start idle timer and attach activity listeners
     startIdleTimers()
-    ACTIVITY_EVENTS.forEach((evt) =>
-        window.addEventListener(evt, handleActivity, { passive: true }),
-    )
+    ACTIVITY_EVENTS.forEach((evt) => window.addEventListener(evt, handleActivity, { passive: true }))
 })
 
 onUnmounted(() => {
     clearIdleTimers()
+    if (flyoutHideTimer) clearTimeout(flyoutHideTimer)
     ACTIVITY_EVENTS.forEach((evt) => window.removeEventListener(evt, handleActivity))
 })
 </script>
@@ -297,84 +362,230 @@ onUnmounted(() => {
         <aside
             :class="[
                 'flex flex-col bg-slate-900 dark:bg-slate-950 transition-all duration-200 shrink-0 z-40',
-                collapsed ? 'w-16' : 'w-56',
+                collapsed ? 'w-16' : 'w-64',
             ]"
         >
             <!-- Logo -->
-            <div class="h-14 flex items-center justify-center border-b border-slate-700/50 shrink-0">
-                <span class="text-white font-bold text-lg tracking-tight">
-                    {{ collapsed ? 'N' : 'NostosEMR' }}
+            <div
+                :class="[
+                    'h-14 flex items-center border-b border-slate-700/50 shrink-0',
+                    collapsed ? 'justify-center' : 'px-4',
+                ]"
+            >
+                <span v-if="!collapsed" class="text-white font-bold text-lg tracking-tight select-none">
+                    Nostos<span class="text-indigo-400">EMR</span>
                 </span>
+                <span v-else class="text-indigo-400 font-bold text-xl select-none">N</span>
             </div>
 
-            <!-- Nav items -->
-            <nav class="flex-1 overflow-y-auto py-2 space-y-1 px-1" aria-label="Main navigation">
+            <!-- Nav -->
+            <nav class="flex-1 overflow-y-auto py-3 px-2 space-y-0.5" aria-label="Main navigation">
+                <!-- Dashboard — top-level fixed item -->
+                <button
+                    :class="[
+                        'w-full flex items-center gap-3 px-2 py-2 rounded-md text-sm font-medium transition-colors',
+                        isActive('/dashboard')
+                            ? 'bg-indigo-600 text-white'
+                            : 'text-slate-300 hover:bg-slate-700/60 hover:text-white',
+                        collapsed ? 'justify-center' : '',
+                    ]"
+                    aria-label="Dashboard"
+                    :aria-current="isActive('/dashboard') ? 'page' : undefined"
+                    @click="navigate('/dashboard')"
+                >
+                    <HomeIcon class="shrink-0 w-5 h-5" aria-hidden="true" />
+                    <span v-if="!collapsed" class="truncate">Dashboard</span>
+                </button>
+
+                <!-- Nav groups -->
                 <template v-for="group in navGroups" :key="group.label">
-                    <div
-                        v-if="!collapsed"
-                        class="px-2 pt-3 pb-1 text-xs font-semibold text-slate-400 uppercase tracking-wider"
-                    >
-                        {{ group.label }}
-                    </div>
+                    <!-- Group header -->
                     <button
-                        v-for="item in group.items"
-                        :key="item.module"
                         :class="[
-                            'w-full flex items-center gap-3 px-2 py-2 rounded text-sm transition',
-                            isActive(item.href)
-                                ? 'bg-indigo-600 text-white'
-                                : 'text-slate-300 hover:bg-slate-700/50 hover:text-white',
+                            'w-full flex items-center gap-3 px-2 py-2 rounded-md text-sm font-medium transition-colors',
+                            isGroupActive(group)
+                                ? collapsed
+                                    ? 'text-indigo-300 bg-indigo-600/10'
+                                    : 'text-slate-200'
+                                : 'text-slate-400 hover:text-white hover:bg-slate-700/60',
                             collapsed ? 'justify-center' : '',
                         ]"
-                        :aria-label="collapsed ? item.label : undefined"
-                        :aria-current="isActive(item.href) ? 'page' : undefined"
-                        @click="navigate(item.href)"
+                        :aria-label="group.label"
+                        :aria-expanded="!collapsed ? isGroupExpanded(group.label) : undefined"
+                        @click="collapsed ? undefined : toggleGroup(group.label)"
+                        @mouseenter="showFlyout(group, $event)"
+                        @mouseleave="scheduleFlyoutHide"
                     >
                         <component
-                            :is="navIcon(item.module)"
+                            :is="groupIcon(group.icon)"
                             class="shrink-0 w-5 h-5"
                             aria-hidden="true"
                         />
-                        <span v-if="!collapsed" class="truncate">{{ item.label }}</span>
-                        <span
-                            v-if="item.badge && item.badge > 0 && !collapsed"
-                            class="ml-auto bg-red-500 text-white text-xs font-bold rounded-full px-1.5 py-0.5 min-w-[1.25rem] text-center"
-                            :aria-label="`${item.badge} unread`"
-                        >
-                            {{ item.badge }}
-                        </span>
+                        <template v-if="!collapsed">
+                            <span class="truncate flex-1 text-left">{{ group.label }}</span>
+                            <ChevronRightIcon
+                                :class="[
+                                    'w-4 h-4 shrink-0 transition-transform duration-150',
+                                    isGroupExpanded(group.label) ? 'rotate-90' : '',
+                                ]"
+                                aria-hidden="true"
+                            />
+                        </template>
                     </button>
+
+                    <!-- Group items (expanded sidebar accordion) -->
+                    <div
+                        v-if="!collapsed && isGroupExpanded(group.label)"
+                        class="ml-2 pl-3 border-l border-slate-700/40 space-y-0.5 py-0.5"
+                    >
+                        <button
+                            v-for="item in group.items"
+                            :key="item.module"
+                            :class="[
+                                'w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-sm transition-colors',
+                                isActive(item.href)
+                                    ? 'bg-indigo-600 text-white'
+                                    : 'text-slate-400 hover:bg-slate-700/50 hover:text-white',
+                            ]"
+                            :aria-current="isActive(item.href) ? 'page' : undefined"
+                            @click="navigate(item.href)"
+                        >
+                            <component
+                                :is="navIcon(item.module)"
+                                class="shrink-0 w-4 h-4"
+                                aria-hidden="true"
+                            />
+                            <span class="truncate flex-1 text-left">{{ item.label }}</span>
+                            <span
+                                v-if="item.badge && item.badge > 0"
+                                class="ml-auto bg-red-500 text-white text-xs font-bold rounded-full px-1.5 py-0.5 min-w-[1.25rem] text-center"
+                                :aria-label="`${item.badge} unread`"
+                            >
+                                {{ item.badge }}
+                            </span>
+                        </button>
+                    </div>
                 </template>
             </nav>
 
             <!-- Sidebar footer -->
-            <div class="border-t border-slate-700/50 p-2 shrink-0">
-                <div v-if="!collapsed && user" class="text-xs text-slate-400 px-2 pb-2 truncate">
-                    {{ user.first_name }} {{ user.last_name }}
-                    <span class="block text-slate-500">{{ user.department_label }}</span>
-                </div>
-                <button
-                    class="w-full flex items-center justify-center py-1.5 text-slate-400 hover:text-white hover:bg-slate-700/50 rounded transition"
-                    :aria-label="collapsed ? 'Expand sidebar' : 'Collapse sidebar'"
-                    @click="collapsed = !collapsed"
+            <div class="border-t border-slate-700/50 p-3 shrink-0 space-y-2">
+                <!-- Dashboard View selector (super admin only, not when impersonating) -->
+                <div
+                    v-if="user?.is_super_admin && !impersonation.active && !collapsed"
+                    class="rounded-lg bg-slate-800 border border-slate-700 p-2.5 space-y-1.5"
                 >
-                    <ChevronDoubleRightIcon v-if="collapsed" class="w-4 h-4" aria-hidden="true" />
-                    <ChevronDoubleLeftIcon v-else class="w-4 h-4" aria-hidden="true" />
+                    <p class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Dashboard View</p>
+                    <select
+                        class="w-full bg-slate-700 text-slate-200 text-xs rounded px-2 py-1.5 border border-slate-600 focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer"
+                        :value="page.props.impersonation?.viewing_as_dept ?? 'it_admin'"
+                        @change="(e) => axios.post('/super-admin/view-as', { department: (e.target as HTMLSelectElement).value }).then(() => router.reload())"
+                    >
+                        <option value="primary_care">Primary Care</option>
+                        <option value="home_care">Home Care</option>
+                        <option value="therapies">Therapies</option>
+                        <option value="social_work">Social Work</option>
+                        <option value="nutrition">Nutrition</option>
+                        <option value="behavioral_health">Behavioral Health</option>
+                        <option value="idt">IDT</option>
+                        <option value="transportation">Transportation</option>
+                        <option value="pharmacy">Pharmacy</option>
+                        <option value="enrollment">Enrollment</option>
+                        <option value="finance">Finance</option>
+                        <option value="qa_compliance">QA / Compliance</option>
+                        <option value="it_admin">IT Admin</option>
+                        <option value="executive">Executive</option>
+                    </select>
+                    <p class="text-[10px] text-slate-500 leading-tight">
+                        Controls dashboard module cards only. All pages remain accessible.
+                    </p>
+                </div>
+
+                <!-- User identity -->
+                <div v-if="!collapsed && user" class="px-1 space-y-1">
+                    <p class="text-xs font-medium text-slate-200 truncate">
+                        {{ user.first_name }} {{ user.last_name }}
+                    </p>
+                    <div class="flex items-center gap-1 flex-wrap">
+                        <span class="text-[10px] bg-indigo-700/60 text-indigo-300 px-1.5 py-0.5 rounded">
+                            {{ user.department_label }}
+                        </span>
+                        <span
+                            v-if="user.is_super_admin"
+                            class="text-[10px] bg-amber-700/60 text-amber-300 px-1.5 py-0.5 rounded"
+                        >
+                            super_admin
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Logout -->
+                <button
+                    :class="[
+                        'w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-sm text-slate-400 hover:text-red-400 hover:bg-slate-700/50 transition-colors',
+                        collapsed ? 'justify-center' : '',
+                    ]"
+                    aria-label="Sign out"
+                    @click="logout"
+                >
+                    <ArrowRightOnRectangleIcon class="w-4 h-4 shrink-0" aria-hidden="true" />
+                    <span v-if="!collapsed">Log out</span>
                 </button>
             </div>
         </aside>
+
+        <!-- ── Flyout panel (rendered in body to avoid sidebar z-index clipping) ── -->
+        <Teleport to="body">
+            <div
+                v-if="collapsed && hoveredGroup"
+                class="fixed z-[60] bg-slate-800 border border-slate-700 rounded-md shadow-2xl py-1.5 min-w-[200px]"
+                :style="{ top: `${flyoutTop}px`, left: '64px' }"
+                @mouseenter="keepFlyoutOpen"
+                @mouseleave="scheduleFlyoutHide"
+            >
+                <p class="px-3 pt-1 pb-1.5 text-[10px] font-semibold text-slate-400 uppercase tracking-wider border-b border-slate-700">
+                    {{ hoveredGroup.label }}
+                </p>
+                <div class="py-1">
+                    <button
+                        v-for="item in hoveredGroup.items"
+                        :key="item.module"
+                        :class="[
+                            'w-full flex items-center gap-2.5 px-3 py-1.5 text-sm transition-colors text-left',
+                            isActive(item.href)
+                                ? 'bg-indigo-600 text-white'
+                                : 'text-slate-300 hover:bg-slate-700 hover:text-white',
+                        ]"
+                        :aria-current="isActive(item.href) ? 'page' : undefined"
+                        @click="navigate(item.href)"
+                    >
+                        <component :is="navIcon(item.module)" class="w-4 h-4 shrink-0" aria-hidden="true" />
+                        {{ item.label }}
+                    </button>
+                </div>
+            </div>
+        </Teleport>
 
         <!-- ── Main area ──────────────────────────────────────────────────────── -->
         <div class="flex flex-col flex-1 min-w-0 overflow-hidden">
             <!-- Top bar -->
             <header
-                class="h-14 bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 flex items-center px-4 gap-3 shrink-0 z-30"
+                class="h-14 bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 flex items-center px-3 gap-2 shrink-0 z-30"
             >
+                <!-- Hamburger: toggles sidebar collapse -->
+                <button
+                    class="p-2 text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 transition shrink-0"
+                    :aria-label="collapsed ? 'Expand sidebar' : 'Collapse sidebar'"
+                    @click="toggleSidebar"
+                >
+                    <Bars3Icon class="w-5 h-5" aria-hidden="true" />
+                </button>
+
                 <div class="flex-1 min-w-0">
                     <slot name="header" />
                 </div>
 
-                <div class="flex items-center gap-2 shrink-0">
+                <div class="flex items-center gap-1 shrink-0">
                     <!-- Chat -->
                     <button
                         class="relative p-2 text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 transition"
@@ -395,7 +606,7 @@ onUnmounted(() => {
                     <div class="relative">
                         <button
                             class="relative p-2 text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 transition"
-                            :aria-label="`Alerts${alertCount > 0 ? ` — ${alertCount} active` : ''}`"
+                            :aria-label="`Alerts${alertCount > 0 ? ` - ${alertCount} active` : ''}`"
                             :aria-expanded="showAlerts"
                             aria-haspopup="true"
                             @click="showAlerts = !showAlerts"
@@ -431,9 +642,7 @@ onUnmounted(() => {
                                 class="p-3 border-b border-gray-50 dark:border-slate-700 last:border-0"
                                 role="menuitem"
                             >
-                                <div class="text-sm font-medium text-gray-800 dark:text-slate-200">
-                                    {{ alert.title }}
-                                </div>
+                                <div class="text-sm font-medium text-gray-800 dark:text-slate-200">{{ alert.title }}</div>
                                 <div class="text-xs text-gray-500 dark:text-slate-400 mt-0.5 capitalize">
                                     {{ alert.severity }} - {{ alert.source_module }}
                                 </div>
@@ -458,15 +667,6 @@ onUnmounted(() => {
                         @click="navigate('/profile')"
                     >
                         <UserIcon class="w-5 h-5" aria-hidden="true" />
-                    </button>
-
-                    <!-- Logout -->
-                    <button
-                        class="p-2 text-gray-500 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 transition"
-                        aria-label="Sign out"
-                        @click="logout"
-                    >
-                        <ArrowRightOnRectangleIcon class="w-5 h-5" aria-hidden="true" />
                     </button>
                 </div>
             </header>
