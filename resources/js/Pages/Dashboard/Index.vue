@@ -44,7 +44,7 @@ const page = usePage<DashboardProps>()
 const department = computed(() => page.props.department)
 const departmentLabel = computed(() => page.props.departmentLabel)
 const role = computed(() => page.props.role)
-const user = computed(() => page.props.auth.user)
+const user = computed(() => page.props.auth?.user ?? null)
 
 // ── Department-to-component map ────────────────────────────────────────────────
 // Each key matches the 'department' prop value from DashboardController.
@@ -72,21 +72,14 @@ const DEPT_COMPONENT_MAP: Record<string, Component> = {
 const activeDashboard = computed(() => DEPT_COMPONENT_MAP[department.value] ?? null)
 
 const formattedDate = computed(() =>
-    new Date().toLocaleDateString('en-US', {
-        weekday: 'long',
-        month: 'long',
-        day: 'numeric',
-        year: 'numeric',
-    }),
+    new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })
 )
 </script>
 
 <template>
     <AppShell>
         <template #header>
-            <span class="text-sm font-semibold text-slate-700 dark:text-slate-200">{{
-                departmentLabel
-            }}</span>
+            <span class="text-sm font-semibold text-slate-700 dark:text-slate-200">{{ departmentLabel }}</span>
         </template>
 
         <Head :title="departmentLabel" />
@@ -100,14 +93,10 @@ const formattedDate = computed(() =>
                             Welcome back, {{ user?.first_name }}
                         </h1>
                         <div class="flex items-center gap-2 mt-1">
-                            <span
-                                class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300"
-                            >
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300">
                                 {{ departmentLabel }}
                             </span>
-                            <span
-                                class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300 capitalize"
-                            >
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300 capitalize">
                                 {{ role }}
                             </span>
                         </div>
