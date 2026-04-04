@@ -5,7 +5,7 @@
 //           impersonation banner, HIPAA idle-timeout modal, and page content slot.
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, type Component } from 'vue'
 import { usePage, router } from '@inertiajs/vue3'
 import axios from 'axios'
 import {
@@ -18,9 +18,95 @@ import {
     ChevronDoubleLeftIcon,
     ChevronDoubleRightIcon,
     ChatBubbleLeftRightIcon,
+    UsersIcon,
+    ClipboardDocumentCheckIcon,
+    ClipboardDocumentListIcon,
+    DocumentTextIcon,
+    HeartIcon,
+    BeakerIcon,
+    DocumentCheckIcon,
+    UserGroupIcon,
+    ExclamationTriangleIcon,
+    ExclamationCircleIcon,
+    CalendarDaysIcon,
+    BuildingOfficeIcon,
+    TruckIcon,
+    ClockIcon,
+    MapIcon,
+    XCircleIcon,
+    ListBulletIcon,
+    BuildingStorefrontIcon,
+    IdentificationIcon,
+    AdjustmentsHorizontalIcon,
+    PhoneIcon,
+    CurrencyDollarIcon,
+    QueueListIcon,
+    BanknotesIcon,
+    TableCellsIcon,
+    CloudArrowUpIcon,
+    ShieldCheckIcon,
+    ChartBarIcon,
+    MagnifyingGlassIcon,
+    MapPinIcon,
+    Cog6ToothIcon,
+    LockClosedIcon,
+    PresentationChartBarIcon,
+    CpuChipIcon,
+    QuestionMarkCircleIcon,
 } from '@heroicons/vue/24/outline'
 import type { PageProps } from '@/types'
 import IdleWarningModal from '@/Components/IdleWarningModal.vue'
+
+// ── Nav icon map ───────────────────────────────────────────────────────────────
+// Maps PermissionService module keys → Heroicon components for the sidebar.
+const moduleIconMap: Record<string, Component> = {
+    participants:          UsersIcon,
+    enrollment:            ClipboardDocumentCheckIcon,
+    clinical_notes:        DocumentTextIcon,
+    vitals:                HeartIcon,
+    assessments:           ClipboardDocumentListIcon,
+    care_plans:            ClipboardDocumentListIcon,
+    medications:           BeakerIcon,
+    orders:                DocumentCheckIcon,
+    idt_dashboard:         UserGroupIcon,
+    idt_minutes:           DocumentTextIcon,
+    sdr_tracker:           ExclamationTriangleIcon,
+    appointments:          CalendarDaysIcon,
+    day_center:            BuildingOfficeIcon,
+    transport_dashboard:   TruckIcon,
+    transport_scheduler:   ClockIcon,
+    dispatch_map:          MapIcon,
+    cancellations:         XCircleIcon,
+    transport_addons:      ListBulletIcon,
+    vehicles:              TruckIcon,
+    vendors:               BuildingStorefrontIcon,
+    transport_credentials: IdentificationIcon,
+    broker_settings:       AdjustmentsHorizontalIcon,
+    courtesy_calls:        PhoneIcon,
+    billing:               CurrencyDollarIcon,
+    encounters:            DocumentCheckIcon,
+    edi_batches:           QueueListIcon,
+    capitation:            BanknotesIcon,
+    pde_records:           TableCellsIcon,
+    hpms_submissions:      CloudArrowUpIcon,
+    hos_m_surveys:         ClipboardDocumentListIcon,
+    revenue_integrity:     ShieldCheckIcon,
+    reports:               ChartBarIcon,
+    audit_log:             MagnifyingGlassIcon,
+    grievances:            ExclamationCircleIcon,
+    qapi_projects:         ShieldCheckIcon,
+    user_management:       UsersIcon,
+    locations:             MapPinIcon,
+    system_settings:       Cog6ToothIcon,
+    security_compliance:   LockClosedIcon,
+    chat:                  ChatBubbleLeftRightIcon,
+    executive_overview:    PresentationChartBarIcon,
+    tenant_management:     CpuChipIcon,
+}
+
+function navIcon(module: string): Component {
+    return moduleIconMap[module] ?? QuestionMarkCircleIcon
+}
 
 // ── Shared props ───────────────────────────────────────────────────────────────
 const page = usePage<PageProps>()
@@ -244,9 +330,11 @@ onUnmounted(() => {
                         :aria-current="isActive(item.href) ? 'page' : undefined"
                         @click="navigate(item.href)"
                     >
-                        <span class="shrink-0 w-5 h-5 flex items-center justify-center text-xs font-bold">
-                            {{ item.label.charAt(0) }}
-                        </span>
+                        <component
+                            :is="navIcon(item.module)"
+                            class="shrink-0 w-5 h-5"
+                            aria-hidden="true"
+                        />
                         <span v-if="!collapsed" class="truncate">{{ item.label }}</span>
                         <span
                             v-if="item.badge && item.badge > 0 && !collapsed"
