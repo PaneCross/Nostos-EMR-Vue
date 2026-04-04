@@ -182,18 +182,21 @@ function toggleSidebar() {
 }
 
 // ── Group accordion ────────────────────────────────────────────────────────────
-const expandedGroups = ref<Set<string>>(new Set())
+// NOTE: Vue 3 ref<Set> does NOT trigger reactivity on .add()/.delete() —
+//       use a plain string[] array which IS deeply reactive.
+const expandedGroups = ref<string[]>([])
 
 function toggleGroup(label: string) {
-    if (expandedGroups.value.has(label)) {
-        expandedGroups.value.delete(label)
+    const idx = expandedGroups.value.indexOf(label)
+    if (idx >= 0) {
+        expandedGroups.value.splice(idx, 1)
     } else {
-        expandedGroups.value.add(label)
+        expandedGroups.value.push(label)
     }
 }
 
 function isGroupExpanded(label: string): boolean {
-    return expandedGroups.value.has(label)
+    return expandedGroups.value.includes(label)
 }
 
 // ── Flyout panel (collapsed sidebar hover) ─────────────────────────────────────
