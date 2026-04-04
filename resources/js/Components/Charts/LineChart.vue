@@ -21,16 +21,7 @@ import type { ChartData, ChartOptions } from 'chart.js'
 import { chartPalettes } from '@/utils/chartColors'
 import type { ColorScheme } from '@/utils/chartColors'
 
-ChartJS.register(
-    Title,
-    Tooltip,
-    Legend,
-    LineElement,
-    PointElement,
-    CategoryScale,
-    LinearScale,
-    Filler,
-)
+ChartJS.register(Title, Tooltip, Legend, LineElement, PointElement, CategoryScale, LinearScale, Filler)
 
 const props = withDefaults(
     defineProps<{
@@ -57,8 +48,7 @@ const chartData = computed<ChartData<'line'>>(() => ({
     datasets: props.data.datasets.map((ds, i) => ({
         ...ds,
         borderColor: ds.borderColor ?? palette.value.borders[i % palette.value.borders.length],
-        backgroundColor:
-            ds.backgroundColor ?? palette.value.backgrounds[i % palette.value.backgrounds.length],
+        backgroundColor: ds.backgroundColor ?? palette.value.backgrounds[i % palette.value.backgrounds.length],
         tension: 0.3,
         fill: props.fill,
         pointRadius: 3,

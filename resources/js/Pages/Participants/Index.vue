@@ -121,9 +121,7 @@ function parseDate(val: string | null | undefined): Date | null {
 
 function fmtDate(val: string | null | undefined): string {
     const d = parseDate(val)
-    return d
-        ? d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
-        : '-'
+    return d ? d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : '-'
 }
 
 function calcAge(dob: string): number {
@@ -232,9 +230,7 @@ const STATUSES = ['enrolled', 'referred', 'intake', 'pending', 'disenrolled', 'd
                 </select>
 
                 <!-- Flags checkbox -->
-                <label
-                    class="flex items-center gap-1.5 text-sm text-gray-700 dark:text-slate-300 cursor-pointer"
-                >
+                <label class="flex items-center gap-1.5 text-sm text-gray-700 dark:text-slate-300 cursor-pointer">
                     <input
                         type="checkbox"
                         :checked="hasFlags"
@@ -262,23 +258,12 @@ const STATUSES = ['enrolled', 'referred', 'intake', 'pending', 'disenrolled', 'd
             </form>
 
             <!-- ── Table ── -->
-            <div
-                class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 overflow-hidden shadow-sm"
-            >
+            <div class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 overflow-hidden shadow-sm">
                 <table class="w-full text-sm" aria-label="Participant directory">
-                    <thead
-                        class="bg-gray-50 dark:bg-slate-700/50 border-b border-gray-200 dark:border-slate-700"
-                    >
+                    <thead class="bg-gray-50 dark:bg-slate-700/50 border-b border-gray-200 dark:border-slate-700">
                         <tr>
                             <th
-                                v-for="col in [
-                                    'MRN',
-                                    'Name',
-                                    'DOB / Age',
-                                    'Status',
-                                    'Flags',
-                                    'Site',
-                                ]"
+                                v-for="col in ['MRN', 'Name', 'DOB / Age', 'Status', 'Flags', 'Site']"
                                 :key="col"
                                 scope="col"
                                 class="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide"
@@ -290,10 +275,7 @@ const STATUSES = ['enrolled', 'referred', 'intake', 'pending', 'disenrolled', 'd
                     <tbody class="divide-y divide-gray-100 dark:divide-slate-700">
                         <!-- Empty state -->
                         <tr v-if="participants.data.length === 0">
-                            <td
-                                colspan="6"
-                                class="px-4 py-10 text-center text-gray-400 dark:text-slate-500"
-                            >
+                            <td colspan="6" class="px-4 py-10 text-center text-gray-400 dark:text-slate-500">
                                 No participants found.
                             </td>
                         </tr>
@@ -302,19 +284,14 @@ const STATUSES = ['enrolled', 'referred', 'intake', 'pending', 'disenrolled', 'd
                         <tr
                             v-for="ppt in participants.data"
                             :key="ppt.id"
-                            :class="[
-                                rowBg(ppt.enrollment_status),
-                                'hover:bg-blue-50 dark:hover:bg-blue-900/20 cursor-pointer transition-colors',
-                            ]"
+                            :class="[rowBg(ppt.enrollment_status), 'hover:bg-blue-50 dark:hover:bg-blue-900/20 cursor-pointer transition-colors']"
                             tabindex="0"
                             :aria-label="`Open profile for ${ppt.last_name}, ${ppt.first_name}`"
                             @click="router.visit(`/participants/${ppt.id}`)"
                             @keydown.enter="router.visit(`/participants/${ppt.id}`)"
                         >
                             <!-- MRN -->
-                            <td
-                                class="px-4 py-3 font-mono text-xs font-semibold text-gray-700 dark:text-slate-300"
-                            >
+                            <td class="px-4 py-3 font-mono text-xs font-semibold text-gray-700 dark:text-slate-300">
                                 {{ ppt.mrn }}
                             </td>
 
@@ -359,11 +336,7 @@ const STATUSES = ['enrolled', 'referred', 'intake', 'pending', 'disenrolled', 'd
                             <!-- Status badge -->
                             <td class="px-4 py-3">
                                 <span
-                                    :class="[
-                                        'inline-flex px-2 py-0.5 rounded-full text-xs font-medium',
-                                        STATUS_COLORS[ppt.enrollment_status] ??
-                                            'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300',
-                                    ]"
+                                    :class="['inline-flex px-2 py-0.5 rounded-full text-xs font-medium', STATUS_COLORS[ppt.enrollment_status] ?? 'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300']"
                                 >
                                     {{ ppt.enrollment_status }}
                                 </span>
@@ -375,10 +348,7 @@ const STATUSES = ['enrolled', 'referred', 'intake', 'pending', 'disenrolled', 'd
                                     <span
                                         v-for="(f, i) in ppt.active_flags.slice(0, 4)"
                                         :key="i"
-                                        :class="[
-                                            'inline-flex px-2.5 py-1 rounded-full text-xs font-semibold shadow-sm',
-                                            FLAG_COLORS[f.severity] ?? 'bg-slate-500 text-white',
-                                        ]"
+                                        :class="['inline-flex px-2.5 py-1 rounded-full text-xs font-semibold shadow-sm', FLAG_COLORS[f.severity] ?? 'bg-slate-500 text-white']"
                                         :title="f.label"
                                     >
                                         {{ f.label }}
@@ -416,11 +386,8 @@ const STATUSES = ['enrolled', 'referred', 'intake', 'pending', 'disenrolled', 'd
             >
                 <span class="text-gray-500 dark:text-slate-400">
                     Showing
-                    {{ (participants.current_page - 1) * participants.per_page + 1 }}&ndash;{{
-                        Math.min(
-                            participants.current_page * participants.per_page,
-                            participants.total,
-                        )
+                    {{ ((participants.current_page - 1) * participants.per_page) + 1 }}&ndash;{{
+                        Math.min(participants.current_page * participants.per_page, participants.total)
                     }}
                     of {{ participants.total }}
                 </span>
@@ -435,12 +402,12 @@ const STATUSES = ['enrolled', 'referred', 'intake', 'pending', 'disenrolled', 'd
                             link.active
                                 ? 'bg-blue-600 text-white border-blue-600'
                                 : link.url
-                                  ? 'bg-white dark:bg-slate-800 text-gray-700 dark:text-slate-300 border-gray-300 dark:border-slate-600 hover:bg-gray-50 dark:hover:bg-slate-700/50'
-                                  : 'bg-white dark:bg-slate-800 text-gray-300 dark:text-slate-600 border-gray-200 dark:border-slate-700 cursor-not-allowed',
+                                    ? 'bg-white dark:bg-slate-800 text-gray-700 dark:text-slate-300 border-gray-300 dark:border-slate-600 hover:bg-gray-50 dark:hover:bg-slate-700/50'
+                                    : 'bg-white dark:bg-slate-800 text-gray-300 dark:text-slate-600 border-gray-200 dark:border-slate-700 cursor-not-allowed',
                         ]"
                         @click="link.url && router.visit(link.url, { preserveState: true })"
                         v-html="link.label"
-                    ></button>
+                    />
                 </div>
             </div>
         </div>
