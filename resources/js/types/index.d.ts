@@ -18,7 +18,6 @@ export interface User {
     is_super_admin: boolean
     theme_preference: 'light' | 'dark'
     designations: string[]
-    nav_groups: NavGroup[]
 }
 
 export interface RealUser {
@@ -60,6 +59,7 @@ export interface PageProps extends Record<string, unknown> {
         user: User
         real_user: RealUser | null
     }
+    nav_groups: NavGroup[]
     impersonation: ImpersonationState
     flash: {
         success?: string

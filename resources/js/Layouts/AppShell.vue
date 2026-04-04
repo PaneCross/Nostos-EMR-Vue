@@ -19,7 +19,7 @@ import {
     ChevronDoubleRightIcon,
     ChatBubbleLeftRightIcon,
 } from '@heroicons/vue/24/outline'
-import type { PageProps, NavGroup } from '@/types'
+import type { PageProps } from '@/types'
 import IdleWarningModal from '@/Components/IdleWarningModal.vue'
 
 // ── Shared props ───────────────────────────────────────────────────────────────
@@ -43,7 +43,7 @@ function toggleTheme() {
 }
 
 // ── Nav ────────────────────────────────────────────────────────────────────────
-const navGroups = computed(() => (page.props.nav_groups as NavGroup[] | undefined) ?? [])
+const navGroups = computed(() => page.props.nav_groups ?? [])
 const currentPath = computed(() => window.location.pathname)
 
 function isActive(href: string): boolean {
