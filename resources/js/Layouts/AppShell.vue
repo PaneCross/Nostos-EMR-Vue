@@ -26,7 +26,7 @@ import IdleWarningModal from '@/Components/IdleWarningModal.vue'
 const page = usePage<PageProps>()
 const auth = computed(() => page.props.auth)
 const user = computed(() => auth.value?.user ?? null)
-const impersonation = computed(() => page.props.impersonation)
+const impersonation = computed(() => page.props.impersonation ?? { active: false, user: null, viewing_as_dept: null })
 
 // ── Theme ──────────────────────────────────────────────────────────────────────
 const theme = ref<'light' | 'dark'>((user.value?.theme_preference as 'light' | 'dark' | undefined) ?? 'light')
@@ -80,10 +80,12 @@ const chatUnread = ref(0)
 
 async function loadChatUnread() {
     try {
-        const res = await axios.get('/chat/unread')
-        chatUnread.value = res.data.count ?? 0
+        const res = await axios.get('/chat/channels')
+        // Sum unread counts across all channels
+        const channels = res.data?.channels ?? []
+        chatUnread.value = channels.reduce((sum: number, c: { unread_count?: number }) => sum + (c.unread_count ?? 0), 0)
     } catch {
-        // Non-blocking
+        // Non-blocking — chat badge just won't update
     }
 }
 
