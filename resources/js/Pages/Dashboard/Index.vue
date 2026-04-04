@@ -44,7 +44,7 @@ const page = usePage<DashboardProps>()
 const department = computed(() => page.props.department)
 const departmentLabel = computed(() => page.props.departmentLabel)
 const role = computed(() => page.props.role)
-const user = computed(() => page.props.auth?.user ?? null)
+const user = computed(() => page.props.auth?.user)
 
 // ── Department-to-component map ────────────────────────────────────────────────
 // Each key matches the 'department' prop value from DashboardController.
