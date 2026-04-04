@@ -43,7 +43,7 @@ function toggleTheme() {
 }
 
 // ── Nav ────────────────────────────────────────────────────────────────────────
-const navGroups = computed(() => user.value.nav_groups ?? [])
+const navGroups = computed(() => user.value?.nav_groups ?? [])
 const currentPath = computed(() => window.location.pathname)
 
 function isActive(href: string): boolean {
