@@ -162,12 +162,6 @@ function isGroupActive(group: any): boolean {
     return group.items.some((item: any) => isActive(item.href))
 }
 
-// Dashboard href: use the user's dept route if known, fall back to '/' redirect
-const dashboardHref = computed(() => {
-    const dept = user.value?.department
-    return dept ? `/dashboard/${dept}` : '/'
-})
-
 function navigate(href: string) {
     router.visit(href)
     hoveredGroup.value = null
@@ -400,7 +394,7 @@ onUnmounted(() => {
                     ]"
                     aria-label="Dashboard"
                     :aria-current="currentPath.startsWith('/dashboard') ? 'page' : undefined"
-                    @click="navigate(dashboardHref)"
+                    @click="navigate('/')"
                 >
                     <HomeIcon class="shrink-0 w-5 h-5" aria-hidden="true" />
                     <span v-if="!collapsed" class="truncate">Dashboard</span>
