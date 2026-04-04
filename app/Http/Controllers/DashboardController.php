@@ -17,7 +17,7 @@ class DashboardController extends Controller
         private ImpersonationService $impersonation,
     ) {}
 
-    public function show(Request $request, string $department): \Symfony\Component\HttpFoundation\Response
+    public function show(Request $request, string $department): \Inertia\Response|\Illuminate\Http\Response|\Illuminate\Http\RedirectResponse
     {
         $user = Auth::user();
 
