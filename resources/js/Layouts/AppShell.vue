@@ -162,6 +162,12 @@ function isGroupActive(group: any): boolean {
     return group.items.some((item: any) => isActive(item.href))
 }
 
+// Dashboard href: use the user's dept route if known, fall back to '/' redirect
+const dashboardHref = computed(() => {
+    const dept = user.value?.department
+    return dept ? `/dashboard/${dept}` : '/'
+})
+
 function navigate(href: string) {
     router.visit(href)
     hoveredGroup.value = null
@@ -387,14 +393,14 @@ onUnmounted(() => {
                 <button
                     :class="[
                         'w-full flex items-center gap-3 px-2 py-2 rounded-md text-sm font-medium transition-colors',
-                        isActive('/dashboard')
+                        currentPath.startsWith('/dashboard')
                             ? 'bg-indigo-600 text-white'
                             : 'text-slate-300 hover:bg-slate-700/60 hover:text-white',
                         collapsed ? 'justify-center' : '',
                     ]"
                     aria-label="Dashboard"
-                    :aria-current="isActive('/dashboard') ? 'page' : undefined"
-                    @click="navigate('/dashboard')"
+                    :aria-current="currentPath.startsWith('/dashboard') ? 'page' : undefined"
+                    @click="navigate(dashboardHref)"
                 >
                     <HomeIcon class="shrink-0 w-5 h-5" aria-hidden="true" />
                     <span v-if="!collapsed" class="truncate">Dashboard</span>
