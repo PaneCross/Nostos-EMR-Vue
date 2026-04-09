@@ -10,12 +10,17 @@ const props = defineProps<{
 interface ConsentRecord {
   id: number
   consent_type: string
+  type_label: string
+  document_title: string | null
   status: string
-  signed_at: string | null
-  expires_at: string | null
-  signed_by_name: string | null
-  witnessed_by: { first_name: string; last_name: string } | null
+  status_label: string
+  acknowledged_by: string | null
+  acknowledged_at: string | null
+  expiration_date: string | null
+  representative_type: string | null
   notes: string | null
+  created_by: string | null
+  created_at: string
 }
 
 const consents = ref<ConsentRecord[]>([])
@@ -23,27 +28,17 @@ const loading = ref(true)
 const error = ref('')
 
 const STATUS_COLORS: Record<string, string> = {
-  signed:    'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300',
-  pending:   'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300',
-  refused:   'bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300',
-  expired:   'bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-400',
-  revoked:   'bg-orange-100 dark:bg-orange-950/40 text-orange-700 dark:text-orange-300',
-}
-
-const CONSENT_LABELS: Record<string, string> = {
-  npp:              'Notice of Privacy Practices',
-  treatment:        'Consent to Treatment',
-  pace_enrollment:  'PACE Enrollment Consent',
-  photo_release:    'Photo Release',
-  research:         'Research Participation',
-  medication:       'Medication Consent',
-  other:            'Other',
+  acknowledged: 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300',
+  pending:      'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300',
+  refused:      'bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300',
+  expired:      'bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-400',
+  revoked:      'bg-orange-100 dark:bg-orange-950/40 text-orange-700 dark:text-orange-300',
 }
 
 onMounted(async () => {
   try {
     const res = await axios.get(`/participants/${props.participant.id}/consents`)
-    consents.value = res.data
+    consents.value = res.data.consents ?? []
   } catch {
     error.value = 'Unable to load consent records.'
   } finally {
@@ -83,7 +78,7 @@ function fmtDate(val: string | null): string {
         <thead class="bg-gray-50 dark:bg-slate-700/50">
           <tr>
             <th
-              v-for="h in ['Consent Type', 'Status', 'Signed', 'Expires', 'Signed By', 'Witnessed By']"
+              v-for="h in ['Consent Type', 'Status', 'Acknowledged', 'Expires', 'Acknowledged By']"
               :key="h"
               class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide"
             >{{ h }}</th>
@@ -92,21 +87,18 @@ function fmtDate(val: string | null): string {
         <tbody class="divide-y divide-gray-100 dark:divide-slate-700">
           <tr v-for="c in consents" :key="c.id" class="hover:bg-gray-50 dark:hover:bg-slate-700/30 transition-colors">
             <td class="px-4 py-3 font-medium text-gray-800 dark:text-slate-200">
-              {{ CONSENT_LABELS[c.consent_type] ?? c.consent_type.replace(/_/g, ' ') }}
-              <div v-if="c.notes" class="text-xs text-gray-500 dark:text-slate-400 font-normal mt-0.5">{{ c.notes }}</div>
+              {{ c.type_label || c.consent_type.replace(/_/g, ' ') }}
+              <div v-if="c.document_title" class="text-xs text-gray-500 dark:text-slate-400 font-normal mt-0.5">{{ c.document_title }}</div>
+              <div v-if="c.notes" class="text-xs text-gray-400 dark:text-slate-500 font-normal mt-0.5 italic">{{ c.notes }}</div>
             </td>
             <td class="px-4 py-3">
-              <span :class="['inline-flex px-2 py-0.5 rounded text-xs font-medium capitalize', STATUS_COLORS[c.status] ?? '']">
-                {{ c.status }}
+              <span :class="['inline-flex px-2 py-0.5 rounded text-xs font-medium capitalize', STATUS_COLORS[c.status] ?? 'bg-gray-100 dark:bg-slate-700 text-gray-500']">
+                {{ c.status_label || c.status }}
               </span>
             </td>
-            <td class="px-4 py-3 text-gray-600 dark:text-slate-400 whitespace-nowrap">{{ fmtDate(c.signed_at) }}</td>
-            <td class="px-4 py-3 text-gray-600 dark:text-slate-400 whitespace-nowrap">{{ fmtDate(c.expires_at) }}</td>
-            <td class="px-4 py-3 text-gray-600 dark:text-slate-400">{{ c.signed_by_name ?? '-' }}</td>
-            <td class="px-4 py-3 text-gray-600 dark:text-slate-400">
-              <span v-if="c.witnessed_by">{{ c.witnessed_by.first_name }} {{ c.witnessed_by.last_name }}</span>
-              <span v-else class="text-gray-400 dark:text-slate-500">-</span>
-            </td>
+            <td class="px-4 py-3 text-gray-600 dark:text-slate-400 whitespace-nowrap text-xs">{{ fmtDate(c.acknowledged_at) }}</td>
+            <td class="px-4 py-3 text-gray-600 dark:text-slate-400 whitespace-nowrap text-xs">{{ fmtDate(c.expiration_date) }}</td>
+            <td class="px-4 py-3 text-gray-600 dark:text-slate-400 text-xs">{{ c.acknowledged_by ?? '-' }}</td>
           </tr>
         </tbody>
       </table>

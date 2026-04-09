@@ -1,315 +1,255 @@
 <script setup lang="ts">
 // ─── EmarTab.vue ──────────────────────────────────────────────────────────────
-// Electronic Medication Administration Record (eMAR). Displays today's MAR
-// schedule grouped by scheduled time. Administer dose button opens a confirm
-// modal. DEA schedule II/III requires witness_user_id. Shows administration
-// history for the current day with administered_by and timestamp.
+// Electronic Medication Administration Record grid for a single date.
+// Date picker defaults to today. Records loaded lazily on mount + on date change.
+// Each row = one scheduled dose. "Chart" button opens an inline form row below.
+// Controlled substances show "Witness req." badge. Status badge color-coded.
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { ref, computed } from 'vue'
+import { ref, onMounted } from 'vue'
 import axios from 'axios'
-import { CheckCircleIcon, ClockIcon } from '@heroicons/vue/24/outline'
 
-interface EmarRecord {
+interface EmarRow {
+  id: number
+  scheduled_time: string | null
+  administered_at: string | null
+  status: string
+  dose_given: string | null
+  route_given: string | null
+  reason_not_given: string | null
+  notes: string | null
+  medication: {
     id: number
-    medication_id: number
-    scheduled_time: string | null
-    administered_at: string | null
-    status: string
-    dose_given: string | null
-    route_given: string | null
-    notes: string | null
-    witness_user_id: number | null
-    administered_by: { id: number; first_name: string; last_name: string } | null
-    medication: {
-        id: number
-        drug_name: string
-        dose: string | null
-        route: string | null
-        dea_schedule: string | null
-    }
+    drug_name: string
+    dose: number | null
+    dose_unit: string | null
+    route: string | null
+    frequency: string | null
+    is_controlled: boolean
+    controlled_schedule: string | null
+  } | null
+  administered_by: { first_name: string; last_name: string } | null
+  witness: { first_name: string; last_name: string } | null
 }
 
-interface Participant {
-    id: number
+interface Participant { id: number }
+
+const props = defineProps<{ participant: Participant }>()
+
+const EMAR_STATUS_COLORS: Record<string, string> = {
+  scheduled:     'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-400',
+  given:         'bg-green-100 dark:bg-green-900/60 text-green-700 dark:text-green-300',
+  refused:       'bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300',
+  held:          'bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300',
+  not_available: 'bg-orange-100 dark:bg-orange-900/60 text-orange-700 dark:text-orange-300',
+  late:          'bg-red-200 dark:bg-red-900/80 text-red-800 dark:text-red-300',
+  missed:        'bg-red-100 dark:bg-red-900/60 text-red-600 dark:text-red-400',
 }
 
-const props = defineProps<{
-    participant: Participant
-    emarRecords?: EmarRecord[]
-}>()
+const today   = new Date().toISOString().slice(0, 10)
+const date    = ref(today)
+const records = ref<EmarRow[]>([])
+const loading = ref(true)
 
-const records = ref<EmarRecord[]>(props.emarRecords ?? [])
-const administeringId = ref<number | null>(null)
-const showAdminModal = ref(false)
-const selectedRecord = ref<EmarRecord | null>(null)
-const adminForm = ref({ dose_given: '', route_given: '', notes: '', witness_user_id: '' })
-const adminError = ref('')
+// Inline charting state
+const chartingId = ref<number | null>(null)
+const chartForm  = ref<Record<string, string>>({})
 
-const STATUS_COLORS: Record<string, string> = {
-    given: 'bg-green-100 dark:bg-green-900/60 text-green-800 dark:text-green-300',
-    late: 'bg-red-100 dark:bg-red-900/60 text-red-800 dark:text-red-300',
-    missed: 'bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-500',
-    held: 'bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-300',
-    refused: 'bg-orange-100 dark:bg-orange-900/60 text-orange-800 dark:text-orange-300',
-    scheduled: 'bg-blue-100 dark:bg-blue-900/60 text-blue-800 dark:text-blue-300',
+function formatTime(iso: string | null): string {
+  if (!iso) return '-'
+  return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 }
 
-const pendingRecords = computed(() =>
-    records.value.filter((r) => r.status === 'scheduled' || r.status === 'late'),
-)
-const administeredRecords = computed(() => records.value.filter((r) => r.status === 'given'))
-const otherRecords = computed(() =>
-    records.value.filter((r) => !['scheduled', 'late', 'given'].includes(r.status)),
-)
-
-function fmtTime(val: string | null | undefined): string {
-    if (!val) return '-'
-    const d = new Date(val)
-    return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+async function loadEmar(d: string) {
+  loading.value = true
+  try {
+    const r = await axios.get(`/participants/${props.participant.id}/emar`, { params: { date: d } })
+    records.value = r.data
+  } catch {
+    records.value = []
+  } finally {
+    loading.value = false
+  }
 }
 
-function openAdminModal(record: EmarRecord) {
-    selectedRecord.value = record
-    adminForm.value = {
-        dose_given: record.medication.dose ?? '',
-        route_given: record.medication.route ?? '',
-        notes: '',
-        witness_user_id: '',
-    }
-    adminError.value = ''
-    showAdminModal.value = true
+onMounted(() => loadEmar(today))
+
+function handleDateChange(d: string) {
+  date.value    = d
+  chartingId.value = null
+  loadEmar(d)
 }
 
-async function confirmAdminister() {
-    if (!selectedRecord.value) return
-    const rec = selectedRecord.value
-    const needsWitness =
-        rec.medication.dea_schedule === 'II' || rec.medication.dea_schedule === 'III'
-    if (needsWitness && !adminForm.value.witness_user_id) {
-        adminError.value = 'Witness user ID is required for Schedule II/III medications.'
-        return
-    }
-    administeringId.value = rec.id
-    try {
-        const payload: Record<string, unknown> = {
-            dose_given: adminForm.value.dose_given || null,
-            route_given: adminForm.value.route_given || null,
-            notes: adminForm.value.notes || null,
-        }
-        if (adminForm.value.witness_user_id)
-            payload.witness_user_id = parseInt(adminForm.value.witness_user_id)
-        const res = await axios.post(
-            `/participants/${props.participant.id}/emar/${rec.id}/administer`,
-            payload,
-        )
-        const idx = records.value.findIndex((r) => r.id === rec.id)
-        if (idx !== -1) records.value[idx] = res.data
-        showAdminModal.value = false
-    } catch (err: unknown) {
-        const e = err as { response?: { data?: { message?: string } } }
-        adminError.value = e.response?.data?.message ?? 'Failed to record administration.'
-    } finally {
-        administeringId.value = null
-    }
+function startCharting(record: EmarRow) {
+  chartingId.value = record.id
+  chartForm.value  = {
+    status:          'given',
+    administered_at: new Date().toISOString().slice(0, 16),
+  }
+}
+
+async function submitCharting(e: Event) {
+  e.preventDefault()
+  if (!chartingId.value) return
+  try {
+    await axios.post(
+      `/participants/${props.participant.id}/emar/${chartingId.value}/administer`,
+      chartForm.value,
+    )
+    await loadEmar(date.value)
+    chartingId.value = null
+  } catch {
+    // noop
+  }
 }
 </script>
 
 <template>
-    <div class="p-6">
-        <h2 class="text-base font-semibold text-gray-900 dark:text-slate-100 mb-4">
-            eMAR — Today's Schedule
-        </h2>
-
-        <div
-            v-if="records.length === 0"
-            class="py-12 text-center text-gray-400 dark:text-slate-500 text-sm"
-        >
-            No MAR records for today.
-        </div>
-
-        <!-- Pending / Due -->
-        <div v-if="pendingRecords.length > 0" class="mb-6">
-            <h3
-                class="text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-1"
-            >
-                <ClockIcon class="w-3.5 h-3.5" /> Due / Pending
-            </h3>
-            <div class="space-y-1.5">
-                <div
-                    v-for="rec in pendingRecords"
-                    :key="rec.id"
-                    class="flex items-center gap-3 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg px-4 py-3"
-                >
-                    <div class="flex-1 min-w-0">
-                        <div class="flex items-center gap-2">
-                            <span class="text-sm font-medium text-gray-900 dark:text-slate-100">{{
-                                rec.medication.drug_name
-                            }}</span>
-                            <span
-                                v-if="rec.medication.dea_schedule"
-                                class="text-xs bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300 px-1.5 py-0.5 rounded"
-                                >Sched {{ rec.medication.dea_schedule }}</span
-                            >
-                            <span
-                                :class="[
-                                    'text-xs px-1.5 py-0.5 rounded',
-                                    STATUS_COLORS[rec.status] ?? '',
-                                ]"
-                                >{{ rec.status }}</span
-                            >
-                        </div>
-                        <div class="text-xs text-gray-400 dark:text-slate-500 mt-0.5">
-                            {{ rec.medication.dose }} · {{ rec.medication.route }} · Scheduled
-                            {{ fmtTime(rec.scheduled_time) }}
-                        </div>
-                    </div>
-                    <button
-                        class="text-xs px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 transition-colors shrink-0"
-                        @click="openAdminModal(rec)"
-                    >
-                        Administer
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Administered -->
-        <div v-if="administeredRecords.length > 0" class="mb-6">
-            <h3
-                class="text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-1"
-            >
-                <CheckCircleIcon class="w-3.5 h-3.5" /> Administered
-            </h3>
-            <div class="space-y-1">
-                <div
-                    v-for="rec in administeredRecords"
-                    :key="rec.id"
-                    class="flex items-center gap-3 bg-green-50 dark:bg-green-950/20 border border-green-100 dark:border-green-900/40 rounded-lg px-4 py-2"
-                >
-                    <span class="text-sm text-gray-800 dark:text-slate-200 flex-1">{{
-                        rec.medication.drug_name
-                    }}</span>
-                    <span class="text-xs text-gray-500 dark:text-slate-400">{{
-                        fmtTime(rec.administered_at)
-                    }}</span>
-                    <span
-                        v-if="rec.administered_by"
-                        class="text-xs text-gray-400 dark:text-slate-500"
-                        >{{ rec.administered_by.first_name[0] }}.
-                        {{ rec.administered_by.last_name }}</span
-                    >
-                </div>
-            </div>
-        </div>
-
-        <!-- Missed / Held / Refused -->
-        <div v-if="otherRecords.length > 0">
-            <h3
-                class="text-xs font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-2"
-            >
-                Other
-            </h3>
-            <div class="space-y-1">
-                <div
-                    v-for="rec in otherRecords"
-                    :key="rec.id"
-                    class="flex items-center gap-3 bg-gray-50 dark:bg-slate-800/50 border border-gray-100 dark:border-slate-700 rounded-lg px-4 py-2"
-                >
-                    <span class="text-sm text-gray-600 dark:text-slate-400 flex-1">{{
-                        rec.medication.drug_name
-                    }}</span>
-                    <span
-                        :class="['text-xs px-1.5 py-0.5 rounded', STATUS_COLORS[rec.status] ?? '']"
-                        >{{ rec.status }}</span
-                    >
-                    <span v-if="rec.notes" class="text-xs text-gray-400 dark:text-slate-500">{{
-                        rec.notes
-                    }}</span>
-                </div>
-            </div>
-        </div>
-
-        <!-- Administer modal -->
-        <div
-            v-if="showAdminModal && selectedRecord"
-            class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-        >
-            <div class="bg-white dark:bg-slate-800 rounded-xl shadow-xl max-w-sm w-full p-5">
-                <h3 class="text-sm font-semibold text-gray-900 dark:text-slate-100 mb-3">
-                    Administer: {{ selectedRecord.medication.drug_name }}
-                </h3>
-                <div class="space-y-3">
-                    <div>
-                        <label
-                            class="block text-xs font-medium text-gray-700 dark:text-slate-300 mb-1"
-                            >Dose Given</label
-                        >
-                        <input
-                            v-model="adminForm.dose_given"
-                            type="text"
-                            class="w-full text-sm border border-gray-300 dark:border-slate-600 rounded-md px-2 py-1.5 bg-white dark:bg-slate-700"
-                        />
-                    </div>
-                    <div>
-                        <label
-                            class="block text-xs font-medium text-gray-700 dark:text-slate-300 mb-1"
-                            >Route Given</label
-                        >
-                        <input
-                            v-model="adminForm.route_given"
-                            type="text"
-                            class="w-full text-sm border border-gray-300 dark:border-slate-600 rounded-md px-2 py-1.5 bg-white dark:bg-slate-700"
-                        />
-                    </div>
-                    <div
-                        v-if="
-                            selectedRecord.medication.dea_schedule === 'II' ||
-                            selectedRecord.medication.dea_schedule === 'III'
-                        "
-                    >
-                        <label class="block text-xs font-medium text-red-600 dark:text-red-400 mb-1"
-                            >Witness User ID (required for Sched
-                            {{ selectedRecord.medication.dea_schedule }})</label
-                        >
-                        <input
-                            v-model="adminForm.witness_user_id"
-                            type="number"
-                            class="w-full text-sm border border-red-300 dark:border-red-700 rounded-md px-2 py-1.5 bg-white dark:bg-slate-700"
-                        />
-                    </div>
-                    <div>
-                        <label
-                            class="block text-xs font-medium text-gray-700 dark:text-slate-300 mb-1"
-                            >Notes</label
-                        >
-                        <input
-                            v-model="adminForm.notes"
-                            type="text"
-                            placeholder="Optional"
-                            class="w-full text-sm border border-gray-300 dark:border-slate-600 rounded-md px-2 py-1.5 bg-white dark:bg-slate-700"
-                        />
-                    </div>
-                </div>
-                <p v-if="adminError" class="text-red-600 dark:text-red-400 text-xs mt-2">
-                    {{ adminError }}
-                </p>
-                <div class="flex gap-2 mt-4">
-                    <button
-                        :disabled="administeringId !== null"
-                        class="text-xs px-3 py-1.5 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 transition-colors"
-                        @click="confirmAdminister"
-                    >
-                        {{ administeringId !== null ? 'Recording...' : 'Confirm Administration' }}
-                    </button>
-                    <button
-                        class="text-xs px-3 py-1.5 border border-gray-300 dark:border-slate-600 text-gray-700 dark:text-slate-300 rounded-lg transition-colors"
-                        @click="showAdminModal = false"
-                    >
-                        Cancel
-                    </button>
-                </div>
-            </div>
-        </div>
+  <div class="space-y-4 p-6">
+    <!-- Date selector -->
+    <div class="flex items-center gap-3">
+      <h3 class="text-sm font-semibold text-gray-700 dark:text-slate-300">eMAR</h3>
+      <input
+        :value="date"
+        type="date"
+        :max="today"
+        class="text-sm border border-gray-300 dark:border-slate-600 rounded px-2 py-1 bg-white dark:bg-slate-800 dark:text-slate-100"
+        @change="handleDateChange(($event.target as HTMLInputElement).value)"
+      />
+      <button
+        class="text-xs text-blue-600 dark:text-blue-400 hover:underline"
+        @click="handleDateChange(today)"
+      >
+        Today
+      </button>
     </div>
+
+    <!-- Loading -->
+    <div v-if="loading" class="py-8 text-center text-gray-400 dark:text-slate-500 text-sm">
+      Loading eMAR...
+    </div>
+
+    <!-- Empty state -->
+    <div v-else-if="records.length === 0" class="py-8 text-center text-gray-400 dark:text-slate-500 text-sm">
+      No eMAR records for {{ date }}.
+      <p class="text-xs mt-1">Records are generated nightly for scheduled medications.</p>
+    </div>
+
+    <!-- eMAR table -->
+    <div v-else class="overflow-x-auto rounded-lg border border-gray-200 dark:border-slate-700">
+      <table class="min-w-full text-sm">
+        <thead class="bg-gray-50 dark:bg-slate-700/50 text-xs text-gray-500 dark:text-slate-400 uppercase tracking-wide">
+          <tr>
+            <th class="px-4 py-2 text-left">Time</th>
+            <th class="px-4 py-2 text-left">Medication</th>
+            <th class="px-4 py-2 text-left">Ordered Dose</th>
+            <th class="px-4 py-2 text-left">Status</th>
+            <th class="px-4 py-2 text-left">Administered By</th>
+            <th class="px-4 py-2"></th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100 dark:divide-slate-700">
+          <template v-for="record in records" :key="record.id">
+            <!-- Main row -->
+            <tr class="hover:bg-gray-50 dark:hover:bg-slate-700/50">
+              <td class="px-4 py-2.5 text-gray-700 dark:text-slate-300 font-mono text-xs whitespace-nowrap">
+                {{ formatTime(record.scheduled_time) }}
+              </td>
+              <td class="px-4 py-2.5">
+                <span class="font-medium text-gray-900 dark:text-slate-100">
+                  {{ record.medication?.drug_name ?? '-' }}
+                </span>
+                <span
+                  v-if="record.medication?.is_controlled"
+                  class="ml-2 text-xs px-1.5 py-0.5 bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300 rounded"
+                >
+                  C-{{ record.medication.controlled_schedule }} · Witness req.
+                </span>
+              </td>
+              <td class="px-4 py-2.5 text-gray-600 dark:text-slate-400 text-xs">
+                <template v-if="record.medication?.dose">
+                  {{ record.medication.dose }} {{ record.medication.dose_unit }}
+                </template>
+                <template v-else>-</template>
+                <template v-if="record.medication?.route"> ({{ record.medication.route }})</template>
+              </td>
+              <td class="px-4 py-2.5">
+                <span :class="['inline-block text-xs px-2 py-0.5 rounded-full font-medium', EMAR_STATUS_COLORS[record.status] ?? 'bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-400']">
+                  {{ record.status }}
+                </span>
+              </td>
+              <td class="px-4 py-2.5 text-gray-500 dark:text-slate-400 text-xs">
+                <template v-if="record.administered_by">
+                  {{ record.administered_by.first_name }} {{ record.administered_by.last_name }}
+                </template>
+                <template v-else>-</template>
+                <span v-if="record.witness" class="block text-gray-400 dark:text-slate-500">
+                  Witness: {{ record.witness.first_name }} {{ record.witness.last_name }}
+                </span>
+              </td>
+              <td class="px-4 py-2.5 text-right">
+                <button
+                  v-if="record.status === 'scheduled' || record.status === 'late'"
+                  class="text-xs px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
+                  @click="startCharting(record)"
+                >
+                  Chart
+                </button>
+              </td>
+            </tr>
+
+            <!-- Inline charting row -->
+            <tr v-if="chartingId === record.id">
+              <td colspan="6" class="px-4 py-3 bg-blue-50 dark:bg-blue-950/60 border-t border-blue-200 dark:border-blue-800">
+                <form class="flex flex-wrap items-end gap-3" @submit.prevent="submitCharting">
+                  <div>
+                    <label class="text-xs font-medium text-gray-600 dark:text-slate-400">Status</label>
+                    <select
+                      v-model="chartForm.status"
+                      class="block mt-1 text-sm border border-gray-300 dark:border-slate-600 rounded px-2 py-1 bg-white dark:bg-slate-800 dark:text-slate-100"
+                    >
+                      <option v-for="s in ['given','refused','held','not_available','missed']" :key="s" :value="s">{{ s }}</option>
+                    </select>
+                  </div>
+                  <div v-if="chartForm.status === 'given'">
+                    <label class="text-xs font-medium text-gray-600 dark:text-slate-400">Given At</label>
+                    <input
+                      v-model="chartForm.administered_at"
+                      type="datetime-local"
+                      class="block mt-1 text-sm border border-gray-300 dark:border-slate-600 rounded px-2 py-1 bg-white dark:bg-slate-800 dark:text-slate-100"
+                    />
+                  </div>
+                  <div v-if="['refused','held','not_available','missed'].includes(chartForm.status)">
+                    <label class="text-xs font-medium text-gray-600 dark:text-slate-400">Reason *</label>
+                    <input
+                      v-model="chartForm.reason_not_given"
+                      type="text"
+                      required
+                      placeholder="Reason..."
+                      class="block mt-1 text-sm border border-gray-300 dark:border-slate-600 rounded px-2 py-1 w-48 bg-white dark:bg-slate-800 dark:text-slate-100"
+                    />
+                  </div>
+                  <div class="flex gap-2">
+                    <button
+                      type="button"
+                      class="text-xs px-3 py-1.5 border border-gray-300 dark:border-slate-600 text-gray-700 dark:text-slate-300 rounded hover:bg-gray-50 dark:hover:bg-slate-700"
+                      @click="chartingId = null"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      class="text-xs px-3 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-700"
+                    >
+                      Save
+                    </button>
+                  </div>
+                </form>
+              </td>
+            </tr>
+          </template>
+        </tbody>
+      </table>
+    </div>
+  </div>
 </template>

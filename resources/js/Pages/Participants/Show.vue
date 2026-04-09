@@ -9,7 +9,7 @@
 
 import { ref, computed, onMounted } from 'vue'
 import { Head, usePage } from '@inertiajs/vue3'
-import { ExclamationTriangleIcon } from '@heroicons/vue/24/outline'
+import { ExclamationTriangleIcon, ChevronRightIcon } from '@heroicons/vue/24/outline'
 import AppShell from '@/Layouts/AppShell.vue'
 import ParticipantHeader from './Components/ParticipantHeader.vue'
 
@@ -201,93 +201,113 @@ const auth = computed(() => (page.props as Record<string, unknown>).auth as { us
   <AppShell>
     <Head :title="`${participant.first_name} ${participant.last_name} | ${participant.mrn}`" />
 
-    <!-- Sticky participant header -->
-    <ParticipantHeader
-      :participant="participant"
-      :active-flags="(flags ?? []) as any[]"
-      :active-tab="activeTab"
-      :can-edit="canEdit ?? false"
-      :can-delete="canDelete ?? false"
-      :has-break-glass-access="hasBreakGlassAccess ?? false"
-      :break-glass-expires-at="breakGlassExpiresAt ?? null"
-      @tab-change="switchTab"
-    />
+    <!-- Sticky wrapper: breadcrumb + participant card + tab bar -->
+    <div class="sticky top-0 z-30 bg-gray-50 dark:bg-slate-900 shadow-md">
+      <div class="px-4 pt-4">
 
-    <!-- Life-threatening allergy banner — persists across all tabs -->
-    <div
-      v-if="hasLifeThreateningAllergy"
-      role="alert"
-      class="bg-red-600 text-white px-6 py-2 flex items-center gap-3 text-sm"
-    >
-      <ExclamationTriangleIcon class="w-5 h-5 shrink-0" />
-      <span class="font-semibold">ALLERGY ALERT:</span>
-      <span>
-        {{ lifeThreateningAllergyCount }}
-        {{ lifeThreateningAllergyCount === 1 ? 'life-threatening allergy' : 'life-threatening allergies' }} on file.
-      </span>
-      <button
-        class="ml-auto text-xs underline hover:no-underline opacity-90"
-        @click="switchTab('allergies')"
-      >
-        View Allergies
-      </button>
-    </div>
-
-    <!-- Two-row tab bar: CLINICAL (top) + ADMIN (bottom) -->
-    <div class="bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700">
-      <!-- CLINICAL row -->
-      <div class="border-b border-gray-100 dark:border-slate-700/60 overflow-x-auto scrollbar-none">
-        <div class="flex items-end px-3 min-w-max" role="tablist" aria-label="Clinical tabs">
-          <span class="text-[10px] font-bold text-blue-500 uppercase tracking-widest px-2 pb-2 pt-1.5 mr-1 shrink-0 self-end">Clinical</span>
-          <button
-            v-for="tab in CLINICAL_TABS"
-            :key="tab.key"
-            role="tab"
-            :aria-selected="activeTab === tab.key"
-            :aria-controls="`panel-${tab.key}`"
-            :class="[
-              'px-3 py-2 text-xs font-medium border-b-2 whitespace-nowrap transition-colors',
-              activeTab === tab.key
-                ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                : 'border-transparent text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200 hover:border-gray-300 dark:hover:border-slate-600'
-            ]"
-            @click="switchTab(tab.key)"
-          >
-            {{ tab.label }}
-          </button>
+        <!-- Breadcrumb -->
+        <div class="flex items-center gap-1.5 text-xs text-gray-400 dark:text-slate-500 mb-3">
+          <a href="/participants" class="hover:text-gray-700 dark:hover:text-slate-200 transition-colors">Participants</a>
+          <ChevronRightIcon class="w-3 h-3 shrink-0" />
+          <span class="text-gray-700 dark:text-slate-300 font-medium truncate">
+            {{ participant.first_name }} {{ participant.last_name }}
+            <span v-if="participant.preferred_name" class="font-normal text-gray-400 dark:text-slate-500">"{{ participant.preferred_name }}"</span>
+          </span>
         </div>
-      </div>
 
-      <!-- ADMIN row -->
-      <div class="overflow-x-auto scrollbar-none">
-        <div class="flex items-end px-3 min-w-max" role="tablist" aria-label="Admin tabs">
-          <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-2 pb-2 pt-1.5 mr-1 shrink-0 self-end">Admin</span>
-          <button
-            v-for="tab in ADMIN_TABS"
-            :key="tab.key"
-            role="tab"
-            :aria-selected="activeTab === tab.key"
-            :aria-controls="`panel-${tab.key}`"
-            :class="[
-              'px-3 py-2 text-xs font-medium border-b-2 whitespace-nowrap transition-colors',
-              activeTab === tab.key
-                ? 'border-slate-500 text-slate-700 dark:text-slate-200'
-                : 'border-transparent text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200 hover:border-gray-300 dark:hover:border-slate-600'
-            ]"
-            @click="switchTab(tab.key)"
+        <!-- Participant profile card -->
+        <div class="bg-white dark:bg-slate-800 rounded-t-xl border border-b-0 border-gray-200 dark:border-slate-700 shadow-sm overflow-hidden">
+
+          <ParticipantHeader
+            :participant="participant"
+            :active-flags="(flags ?? []) as any[]"
+            :active-tab="activeTab"
+            :can-edit="canEdit ?? false"
+            :can-delete="canDelete ?? false"
+            :has-break-glass-access="hasBreakGlassAccess ?? false"
+            :break-glass-expires-at="breakGlassExpiresAt ?? null"
+            @tab-change="switchTab"
+          />
+
+          <!-- Life-threatening allergy banner — persists across all tabs -->
+          <div
+            v-if="hasLifeThreateningAllergy"
+            role="alert"
+            class="bg-red-600 text-white px-6 py-2 flex items-center gap-3 text-sm"
           >
-            {{ tab.label }}
-          </button>
-        </div>
-      </div>
-    </div>
+            <ExclamationTriangleIcon class="w-5 h-5 shrink-0" />
+            <span class="font-semibold">ALLERGY ALERT:</span>
+            <span>
+              {{ lifeThreateningAllergyCount }}
+              {{ lifeThreateningAllergyCount === 1 ? 'life-threatening allergy' : 'life-threatening allergies' }} on file.
+            </span>
+            <button
+              class="ml-auto text-xs underline hover:no-underline opacity-90"
+              @click="switchTab('allergies')"
+            >
+              View Allergies
+            </button>
+          </div>
 
-    <!-- Active tab panel -->
+          <!-- Two-row tab bar: CLINICAL (top) + ADMIN (bottom) -->
+          <div class="border-t border-gray-100 dark:border-slate-700/60">
+            <!-- CLINICAL row -->
+            <div class="border-b border-gray-100 dark:border-slate-700/60 overflow-x-auto scrollbar-none">
+              <div class="flex items-end px-3 min-w-max" role="tablist" aria-label="Clinical tabs">
+                <span class="text-[10px] font-bold text-blue-500 uppercase tracking-widest px-2 pb-2 pt-1.5 mr-1 shrink-0 self-end">Clinical</span>
+                <button
+                  v-for="tab in CLINICAL_TABS"
+                  :key="tab.key"
+                  role="tab"
+                  :aria-selected="activeTab === tab.key"
+                  :aria-controls="`panel-${tab.key}`"
+                  :class="[
+                    'px-3 py-2 text-xs font-medium border-b-2 whitespace-nowrap transition-colors',
+                    activeTab === tab.key
+                      ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                      : 'border-transparent text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200 hover:border-gray-300 dark:hover:border-slate-600'
+                  ]"
+                  @click="switchTab(tab.key)"
+                >
+                  {{ tab.label }}
+                </button>
+              </div>
+            </div>
+
+            <!-- ADMIN row -->
+            <div class="overflow-x-auto scrollbar-none">
+              <div class="flex items-end px-3 min-w-max" role="tablist" aria-label="Admin tabs">
+                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-2 pb-2 pt-1.5 mr-1 shrink-0 self-end">Admin</span>
+                <button
+                  v-for="tab in ADMIN_TABS"
+                  :key="tab.key"
+                  role="tab"
+                  :aria-selected="activeTab === tab.key"
+                  :aria-controls="`panel-${tab.key}`"
+                  :class="[
+                    'px-3 py-2 text-xs font-medium border-b-2 whitespace-nowrap transition-colors',
+                    activeTab === tab.key
+                      ? 'border-slate-500 text-slate-700 dark:text-slate-200'
+                      : 'border-transparent text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200 hover:border-gray-300 dark:hover:border-slate-600'
+                  ]"
+                  @click="switchTab(tab.key)"
+                >
+                  {{ tab.label }}
+                </button>
+              </div>
+            </div>
+          </div><!-- end tab bar -->
+
+        </div><!-- end profile card -->
+      </div><!-- end px-4 pt-4 -->
+    </div><!-- end sticky wrapper -->
+
+    <!-- Active tab panel: gray page background with side padding matching the card -->
     <div
       :id="`panel-${activeTab}`"
       role="tabpanel"
       tabindex="0"
-      class="flex-1 overflow-y-auto"
+      class="flex-1 overflow-y-auto bg-gray-50 dark:bg-slate-900 px-4 pt-4 pb-6"
     >
       <component
         :is="activeTabComponent"

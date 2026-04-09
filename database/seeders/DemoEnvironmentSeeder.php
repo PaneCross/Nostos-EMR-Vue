@@ -263,6 +263,12 @@ class DemoEnvironmentSeeder extends Seeder
         $this->command->info('  Seeding W5-3 remittance and denial management demo data...');
         $this->call(W53DataSeeder::class);
 
+        // --- W5-4: Tab CRUD Demo Data (consents, documents, immunizations, procedures, SDOH)
+        // Seeds realistic data for the first 8 enrolled participants.
+        $this->command->info('');
+        $this->command->info('  Seeding W5-4 tab CRUD demo data (consents, docs, immunizations, procedures, SDOH)...');
+        $this->call(W54DataSeeder::class);
+
         // ─── Participant Photos ────────────────────────────────────────────────
         // Downloads pravatar.cc placeholder images for the first 15 enrolled
         // participants so the photo upload feature is visually testable.

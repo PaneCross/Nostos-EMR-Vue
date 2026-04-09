@@ -107,32 +107,25 @@ class ProblemController extends Controller
     /**
      * GET /icd10/search?q=...
      * Searches the ICD-10 lookup table by code or description.
-     * Returns up to 20 results, exact code matches first.
+     * Returns up to 20 results, with code-prefix matches ranked first.
      */
     public function icd10Search(Request $request): JsonResponse
     {
         $request->validate(['q' => ['required', 'string', 'min:2', 'max:50']]);
 
         $term = trim($request->input('q'));
+        $like = '%' . $term . '%';
 
-        // Exact code matches first, then partial matches
-        $results = Icd10Lookup::where('code', 'ilike', $term . '%')
+        // Single query: matches code OR description (case-insensitive ILIKE)
+        // Ordered so that codes starting with the search term appear first
+        $results = Icd10Lookup::where(function ($q) use ($like) {
+                $q->where('code', 'ilike', $like)
+                  ->orWhere('description', 'ilike', $like);
+            })
+            ->orderByRaw('CASE WHEN code ilike ? THEN 0 ELSE 1 END', [$term . '%'])
             ->orderBy('code')
-            ->limit(10)
-            ->get(['code', 'description', 'category'])
-            ->merge(
-                Icd10Lookup::where('code', 'not ilike', $term . '%')
-                    ->where(function ($q) use ($term) {
-                        $q->where('code', 'ilike', '%' . $term . '%')
-                          ->orWhere('description', 'ilike', '%' . $term . '%');
-                    })
-                    ->orderBy('code')
-                    ->limit(10)
-                    ->get(['code', 'description', 'category'])
-            )
-            ->unique('code')
-            ->take(20)
-            ->values();
+            ->limit(20)
+            ->get(['code', 'description', 'category']);
 
         return response()->json($results);
     }

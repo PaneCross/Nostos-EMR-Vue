@@ -11,11 +11,15 @@ interface Order {
   id: number
   ordered_at: string
   order_type: string
-  description: string
+  order_type_label: string
+  instructions: string | null
+  clinical_indication: string | null
   status: string
-  ordered_by: { first_name: string; last_name: string } | null
+  ordered_by: { id: number; name: string } | null
   priority: string | null
-  notes: string | null
+  target_department: string | null
+  due_date: string | null
+  is_overdue: boolean
 }
 
 const orders = ref<Order[]>([])
@@ -23,23 +27,23 @@ const loading = ref(true)
 const error = ref('')
 
 const STATUS_COLORS: Record<string, string> = {
-  pending:    'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300',
-  active:     'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300',
-  completed:  'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300',
-  cancelled:  'bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-400',
-  on_hold:    'bg-orange-100 dark:bg-orange-950/40 text-orange-700 dark:text-orange-300',
+  pending:     'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300',
+  acknowledged:'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300',
+  resulted:    'bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300',
+  completed:   'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300',
+  cancelled:   'bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-400',
 }
 
 const PRIORITY_COLORS: Record<string, string> = {
-  stat:     'text-red-600 dark:text-red-400 font-semibold',
-  urgent:   'text-orange-600 dark:text-orange-400',
-  routine:  'text-gray-500 dark:text-slate-400',
+  stat:    'text-red-600 dark:text-red-400 font-semibold',
+  urgent:  'text-orange-600 dark:text-orange-400',
+  routine: 'text-gray-500 dark:text-slate-400',
 }
 
 onMounted(async () => {
   try {
     const res = await axios.get(`/participants/${props.participant.id}/orders`)
-    orders.value = res.data
+    orders.value = res.data.orders ?? []
   } catch {
     error.value = 'Unable to load orders.'
   } finally {
@@ -47,7 +51,8 @@ onMounted(async () => {
   }
 })
 
-function fmtDate(val: string): string {
+function fmtDate(val: string | null | undefined): string {
+  if (!val) return '-'
   return new Date(val.slice(0, 10) + 'T12:00:00').toLocaleDateString('en-US', {
     year: 'numeric', month: 'short', day: 'numeric',
   })
@@ -55,7 +60,7 @@ function fmtDate(val: string): string {
 </script>
 
 <template>
-  <div class="p-6 max-w-4xl space-y-4">
+  <div class="p-6 max-w-5xl space-y-4">
     <h2 class="text-base font-semibold text-gray-900 dark:text-slate-100">Orders</h2>
 
     <div v-if="loading" class="flex items-center justify-center py-16">
@@ -78,29 +83,35 @@ function fmtDate(val: string): string {
         <thead class="bg-gray-50 dark:bg-slate-700/50">
           <tr>
             <th
-              v-for="h in ['Date', 'Type', 'Description', 'Priority', 'Ordered By', 'Status']"
+              v-for="h in ['Date', 'Type', 'Instructions', 'Priority', 'Ordered By', 'Status']"
               :key="h"
               class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide"
             >{{ h }}</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-100 dark:divide-slate-700">
-          <tr v-for="order in orders" :key="order.id" class="hover:bg-gray-50 dark:hover:bg-slate-700/30 transition-colors">
-            <td class="px-4 py-3 text-gray-800 dark:text-slate-200 whitespace-nowrap">{{ fmtDate(order.ordered_at) }}</td>
-            <td class="px-4 py-3 text-gray-600 dark:text-slate-400 capitalize">{{ order.order_type.replace(/_/g, ' ') }}</td>
+          <tr
+            v-for="order in orders"
+            :key="order.id"
+            :class="['hover:bg-gray-50 dark:hover:bg-slate-700/30 transition-colors', order.is_overdue ? 'bg-red-50/50 dark:bg-red-950/10' : '']"
+          >
+            <td class="px-4 py-3 text-gray-700 dark:text-slate-300 whitespace-nowrap text-xs">
+              {{ fmtDate(order.ordered_at) }}
+              <div v-if="order.due_date" :class="['text-xs mt-0.5', order.is_overdue ? 'text-red-500 dark:text-red-400 font-medium' : 'text-gray-400 dark:text-slate-500']">
+                Due: {{ fmtDate(order.due_date) }}{{ order.is_overdue ? ' (overdue)' : '' }}
+              </div>
+            </td>
+            <td class="px-4 py-3 text-gray-700 dark:text-slate-300">{{ order.order_type_label || order.order_type.replace(/_/g, ' ') }}</td>
             <td class="px-4 py-3 text-gray-800 dark:text-slate-200 max-w-xs">
-              <div>{{ order.description }}</div>
-              <div v-if="order.notes" class="text-xs text-gray-500 dark:text-slate-400 mt-0.5">{{ order.notes }}</div>
+              <div class="truncate">{{ order.instructions || '-' }}</div>
+              <div v-if="order.clinical_indication" class="text-xs text-gray-500 dark:text-slate-400 mt-0.5 truncate">{{ order.clinical_indication }}</div>
             </td>
             <td class="px-4 py-3 capitalize">
-              <span v-if="order.priority" :class="['text-xs', PRIORITY_COLORS[order.priority] ?? '']">
-                {{ order.priority }}
-              </span>
+              <span v-if="order.priority" :class="['text-xs', PRIORITY_COLORS[order.priority] ?? '']">{{ order.priority }}</span>
               <span v-else class="text-gray-400 dark:text-slate-500 text-xs">-</span>
             </td>
-            <td class="px-4 py-3 text-gray-600 dark:text-slate-400">
-              <span v-if="order.ordered_by">{{ order.ordered_by.first_name }} {{ order.ordered_by.last_name }}</span>
-              <span v-else class="text-gray-400 dark:text-slate-500">-</span>
+            <td class="px-4 py-3 text-gray-600 dark:text-slate-400 text-xs whitespace-nowrap">
+              {{ order.ordered_by?.name ?? '-' }}
             </td>
             <td class="px-4 py-3">
               <span :class="['inline-flex px-2 py-0.5 rounded text-xs font-medium capitalize', STATUS_COLORS[order.status] ?? 'bg-gray-100 dark:bg-slate-700 text-gray-500']">
