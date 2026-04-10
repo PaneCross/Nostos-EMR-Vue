@@ -13,11 +13,12 @@ class DisenrollParticipantRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        // Only enrollment admin and IT admin may disenroll participants
+        // Enrollment admin, IT admin, and super_admin may disenroll participants
         $dept = $this->user()?->department;
         $role = $this->user()?->role;
         return in_array($dept, ['enrollment', 'it_admin'], true) ||
-               ($dept === 'enrollment' && $role === 'admin');
+               ($dept === 'enrollment' && $role === 'admin') ||
+               $role === 'super_admin';
     }
 
     public function rules(): array
@@ -32,6 +33,6 @@ class DisenrollParticipantRequest extends FormRequest
 
     protected function failedAuthorization(): never
     {
-        abort(403, 'Only Enrollment Admin or IT Admin may disenroll participants.');
+        abort(403, 'Only Enrollment Admin, IT Admin, or Super Admin may disenroll participants.');
     }
 }

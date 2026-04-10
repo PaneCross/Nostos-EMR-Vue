@@ -392,6 +392,7 @@ Route::middleware('auth')->group(function () {
 
     // ─── Phase 6A: Disenrollment (nested under participant) ──────────────────
     Route::post('/participants/{participant}/disenroll', [ReferralController::class, 'disenroll'])->name('participants.disenroll');
+    Route::post('/participants/{participant}/reenroll', [ReferralController::class, 'reenroll'])->name('participants.reenroll');
 
     // ─── W4-5: Disenrollment record (42 CFR §460.116 transition plan) ─────────
     Route::prefix('participants/{participant}/disenrollment')->group(function () {
@@ -630,6 +631,9 @@ Route::middleware('auth')->group(function () {
         Route::post('/{grievance}/cms-reported',      [GrievanceController::class, 'markCmsReported'])->name('grievances.cms-reported');
         Route::post('/{grievance}/notify-participant',[GrievanceController::class, 'notifyParticipant'])->name('grievances.notify');
     });
+
+    // ─── W4-1: Participant-Scoped Grievances JSON Endpoint ─────────────────────
+    Route::get('/participants/{participant}/grievances', [GrievanceController::class, 'participantGrievances'])->name('participant.grievances');
 
     // ─── W4-1: Participant Consent Records (HIPAA 45 CFR §164.520) ───────────
     // Tracks NPP acknowledgment and other consent forms per participant.

@@ -215,4 +215,46 @@ class ReferralController extends Controller
             'Only Enrollment or IT Admin staff may manage referrals.',
         );
     }
+
+    /**
+     * POST /participants/{participant}/reenroll
+     * Re-enrolls a previously disenrolled participant.
+     * Only enrollment, it_admin, and super_admin may re-enroll.
+     */
+    public function reenroll(Request $request, Participant $participant): JsonResponse
+    {
+        $user = Auth::user();
+        $this->authorizeTenant($participant, $user);
+
+        abort_unless(
+            in_array($user->department, ['enrollment', 'it_admin'], true) || $user->isSuperAdmin(),
+            403,
+            'Only Enrollment or IT Admin may re-enroll participants.',
+        );
+
+        abort_unless(
+            $participant->enrollment_status === 'disenrolled',
+            422,
+            'Only disenrolled participants can be re-enrolled.',
+        );
+
+        $participant->update([
+            'enrollment_status'    => 'enrolled',
+            'disenrollment_date'   => null,
+            'disenrollment_reason' => null,
+            'is_active'            => true,
+        ]);
+
+        AuditLog::record(
+            action:       'participant.reenrolled',
+            tenantId:     $user->tenant_id,
+            userId:       $user->id,
+            resourceType: 'participant',
+            resourceId:   $participant->id,
+            description:  "Participant {$participant->mrn} re-enrolled by {$user->first_name} {$user->last_name}.",
+        );
+
+        return response()->json(['message' => 'Participant re-enrolled successfully.']);
+    }
+
 }
