@@ -8,11 +8,20 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
         web: __DIR__.'/../routes/web.php',
         commands: __DIR__.'/../routes/console.php',
+        channels: __DIR__.'/../routes/channels.php',
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->web(append: [
             \App\Http\Middleware\HandleInertiaRequests::class,
+        ]);
+
+        // OTP auth endpoints are exempt from CSRF — the OTP code itself is the
+        // security mechanism, and the XSRF-TOKEN cookie is not yet available on
+        // the login page before any authenticated session is established.
+        $middleware->validateCsrfTokens(except: [
+            '/auth/request-otp',
+            '/auth/verify-otp',
         ]);
 
         $middleware->alias([
