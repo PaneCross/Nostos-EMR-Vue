@@ -9,15 +9,15 @@ Broadcast::channel('App.Models.User.{id}', function ($user, $id) {
 
 // ─── Tenant-wide channel ──────────────────────────────────────────────────────
 // Used by AlertCreated events pushed to all users in a tenant.
-Broadcast::channel('tenant.{tenantId}', function ($user, int $tenantId) {
-    return (int) $user->tenant_id === $tenantId;
+Broadcast::channel('tenant.{tenantId}', function ($user, $tenantId) {
+    return (int) $user->tenant_id === (int) $tenantId;
 });
 
 // ─── Chat Channels ────────────────────────────────────────────────────────────
 // Private channel per chat channel ID. Authorizes based on ChatMembership.
 // Only users who are members of the channel may subscribe.
-Broadcast::channel('chat.{channelId}', function ($user, int $channelId) {
-    return ChatMembership::where('channel_id', $channelId)
+Broadcast::channel('chat.{channelId}', function ($user, $channelId) {
+    return ChatMembership::where('channel_id', (int) $channelId)
         ->where('user_id', $user->id)
         ->exists();
 });
@@ -26,6 +26,6 @@ Broadcast::channel('chat.{channelId}', function ($user, int $channelId) {
 // Used by ChatActivityEvent to push "you have new chat activity" notifications
 // to a user's nav badge without subscribing to all their chat channels.
 // Authorized only for the owning user.
-Broadcast::channel('user.{userId}', function ($user, int $userId) {
-    return (int) $user->id === $userId;
+Broadcast::channel('user.{userId}', function ($user, $userId) {
+    return (int) $user->id === (int) $userId;
 });
