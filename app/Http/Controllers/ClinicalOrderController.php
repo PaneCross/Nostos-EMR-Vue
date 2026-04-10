@@ -313,29 +313,52 @@ class ClinicalOrderController extends Controller
         $user     = Auth::user();
         $tenantId = $user->tenant_id;
 
+        $dept           = $user->department;
+        $statusFilter   = $request->query('status', '');
+        $priorityFilter = $request->query('priority', '');
+
         $query = ClinicalOrder::forTenant($tenantId)
             ->with(['participant:id,first_name,last_name,mrn', 'orderedBy:id,first_name,last_name'])
-            ->whereNotIn('status', ['completed', 'cancelled'])
             ->orderByRaw("CASE priority WHEN 'stat' THEN 1 WHEN 'urgent' THEN 2 ELSE 3 END")
             ->orderBy('ordered_at');
 
+        // Apply status filter (default: hide completed/cancelled unless explicitly requested)
+        if ($statusFilter !== '') {
+            $query->where('status', $statusFilter);
+        } else {
+            $query->whereNotIn('status', ['completed', 'cancelled']);
+        }
+
+        // Apply priority filter
+        if ($priorityFilter !== '') {
+            $query->where('priority', $priorityFilter);
+        }
+
         // Narrow to relevant department unless super_admin/primary_care (they see all)
-        $dept = $user->department;
         if (!$user->isSuperAdmin() && !in_array($dept, ['primary_care', 'it_admin'])) {
             $query->where('target_department', $dept);
         }
 
         $orders = $query->get()->map(fn ($o) => $o->toApiArray());
 
-        // Counts for the status filter tabs
-        $allActive = ClinicalOrder::forTenant($tenantId)->active()->count();
-        $pending   = ClinicalOrder::forTenant($tenantId)->pending()->count();
+        // KPIs scoped to tenant (and department where applicable)
+        $kpiQuery = ClinicalOrder::forTenant($tenantId)
+            ->whereNotIn('status', ['completed', 'cancelled']);
+        if (!$user->isSuperAdmin() && !in_array($dept, ['primary_care', 'it_admin'])) {
+            $kpiQuery->where('target_department', $dept);
+        }
+        $kpiOrders = $kpiQuery->get();
+
+        $kpis = [
+            'total_pending' => $kpiOrders->where('status', 'pending')->count(),
+            'total_active'  => $kpiOrders->whereIn('status', ['active', 'acknowledged'])->count(),
+            'stat_orders'   => $kpiOrders->where('priority', 'stat')->count(),
+        ];
 
         return Inertia::render('Clinical/Orders', [
-            'orders'     => $orders,
-            'allCount'   => $allActive,
-            'pending'    => $pending,
-            'userDept'   => $dept,
+            'orders'  => ['data' => $orders->values()],
+            'kpis'    => $kpis,
+            'filters' => ['status' => $statusFilter, 'priority' => $priorityFilter],
         ]);
     }
 

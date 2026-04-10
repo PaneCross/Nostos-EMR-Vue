@@ -94,7 +94,9 @@ function truncate(str: string | null | undefined, len = 50): string {
 
 function fmtDept(dept: string | null): string {
     if (!dept) return '-'
-    return dept.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+    return dept
+        .replace(/_/g, ' ')
+        .replace(/\b\w/g, (c) => c.toUpperCase())
 }
 
 // ── Badge maps ─────────────────────────────────────────────────────────────────
@@ -120,13 +122,8 @@ const STATUS_BADGE: Record<string, string> = {
     <AppShell>
         <template #header>
             <div class="flex items-center gap-2">
-                <ClipboardDocumentCheckIcon
-                    class="w-5 h-5 text-gray-500 dark:text-slate-400"
-                    aria-hidden="true"
-                />
-                <h1 class="text-base font-semibold text-gray-800 dark:text-slate-200">
-                    Clinical Orders
-                </h1>
+                <ClipboardDocumentCheckIcon class="w-5 h-5 text-gray-500 dark:text-slate-400" aria-hidden="true" />
+                <h1 class="text-base font-semibold text-gray-800 dark:text-slate-200">Clinical Orders</h1>
             </div>
         </template>
 
@@ -134,23 +131,12 @@ const STATUS_BADGE: Record<string, string> = {
             <!-- ── KPI cards ── -->
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
                 <!-- Pending -->
-                <div
-                    class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 px-4 py-3 shadow-sm flex items-start gap-3"
-                >
-                    <div
-                        class="p-2 bg-yellow-50 dark:bg-yellow-900/40 rounded-lg mt-0.5 flex-shrink-0"
-                    >
-                        <ClockIcon
-                            class="w-4 h-4 text-yellow-600 dark:text-yellow-400"
-                            aria-hidden="true"
-                        />
+                <div class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 px-4 py-3 shadow-sm flex items-start gap-3">
+                    <div class="p-2 bg-yellow-50 dark:bg-yellow-900/40 rounded-lg mt-0.5 flex-shrink-0">
+                        <ClockIcon class="w-4 h-4 text-yellow-600 dark:text-yellow-400" aria-hidden="true" />
                     </div>
                     <div>
-                        <p
-                            class="text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wide"
-                        >
-                            Pending
-                        </p>
+                        <p class="text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wide">Pending</p>
                         <p class="text-2xl font-bold text-gray-900 dark:text-slate-100 mt-0.5">
                             {{ (kpis?.total_pending ?? 0).toLocaleString() }}
                         </p>
@@ -158,21 +144,12 @@ const STATUS_BADGE: Record<string, string> = {
                 </div>
 
                 <!-- Active -->
-                <div
-                    class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 px-4 py-3 shadow-sm flex items-start gap-3"
-                >
+                <div class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 px-4 py-3 shadow-sm flex items-start gap-3">
                     <div class="p-2 bg-blue-50 dark:bg-blue-900/40 rounded-lg mt-0.5 flex-shrink-0">
-                        <CheckCircleIcon
-                            class="w-4 h-4 text-blue-600 dark:text-blue-400"
-                            aria-hidden="true"
-                        />
+                        <CheckCircleIcon class="w-4 h-4 text-blue-600 dark:text-blue-400" aria-hidden="true" />
                     </div>
                     <div>
-                        <p
-                            class="text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wide"
-                        >
-                            Active
-                        </p>
+                        <p class="text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wide">Active</p>
                         <p class="text-2xl font-bold text-gray-900 dark:text-slate-100 mt-0.5">
                             {{ (kpis?.total_active ?? 0).toLocaleString() }}
                         </p>
@@ -207,11 +184,7 @@ const STATUS_BADGE: Record<string, string> = {
                         />
                     </div>
                     <div>
-                        <p
-                            class="text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wide"
-                        >
-                            STAT Orders
-                        </p>
+                        <p class="text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wide">STAT Orders</p>
                         <p
                             :class="[
                                 'text-2xl font-bold mt-0.5',
@@ -228,10 +201,7 @@ const STATUS_BADGE: Record<string, string> = {
 
             <!-- ── Filter bar ── -->
             <div class="flex flex-wrap items-center gap-2 mb-4">
-                <FunnelIcon
-                    class="w-4 h-4 text-gray-400 dark:text-slate-500 flex-shrink-0"
-                    aria-hidden="true"
-                />
+                <FunnelIcon class="w-4 h-4 text-gray-400 dark:text-slate-500 flex-shrink-0" aria-hidden="true" />
 
                 <!-- Status filter -->
                 <select
@@ -272,25 +242,12 @@ const STATUS_BADGE: Record<string, string> = {
             </div>
 
             <!-- ── Table ── -->
-            <div
-                class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 overflow-hidden shadow-sm"
-            >
+            <div class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 overflow-hidden shadow-sm">
                 <table class="w-full text-sm" aria-label="Clinical orders worklist">
-                    <thead
-                        class="bg-gray-50 dark:bg-slate-700/50 border-b border-gray-200 dark:border-slate-700"
-                    >
+                    <thead class="bg-gray-50 dark:bg-slate-700/50 border-b border-gray-200 dark:border-slate-700">
                         <tr>
                             <th
-                                v-for="col in [
-                                    'Participant',
-                                    'Order Type',
-                                    'Description',
-                                    'Priority',
-                                    'Status',
-                                    'Department',
-                                    'Ordered By',
-                                    'Date',
-                                ]"
+                                v-for="col in ['Participant', 'Order Type', 'Description', 'Priority', 'Status', 'Department', 'Ordered By', 'Date']"
                                 :key="col"
                                 scope="col"
                                 class="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide whitespace-nowrap"
@@ -316,24 +273,19 @@ const STATUS_BADGE: Record<string, string> = {
                             :key="order.id"
                             class="hover:bg-blue-50 dark:hover:bg-blue-900/20 cursor-pointer transition-colors bg-white dark:bg-slate-800"
                             tabindex="0"
-                            :aria-label="
-                                order.participant
-                                    ? `Open profile for ${order.participant.last_name}, ${order.participant.first_name}`
-                                    : `Order ${order.id}`
-                            "
-                            @click="order.participant && router.visit(`/participants/${order.participant.id}`)"
-                            @keydown.enter="order.participant && router.visit(`/participants/${order.participant.id}`)"
+                            :aria-label="order.participant
+                                ? `Open profile for ${order.participant.last_name}, ${order.participant.first_name}`
+                                : `Order ${order.id}`"
+                            @click="order.participant && router.visit(`/participants/${order.participant.id}?tab=orders`)"
+                            @keydown.enter="order.participant && router.visit(`/participants/${order.participant.id}?tab=orders`)"
                         >
                             <!-- Participant -->
                             <td class="px-4 py-3">
                                 <template v-if="order.participant">
                                     <div class="font-medium text-gray-900 dark:text-slate-100">
-                                        {{ order.participant.last_name }},
-                                        {{ order.participant.first_name }}
+                                        {{ order.participant.last_name }}, {{ order.participant.first_name }}
                                     </div>
-                                    <div
-                                        class="text-xs font-mono text-gray-400 dark:text-slate-500"
-                                    >
+                                    <div class="text-xs font-mono text-gray-400 dark:text-slate-500">
                                         {{ order.participant.mrn }}
                                     </div>
                                 </template>
@@ -341,9 +293,7 @@ const STATUS_BADGE: Record<string, string> = {
                             </td>
 
                             <!-- Order type -->
-                            <td
-                                class="px-4 py-3 text-gray-700 dark:text-slate-300 whitespace-nowrap"
-                            >
+                            <td class="px-4 py-3 text-gray-700 dark:text-slate-300 whitespace-nowrap">
                                 {{ order.order_type }}
                             </td>
 
@@ -361,8 +311,7 @@ const STATUS_BADGE: Record<string, string> = {
                                     v-if="order.priority"
                                     :class="[
                                         'inline-flex px-2 py-0.5 rounded-full text-xs font-semibold uppercase',
-                                        PRIORITY_BADGE[order.priority] ??
-                                            'bg-gray-100 dark:bg-slate-700 text-gray-600',
+                                        PRIORITY_BADGE[order.priority] ?? 'bg-gray-100 dark:bg-slate-700 text-gray-600',
                                     ]"
                                 >
                                     {{ order.priority }}
@@ -375,8 +324,7 @@ const STATUS_BADGE: Record<string, string> = {
                                 <span
                                     :class="[
                                         'inline-flex px-2 py-0.5 rounded-full text-xs font-medium capitalize',
-                                        STATUS_BADGE[order.status] ??
-                                            'bg-gray-100 dark:bg-slate-700 text-gray-600',
+                                        STATUS_BADGE[order.status] ?? 'bg-gray-100 dark:bg-slate-700 text-gray-600',
                                     ]"
                                 >
                                     {{ order.status }}
@@ -384,27 +332,20 @@ const STATUS_BADGE: Record<string, string> = {
                             </td>
 
                             <!-- Department -->
-                            <td
-                                class="px-4 py-3 text-gray-500 dark:text-slate-400 text-xs whitespace-nowrap"
-                            >
+                            <td class="px-4 py-3 text-gray-500 dark:text-slate-400 text-xs whitespace-nowrap">
                                 {{ fmtDept(order.target_department) }}
                             </td>
 
                             <!-- Ordered by -->
-                            <td
-                                class="px-4 py-3 text-gray-600 dark:text-slate-400 whitespace-nowrap"
-                            >
+                            <td class="px-4 py-3 text-gray-600 dark:text-slate-400 whitespace-nowrap">
                                 <template v-if="order.ordered_by">
-                                    {{ order.ordered_by.last_name }},
-                                    {{ order.ordered_by.first_name }}
+                                    {{ order.ordered_by.last_name }}, {{ order.ordered_by.first_name }}
                                 </template>
                                 <span v-else class="text-gray-400 dark:text-slate-500">-</span>
                             </td>
 
                             <!-- Date -->
-                            <td
-                                class="px-4 py-3 text-gray-500 dark:text-slate-400 text-xs whitespace-nowrap"
-                            >
+                            <td class="px-4 py-3 text-gray-500 dark:text-slate-400 text-xs whitespace-nowrap">
                                 {{ fmtDate(order.created_at) }}
                             </td>
                         </tr>

@@ -95,7 +95,7 @@ const DEPARTMENTS = [
 ]
 
 function fmtDept(d: string): string {
-    return d.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+    return d.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
 }
 
 function fmtDate(val: string | null): string {
@@ -105,13 +105,13 @@ function fmtDate(val: string | null): string {
 }
 
 function fmtNoteType(t: string): string {
-    return t.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+    return t.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
 }
 
 // Status badge classes
 const STATUS_BADGE: Record<string, string> = {
-    draft: 'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300',
-    signed: 'bg-green-100 dark:bg-green-900/60 text-green-800 dark:text-green-300',
+    draft:    'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300',
+    signed:   'bg-green-100 dark:bg-green-900/60 text-green-800 dark:text-green-300',
     addendum: 'bg-blue-100 dark:bg-blue-900/60 text-blue-800 dark:text-blue-300',
 }
 
@@ -126,10 +126,7 @@ function statusBadge(s: string): string {
     <AppShell>
         <template #header>
             <div class="flex items-center gap-2">
-                <DocumentTextIcon
-                    class="w-5 h-5 text-gray-500 dark:text-slate-400"
-                    aria-hidden="true"
-                />
+                <DocumentTextIcon class="w-5 h-5 text-gray-500 dark:text-slate-400" aria-hidden="true" />
                 <h1 class="text-base font-semibold text-gray-800 dark:text-slate-200">
                     Clinical Notes
                 </h1>
@@ -143,9 +140,7 @@ function statusBadge(s: string): string {
                     {{ notes.total.toLocaleString() }}
                     note{{ notes.total !== 1 ? 's' : '' }}
                 </span>
-                <span
-                    class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900/60 text-blue-800 dark:text-blue-300"
-                >
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900/60 text-blue-800 dark:text-blue-300">
                     {{ notes.total.toLocaleString() }} total
                 </span>
             </div>
@@ -193,24 +188,12 @@ function statusBadge(s: string): string {
             </div>
 
             <!-- ── Table ── -->
-            <div
-                class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 overflow-hidden shadow-sm"
-            >
-                <table
-                    class="min-w-full divide-y divide-gray-200 dark:divide-slate-700"
-                    aria-label="Clinical notes"
-                >
+            <div class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 overflow-hidden shadow-sm">
+                <table class="min-w-full divide-y divide-gray-200 dark:divide-slate-700" aria-label="Clinical notes">
                     <thead class="bg-gray-50 dark:bg-slate-700/50">
                         <tr>
                             <th
-                                v-for="col in [
-                                    'Participant',
-                                    'Note Type',
-                                    'Status',
-                                    'Visit Date',
-                                    'Author',
-                                    'Department',
-                                ]"
+                                v-for="col in ['Participant', 'Note Type', 'Status', 'Visit Date', 'Author', 'Department']"
                                 :key="col"
                                 scope="col"
                                 class="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide"
@@ -221,10 +204,7 @@ function statusBadge(s: string): string {
                     </thead>
                     <tbody class="divide-y divide-gray-100 dark:divide-slate-700">
                         <tr v-if="notes.data.length === 0">
-                            <td
-                                colspan="6"
-                                class="px-4 py-10 text-center text-gray-400 dark:text-slate-500"
-                            >
+                            <td colspan="6" class="px-4 py-10 text-center text-gray-400 dark:text-slate-500">
                                 No notes found.
                             </td>
                         </tr>
@@ -234,32 +214,21 @@ function statusBadge(s: string): string {
                             :key="note.id"
                             class="bg-white dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-blue-900/20 cursor-pointer transition-colors"
                             tabindex="0"
-                            :aria-label="
-                                note.participant
-                                    ? `Open chart for ${note.participant.last_name}, ${note.participant.first_name}`
-                                    : 'Open participant chart'
-                            "
-                            @click="note.participant && router.visit(`/participants/${note.participant.id}`)"
-                            @keydown.enter="note.participant && router.visit(`/participants/${note.participant.id}`)"
+                            :aria-label="note.participant ? `Open chart for ${note.participant.last_name}, ${note.participant.first_name}` : 'Open participant chart'"
+                            @click="note.participant && router.visit(`/participants/${note.participant.id}?tab=chart`)"
+                            @keydown.enter="note.participant && router.visit(`/participants/${note.participant.id}?tab=chart`)"
                         >
                             <!-- Participant -->
                             <td class="px-4 py-3">
                                 <template v-if="note.participant">
-                                    <div
-                                        class="font-medium text-blue-600 dark:text-blue-400 hover:underline text-sm"
-                                    >
-                                        {{ note.participant.last_name }},
-                                        {{ note.participant.first_name }}
+                                    <div class="font-medium text-blue-600 dark:text-blue-400 hover:underline text-sm">
+                                        {{ note.participant.last_name }}, {{ note.participant.first_name }}
                                     </div>
-                                    <div
-                                        class="font-mono text-xs text-gray-400 dark:text-slate-500 mt-0.5"
-                                    >
+                                    <div class="font-mono text-xs text-gray-400 dark:text-slate-500 mt-0.5">
                                         {{ note.participant.mrn }}
                                     </div>
                                 </template>
-                                <span v-else class="text-gray-400 dark:text-slate-500 text-sm"
-                                    >-</span
-                                >
+                                <span v-else class="text-gray-400 dark:text-slate-500 text-sm">-</span>
                             </td>
 
                             <!-- Note type -->
@@ -270,10 +239,7 @@ function statusBadge(s: string): string {
                             <!-- Status badge -->
                             <td class="px-4 py-3">
                                 <span
-                                    :class="[
-                                        'inline-flex px-2 py-0.5 rounded-full text-xs font-medium capitalize',
-                                        statusBadge(note.status),
-                                    ]"
+                                    :class="['inline-flex px-2 py-0.5 rounded-full text-xs font-medium capitalize', statusBadge(note.status)]"
                                 >
                                     {{ note.status }}
                                 </span>
@@ -302,7 +268,10 @@ function statusBadge(s: string): string {
             </div>
 
             <!-- ── Pagination ── -->
-            <div v-if="notes.last_page > 1" class="flex items-center justify-between mt-4 text-sm">
+            <div
+                v-if="notes.last_page > 1"
+                class="flex items-center justify-between mt-4 text-sm"
+            >
                 <span class="text-gray-500 dark:text-slate-400">
                     Page {{ notes.current_page }} of {{ notes.last_page }}
                 </span>
