@@ -7,6 +7,7 @@
 //                                   └─────────────────────→ cancelled
 //
 // Actions (matching backend routes):
+//   POST /orders              (create — prescriber depts only)
 //   POST /orders/{id}/acknowledge   (pending only)
 //   POST /orders/{id}/result        (non-terminal, requires result_summary)
 //   POST /orders/{id}/complete      (non-terminal)
@@ -21,6 +22,7 @@ import {
   CheckCircleIcon,
   XCircleIcon,
   ClipboardDocumentCheckIcon,
+  PlusIcon,
 } from '@heroicons/vue/24/outline'
 
 const props = defineProps<{
@@ -49,10 +51,37 @@ interface Order {
   created_at: string | null
 }
 
-const orders    = ref<Order[]>([])
-const loading   = ref(true)
-const error     = ref('')
+const orders     = ref<Order[]>([])
+const loading    = ref(true)
+const error      = ref('')
 const expandedId = ref<number | null>(null)
+
+// ── New order form ────────────────────────────────────────────────────────────
+const showNewOrderForm = ref(false)
+const newOrderSaving   = ref(false)
+const newOrderError    = ref('')
+const newOrderForm = ref({
+  order_type:          'lab',
+  priority:            'routine',
+  instructions:        '',
+  clinical_indication: '',
+  due_date:            '',
+})
+
+const ORDER_TYPE_LABELS: Record<string, string> = {
+  lab:               'Laboratory',
+  imaging:           'Imaging / Radiology',
+  consult:           'Specialist Consult',
+  therapy_pt:        'Physical Therapy',
+  therapy_ot:        'Occupational Therapy',
+  therapy_st:        'Speech Therapy',
+  therapy_speech:    'Speech-Language Pathology',
+  dme:               'DME / Equipment',
+  medication_change: 'Medication Change',
+  home_health:       'Home Health',
+  hospice_referral:  'Hospice Referral',
+  other:             'Other',
+}
 
 // ── Cancel modal state ────────────────────────────────────────────────────────
 const showCancelModal  = ref(false)
@@ -122,6 +151,36 @@ function toggleExpand(id: number) {
 function updateOrder(updated: Order) {
   const idx = orders.value.findIndex(o => o.id === updated.id)
   if (idx >= 0) orders.value[idx] = updated
+}
+
+// ── New order submit ──────────────────────────────────────────────────────────
+async function submitNewOrder() {
+  if (!newOrderForm.value.instructions.trim()) {
+    newOrderError.value = 'Instructions are required.'
+    return
+  }
+  newOrderSaving.value = true; newOrderError.value = ''
+  try {
+    const payload: Record<string, unknown> = {
+      order_type:          newOrderForm.value.order_type,
+      priority:            newOrderForm.value.priority,
+      instructions:        newOrderForm.value.instructions,
+      clinical_indication: newOrderForm.value.clinical_indication || null,
+      due_date:            newOrderForm.value.due_date || null,
+    }
+    const res = await axios.post(`/participants/${props.participant.id}/orders`, payload)
+    orders.value.unshift(res.data.order)
+    showNewOrderForm.value = false
+    newOrderForm.value = { order_type: 'lab', priority: 'routine', instructions: '', clinical_indication: '', due_date: '' }
+  } catch (e: unknown) {
+    const err = e as { response?: { data?: { message?: string; errors?: Record<string, string[]> } } }
+    const errors = err.response?.data?.errors
+    newOrderError.value = errors
+      ? Object.values(errors).flat().join(' ')
+      : (err.response?.data?.message ?? 'Failed to create order.')
+  } finally {
+    newOrderSaving.value = false
+  }
 }
 
 // ── Acknowledge ───────────────────────────────────────────────────────────────
@@ -207,7 +266,69 @@ async function submitResult() {
 
 <template>
   <div class="p-6 max-w-5xl space-y-4">
-    <h2 class="text-base font-semibold text-gray-900 dark:text-slate-100">Orders</h2>
+    <!-- Header -->
+    <div class="flex items-center justify-between">
+      <h2 class="text-base font-semibold text-gray-900 dark:text-slate-100">Orders</h2>
+      <button
+        class="inline-flex items-center gap-1 text-xs px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+        @click="showNewOrderForm = !showNewOrderForm"
+      >
+        <PlusIcon class="w-3 h-3" />
+        New Order
+      </button>
+    </div>
+
+    <!-- New order form -->
+    <div v-if="showNewOrderForm" class="bg-gray-50 dark:bg-slate-700/50 rounded-xl border border-gray-200 dark:border-slate-600 p-5">
+      <h3 class="text-sm font-semibold text-gray-900 dark:text-slate-100 mb-4">New Clinical Order</h3>
+      <div class="grid grid-cols-2 gap-3 mb-3">
+        <div>
+          <label class="block text-xs font-medium text-gray-700 dark:text-slate-300 mb-1">Order Type</label>
+          <select v-model="newOrderForm.order_type"
+            class="w-full text-sm border border-gray-300 dark:border-slate-600 rounded-md px-2 py-1.5 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100">
+            <option v-for="(label, key) in ORDER_TYPE_LABELS" :key="key" :value="key">{{ label }}</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-gray-700 dark:text-slate-300 mb-1">Priority</label>
+          <select v-model="newOrderForm.priority"
+            class="w-full text-sm border border-gray-300 dark:border-slate-600 rounded-md px-2 py-1.5 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100">
+            <option value="routine">Routine</option>
+            <option value="urgent">Urgent</option>
+            <option value="stat">STAT</option>
+          </select>
+        </div>
+        <div class="col-span-2">
+          <label class="block text-xs font-medium text-gray-700 dark:text-slate-300 mb-1">
+            Instructions <span class="text-red-500">*</span>
+          </label>
+          <textarea v-model="newOrderForm.instructions" rows="3"
+            placeholder="Describe the order in detail..."
+            class="w-full text-sm border border-gray-300 dark:border-slate-600 rounded-md px-2 py-1.5 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 resize-none" />
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-gray-700 dark:text-slate-300 mb-1">Clinical Indication</label>
+          <input v-model="newOrderForm.clinical_indication" type="text" placeholder="Reason / diagnosis (optional)"
+            class="w-full text-sm border border-gray-300 dark:border-slate-600 rounded-md px-2 py-1.5 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100" />
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-gray-700 dark:text-slate-300 mb-1">Due Date</label>
+          <input v-model="newOrderForm.due_date" type="date"
+            class="w-full text-sm border border-gray-300 dark:border-slate-600 rounded-md px-2 py-1.5 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100" />
+        </div>
+      </div>
+      <p v-if="newOrderError" class="text-xs text-red-600 dark:text-red-400 mb-2">{{ newOrderError }}</p>
+      <div class="flex gap-2">
+        <button :disabled="newOrderSaving" @click="submitNewOrder"
+          class="text-xs px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors">
+          {{ newOrderSaving ? 'Placing...' : 'Place Order' }}
+        </button>
+        <button @click="showNewOrderForm = false"
+          class="text-xs px-3 py-1.5 border border-gray-300 dark:border-slate-600 text-gray-700 dark:text-slate-300 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors">
+          Cancel
+        </button>
+      </div>
+    </div>
 
     <div v-if="loading" class="flex items-center justify-center py-16">
       <div class="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />

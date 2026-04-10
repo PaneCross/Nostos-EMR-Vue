@@ -1,4 +1,8 @@
 <script setup lang="ts">
+// ─── GrievancesTab.vue ────────────────────────────────────────────────────────
+// Participant grievance records per 42 CFR §460.120.
+// Fields match Grievance::toApiArray() output.
+// ─────────────────────────────────────────────────────────────────────────────
 import { ref, onMounted } from 'vue'
 import axios from 'axios'
 import { ExclamationCircleIcon } from '@heroicons/vue/24/outline'
@@ -9,32 +13,44 @@ const props = defineProps<{
 
 interface Grievance {
   id: number
-  submitted_at: string
+  reference_number: string
+  filed_at: string | null          // toApiArray: filed_at (ISO)
   category: string | null
+  category_label: string | null
   description: string
   status: string
-  resolution: string | null
-  resolved_at: string | null
-  submitted_by: { first_name: string; last_name: string } | null
-  assigned_to: { first_name: string; last_name: string } | null
+  status_label: string
+  priority: string | null
+  filed_by_name: string | null     // person who filed (string, not object)
+  assigned_to: string | null       // assigned staff name (string)
+  resolution_date: string | null
+  is_urgent_overdue: boolean
+  is_standard_overdue: boolean
+  cms_reportable: boolean
 }
 
 const grievances = ref<Grievance[]>([])
-const loading = ref(true)
-const error = ref('')
+const loading    = ref(true)
+const error      = ref('')
 
 const STATUS_COLORS: Record<string, string> = {
-  open:       'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300',
-  in_review:  'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300',
-  resolved:   'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300',
-  closed:     'bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-400',
-  withdrawn:  'bg-gray-100 dark:bg-slate-700 text-gray-400 dark:text-slate-500',
+  open:        'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300',
+  under_review:'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300',
+  in_review:   'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300',
+  resolved:    'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300',
+  closed:      'bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-400',
+  withdrawn:   'bg-gray-100 dark:bg-slate-700 text-gray-400 dark:text-slate-500',
+}
+
+const PRIORITY_COLORS: Record<string, string> = {
+  urgent:   'text-red-600 dark:text-red-400 font-semibold',
+  standard: 'text-gray-500 dark:text-slate-400',
 }
 
 onMounted(async () => {
   try {
     const res = await axios.get(`/participants/${props.participant.id}/grievances`)
-    grievances.value = res.data
+    grievances.value = Array.isArray(res.data) ? res.data : []
   } catch {
     error.value = 'Unable to load grievances.'
   } finally {
@@ -42,7 +58,7 @@ onMounted(async () => {
   }
 })
 
-function fmtDate(val: string | null): string {
+function fmtDate(val: string | null | undefined): string {
   if (!val) return '-'
   return new Date(val.slice(0, 10) + 'T12:00:00').toLocaleDateString('en-US', {
     year: 'numeric', month: 'short', day: 'numeric',
@@ -73,34 +89,39 @@ function fmtDate(val: string | null): string {
       <div
         v-for="g in grievances"
         :key="g.id"
-        class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-4"
+        :class="['bg-white dark:bg-slate-800 rounded-xl border p-4',
+          (g.is_urgent_overdue || g.is_standard_overdue)
+            ? 'border-red-300 dark:border-red-700'
+            : 'border-gray-200 dark:border-slate-700']"
       >
         <div class="flex items-start justify-between gap-3 mb-2">
           <div class="flex items-center gap-2 flex-wrap">
-            <span class="text-sm font-medium text-gray-800 dark:text-slate-200">
-              {{ g.category ? g.category.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : 'General' }}
+            <span class="text-sm font-semibold text-gray-800 dark:text-slate-200">
+              {{ g.category_label ?? (g.category ? g.category.replace(/_/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase()) : 'General') }}
             </span>
-            <span :class="['inline-flex px-2 py-0.5 rounded text-xs font-medium capitalize', STATUS_COLORS[g.status] ?? '']">
-              {{ g.status.replace(/_/g, ' ') }}
+            <span :class="['inline-flex px-2 py-0.5 rounded text-xs font-medium', STATUS_COLORS[g.status] ?? 'bg-gray-100 dark:bg-slate-700 text-gray-500']">
+              {{ g.status_label ?? g.status.replace(/_/g, ' ') }}
             </span>
+            <span v-if="g.priority" :class="['text-xs', PRIORITY_COLORS[g.priority] ?? '']">
+              {{ g.priority }}
+            </span>
+            <span v-if="g.is_urgent_overdue || g.is_standard_overdue"
+              class="text-xs text-red-600 dark:text-red-400 font-medium">Overdue</span>
+            <span v-if="g.cms_reportable"
+              class="text-xs bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 px-1.5 py-0.5 rounded">CMS</span>
           </div>
-          <span class="text-xs text-gray-500 dark:text-slate-400 shrink-0">{{ fmtDate(g.submitted_at) }}</span>
+          <div class="text-right shrink-0">
+            <div class="text-xs font-mono text-gray-400 dark:text-slate-500">{{ g.reference_number }}</div>
+            <div class="text-xs text-gray-500 dark:text-slate-400 mt-0.5">{{ fmtDate(g.filed_at) }}</div>
+          </div>
         </div>
 
         <p class="text-sm text-gray-700 dark:text-slate-300 mb-2">{{ g.description }}</p>
 
         <div class="flex items-center gap-4 text-xs text-gray-500 dark:text-slate-400 flex-wrap">
-          <span v-if="g.submitted_by">
-            Submitted by: {{ g.submitted_by.first_name }} {{ g.submitted_by.last_name }}
-          </span>
-          <span v-if="g.assigned_to">
-            Assigned to: {{ g.assigned_to.first_name }} {{ g.assigned_to.last_name }}
-          </span>
-          <span v-if="g.resolved_at">Resolved: {{ fmtDate(g.resolved_at) }}</span>
-        </div>
-
-        <div v-if="g.resolution" class="mt-2 text-xs text-gray-600 dark:text-slate-400 bg-gray-50 dark:bg-slate-700/50 rounded px-3 py-2">
-          <span class="font-medium">Resolution:</span> {{ g.resolution }}
+          <span v-if="g.filed_by_name">Filed by: {{ g.filed_by_name }}</span>
+          <span v-if="g.assigned_to">Assigned to: {{ g.assigned_to }}</span>
+          <span v-if="g.resolution_date">Resolved: {{ fmtDate(g.resolution_date) }}</span>
         </div>
       </div>
     </div>

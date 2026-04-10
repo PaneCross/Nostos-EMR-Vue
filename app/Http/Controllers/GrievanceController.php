@@ -481,4 +481,22 @@ class GrievanceController extends Controller
 
         return response()->json(['grievance' => $grievance->fresh()->toApiArray()]);
     }
+
+
+    /**
+     * JSON endpoint: grievances for a specific participant (used by GrievancesTab).
+     * GET /participants/{participant}/grievances
+     */
+    public function participantGrievances(Participant $participant): JsonResponse
+    {
+        abort_if($participant->tenant_id !== Auth::user()->tenant_id, 403);
+
+        $grievances = Grievance::forTenant(Auth::user()->tenant_id)
+            ->where('participant_id', $participant->id)
+            ->with(['receivedBy:id,first_name,last_name', 'assignedTo:id,first_name,last_name'])
+            ->orderBy('filed_at', 'desc')
+            ->get();
+
+        return response()->json($grievances->map->toApiArray()->values());
+    }
 }
