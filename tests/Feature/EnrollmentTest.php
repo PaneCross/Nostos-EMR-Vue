@@ -60,15 +60,21 @@ class EnrollmentTest extends TestCase
         );
     }
 
-    public function test_show_returns_referral_json(): void
+    public function test_show_returns_referral_inertia_page(): void
     {
         $user     = $this->makeUser();
         $referral = $this->makeReferral($user);
 
-        $response = $this->actingAs($user)->getJson("/enrollment/referrals/{$referral->id}");
+        $response = $this->actingAs($user)->get("/enrollment/referrals/{$referral->id}");
 
         $response->assertStatus(200)
-            ->assertJsonFragment(['id' => $referral->id]);
+            ->assertInertia(fn ($page) => $page
+                ->component('Enrollment/Show')
+                ->has('referral', fn ($r) => $r->where('id', $referral->id)->etc())
+                ->has('validTransitions')
+                ->has('statusLabels')
+                ->has('pipelineSteps')
+            );
     }
 
     public function test_show_rejects_cross_tenant_referral(): void
@@ -77,7 +83,7 @@ class EnrollmentTest extends TestCase
         $otherUser = User::factory()->create(); // different tenant
         $referral  = $this->makeReferral($otherUser);
 
-        $response = $this->actingAs($user)->getJson("/enrollment/referrals/{$referral->id}");
+        $response = $this->actingAs($user)->get("/enrollment/referrals/{$referral->id}");
 
         $response->assertStatus(403);
     }

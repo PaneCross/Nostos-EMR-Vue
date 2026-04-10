@@ -106,13 +106,47 @@ class ReferralController extends Controller
      *
      * GET /enrollment/referrals/{referral}
      */
-    public function show(Request $request, Referral $referral): JsonResponse
+    public function show(Request $request, Referral $referral): Response
     {
         $this->authorizeTenant($referral, $request->user());
 
-        return response()->json(
-            $referral->load(['assignedTo', 'participant', 'createdBy', 'site'])
-        );
+        $referral->load(['assignedTo:id,first_name,last_name', 'participant:id,mrn,first_name,last_name', 'createdBy:id,first_name,last_name', 'site:id,name']);
+
+        $currentStatus    = $referral->status;
+        $validTransitions = EnrollmentService::VALID_TRANSITIONS[$currentStatus] ?? [];
+
+        return Inertia::render('Enrollment/Show', [
+            'referral' => [
+                'id'               => $referral->id,
+                'referred_by_name' => $referral->referred_by_name,
+                'referral_source'  => $referral->referral_source,
+                'source_label'     => $referral->sourceLabel(),
+                'referral_date'    => $referral->referral_date?->toDateString(),
+                'status'           => $referral->status,
+                'status_label'     => $referral->statusLabel(),
+                'priority'         => $referral->priority,
+                'notes'            => $referral->notes,
+                'decline_reason'   => $referral->decline_reason,
+                'withdrawn_reason' => $referral->withdrawn_reason,
+                'assigned_to'      => $referral->assignedTo
+                    ? ['id' => $referral->assignedTo->id, 'first_name' => $referral->assignedTo->first_name, 'last_name' => $referral->assignedTo->last_name]
+                    : null,
+                'created_by'       => $referral->createdBy
+                    ? ['id' => $referral->createdBy->id, 'first_name' => $referral->createdBy->first_name, 'last_name' => $referral->createdBy->last_name]
+                    : null,
+                'participant'      => $referral->participant
+                    ? ['id' => $referral->participant->id, 'mrn' => $referral->participant->mrn, 'first_name' => $referral->participant->first_name, 'last_name' => $referral->participant->last_name]
+                    : null,
+                'site'             => $referral->site
+                    ? ['id' => $referral->site->id, 'name' => $referral->site->name]
+                    : null,
+                'created_at'       => $referral->created_at?->toIso8601String(),
+                'updated_at'       => $referral->updated_at?->toIso8601String(),
+            ],
+            'validTransitions' => $validTransitions,
+            'statusLabels'     => Referral::STATUS_LABELS,
+            'pipelineSteps'    => ['new', 'intake_scheduled', 'intake_in_progress', 'intake_complete', 'eligibility_pending', 'pending_enrollment', 'enrolled'],
+        ]);
     }
 
     /**
@@ -223,7 +257,7 @@ class ReferralController extends Controller
      */
     public function reenroll(Request $request, Participant $participant): JsonResponse
     {
-        $user = Auth::user();
+        $user = $request->user();
         $this->authorizeTenant($participant, $user);
 
         abort_unless(
