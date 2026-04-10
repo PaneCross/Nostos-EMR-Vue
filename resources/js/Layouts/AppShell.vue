@@ -402,7 +402,7 @@ onMounted(() => {
     loadChatUnread()
 
     if (window.Echo && user.value) {
-        window.Echo.private(`tenant.${user.value.tenant_id}`).listen('AlertCreated', () => loadAlerts())
+        window.Echo.private(`tenant.${user.value.tenant?.id}`).listen('AlertCreated', () => loadAlerts())
         window.Echo.private(`user.${user.value.id}`).listen('ChatActivity', () => loadChatUnread())
     }
 
