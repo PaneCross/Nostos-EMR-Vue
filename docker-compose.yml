@@ -21,6 +21,7 @@ services:
             SUPERVISOR_PHP_USER: 'root'
         volumes:
             - '.:/var/www/html'
+            - './docker/supervisord.conf:/etc/supervisor/conf.d/supervisord.conf'
         networks:
             - sail
         depends_on:
