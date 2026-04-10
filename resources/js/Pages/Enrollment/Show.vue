@@ -132,6 +132,25 @@ function fmtDate(val: string | null | undefined): string {
     })
 }
 
+function fmtDateTime(val: string | null | undefined): string {
+    if (!val) return ''
+    return new Date(val).toLocaleDateString('en-US', {
+        month: 'short', day: 'numeric', year: 'numeric',
+    })
+}
+
+/**
+ * Returns the timestamp to display under a stepper step, if available.
+ * - Step 0 (new): use created_at — that's when the referral was filed
+ * - Current step: use updated_at — last recorded transition
+ * - All other completed steps: no exact timestamp available (no history table)
+ */
+function stepTimestamp(idx: number): string {
+    if (idx === 0) return fmtDateTime(props.referral.created_at)
+    if (idx === currentStepIndex.value && idx > 0) return fmtDateTime(props.referral.updated_at)
+    return ''
+}
+
 const STATUS_BADGE: Record<string, string> = {
     new:                'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300',
     intake_scheduled:   'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300',
@@ -168,12 +187,23 @@ const STATUS_BADGE: Record<string, string> = {
 
         <div class="px-6 py-5 max-w-4xl space-y-6">
 
+            <!-- ── Back to pipeline ── -->
+            <div>
+                <Link
+                    href="/enrollment/referrals"
+                    class="inline-flex items-center gap-1.5 text-sm text-blue-600 dark:text-blue-400 hover:underline"
+                >
+                    <ArrowLeftIcon class="w-4 h-4" />
+                    Back to Pipeline
+                </Link>
+            </div>
+
             <!-- ── Status progress stepper ── -->
             <div v-if="!isExited" class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 px-6 py-5">
                 <h2 class="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide mb-4">Enrollment Progress</h2>
-                <div class="flex items-center gap-0 overflow-x-auto">
+                <div class="flex items-center gap-0 overflow-x-auto pb-1">
                     <template v-for="(step, idx) in FORWARD_STEPS" :key="step">
-                        <!-- Step circle -->
+                        <!-- Step circle + label + timestamp -->
                         <div class="flex flex-col items-center shrink-0">
                             <div :class="[
                                 'w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-colors',
@@ -194,12 +224,17 @@ const STATUS_BADGE: Record<string, string> = {
                                         ? 'text-green-600 dark:text-green-400'
                                         : 'text-gray-400 dark:text-slate-500',
                             ]">{{ statusLabels[step] ?? step }}</span>
+                            <!-- Timestamp under step label (only where available) -->
+                            <span
+                                v-if="stepTimestamp(idx)"
+                                class="text-[10px] text-gray-400 dark:text-slate-500 mt-0.5 text-center max-w-[4.5rem] leading-tight"
+                            >{{ stepTimestamp(idx) }}</span>
                         </div>
                         <!-- Connector line (not after last step) -->
                         <div
                             v-if="idx < FORWARD_STEPS.length - 1"
                             :class="[
-                                'h-0.5 flex-1 min-w-[1rem] mx-1 mt-[-1rem]',
+                                'h-0.5 flex-1 min-w-[1rem] mx-1 mt-[-1.75rem]',
                                 idx < currentStepIndex ? 'bg-green-400' : 'bg-gray-200 dark:bg-slate-700',
                             ]"
                         />
