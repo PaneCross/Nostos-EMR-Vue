@@ -220,6 +220,13 @@ async function submitAck() {
     ackSaving.value = false
   }
 }
+
+function fmtDate(val: string | null): string {
+  if (!val) return '-'
+  return new Date(val.slice(0, 10) + 'T12:00:00').toLocaleDateString('en-US', {
+    year: 'numeric', month: 'short', day: 'numeric',
+  })
+}
 </script>
 
 <template>
@@ -399,7 +406,7 @@ async function submitAck() {
           </div>
           <div>
             <label class="text-xs font-medium text-gray-600 dark:text-slate-400">Unit</label>
-            <select
+            <select name="dose_unit"
               v-model="form.dose_unit"
               class="w-full mt-1 text-sm border border-gray-300 dark:border-slate-600 rounded px-2 py-1.5 bg-white dark:bg-slate-800 dark:text-slate-100"
             >
@@ -408,7 +415,7 @@ async function submitAck() {
           </div>
           <div>
             <label class="text-xs font-medium text-gray-600 dark:text-slate-400">Route</label>
-            <select
+            <select name="route"
               v-model="form.route"
               class="w-full mt-1 text-sm border border-gray-300 dark:border-slate-600 rounded px-2 py-1.5 bg-white dark:bg-slate-800 dark:text-slate-100"
             >
@@ -417,7 +424,7 @@ async function submitAck() {
           </div>
           <div>
             <label class="text-xs font-medium text-gray-600 dark:text-slate-400">Frequency</label>
-            <select
+            <select name="frequency"
               v-model="form.frequency"
               class="w-full mt-1 text-sm border border-gray-300 dark:border-slate-600 rounded px-2 py-1.5 bg-white dark:bg-slate-800 dark:text-slate-100"
             >
@@ -502,7 +509,7 @@ async function submitAck() {
                   {{ med.status }}
                 </span>
               </td>
-              <td class="px-4 py-2.5 text-gray-500 dark:text-slate-400 text-xs">{{ med.start_date ?? '-' }}</td>
+              <td class="px-4 py-2.5 text-gray-500 dark:text-slate-400 text-xs">{{ fmtDate(med.start_date) }}</td>
               <td class="px-4 py-2.5 text-right">
                 <button
                   class="text-xs text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 hover:underline"

@@ -170,7 +170,7 @@ async function submit() {
       <div class="grid grid-cols-3 gap-3">
         <div>
           <label class="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">Status</label>
-          <select v-model="form.status" class="w-full text-sm border border-gray-300 dark:border-slate-600 rounded px-2 py-1.5 bg-white dark:bg-slate-800">
+          <select name="status" v-model="form.status" class="w-full text-sm border border-gray-300 dark:border-slate-600 rounded px-2 py-1.5 bg-white dark:bg-slate-800">
             <option value="active">Active</option>
             <option value="chronic">Chronic</option>
             <option value="resolved">Resolved</option>

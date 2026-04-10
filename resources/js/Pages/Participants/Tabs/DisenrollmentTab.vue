@@ -240,7 +240,7 @@ async function submitReenroll() {
               <label class="block text-xs font-medium text-gray-700 dark:text-slate-300 mb-1">
                 Reason <span class="text-red-500">*</span>
               </label>
-              <select v-model="disenrollForm.reason"
+              <select name="reason" v-model="disenrollForm.reason"
                 class="w-full text-sm border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-2 bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-100">
                 <option value="voluntary">Voluntary Disenrollment</option>
                 <option value="involuntary">Involuntary Disenrollment</option>

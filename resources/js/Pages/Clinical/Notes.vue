@@ -148,7 +148,7 @@ function statusBadge(s: string): string {
             <!-- ── Filter bar ── -->
             <div class="flex flex-wrap gap-2 mb-4">
                 <!-- Department filter -->
-                <select
+                <select name="select"
                     :value="department"
                     aria-label="Filter by department"
                     class="text-sm border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-slate-100"
@@ -161,7 +161,7 @@ function statusBadge(s: string): string {
                 </select>
 
                 <!-- Note type filter -->
-                <select
+                <select name="select"
                     :value="noteType"
                     aria-label="Filter by note type"
                     class="text-sm border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-slate-100"
@@ -174,7 +174,7 @@ function statusBadge(s: string): string {
                 </select>
 
                 <!-- Status filter -->
-                <select
+                <select name="select"
                     :value="status"
                     aria-label="Filter by status"
                     class="text-sm border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-slate-100"

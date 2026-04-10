@@ -130,7 +130,7 @@ async function submit() {
         <div class="space-y-3">
           <div>
             <label class="block text-xs font-medium text-gray-700 dark:text-slate-300 mb-1">Destination Site *</label>
-            <select v-model="form.to_site_id" class="w-full text-sm border border-gray-300 dark:border-slate-600 rounded-md px-2 py-1.5 bg-white dark:bg-slate-700">
+            <select name="to_site_id" v-model="form.to_site_id" class="w-full text-sm border border-gray-300 dark:border-slate-600 rounded-md px-2 py-1.5 bg-white dark:bg-slate-700">
               <option value="">Select site...</option>
               <option v-for="site in availableSites" :key="site.id" :value="site.id">{{ site.name }}</option>
             </select>

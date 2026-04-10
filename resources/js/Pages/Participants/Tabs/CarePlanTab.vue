@@ -194,6 +194,13 @@ async function startNewVersion() {
     versioning.value = false
   }
 }
+
+function fmtDate(val: string | null): string {
+  if (!val) return '-'
+  return new Date(val.slice(0, 10) + 'T12:00:00').toLocaleDateString('en-US', {
+    year: 'numeric', month: 'short', day: 'numeric',
+  })
+}
 </script>
 
 <template>
@@ -227,8 +234,8 @@ async function startNewVersion() {
             </span>
           </div>
           <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
-            {{ plan.effective_date ? `Effective: ${plan.effective_date}` : 'Draft: not yet effective' }}
-            <template v-if="plan.review_due_date"> · Review due: {{ plan.review_due_date }}</template>
+            {{ plan.effective_date ? `Effective: ${fmtDate(plan.effective_date)}` : 'Draft: not yet effective' }}
+            <template v-if="plan.review_due_date"> · Review due: {{ fmtDate(plan.review_due_date) }}</template>
             <span
               v-if="daysUntilReview !== null && daysUntilReview <= 30"
               class="ml-1.5 text-amber-600 dark:text-amber-400 font-medium"
@@ -334,7 +341,7 @@ async function startNewVersion() {
             <div class="grid grid-cols-2 gap-2">
               <div>
                 <label class="block text-[10px] font-medium text-slate-600 dark:text-slate-400 mb-0.5">Status</label>
-                <select
+                <select name="status"
                   v-model="editForm.status"
                   class="w-full text-xs border border-slate-300 dark:border-slate-600 rounded px-2 py-1 bg-white dark:bg-slate-700 dark:text-slate-100"
                 >

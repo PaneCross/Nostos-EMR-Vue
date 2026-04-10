@@ -123,7 +123,7 @@ async function submit() {
         </div>
         <div>
           <label class="block text-xs font-medium text-gray-700 dark:text-slate-300 mb-1">Source</label>
-          <select v-model="form.source" class="w-full text-sm border border-gray-300 dark:border-slate-600 rounded-md px-2 py-1.5 bg-white dark:bg-slate-700">
+          <select name="source" v-model="form.source" class="w-full text-sm border border-gray-300 dark:border-slate-600 rounded-md px-2 py-1.5 bg-white dark:bg-slate-700">
             <option value="internal">Internal</option>
             <option value="external">External</option>
             <option value="patient_reported">Patient Reported</option>

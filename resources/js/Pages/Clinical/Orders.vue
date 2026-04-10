@@ -204,7 +204,7 @@ const STATUS_BADGE: Record<string, string> = {
                 <FunnelIcon class="w-4 h-4 text-gray-400 dark:text-slate-500 flex-shrink-0" aria-hidden="true" />
 
                 <!-- Status filter -->
-                <select
+                <select name="select"
                     :value="statusFilter"
                     aria-label="Filter by status"
                     class="text-sm border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-slate-100"
@@ -219,7 +219,7 @@ const STATUS_BADGE: Record<string, string> = {
                 </select>
 
                 <!-- Priority filter -->
-                <select
+                <select name="select"
                     :value="priorityFilter"
                     aria-label="Filter by priority"
                     class="text-sm border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-slate-100"

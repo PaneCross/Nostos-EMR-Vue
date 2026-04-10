@@ -237,14 +237,14 @@ async function markUnable(consent: ConsentRecord) {
       <div class="grid grid-cols-2 gap-3 mb-3">
         <div>
           <label class="block text-xs font-medium text-gray-700 dark:text-slate-300 mb-1">Consent Type</label>
-          <select v-model="addForm.consent_type"
+          <select name="consent_type" v-model="addForm.consent_type"
             class="w-full text-sm border border-gray-300 dark:border-slate-600 rounded-md px-2 py-1.5 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100">
             <option v-for="(label, key) in TYPE_LABELS" :key="key" :value="key">{{ label }}</option>
           </select>
         </div>
         <div>
           <label class="block text-xs font-medium text-gray-700 dark:text-slate-300 mb-1">Status</label>
-          <select v-model="addForm.status"
+          <select name="status" v-model="addForm.status"
             class="w-full text-sm border border-gray-300 dark:border-slate-600 rounded-md px-2 py-1.5 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100">
             <option value="pending">Pending</option>
             <option value="acknowledged">Acknowledged</option>
@@ -376,7 +376,7 @@ async function markUnable(consent: ConsentRecord) {
             </div>
             <div>
               <label class="block text-xs font-medium text-gray-700 dark:text-slate-300 mb-1">Representative Type</label>
-              <select v-model="ackRepType"
+              <select name="ackRepType" v-model="ackRepType"
                 class="w-full text-sm border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-2 bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-100">
                 <option value="self">Self (Participant)</option>
                 <option value="guardian">Legal Guardian</option>

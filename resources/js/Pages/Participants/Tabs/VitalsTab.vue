@@ -433,7 +433,7 @@ async function submit() {
       </div>
       <div>
         <label class="text-xs font-medium text-gray-600 dark:text-slate-400">Glucose Timing</label>
-        <select v-model="form.blood_glucose_timing" class="w-full mt-1 text-sm border border-gray-300 dark:border-slate-600 rounded px-2 py-1.5 bg-white dark:bg-slate-800">
+        <select name="blood_glucose_timing" v-model="form.blood_glucose_timing" class="w-full mt-1 text-sm border border-gray-300 dark:border-slate-600 rounded px-2 py-1.5 bg-white dark:bg-slate-800">
           <option value="">-- select --</option>
           <option v-for="(label, key) in GLUCOSE_TIMING_LABELS" :key="key" :value="key">{{ label }}</option>
         </select>

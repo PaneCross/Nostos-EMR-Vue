@@ -167,13 +167,13 @@ async function submit() {
         <div class="grid grid-cols-2 gap-3 mb-3">
           <div>
             <label class="block text-xs font-medium text-gray-700 dark:text-slate-300 mb-1">Type</label>
-            <select v-model="form.insurance_type" class="w-full text-sm border border-gray-300 dark:border-slate-600 rounded-md px-2 py-1.5 bg-white dark:bg-slate-700">
+            <select name="insurance_type" v-model="form.insurance_type" class="w-full text-sm border border-gray-300 dark:border-slate-600 rounded-md px-2 py-1.5 bg-white dark:bg-slate-700">
               <option v-for="(label, key) in INSURANCE_TYPE_LABELS" :key="key" :value="key">{{ label }}</option>
             </select>
           </div>
           <div>
             <label class="block text-xs font-medium text-gray-700 dark:text-slate-300 mb-1">Eligibility Status</label>
-            <select v-model="form.eligibility_status" class="w-full text-sm border border-gray-300 dark:border-slate-600 rounded-md px-2 py-1.5 bg-white dark:bg-slate-700">
+            <select name="eligibility_status" v-model="form.eligibility_status" class="w-full text-sm border border-gray-300 dark:border-slate-600 rounded-md px-2 py-1.5 bg-white dark:bg-slate-700">
               <option value="active">Active</option>
               <option value="pending">Pending</option>
               <option value="terminated">Terminated</option>
@@ -203,7 +203,7 @@ async function submit() {
           </div>
         </div>
         <label class="flex items-center gap-2 text-xs text-gray-700 dark:text-slate-300 mb-3 cursor-pointer">
-          <input v-model="form.is_primary" type="checkbox" class="rounded border-gray-300" />
+          <input v-model="form.is_primary" type="checkbox" class="rounded border-gray-300 dark:border-slate-600 dark:bg-slate-700" />
           Primary coverage
         </label>
         <p v-if="error" class="text-red-600 dark:text-red-400 text-xs mb-2">{{ error }}</p>

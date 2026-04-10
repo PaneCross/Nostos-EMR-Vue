@@ -94,19 +94,15 @@ function statusClass(status: string | null): string {
 
     <AppShell>
         <template #header>
-            <h1 class="text-base font-semibold text-gray-800 dark:text-slate-200">
-                Part D Events (PDE)
-            </h1>
+            <h1 class="text-base font-semibold text-gray-800 dark:text-slate-200">Part D Events (PDE)</h1>
         </template>
 
         <div class="px-6 py-5 space-y-4">
+
             <!-- ── Filter bar ── -->
             <div class="flex items-center gap-2">
-                <FunnelIcon
-                    class="w-4 h-4 text-gray-400 dark:text-slate-500 shrink-0"
-                    aria-hidden="true"
-                />
-                <select
+                <FunnelIcon class="w-4 h-4 text-gray-400 dark:text-slate-500 shrink-0" aria-hidden="true" />
+                <select name="statusFilter"
                     v-model="statusFilter"
                     class="text-sm border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-1.5 focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-slate-100"
                     aria-label="Filter by status"
@@ -120,14 +116,9 @@ function statusClass(status: string | null): string {
             </div>
 
             <!-- ── Table ── -->
-            <div
-                class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 overflow-hidden"
-            >
+            <div class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 overflow-hidden">
                 <!-- Loading -->
-                <div
-                    v-if="loading"
-                    class="py-12 text-center text-sm text-gray-400 dark:text-slate-500"
-                >
+                <div v-if="loading" class="py-12 text-center text-sm text-gray-400 dark:text-slate-500">
                     Loading PDE records...
                 </div>
 
@@ -144,50 +135,19 @@ function statusClass(status: string | null): string {
                     <table class="min-w-full text-sm">
                         <thead class="bg-gray-50 dark:bg-slate-700/50">
                             <tr>
-                                <th
-                                    class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide"
-                                >
-                                    Participant
-                                </th>
-                                <th
-                                    class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide"
-                                >
-                                    Drug Name
-                                </th>
-                                <th
-                                    class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide"
-                                >
-                                    Dispense Date
-                                </th>
-                                <th
-                                    class="px-4 py-2.5 text-right text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide"
-                                >
-                                    Days Supply
-                                </th>
-                                <th
-                                    class="px-4 py-2.5 text-right text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide"
-                                >
-                                    Gross Drug Cost
-                                </th>
-                                <th
-                                    class="px-4 py-2.5 text-right text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide"
-                                >
-                                    Patient Pay
-                                </th>
-                                <th
-                                    class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide"
-                                >
-                                    Status
-                                </th>
+                                <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">Participant</th>
+                                <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">Drug Name</th>
+                                <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">Dispense Date</th>
+                                <th class="px-4 py-2.5 text-right text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">Days Supply</th>
+                                <th class="px-4 py-2.5 text-right text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">Gross Drug Cost</th>
+                                <th class="px-4 py-2.5 text-right text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">Patient Pay</th>
+                                <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">Status</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-100 dark:divide-slate-700">
                             <!-- Empty state -->
                             <tr v-if="filtered.length === 0">
-                                <td
-                                    colspan="7"
-                                    class="px-4 py-10 text-center text-sm text-gray-400 dark:text-slate-500"
-                                >
+                                <td colspan="7" class="px-4 py-10 text-center text-sm text-gray-400 dark:text-slate-500">
                                     No PDE records found.
                                 </td>
                             </tr>
@@ -212,33 +172,22 @@ function statusClass(status: string | null): string {
                                 <td class="px-4 py-3 text-gray-700 dark:text-slate-300">
                                     {{ rec.drug_name ?? '-' }}
                                 </td>
-                                <td
-                                    class="px-4 py-3 text-gray-600 dark:text-slate-400 whitespace-nowrap"
-                                >
+                                <td class="px-4 py-3 text-gray-600 dark:text-slate-400 whitespace-nowrap">
                                     {{ fmtDate(rec.dispense_date) }}
                                 </td>
-                                <td
-                                    class="px-4 py-3 text-right text-gray-600 dark:text-slate-400 tabular-nums"
-                                >
+                                <td class="px-4 py-3 text-right text-gray-600 dark:text-slate-400 tabular-nums">
                                     {{ rec.days_supply?.toLocaleString() ?? '-' }}
                                 </td>
-                                <td
-                                    class="px-4 py-3 text-right text-gray-800 dark:text-slate-200 tabular-nums"
-                                >
+                                <td class="px-4 py-3 text-right text-gray-800 dark:text-slate-200 tabular-nums">
                                     {{ fmtCurrency(rec.gross_drug_cost) }}
                                 </td>
-                                <td
-                                    class="px-4 py-3 text-right text-gray-800 dark:text-slate-200 tabular-nums"
-                                >
+                                <td class="px-4 py-3 text-right text-gray-800 dark:text-slate-200 tabular-nums">
                                     {{ fmtCurrency(rec.patient_pay) }}
                                 </td>
                                 <td class="px-4 py-3">
                                     <span
                                         v-if="rec.status"
-                                        :class="[
-                                            'inline-flex px-2 py-0.5 rounded text-xs font-medium capitalize',
-                                            statusClass(rec.status),
-                                        ]"
+                                        :class="['inline-flex px-2 py-0.5 rounded text-xs font-medium capitalize', statusClass(rec.status)]"
                                     >
                                         {{ rec.status }}
                                     </span>

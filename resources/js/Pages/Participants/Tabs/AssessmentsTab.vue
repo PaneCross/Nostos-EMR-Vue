@@ -233,7 +233,7 @@ async function submit(e: Event) {
       >
         <div>
           <label class="text-xs font-medium text-gray-600 dark:text-slate-400">Type</label>
-          <select
+          <select name="assessment_type"
             v-model="form.assessment_type"
             class="w-full mt-1 text-sm border border-gray-300 dark:border-slate-600 rounded px-2 py-1.5 bg-white dark:bg-slate-800 dark:text-slate-100"
           >

@@ -111,7 +111,7 @@ function downloadDocument(doc: ParticipantDocument) {
     <div class="flex items-center justify-between mb-4 gap-2 flex-wrap">
       <h2 class="text-base font-semibold text-gray-900 dark:text-slate-100">Documents</h2>
       <div class="flex items-center gap-2">
-        <select v-model="filterCategory" class="text-xs border border-gray-300 dark:border-slate-600 rounded-md px-2 py-1.5 bg-white dark:bg-slate-700 dark:text-slate-200">
+        <select name="filterCategory" v-model="filterCategory" class="text-xs border border-gray-300 dark:border-slate-600 rounded-md px-2 py-1.5 bg-white dark:bg-slate-700 dark:text-slate-200">
           <option value="">All categories</option>
           <option v-for="(label, key) in CATEGORY_LABELS" :key="key" :value="key">{{ label }}</option>
         </select>
@@ -170,7 +170,7 @@ function downloadDocument(doc: ParticipantDocument) {
           </div>
           <div>
             <label class="block text-xs font-medium text-gray-700 dark:text-slate-300 mb-1">Category</label>
-            <select v-model="uploadForm.category" class="w-full text-sm border border-gray-300 dark:border-slate-600 rounded-md px-2 py-1.5 bg-white dark:bg-slate-700 dark:text-slate-200">
+            <select name="category" v-model="uploadForm.category" class="w-full text-sm border border-gray-300 dark:border-slate-600 rounded-md px-2 py-1.5 bg-white dark:bg-slate-700 dark:text-slate-200">
               <option v-for="(label, key) in CATEGORY_LABELS" :key="key" :value="key">{{ label }}</option>
             </select>
           </div>

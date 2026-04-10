@@ -102,15 +102,13 @@ function selectRow(id: number) {
         </template>
 
         <div class="px-6 py-5 space-y-4">
+
             <!-- ── Toolbar ── -->
             <div class="flex items-center justify-between gap-3 flex-wrap">
                 <!-- Status filter -->
                 <div class="flex items-center gap-2">
-                    <FunnelIcon
-                        class="w-4 h-4 text-gray-400 dark:text-slate-500 shrink-0"
-                        aria-hidden="true"
-                    />
-                    <select
+                    <FunnelIcon class="w-4 h-4 text-gray-400 dark:text-slate-500 shrink-0" aria-hidden="true" />
+                    <select name="statusFilter"
                         v-model="statusFilter"
                         class="text-sm border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-1.5 focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-slate-100"
                         aria-label="Filter by status"
@@ -135,22 +133,14 @@ function selectRow(id: number) {
             </div>
 
             <!-- ── Table ── -->
-            <div
-                class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 overflow-hidden"
-            >
+            <div class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 overflow-hidden">
                 <!-- Loading state -->
-                <div
-                    v-if="loading"
-                    class="py-12 text-center text-sm text-gray-400 dark:text-slate-500"
-                >
+                <div v-if="loading" class="py-12 text-center text-sm text-gray-400 dark:text-slate-500">
                     Loading encounters...
                 </div>
 
                 <!-- Error state -->
-                <div
-                    v-else-if="error"
-                    class="py-12 text-center text-sm text-red-500 dark:text-red-400"
-                >
+                <div v-else-if="error" class="py-12 text-center text-sm text-red-500 dark:text-red-400">
                     {{ error }}
                 </div>
 
@@ -159,45 +149,18 @@ function selectRow(id: number) {
                     <table class="min-w-full text-sm">
                         <thead class="bg-gray-50 dark:bg-slate-700/50">
                             <tr>
-                                <th
-                                    class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide"
-                                >
-                                    Participant
-                                </th>
-                                <th
-                                    class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide"
-                                >
-                                    Service Date
-                                </th>
-                                <th
-                                    class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide"
-                                >
-                                    Service Type
-                                </th>
-                                <th
-                                    class="px-4 py-2.5 text-right text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide"
-                                >
-                                    Amount
-                                </th>
-                                <th
-                                    class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide"
-                                >
-                                    Status
-                                </th>
-                                <th
-                                    class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide"
-                                >
-                                    Claim ID
-                                </th>
+                                <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">Participant</th>
+                                <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">Service Date</th>
+                                <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">Service Type</th>
+                                <th class="px-4 py-2.5 text-right text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">Amount</th>
+                                <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">Status</th>
+                                <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">Claim ID</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-100 dark:divide-slate-700">
                             <!-- Empty state -->
                             <tr v-if="filtered.length === 0">
-                                <td
-                                    colspan="6"
-                                    class="px-4 py-10 text-center text-sm text-gray-400 dark:text-slate-500"
-                                >
+                                <td colspan="6" class="px-4 py-10 text-center text-sm text-gray-400 dark:text-slate-500">
                                     No encounters found.
                                 </td>
                             </tr>
@@ -228,34 +191,25 @@ function selectRow(id: number) {
                                         {{ enc.mrn }}
                                     </span>
                                 </td>
-                                <td
-                                    class="px-4 py-3 text-gray-600 dark:text-slate-400 whitespace-nowrap"
-                                >
+                                <td class="px-4 py-3 text-gray-600 dark:text-slate-400 whitespace-nowrap">
                                     {{ fmtDate(enc.service_date) }}
                                 </td>
                                 <td class="px-4 py-3 text-gray-600 dark:text-slate-400">
                                     {{ enc.service_type ?? '-' }}
                                 </td>
-                                <td
-                                    class="px-4 py-3 text-right text-gray-800 dark:text-slate-200 tabular-nums"
-                                >
+                                <td class="px-4 py-3 text-right text-gray-800 dark:text-slate-200 tabular-nums">
                                     {{ fmtCurrency(enc.amount) }}
                                 </td>
                                 <td class="px-4 py-3">
                                     <span
                                         v-if="enc.status"
-                                        :class="[
-                                            'inline-flex px-2 py-0.5 rounded text-xs font-medium capitalize',
-                                            statusClass(enc.status),
-                                        ]"
+                                        :class="['inline-flex px-2 py-0.5 rounded text-xs font-medium capitalize', statusClass(enc.status)]"
                                     >
                                         {{ enc.status }}
                                     </span>
                                     <span v-else class="text-gray-400 dark:text-slate-500">-</span>
                                 </td>
-                                <td
-                                    class="px-4 py-3 text-gray-500 dark:text-slate-400 font-mono text-xs"
-                                >
+                                <td class="px-4 py-3 text-gray-500 dark:text-slate-400 font-mono text-xs">
                                     {{ enc.claim_id ?? '-' }}
                                 </td>
                             </tr>

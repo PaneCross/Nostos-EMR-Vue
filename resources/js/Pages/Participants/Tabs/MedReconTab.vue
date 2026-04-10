@@ -268,7 +268,7 @@ function updateDecision(i: number, field: string, value: string) {
         <form class="space-y-4" @submit.prevent="handleStart">
           <div>
             <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Prior Medication Source</label>
-            <select
+            <select name="prior_source"
               v-model="startForm.prior_source"
               required
               class="block w-full border border-gray-300 dark:border-slate-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-500"
@@ -279,7 +279,7 @@ function updateDecision(i: number, field: string, value: string) {
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Reconciliation Type</label>
-            <select
+            <select name="type"
               v-model="startForm.type"
               required
               class="block w-full border border-gray-300 dark:border-slate-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-500"
@@ -334,7 +334,7 @@ function updateDecision(i: number, field: string, value: string) {
       <div v-else-if="step === 2 && rec">
         <h3 class="text-base font-semibold text-gray-900 dark:text-slate-100 mb-1">Enter Prior Medications</h3>
         <p class="text-sm text-gray-500 dark:text-slate-400 mb-4">
-          Enter medications from the <strong>{{ priorSourceLabel(rec.prior_source) }}</strong>.
+          Enter medications from the <strong>{{ priorSourceLabel(rec.prior_source) || 'source document' }}</strong>.
           Add all medications listed on the source document.
         </p>
         <form @submit.prevent="handleSavePriorMeds">
@@ -371,7 +371,7 @@ function updateDecision(i: number, field: string, value: string) {
                     />
                   </td>
                   <td class="px-1 py-1">
-                    <select
+                    <select name="select"
                       v-model="priorMeds[i].frequency"
                       class="border border-gray-300 dark:border-slate-600 rounded px-2 py-1 text-sm bg-white dark:bg-slate-700"
                     >
@@ -380,7 +380,7 @@ function updateDecision(i: number, field: string, value: string) {
                     </select>
                   </td>
                   <td class="px-1 py-1">
-                    <select
+                    <select name="select"
                       v-model="priorMeds[i].route"
                       class="border border-gray-300 dark:border-slate-600 rounded px-2 py-1 text-sm bg-white dark:bg-slate-700"
                     >
@@ -525,7 +525,7 @@ function updateDecision(i: number, field: string, value: string) {
             >
               <div class="font-medium text-sm w-36 dark:text-slate-200">{{ d.drug_name }}</div>
               <div>
-                <select
+                <select name="select"
                   :value="d.action"
                   class="border border-gray-300 dark:border-slate-600 rounded px-2 py-1 text-sm bg-white dark:bg-slate-700"
                   @change="updateDecision(i, 'action', ($event.target as HTMLSelectElement).value)"

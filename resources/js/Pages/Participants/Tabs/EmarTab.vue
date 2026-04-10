@@ -204,7 +204,7 @@ async function submitCharting(e: Event) {
                 <form class="flex flex-wrap items-end gap-3" @submit.prevent="submitCharting">
                   <div>
                     <label class="text-xs font-medium text-gray-600 dark:text-slate-400">Status</label>
-                    <select
+                    <select name="status"
                       v-model="chartForm.status"
                       class="block mt-1 text-sm border border-gray-300 dark:border-slate-600 rounded px-2 py-1 bg-white dark:bg-slate-800 dark:text-slate-100"
                     >

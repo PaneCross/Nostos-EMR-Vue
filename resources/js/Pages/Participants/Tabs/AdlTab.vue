@@ -135,7 +135,7 @@ async function handleRecord(e: Event) {
       >
         <div>
           <label class="text-xs font-medium text-gray-600 dark:text-slate-400">Category</label>
-          <select
+          <select name="adl_category"
             v-model="form.adl_category"
             class="w-full mt-1 text-sm border border-gray-300 dark:border-slate-600 rounded px-2 py-1.5 bg-white dark:bg-slate-800 dark:text-slate-100"
           >
@@ -144,7 +144,7 @@ async function handleRecord(e: Event) {
         </div>
         <div>
           <label class="text-xs font-medium text-gray-600 dark:text-slate-400">Independence Level</label>
-          <select
+          <select name="independence_level"
             v-model="form.independence_level"
             class="w-full mt-1 text-sm border border-gray-300 dark:border-slate-600 rounded px-2 py-1.5 bg-white dark:bg-slate-800 dark:text-slate-100"
           >

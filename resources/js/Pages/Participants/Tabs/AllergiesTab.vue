@@ -132,7 +132,7 @@ async function submit() {
     >
       <div>
         <label class="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">Type</label>
-        <select v-model="form.allergy_type" class="w-full text-sm border border-gray-300 dark:border-slate-600 rounded px-2 py-1.5 bg-white dark:bg-slate-800">
+        <select name="allergy_type" v-model="form.allergy_type" class="w-full text-sm border border-gray-300 dark:border-slate-600 rounded px-2 py-1.5 bg-white dark:bg-slate-800">
           <option v-for="(label, key) in ALLERGY_TYPE_LABELS" :key="key" :value="key">{{ label }}</option>
         </select>
       </div>
@@ -147,7 +147,7 @@ async function submit() {
       </div>
       <div>
         <label class="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">Severity</label>
-        <select v-model="form.severity" class="w-full text-sm border border-gray-300 dark:border-slate-600 rounded px-2 py-1.5 bg-white dark:bg-slate-800">
+        <select name="severity" v-model="form.severity" class="w-full text-sm border border-gray-300 dark:border-slate-600 rounded px-2 py-1.5 bg-white dark:bg-slate-800">
           <option value="life_threatening">Life-Threatening</option>
           <option value="severe">Severe</option>
           <option value="moderate">Moderate</option>

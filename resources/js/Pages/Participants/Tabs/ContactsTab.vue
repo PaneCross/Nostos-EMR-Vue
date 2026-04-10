@@ -157,7 +157,7 @@ async function submit() {
           </div>
           <div>
             <label class="block text-xs font-medium text-gray-700 dark:text-slate-300 mb-1">Contact Type</label>
-            <select v-model="form.contact_type" class="w-full text-sm border border-gray-300 dark:border-slate-600 rounded-md px-2 py-1.5 bg-white dark:bg-slate-700">
+            <select name="contact_type" v-model="form.contact_type" class="w-full text-sm border border-gray-300 dark:border-slate-600 rounded-md px-2 py-1.5 bg-white dark:bg-slate-700">
               <option v-for="(label, key) in CONTACT_TYPE_LABELS" :key="key" :value="key">{{ label }}</option>
             </select>
           </div>
@@ -179,7 +179,7 @@ async function submit() {
           </div>
         </div>
         <label class="flex items-center gap-2 text-xs text-gray-700 dark:text-slate-300 mb-3 cursor-pointer">
-          <input v-model="form.is_primary" type="checkbox" class="rounded border-gray-300" />
+          <input v-model="form.is_primary" type="checkbox" class="rounded border-gray-300 dark:border-slate-600 dark:bg-slate-700" />
           Primary contact
         </label>
         <p v-if="error" class="text-red-600 dark:text-red-400 text-xs mb-2">{{ error }}</p>

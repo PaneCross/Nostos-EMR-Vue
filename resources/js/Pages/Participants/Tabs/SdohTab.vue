@@ -206,7 +206,7 @@ async function submit() {
         <div />
         <div v-for="d in DOMAINS" :key="d.key">
           <label class="block text-xs font-medium text-gray-700 dark:text-slate-300 mb-1">{{ d.label }}</label>
-          <select v-model="(form as Record<string,string>)[d.key]"
+          <select name="select" v-model="(form as Record<string,string>)[d.key]"
             class="w-full text-sm border border-gray-300 dark:border-slate-600 rounded-md px-2 py-1.5 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100">
             <option
               v-for="opt in d.key === 'housing_stability' ? ['stable','at_risk','unstable','homeless','unknown']

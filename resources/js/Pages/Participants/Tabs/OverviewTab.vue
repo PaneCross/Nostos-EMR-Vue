@@ -263,8 +263,8 @@ const STATUS_COLORS: Record<string, string> = {
   referred:    'bg-blue-100 text-blue-800',
   intake:      'bg-indigo-100 text-indigo-800',
   pending:     'bg-yellow-100 text-yellow-800',
-  disenrolled: 'bg-gray-200 text-gray-700',
-  deceased:    'bg-gray-300 text-gray-600',
+  disenrolled: 'bg-gray-200 dark:bg-slate-700 text-gray-700 dark:text-slate-300',
+  deceased:    'bg-gray-300 dark:bg-slate-700 text-gray-600 dark:text-slate-400',
 }
 
 const SEVERITY_BADGE_COLORS: Record<string, string> = {

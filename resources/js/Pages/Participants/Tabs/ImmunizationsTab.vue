@@ -130,7 +130,7 @@ async function submit() {
         </div>
         <div>
           <label class="block text-xs font-medium text-gray-700 dark:text-slate-300 mb-1">Route</label>
-          <select v-model="form.route" class="w-full text-sm border border-gray-300 dark:border-slate-600 rounded-md px-2 py-1.5 bg-white dark:bg-slate-700">
+          <select name="route" v-model="form.route" class="w-full text-sm border border-gray-300 dark:border-slate-600 rounded-md px-2 py-1.5 bg-white dark:bg-slate-700">
             <option value="im">IM</option>
             <option value="subq">SubQ</option>
             <option value="intranasal">Intranasal</option>
@@ -139,7 +139,7 @@ async function submit() {
         </div>
         <div>
           <label class="block text-xs font-medium text-gray-700 dark:text-slate-300 mb-1">Site Given</label>
-          <select v-model="form.site_given" class="w-full text-sm border border-gray-300 dark:border-slate-600 rounded-md px-2 py-1.5 bg-white dark:bg-slate-700">
+          <select name="site_given" v-model="form.site_given" class="w-full text-sm border border-gray-300 dark:border-slate-600 rounded-md px-2 py-1.5 bg-white dark:bg-slate-700">
             <option value="left_deltoid">Left Deltoid</option>
             <option value="right_deltoid">Right Deltoid</option>
             <option value="left_thigh">Left Thigh</option>
@@ -151,7 +151,7 @@ async function submit() {
         </div>
       </div>
       <label class="flex items-center gap-2 text-xs text-gray-700 dark:text-slate-300 mb-3 cursor-pointer">
-        <input v-model="form.vis_given" type="checkbox" class="rounded border-gray-300" />
+        <input v-model="form.vis_given" type="checkbox" class="rounded border-gray-300 dark:border-slate-600 dark:bg-slate-700" />
         VIS provided to patient/caregiver
       </label>
       <div v-if="form.vis_given" class="mb-3">

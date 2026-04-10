@@ -115,13 +115,13 @@ function fmtDate(val: string | null | undefined): string {
     >
       <div>
         <label class="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">Flag Type</label>
-        <select v-model="form.flag_type" class="w-full text-sm border border-gray-300 dark:border-slate-600 rounded px-2 py-1.5 bg-white dark:bg-slate-800">
+        <select name="flag_type" v-model="form.flag_type" class="w-full text-sm border border-gray-300 dark:border-slate-600 rounded px-2 py-1.5 bg-white dark:bg-slate-800">
           <option v-for="(label, key) in FLAG_LABELS" :key="key" :value="key">{{ label }}</option>
         </select>
       </div>
       <div>
         <label class="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">Severity</label>
-        <select v-model="form.severity" class="w-full text-sm border border-gray-300 dark:border-slate-600 rounded px-2 py-1.5 bg-white dark:bg-slate-800">
+        <select name="severity" v-model="form.severity" class="w-full text-sm border border-gray-300 dark:border-slate-600 rounded px-2 py-1.5 bg-white dark:bg-slate-800">
           <option value="low">low</option>
           <option value="medium">medium</option>
           <option value="high">high</option>

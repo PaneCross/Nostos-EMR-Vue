@@ -166,7 +166,7 @@ function isCritical(r: LabResult): boolean {
             </span>
             <span class="text-xs text-gray-400 dark:text-slate-500 whitespace-nowrap shrink-0">{{ fmtDate(result.collected_at) }}</span>
             <span v-if="result.performing_facility" class="text-xs text-gray-400 dark:text-slate-500 shrink-0 hidden sm:inline">{{ result.performing_facility }}</span>
-            <ChevronDownIcon :class="['w-4 h-4 text-gray-400 transition-transform shrink-0', expandedId === result.id ? 'rotate-180' : '']" />
+            <ChevronDownIcon :class="['w-4 h-4 text-gray-400 dark:text-slate-500 transition-transform shrink-0', expandedId === result.id ? 'rotate-180' : '']" />
           </button>
 
           <!-- Expanded detail -->

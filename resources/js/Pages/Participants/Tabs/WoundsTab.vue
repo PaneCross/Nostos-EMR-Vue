@@ -164,7 +164,7 @@ async function closeWound(wound: WoundRecord) {
           </div>
           <div>
             <label class="block text-xs font-medium text-gray-700 dark:text-slate-300 mb-1">Type</label>
-            <select v-model="woundForm.wound_type" class="w-full text-sm border border-gray-300 dark:border-slate-600 rounded-md px-2 py-1.5 bg-white dark:bg-slate-700 dark:text-slate-200">
+            <select name="wound_type" v-model="woundForm.wound_type" class="w-full text-sm border border-gray-300 dark:border-slate-600 rounded-md px-2 py-1.5 bg-white dark:bg-slate-700 dark:text-slate-200">
               <option value="pressure_injury">Pressure Injury</option>
               <option value="venous_ulcer">Venous Ulcer</option>
               <option value="arterial_ulcer">Arterial Ulcer</option>
@@ -176,7 +176,7 @@ async function closeWound(wound: WoundRecord) {
           </div>
           <div>
             <label class="block text-xs font-medium text-gray-700 dark:text-slate-300 mb-1">Stage</label>
-            <select v-model="woundForm.pressure_injury_stage" class="w-full text-sm border border-gray-300 dark:border-slate-600 rounded-md px-2 py-1.5 bg-white dark:bg-slate-700 dark:text-slate-200">
+            <select name="pressure_injury_stage" v-model="woundForm.pressure_injury_stage" class="w-full text-sm border border-gray-300 dark:border-slate-600 rounded-md px-2 py-1.5 bg-white dark:bg-slate-700 dark:text-slate-200">
               <option value="stage_1">Stage 1</option>
               <option value="stage_2">Stage 2</option>
               <option value="stage_3">Stage 3</option>
@@ -253,7 +253,7 @@ async function closeWound(wound: WoundRecord) {
             <div class="grid grid-cols-2 gap-2 mb-2">
               <div>
                 <label class="block text-xs text-gray-600 dark:text-slate-400 mb-0.5">Status Change</label>
-                <select v-model="assessmentForm.status_change" class="w-full text-xs border border-gray-300 dark:border-slate-600 rounded px-1.5 py-1 bg-white dark:bg-slate-700 dark:text-slate-200">
+                <select name="status_change" v-model="assessmentForm.status_change" class="w-full text-xs border border-gray-300 dark:border-slate-600 rounded px-1.5 py-1 bg-white dark:bg-slate-700 dark:text-slate-200">
                   <option value="">No change noted</option>
                   <option value="improved">Improved</option>
                   <option value="unchanged">Unchanged</option>

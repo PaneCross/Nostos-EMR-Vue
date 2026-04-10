@@ -97,8 +97,9 @@ const deactivate = async (id: number) => {
     }
 }
 
-const formatDate = (iso: string | null) =>
-    iso ? new Date(iso).toLocaleDateString(undefined, { dateStyle: 'short' }) : '-'
+const formatDate = (iso: string | null) => iso
+    ? new Date(iso).toLocaleDateString(undefined, { dateStyle: 'short' })
+    : '-'
 </script>
 
 <template>
@@ -111,131 +112,64 @@ const formatDate = (iso: string | null) =>
                 <div class="flex items-center gap-3">
                     <MapPinIcon class="w-7 h-7 text-blue-600 dark:text-blue-400" />
                     <div>
-                        <h1 class="text-2xl font-bold text-gray-900 dark:text-slate-100">
-                            State Medicaid Configurations
-                        </h1>
-                        <p class="text-sm text-gray-500 dark:text-slate-400">
-                            State-specific 837 encounter submission settings
-                        </p>
+                        <h1 class="text-2xl font-bold text-gray-900 dark:text-slate-100">State Medicaid Configurations</h1>
+                        <p class="text-sm text-gray-500 dark:text-slate-400">State-specific 837 encounter submission settings</p>
                     </div>
                 </div>
-                <button
+                <button @click="openAdd"
                     class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition-colors"
-                    aria-label="Add state config"
-                    @click="openAdd"
-                >
+                    aria-label="Add state config">
                     <PlusIcon class="w-4 h-4" /> Add State
                 </button>
             </div>
 
             <!-- Table -->
-            <div
-                class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 overflow-hidden shadow-sm"
-            >
+            <div class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 overflow-hidden shadow-sm">
                 <table class="w-full text-sm">
                     <thead class="bg-gray-50 dark:bg-slate-700/50">
                         <tr>
-                            <th
-                                class="text-left px-4 py-3 font-semibold text-gray-700 dark:text-slate-300"
-                            >
-                                State
-                            </th>
-                            <th
-                                class="text-left px-4 py-3 font-semibold text-gray-700 dark:text-slate-300"
-                            >
-                                Format
-                            </th>
-                            <th
-                                class="text-left px-4 py-3 font-semibold text-gray-700 dark:text-slate-300"
-                            >
-                                Clearinghouse
-                            </th>
-                            <th
-                                class="text-left px-4 py-3 font-semibold text-gray-700 dark:text-slate-300"
-                            >
-                                Days to Submit
-                            </th>
-                            <th
-                                class="text-left px-4 py-3 font-semibold text-gray-700 dark:text-slate-300"
-                            >
-                                Status
-                            </th>
-                            <th
-                                class="text-left px-4 py-3 font-semibold text-gray-700 dark:text-slate-300"
-                            >
-                                Actions
-                            </th>
+                            <th class="text-left px-4 py-3 font-semibold text-gray-700 dark:text-slate-300">State</th>
+                            <th class="text-left px-4 py-3 font-semibold text-gray-700 dark:text-slate-300">Format</th>
+                            <th class="text-left px-4 py-3 font-semibold text-gray-700 dark:text-slate-300">Clearinghouse</th>
+                            <th class="text-left px-4 py-3 font-semibold text-gray-700 dark:text-slate-300">Days to Submit</th>
+                            <th class="text-left px-4 py-3 font-semibold text-gray-700 dark:text-slate-300">Status</th>
+                            <th class="text-left px-4 py-3 font-semibold text-gray-700 dark:text-slate-300">Actions</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100 dark:divide-slate-700">
-                        <tr
-                            v-for="c in props.configs"
-                            :key="c.id"
-                            :class="
-                                !c.is_active
-                                    ? 'opacity-60'
-                                    : 'hover:bg-gray-50 dark:hover:bg-slate-700/50'
-                            "
-                        >
+                        <tr v-for="c in props.configs" :key="c.id"
+                            :class="!c.is_active ? 'opacity-60' : 'hover:bg-gray-50 dark:hover:bg-slate-700/50'">
                             <td class="px-4 py-3">
-                                <div class="font-medium text-gray-900 dark:text-slate-100">
-                                    {{ c.state_code }}
-                                </div>
-                                <div class="text-xs text-gray-500 dark:text-slate-400">
-                                    {{ c.state_name }}
-                                </div>
+                                <div class="font-medium text-gray-900 dark:text-slate-100">{{ c.state_code }}</div>
+                                <div class="text-xs text-gray-500 dark:text-slate-400">{{ c.state_name }}</div>
                             </td>
                             <td class="px-4 py-3 text-gray-600 dark:text-slate-400">
-                                {{
-                                    props.submissionFormats[c.submission_format] ??
-                                    c.submission_format
-                                }}
+                                {{ props.submissionFormats[c.submission_format] ?? c.submission_format }}
                             </td>
-                            <td class="px-4 py-3 text-gray-600 dark:text-slate-400">
-                                {{ c.clearinghouse_name ?? '-' }}
-                            </td>
-                            <td class="px-4 py-3 text-gray-600 dark:text-slate-400">
-                                {{ c.days_to_submit ?? '-' }}
-                            </td>
+                            <td class="px-4 py-3 text-gray-600 dark:text-slate-400">{{ c.clearinghouse_name ?? '-' }}</td>
+                            <td class="px-4 py-3 text-gray-600 dark:text-slate-400">{{ c.days_to_submit ?? '-' }}</td>
                             <td class="px-4 py-3">
-                                <span
-                                    :class="
-                                        c.is_active
-                                            ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
-                                            : 'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-400'
-                                    "
-                                    class="inline-block px-2 py-0.5 rounded-full text-xs font-medium"
-                                >
+                                <span :class="c.is_active
+                                    ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
+                                    : 'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-400'"
+                                    class="inline-block px-2 py-0.5 rounded-full text-xs font-medium">
                                     {{ c.is_active ? 'Active' : 'Inactive' }}
                                 </span>
                             </td>
                             <td class="px-4 py-3">
                                 <div class="flex items-center gap-2">
-                                    <button
+                                    <button @click="openEdit(c)"
                                         class="text-xs px-2 py-1 rounded border border-gray-300 dark:border-slate-600 text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
-                                        :aria-label="`Edit config for ${c.state_code}`"
-                                        @click="openEdit(c)"
-                                    >
-                                        Edit
-                                    </button>
-                                    <button
-                                        v-if="c.is_active"
-                                        class="text-xs px-2 py-1 rounded border border-red-300 dark:border-red-700 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-                                        :aria-label="`Deactivate config for ${c.state_code}`"
+                                        :aria-label="`Edit config for ${c.state_code}`">Edit</button>
+                                    <button v-if="c.is_active"
                                         @click="deleteConfirmId = c.id"
-                                    >
-                                        Deactivate
-                                    </button>
+                                        class="text-xs px-2 py-1 rounded border border-red-300 dark:border-red-700 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                                        :aria-label="`Deactivate config for ${c.state_code}`">Deactivate</button>
                                 </div>
                             </td>
                         </tr>
                         <tr v-if="props.configs.length === 0">
-                            <td
-                                colspan="6"
-                                class="py-12 text-center text-gray-500 dark:text-slate-400"
-                            >
-                                No state configurations.
-                            </td>
+                            <td colspan="6" class="py-12 text-center text-gray-500 dark:text-slate-400">No state configurations.</td>
                         </tr>
                     </tbody>
                 </table>
@@ -243,193 +177,79 @@ const formatDate = (iso: string | null) =>
         </div>
 
         <!-- Add/Edit Modal -->
-        <div
-            v-if="showModal"
-            class="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
-        >
-            <div
-                class="bg-white dark:bg-slate-800 rounded-xl shadow-xl w-full max-w-lg mx-4 p-6 max-h-screen overflow-y-auto"
-            >
+        <div v-if="showModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+            <div class="bg-white dark:bg-slate-800 rounded-xl shadow-xl w-full max-w-lg mx-4 p-6 max-h-screen overflow-y-auto">
                 <h2 class="text-lg font-bold text-gray-900 dark:text-slate-100 mb-4">
-                    {{
-                        modalMode === 'add' ? 'Add State Configuration' : 'Edit State Configuration'
-                    }}
+                    {{ modalMode === 'add' ? 'Add State Configuration' : 'Edit State Configuration' }}
                 </h2>
-                <form class="space-y-3" @submit.prevent="submit">
+                <form @submit.prevent="submit" class="space-y-3">
                     <div class="grid grid-cols-2 gap-3">
                         <div>
-                            <label
-                                class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1"
-                                for="sc-code"
-                                >State Code</label
-                            >
-                            <input
-                                id="sc-code"
-                                v-model="form.state_code"
-                                required
-                                maxlength="2"
-                                type="text"
-                                placeholder="CA"
-                                class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm uppercase"
-                            />
+                            <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1" for="sc-code">State Code</label>
+                            <input id="sc-code" v-model="form.state_code" required maxlength="2" type="text" placeholder="CA"
+                                class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm uppercase" />
                         </div>
                         <div>
-                            <label
-                                class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1"
-                                for="sc-name"
-                                >State Name</label
-                            >
-                            <input
-                                id="sc-name"
-                                v-model="form.state_name"
-                                required
-                                type="text"
-                                placeholder="California"
-                                class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm"
-                            />
+                            <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1" for="sc-name">State Name</label>
+                            <input id="sc-name" v-model="form.state_name" required type="text" placeholder="California"
+                                class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm" />
                         </div>
                     </div>
                     <div class="grid grid-cols-2 gap-3">
                         <div>
-                            <label
-                                class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1"
-                                for="sc-format"
-                                >Submission Format</label
-                            >
-                            <select
-                                id="sc-format"
-                                v-model="form.submission_format"
-                                class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm text-gray-700 dark:text-slate-300"
-                            >
-                                <option
-                                    v-for="(label, key) in props.submissionFormats"
-                                    :key="key"
-                                    :value="key"
-                                >
-                                    {{ label }}
-                                </option>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1" for="sc-format">Submission Format</label>
+                            <select id="sc-format" v-model="form.submission_format"
+                                class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm text-gray-700 dark:text-slate-300">
+                                <option v-for="(label, key) in props.submissionFormats" :key="key" :value="key">{{ label }}</option>
                             </select>
                         </div>
                         <div>
-                            <label
-                                class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1"
-                                for="sc-days"
-                                >Days to Submit</label
-                            >
-                            <input
-                                id="sc-days"
-                                v-model.number="form.days_to_submit"
-                                type="number"
-                                min="1"
-                                class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm"
-                            />
+                            <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1" for="sc-days">Days to Submit</label>
+                            <input id="sc-days" v-model.number="form.days_to_submit" type="number" min="1"
+                                class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm" />
                         </div>
                     </div>
                     <div>
-                        <label
-                            class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1"
-                            for="sc-ch"
-                            >Clearinghouse Name</label
-                        >
-                        <input
-                            id="sc-ch"
-                            v-model="form.clearinghouse_name"
-                            type="text"
-                            class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm"
-                        />
+                        <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1" for="sc-ch">Clearinghouse Name</label>
+                        <input id="sc-ch" v-model="form.clearinghouse_name" type="text"
+                            class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm" />
                     </div>
                     <div>
-                        <label
-                            class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1"
-                            for="sc-endpoint"
-                            >Submission Endpoint</label
-                        >
-                        <input
-                            id="sc-endpoint"
-                            v-model="form.submission_endpoint"
-                            type="text"
-                            placeholder="https://"
-                            class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm"
-                        />
+                        <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1" for="sc-endpoint">Submission Endpoint</label>
+                        <input id="sc-endpoint" v-model="form.submission_endpoint" type="text" placeholder="https://"
+                            class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm" />
                     </div>
                     <div>
-                        <label
-                            class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1"
-                            for="sc-notes"
-                            >Companion Guide Notes</label
-                        >
-                        <textarea
-                            id="sc-notes"
-                            v-model="form.companion_guide_notes"
-                            rows="2"
-                            class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm"
-                        ></textarea>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1" for="sc-notes">Companion Guide Notes</label>
+                        <textarea id="sc-notes" v-model="form.companion_guide_notes" rows="2"
+                            class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm"></textarea>
                     </div>
                     <div class="grid grid-cols-3 gap-3">
                         <div>
-                            <label
-                                class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1"
-                                for="sc-contact"
-                                >Contact Name</label
-                            >
-                            <input
-                                id="sc-contact"
-                                v-model="form.contact_name"
-                                type="text"
-                                class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm"
-                            />
+                            <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1" for="sc-contact">Contact Name</label>
+                            <input id="sc-contact" v-model="form.contact_name" type="text"
+                                class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm" />
                         </div>
                         <div>
-                            <label
-                                class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1"
-                                for="sc-phone"
-                                >Phone</label
-                            >
-                            <input
-                                id="sc-phone"
-                                v-model="form.contact_phone"
-                                type="text"
-                                class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm"
-                            />
+                            <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1" for="sc-phone">Phone</label>
+                            <input id="sc-phone" v-model="form.contact_phone" type="text"
+                                class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm" />
                         </div>
                         <div>
-                            <label
-                                class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1"
-                                for="sc-email"
-                                >Email</label
-                            >
-                            <input
-                                id="sc-email"
-                                v-model="form.contact_email"
-                                type="email"
-                                class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm"
-                            />
+                            <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1" for="sc-email">Email</label>
+                            <input id="sc-email" v-model="form.contact_email" type="email"
+                                class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm" />
                         </div>
                     </div>
                     <div class="flex items-center gap-2">
-                        <input
-                            id="sc-active"
-                            v-model="form.is_active"
-                            type="checkbox"
-                            class="rounded border-gray-300 dark:border-slate-600"
-                        />
-                        <label for="sc-active" class="text-sm text-gray-700 dark:text-slate-300"
-                            >Active</label
-                        >
+                        <input id="sc-active" v-model="form.is_active" type="checkbox" class="rounded border-gray-300 dark:border-slate-600" />
+                        <label for="sc-active" class="text-sm text-gray-700 dark:text-slate-300">Active</label>
                     </div>
                     <div class="flex justify-end gap-3 pt-2">
-                        <button
-                            type="button"
-                            class="px-4 py-2 text-sm rounded-lg text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-200 transition-colors"
-                            @click="showModal = false"
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            type="submit"
-                            :disabled="submitting"
-                            class="px-4 py-2 text-sm rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium disabled:opacity-50 transition-colors"
-                        >
+                        <button type="button" @click="showModal = false"
+                            class="px-4 py-2 text-sm rounded-lg text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-200 transition-colors">Cancel</button>
+                        <button type="submit" :disabled="submitting"
+                            class="px-4 py-2 text-sm rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium disabled:opacity-50 transition-colors">
                             {{ submitting ? 'Saving...' : 'Save' }}
                         </button>
                     </div>
@@ -438,30 +258,15 @@ const formatDate = (iso: string | null) =>
         </div>
 
         <!-- Deactivate Confirm Modal -->
-        <div
-            v-if="deleteConfirmId"
-            class="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
-        >
+        <div v-if="deleteConfirmId" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
             <div class="bg-white dark:bg-slate-800 rounded-xl shadow-xl w-full max-w-sm mx-4 p-6">
-                <h3 class="text-lg font-bold text-gray-900 dark:text-slate-100 mb-2">
-                    Deactivate Configuration
-                </h3>
-                <p class="text-sm text-gray-600 dark:text-slate-400 mb-4">
-                    This will mark the state config as inactive. It can be re-activated later.
-                </p>
+                <h3 class="text-lg font-bold text-gray-900 dark:text-slate-100 mb-2">Deactivate Configuration</h3>
+                <p class="text-sm text-gray-600 dark:text-slate-400 mb-4">This will mark the state config as inactive. It can be re-activated later.</p>
                 <div class="flex justify-end gap-3">
-                    <button
-                        class="px-4 py-2 text-sm rounded-lg text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-200 transition-colors"
-                        @click="deleteConfirmId = null"
-                    >
-                        Cancel
-                    </button>
-                    <button
-                        class="px-4 py-2 text-sm rounded-lg bg-red-600 hover:bg-red-700 text-white font-medium transition-colors"
-                        @click="deactivate(deleteConfirmId!)"
-                    >
-                        Deactivate
-                    </button>
+                    <button @click="deleteConfirmId = null"
+                        class="px-4 py-2 text-sm rounded-lg text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-200 transition-colors">Cancel</button>
+                    <button @click="deactivate(deleteConfirmId!)"
+                        class="px-4 py-2 text-sm rounded-lg bg-red-600 hover:bg-red-700 text-white font-medium transition-colors">Deactivate</button>
                 </div>
             </div>
         </div>

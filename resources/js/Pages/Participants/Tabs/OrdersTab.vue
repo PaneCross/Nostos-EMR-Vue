@@ -284,14 +284,14 @@ async function submitResult() {
       <div class="grid grid-cols-2 gap-3 mb-3">
         <div>
           <label class="block text-xs font-medium text-gray-700 dark:text-slate-300 mb-1">Order Type</label>
-          <select v-model="newOrderForm.order_type"
+          <select name="order_type" v-model="newOrderForm.order_type"
             class="w-full text-sm border border-gray-300 dark:border-slate-600 rounded-md px-2 py-1.5 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100">
             <option v-for="(label, key) in ORDER_TYPE_LABELS" :key="key" :value="key">{{ label }}</option>
           </select>
         </div>
         <div>
           <label class="block text-xs font-medium text-gray-700 dark:text-slate-300 mb-1">Priority</label>
-          <select v-model="newOrderForm.priority"
+          <select name="priority" v-model="newOrderForm.priority"
             class="w-full text-sm border border-gray-300 dark:border-slate-600 rounded-md px-2 py-1.5 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100">
             <option value="routine">Routine</option>
             <option value="urgent">Urgent</option>

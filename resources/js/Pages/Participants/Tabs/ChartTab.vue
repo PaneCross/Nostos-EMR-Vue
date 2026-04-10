@@ -219,7 +219,7 @@ async function submitNote() {
 
       <div class="flex items-center gap-2">
         <!-- Note type dropdown filter -->
-        <select
+        <select name="typeFilter"
           v-model="typeFilter"
           class="text-xs border border-gray-300 dark:border-slate-600 rounded-md px-2 py-1.5 bg-white dark:bg-slate-700 dark:text-slate-200"
         >
@@ -246,13 +246,13 @@ async function submitNote() {
       <div class="grid grid-cols-3 gap-3">
         <div>
           <label class="text-xs font-medium text-gray-600 dark:text-slate-400">Note Type</label>
-          <select v-model="noteForm.note_type" class="w-full mt-1 text-sm border border-gray-300 dark:border-slate-600 rounded px-2 py-1.5 bg-white dark:bg-slate-800 dark:text-slate-200">
+          <select name="note_type" v-model="noteForm.note_type" class="w-full mt-1 text-sm border border-gray-300 dark:border-slate-600 rounded px-2 py-1.5 bg-white dark:bg-slate-800 dark:text-slate-200">
             <option v-for="(label, key) in NOTE_TYPE_LABELS" :key="key" :value="key">{{ label }}</option>
           </select>
         </div>
         <div>
           <label class="text-xs font-medium text-gray-600 dark:text-slate-400">Visit Type</label>
-          <select v-model="noteForm.visit_type" class="w-full mt-1 text-sm border border-gray-300 dark:border-slate-600 rounded px-2 py-1.5 bg-white dark:bg-slate-800 dark:text-slate-200">
+          <select name="visit_type" v-model="noteForm.visit_type" class="w-full mt-1 text-sm border border-gray-300 dark:border-slate-600 rounded px-2 py-1.5 bg-white dark:bg-slate-800 dark:text-slate-200">
             <option value="in_center">In Center</option>
             <option value="home_visit">Home Visit</option>
             <option value="telehealth">Telehealth</option>

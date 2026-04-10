@@ -83,17 +83,13 @@ const DEPT_LABELS: Record<string, string> = props.deptLabels || {
 }
 
 const filtered = computed(() => {
-    return users.value.filter((u) => {
+    return users.value.filter(u => {
         const name = `${u.first_name} ${u.last_name}`.toLowerCase()
-        const matchSearch =
-            !search.value ||
-            name.includes(search.value.toLowerCase()) ||
-            u.email.toLowerCase().includes(search.value.toLowerCase())
+        const matchSearch = !search.value || name.includes(search.value.toLowerCase()) || u.email.toLowerCase().includes(search.value.toLowerCase())
         const matchDept = filterDept.value === 'all' || u.department === filterDept.value
-        const matchStatus =
-            filterStatus.value === 'all' ||
-            (filterStatus.value === 'active' && u.is_active) ||
-            (filterStatus.value === 'inactive' && !u.is_active)
+        const matchStatus = filterStatus.value === 'all'
+            || (filterStatus.value === 'active' && u.is_active)
+            || (filterStatus.value === 'inactive' && !u.is_active)
         return matchSearch && matchDept && matchStatus
     })
 })
@@ -107,9 +103,7 @@ const toggleActive = async (user: UserRow) => {
     const action = user.is_active ? 'deactivate' : 'reactivate'
     try {
         await axios.post(`/it-admin/users/${user.id}/${action}`)
-        users.value = users.value.map((u) =>
-            u.id === user.id ? { ...u, is_active: !u.is_active } : u,
-        )
+        users.value = users.value.map(u => u.id === user.id ? { ...u, is_active: !u.is_active } : u)
     } catch {
         // silently handle
     } finally {
@@ -119,13 +113,13 @@ const toggleActive = async (user: UserRow) => {
 
 const toggleDesignation = async (user: UserRow, key: string) => {
     const prev = [...user.designations]
-    const next = prev.includes(key) ? prev.filter((d) => d !== key) : [...prev, key]
-    users.value = users.value.map((u) => (u.id === user.id ? { ...u, designations: next } : u))
+    const next = prev.includes(key) ? prev.filter(d => d !== key) : [...prev, key]
+    users.value = users.value.map(u => u.id === user.id ? { ...u, designations: next } : u)
     savingDesignations.value = user.id
     try {
         await axios.patch(`/it-admin/users/${user.id}/designations`, { designations: next })
     } catch {
-        users.value = users.value.map((u) => (u.id === user.id ? { ...u, designations: prev } : u))
+        users.value = users.value.map(u => u.id === user.id ? { ...u, designations: prev } : u)
     } finally {
         savingDesignations.value = null
     }
@@ -164,17 +158,13 @@ const formatDate = (iso: string) =>
             <!-- Header -->
             <div class="flex items-center justify-between mb-6">
                 <div>
-                    <h1 class="text-2xl font-bold text-gray-900 dark:text-slate-100">
-                        User Management
-                    </h1>
-                    <p class="text-sm text-gray-500 dark:text-slate-400 mt-1">
-                        Manage provisioned staff accounts
-                    </p>
+                    <h1 class="text-2xl font-bold text-gray-900 dark:text-slate-100">User Management</h1>
+                    <p class="text-sm text-gray-500 dark:text-slate-400 mt-1">Manage provisioned staff accounts</p>
                 </div>
                 <button
+                    @click="showProvision = true"
                     class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition-colors"
                     aria-label="Provision new user"
-                    @click="showProvision = true"
                 >
                     <PlusIcon class="w-4 h-4" />
                     Provision User
@@ -184,9 +174,7 @@ const formatDate = (iso: string) =>
             <!-- Filters -->
             <div class="flex flex-wrap gap-3 mb-5">
                 <div class="relative flex-1 min-w-48">
-                    <MagnifyingGlassIcon
-                        class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-slate-500"
-                    />
+                    <MagnifyingGlassIcon class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-slate-500" />
                     <input
                         v-model="search"
                         type="text"
@@ -195,17 +183,15 @@ const formatDate = (iso: string) =>
                         aria-label="Search users"
                     />
                 </div>
-                <select
+                <select name="filterDept"
                     v-model="filterDept"
                     class="px-3 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm text-gray-700 dark:text-slate-300"
                     aria-label="Filter by department"
                 >
                     <option value="all">All Departments</option>
-                    <option v-for="(label, key) in DEPT_LABELS" :key="key" :value="key">
-                        {{ label }}
-                    </option>
+                    <option v-for="(label, key) in DEPT_LABELS" :key="key" :value="key">{{ label }}</option>
                 </select>
-                <select
+                <select name="filterStatus"
                     v-model="filterStatus"
                     class="px-3 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm text-gray-700 dark:text-slate-300"
                     aria-label="Filter by status"
@@ -217,37 +203,15 @@ const formatDate = (iso: string) =>
             </div>
 
             <!-- Table -->
-            <div
-                class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 overflow-hidden shadow-sm"
-            >
+            <div class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 overflow-hidden shadow-sm">
                 <table class="w-full text-sm">
                     <thead class="bg-gray-50 dark:bg-slate-700/50">
                         <tr>
-                            <th
-                                class="text-left px-4 py-3 font-semibold text-gray-700 dark:text-slate-300"
-                            >
-                                Name
-                            </th>
-                            <th
-                                class="text-left px-4 py-3 font-semibold text-gray-700 dark:text-slate-300"
-                            >
-                                Department
-                            </th>
-                            <th
-                                class="text-left px-4 py-3 font-semibold text-gray-700 dark:text-slate-300"
-                            >
-                                Status
-                            </th>
-                            <th
-                                class="text-left px-4 py-3 font-semibold text-gray-700 dark:text-slate-300"
-                            >
-                                Joined
-                            </th>
-                            <th
-                                class="text-left px-4 py-3 font-semibold text-gray-700 dark:text-slate-300"
-                            >
-                                Actions
-                            </th>
+                            <th class="text-left px-4 py-3 font-semibold text-gray-700 dark:text-slate-300">Name</th>
+                            <th class="text-left px-4 py-3 font-semibold text-gray-700 dark:text-slate-300">Department</th>
+                            <th class="text-left px-4 py-3 font-semibold text-gray-700 dark:text-slate-300">Status</th>
+                            <th class="text-left px-4 py-3 font-semibold text-gray-700 dark:text-slate-300">Joined</th>
+                            <th class="text-left px-4 py-3 font-semibold text-gray-700 dark:text-slate-300">Actions</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100 dark:divide-slate-700">
@@ -257,14 +221,9 @@ const formatDate = (iso: string) =>
                                     <div class="font-medium text-gray-900 dark:text-slate-100">
                                         {{ user.first_name }} {{ user.last_name }}
                                     </div>
-                                    <div class="text-xs text-gray-500 dark:text-slate-400">
-                                        {{ user.email }}
-                                    </div>
+                                    <div class="text-xs text-gray-500 dark:text-slate-400">{{ user.email }}</div>
                                     <!-- Designation chips -->
-                                    <div
-                                        v-if="user.designations.length > 0"
-                                        class="flex flex-wrap gap-1 mt-1"
-                                    >
+                                    <div v-if="user.designations.length > 0" class="flex flex-wrap gap-1 mt-1">
                                         <span
                                             v-for="d in user.designations"
                                             :key="d"
@@ -276,59 +235,34 @@ const formatDate = (iso: string) =>
                                     </div>
                                 </td>
                                 <td class="px-4 py-3 text-gray-600 dark:text-slate-400 capitalize">
-                                    {{
-                                        DEPT_LABELS[user.department] ??
-                                        user.department.replace('_', ' ')
-                                    }}
+                                    {{ DEPT_LABELS[user.department] ?? user.department.replace('_', ' ') }}
                                 </td>
                                 <td class="px-4 py-3">
-                                    <span
-                                        :class="
-                                            user.is_active
-                                                ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
-                                                : 'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-400'
-                                        "
+                                    <span :class="user.is_active
+                                        ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
+                                        : 'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-400'"
                                         class="inline-block px-2 py-0.5 rounded-full text-xs font-medium"
                                     >
                                         {{ user.is_active ? 'Active' : 'Inactive' }}
                                     </span>
                                 </td>
-                                <td class="px-4 py-3 text-gray-600 dark:text-slate-400">
-                                    {{ formatDate(user.created_at) }}
-                                </td>
+                                <td class="px-4 py-3 text-gray-600 dark:text-slate-400">{{ formatDate(user.created_at) }}</td>
                                 <td class="px-4 py-3">
                                     <div class="flex items-center gap-2">
                                         <button
+                                            @click="toggleActive(user)"
                                             :disabled="togglingId === user.id"
                                             class="text-xs px-2 py-1 rounded border border-gray-300 dark:border-slate-600 text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700 disabled:opacity-50 transition-colors"
-                                            :aria-label="
-                                                user.is_active
-                                                    ? 'Deactivate user'
-                                                    : 'Reactivate user'
-                                            "
-                                            @click="toggleActive(user)"
+                                            :aria-label="user.is_active ? 'Deactivate user' : 'Reactivate user'"
                                         >
-                                            {{
-                                                togglingId === user.id
-                                                    ? '...'
-                                                    : user.is_active
-                                                      ? 'Deactivate'
-                                                      : 'Reactivate'
-                                            }}
+                                            {{ togglingId === user.id ? '...' : (user.is_active ? 'Deactivate' : 'Reactivate') }}
                                         </button>
                                         <button
-                                            class="text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-300"
-                                            :aria-label="
-                                                expandedRow === user.id
-                                                    ? 'Collapse designations'
-                                                    : 'Expand designations'
-                                            "
                                             @click="toggleRow(user.id)"
+                                            class="text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-300"
+                                            :aria-label="expandedRow === user.id ? 'Collapse designations' : 'Expand designations'"
                                         >
-                                            <ChevronUpIcon
-                                                v-if="expandedRow === user.id"
-                                                class="w-4 h-4"
-                                            />
+                                            <ChevronUpIcon v-if="expandedRow === user.id" class="w-4 h-4" />
                                             <ChevronDownIcon v-else class="w-4 h-4" />
                                         </button>
                                     </div>
@@ -336,20 +270,11 @@ const formatDate = (iso: string) =>
                             </tr>
                             <!-- Designation panel -->
                             <tr v-if="expandedRow === user.id" :key="`${user.id}-designations`">
-                                <td
-                                    colspan="5"
-                                    class="px-4 py-3 bg-indigo-50 dark:bg-indigo-950/20 border-t border-indigo-100 dark:border-indigo-900/30"
-                                >
-                                    <p
-                                        class="text-xs font-semibold text-indigo-700 dark:text-indigo-400 mb-2 flex items-center gap-1"
-                                    >
+                                <td colspan="5" class="px-4 py-3 bg-indigo-50 dark:bg-indigo-950/20 border-t border-indigo-100 dark:border-indigo-900/30">
+                                    <p class="text-xs font-semibold text-indigo-700 dark:text-indigo-400 mb-2 flex items-center gap-1">
                                         <ShieldCheckIcon class="w-3.5 h-3.5" />
                                         Accountability Designations
-                                        <span
-                                            v-if="savingDesignations === user.id"
-                                            class="ml-1 text-indigo-400"
-                                            >(saving...)</span
-                                        >
+                                        <span v-if="savingDesignations === user.id" class="ml-1 text-indigo-400">(saving...)</span>
                                     </p>
                                     <div class="flex flex-wrap gap-2">
                                         <label
@@ -360,26 +285,18 @@ const formatDate = (iso: string) =>
                                             <input
                                                 type="checkbox"
                                                 :checked="user.designations.includes(key)"
+                                                @change="toggleDesignation(user, key)"
                                                 class="rounded border-gray-300 dark:border-slate-600"
                                                 :aria-label="label"
-                                                @change="toggleDesignation(user, key)"
                                             />
-                                            <span
-                                                class="text-sm text-gray-700 dark:text-slate-300"
-                                                >{{ label }}</span
-                                            >
+                                            <span class="text-sm text-gray-700 dark:text-slate-300">{{ label }}</span>
                                         </label>
                                     </div>
                                 </td>
                             </tr>
                         </template>
                         <tr v-if="filtered.length === 0">
-                            <td
-                                colspan="5"
-                                class="text-center py-12 text-gray-500 dark:text-slate-400"
-                            >
-                                No users found.
-                            </td>
+                            <td colspan="5" class="text-center py-12 text-gray-500 dark:text-slate-400">No users found.</td>
                         </tr>
                     </tbody>
                 </table>
@@ -387,93 +304,43 @@ const formatDate = (iso: string) =>
         </div>
 
         <!-- Provision Modal -->
-        <div
-            v-if="showProvision"
-            class="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
-        >
+        <div v-if="showProvision" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
             <div class="bg-white dark:bg-slate-800 rounded-xl shadow-xl w-full max-w-md mx-4 p-6">
-                <h2 class="text-lg font-bold text-gray-900 dark:text-slate-100 mb-4">
-                    Provision New User
-                </h2>
-                <form class="space-y-4" @submit.prevent="submitProvision">
+                <h2 class="text-lg font-bold text-gray-900 dark:text-slate-100 mb-4">Provision New User</h2>
+                <form @submit.prevent="submitProvision" class="space-y-4">
                     <div class="grid grid-cols-2 gap-3">
                         <div>
-                            <label
-                                class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1"
-                                for="prov-first"
-                                >First Name</label
-                            >
-                            <input
-                                id="prov-first"
-                                v-model="provisionForm.first_name"
-                                required
-                                type="text"
-                                class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm"
-                            />
+                            <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1" for="prov-first">First Name</label>
+                            <input id="prov-first" v-model="provisionForm.first_name" required type="text"
+                                class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm" />
                         </div>
                         <div>
-                            <label
-                                class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1"
-                                for="prov-last"
-                                >Last Name</label
-                            >
-                            <input
-                                id="prov-last"
-                                v-model="provisionForm.last_name"
-                                required
-                                type="text"
-                                class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm"
-                            />
+                            <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1" for="prov-last">Last Name</label>
+                            <input id="prov-last" v-model="provisionForm.last_name" required type="text"
+                                class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm" />
                         </div>
                     </div>
                     <div>
-                        <label
-                            class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1"
-                            for="prov-email"
-                            >Email Address</label
-                        >
-                        <input
-                            id="prov-email"
-                            v-model="provisionForm.email"
-                            required
-                            type="email"
-                            class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm"
-                        />
+                        <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1" for="prov-email">Email Address</label>
+                        <input id="prov-email" v-model="provisionForm.email" required type="email"
+                            class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm" />
                     </div>
                     <div>
-                        <label
-                            class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1"
-                            for="prov-dept"
-                            >Department</label
-                        >
-                        <select
-                            id="prov-dept"
-                            v-model="provisionForm.department"
-                            required
-                            class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm text-gray-700 dark:text-slate-300"
-                        >
+                        <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1" for="prov-dept">Department</label>
+                        <select id="prov-dept" v-model="provisionForm.department" required
+                            class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm text-gray-700 dark:text-slate-300">
                             <option value="">Select department...</option>
-                            <option v-for="(label, key) in DEPT_LABELS" :key="key" :value="key">
-                                {{ label }}
-                            </option>
+                            <option v-for="(label, key) in DEPT_LABELS" :key="key" :value="key">{{ label }}</option>
                         </select>
                     </div>
-                    <p v-if="provisionError" class="text-sm text-red-600 dark:text-red-400">
-                        {{ provisionError }}
-                    </p>
+                    <p v-if="provisionError" class="text-sm text-red-600 dark:text-red-400">{{ provisionError }}</p>
                     <div class="flex justify-end gap-3 pt-2">
-                        <button
-                            type="button"
-                            class="px-4 py-2 text-sm rounded-lg text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-200 transition-colors"
-                            @click="showProvision = false; resetProvisionForm()"
-                        >
+                        <button type="button" @click="showProvision = false; resetProvisionForm()"
+                            class="px-4 py-2 text-sm rounded-lg text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-200 transition-colors">
                             Cancel
                         </button>
-                        <button
-                            type="submit"
-                            :disabled="provisioning"
-                            class="px-4 py-2 text-sm rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium disabled:opacity-50 transition-colors"
-                        >
+                        <button type="submit" :disabled="provisioning"
+                            class="px-4 py-2 text-sm rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium disabled:opacity-50 transition-colors">
                             {{ provisioning ? 'Provisioning...' : 'Provision' }}
                         </button>
                     </div>

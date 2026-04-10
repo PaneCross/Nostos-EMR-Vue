@@ -101,6 +101,7 @@ function statusClass(status: string | null): string {
         </template>
 
         <div class="px-6 py-5 space-y-4">
+
             <!-- ── Toolbar ── -->
             <div class="flex items-center justify-end">
                 <button
@@ -126,14 +127,9 @@ function statusClass(status: string | null): string {
             </div>
 
             <!-- ── Table ── -->
-            <div
-                class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 overflow-hidden"
-            >
+            <div class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 overflow-hidden">
                 <!-- Loading -->
-                <div
-                    v-if="loading"
-                    class="py-12 text-center text-sm text-gray-400 dark:text-slate-500"
-                >
+                <div v-if="loading" class="py-12 text-center text-sm text-gray-400 dark:text-slate-500">
                     Loading EDI batches...
                 </div>
 
@@ -142,40 +138,17 @@ function statusClass(status: string | null): string {
                     <table class="min-w-full text-sm">
                         <thead class="bg-gray-50 dark:bg-slate-700/50">
                             <tr>
-                                <th
-                                    class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide"
-                                >
-                                    Batch ID
-                                </th>
-                                <th
-                                    class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide"
-                                >
-                                    Created Date
-                                </th>
-                                <th
-                                    class="px-4 py-2.5 text-right text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide"
-                                >
-                                    Record Count
-                                </th>
-                                <th
-                                    class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide"
-                                >
-                                    Status
-                                </th>
-                                <th
-                                    class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide"
-                                >
-                                    File Name
-                                </th>
+                                <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">Batch ID</th>
+                                <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">Created Date</th>
+                                <th class="px-4 py-2.5 text-right text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">Record Count</th>
+                                <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">Status</th>
+                                <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">File Name</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-100 dark:divide-slate-700">
                             <!-- Empty state -->
                             <tr v-if="batches.length === 0">
-                                <td
-                                    colspan="5"
-                                    class="px-4 py-10 text-center text-sm text-gray-400 dark:text-slate-500"
-                                >
+                                <td colspan="5" class="px-4 py-10 text-center text-sm text-gray-400 dark:text-slate-500">
                                     No EDI batches found.
                                 </td>
                             </tr>
@@ -186,28 +159,19 @@ function statusClass(status: string | null): string {
                                 :key="batch.id"
                                 class="hover:bg-gray-50 dark:hover:bg-slate-700/30 transition-colors"
                             >
-                                <td
-                                    class="px-4 py-3 font-mono text-xs text-gray-700 dark:text-slate-300"
-                                >
+                                <td class="px-4 py-3 font-mono text-xs text-gray-700 dark:text-slate-300">
                                     {{ batch.batch_id ?? String(batch.id) }}
                                 </td>
-                                <td
-                                    class="px-4 py-3 text-gray-600 dark:text-slate-400 whitespace-nowrap"
-                                >
+                                <td class="px-4 py-3 text-gray-600 dark:text-slate-400 whitespace-nowrap">
                                     {{ fmtDate(batch.created_at) }}
                                 </td>
-                                <td
-                                    class="px-4 py-3 text-right text-gray-800 dark:text-slate-200 tabular-nums"
-                                >
+                                <td class="px-4 py-3 text-right text-gray-800 dark:text-slate-200 tabular-nums">
                                     {{ batch.record_count?.toLocaleString() ?? '-' }}
                                 </td>
                                 <td class="px-4 py-3">
                                     <span
                                         v-if="batch.status"
-                                        :class="[
-                                            'inline-flex px-2 py-0.5 rounded text-xs font-medium capitalize',
-                                            statusClass(batch.status),
-                                        ]"
+                                        :class="['inline-flex px-2 py-0.5 rounded text-xs font-medium capitalize', statusClass(batch.status)]"
                                     >
                                         {{ batch.status }}
                                     </span>
@@ -218,10 +182,7 @@ function statusClass(status: string | null): string {
                                         v-if="batch.file_name"
                                         class="inline-flex items-center gap-1 text-gray-600 dark:text-slate-400 text-xs"
                                     >
-                                        <DocumentArrowUpIcon
-                                            class="w-3.5 h-3.5 shrink-0"
-                                            aria-hidden="true"
-                                        />
+                                        <DocumentArrowUpIcon class="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
                                         {{ batch.file_name }}
                                     </span>
                                     <span v-else class="text-gray-400 dark:text-slate-500">-</span>

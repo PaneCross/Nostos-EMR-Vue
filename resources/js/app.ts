@@ -12,6 +12,10 @@ import '../css/app.css'
 // Make axios available globally (used in components for JSON widget requests)
 window.axios = axios
 window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest'
+// Send session cookies and auto-attach XSRF-TOKEN cookie as X-XSRF-TOKEN header
+// on every axios request so Laravel CSRF protection passes for all POST calls.
+window.axios.defaults.withCredentials = true
+window.axios.defaults.withXSRFToken = true
 
 // Bootstrap Reverb/Echo (WebSockets for real-time alerts + chat)
 import './echo'

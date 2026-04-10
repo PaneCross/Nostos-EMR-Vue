@@ -340,7 +340,7 @@ function fmtDate(dateStr: string): string {
 
           <div>
             <label class="block text-xs font-medium text-gray-700 dark:text-slate-300 mb-1">Meeting Type</label>
-            <select
+            <select name="meeting_type"
               v-model="scheduleForm.meeting_type"
               class="block w-full rounded-lg border border-gray-300 dark:border-slate-600 text-sm py-2 px-3 dark:bg-slate-700"
             >

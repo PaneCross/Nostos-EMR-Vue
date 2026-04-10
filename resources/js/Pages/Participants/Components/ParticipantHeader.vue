@@ -456,7 +456,7 @@ const sectionHdr = 'text-xs font-bold text-slate-500 dark:text-slate-400 upperca
           <div class="grid grid-cols-2 gap-3 mt-3">
             <div>
               <label class="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">Enrollment Status</label>
-              <select v-model="editForm.enrollment_status" :class="inputCls">
+              <select name="enrollment_status" v-model="editForm.enrollment_status" :class="inputCls">
                 <option value="referred">Referred</option>
                 <option value="intake">Intake</option>
                 <option value="pending">Pending</option>
@@ -496,7 +496,7 @@ const sectionHdr = 'text-xs font-bold text-slate-500 dark:text-slate-400 upperca
           <div class="grid grid-cols-2 gap-3 mt-3">
             <div>
               <label class="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">Directive Status</label>
-              <select v-model="editForm.advance_directive_status" :class="inputCls">
+              <select name="advance_directive_status" v-model="editForm.advance_directive_status" :class="inputCls">
                 <option value="">-- Not set --</option>
                 <option value="has_directive">Has Directive on File</option>
                 <option value="declined_directive">Declined Directive</option>
@@ -506,7 +506,7 @@ const sectionHdr = 'text-xs font-bold text-slate-500 dark:text-slate-400 upperca
             </div>
             <div>
               <label class="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">Directive Type</label>
-              <select v-model="editForm.advance_directive_type" :class="inputCls">
+              <select name="advance_directive_type" v-model="editForm.advance_directive_type" :class="inputCls">
                 <option value="">-- None --</option>
                 <option value="dnr">DNR</option>
                 <option value="polst">POLST</option>
@@ -526,7 +526,7 @@ const sectionHdr = 'text-xs font-bold text-slate-500 dark:text-slate-400 upperca
           <div class="grid grid-cols-2 gap-3 mt-3">
             <div>
               <label class="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">Race</label>
-              <select v-model="editForm.race" :class="inputCls">
+              <select name="race" v-model="editForm.race" :class="inputCls">
                 <option value="">-- Not specified --</option>
                 <option value="white">White</option>
                 <option value="black_african_american">Black / African American</option>
@@ -541,7 +541,7 @@ const sectionHdr = 'text-xs font-bold text-slate-500 dark:text-slate-400 upperca
             </div>
             <div>
               <label class="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">Ethnicity</label>
-              <select v-model="editForm.ethnicity" :class="inputCls">
+              <select name="ethnicity" v-model="editForm.ethnicity" :class="inputCls">
                 <option value="">-- Not specified --</option>
                 <option value="hispanic_latino">Hispanic / Latino</option>
                 <option value="not_hispanic_latino">Not Hispanic / Latino</option>
@@ -555,7 +555,7 @@ const sectionHdr = 'text-xs font-bold text-slate-500 dark:text-slate-400 upperca
             </div>
             <div>
               <label class="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">Marital Status</label>
-              <select v-model="editForm.marital_status" :class="inputCls">
+              <select name="marital_status" v-model="editForm.marital_status" :class="inputCls">
                 <option value="">-- Not specified --</option>
                 <option value="single">Single</option>
                 <option value="married">Married</option>
@@ -568,7 +568,7 @@ const sectionHdr = 'text-xs font-bold text-slate-500 dark:text-slate-400 upperca
             </div>
             <div>
               <label class="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">Veteran Status</label>
-              <select v-model="editForm.veteran_status" :class="inputCls">
+              <select name="veteran_status" v-model="editForm.veteran_status" :class="inputCls">
                 <option value="">-- Not specified --</option>
                 <option value="not_veteran">Not a veteran</option>
                 <option value="veteran_active">Veteran (active benefits)</option>
@@ -578,7 +578,7 @@ const sectionHdr = 'text-xs font-bold text-slate-500 dark:text-slate-400 upperca
             </div>
             <div>
               <label class="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">Education Level</label>
-              <select v-model="editForm.education_level" :class="inputCls">
+              <select name="education_level" v-model="editForm.education_level" :class="inputCls">
                 <option value="">-- Not specified --</option>
                 <option value="less_than_high_school">Less than high school</option>
                 <option value="high_school_ged">High school / GED</option>
@@ -600,7 +600,7 @@ const sectionHdr = 'text-xs font-bold text-slate-500 dark:text-slate-400 upperca
           <div class="grid grid-cols-2 gap-3 mt-3">
             <div>
               <label class="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">Representative Type</label>
-              <select v-model="editForm.legal_representative_type" :class="inputCls">
+              <select name="legal_representative_type" v-model="editForm.legal_representative_type" :class="inputCls">
                 <option value="">-- None / Self --</option>
                 <option value="self">Self</option>
                 <option value="legal_guardian">Legal Guardian</option>

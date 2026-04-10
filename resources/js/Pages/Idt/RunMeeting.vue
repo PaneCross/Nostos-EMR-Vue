@@ -460,7 +460,7 @@ function fmtDate(dateStr: string): string {
                       />
                     </div>
                     <div>
-                      <select
+                      <select name="department"
                         v-model="item.department"
                         :disabled="locked"
                         class="block w-full text-xs border border-gray-300 dark:border-slate-600 rounded px-2 py-1 dark:bg-slate-700 disabled:opacity-60"

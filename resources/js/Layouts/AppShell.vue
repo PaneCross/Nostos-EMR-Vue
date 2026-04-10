@@ -579,7 +579,7 @@ function handleGlobalKey(e: KeyboardEvent) {
                     class="rounded-lg bg-slate-800 border border-slate-700 p-2.5 space-y-1.5"
                 >
                     <p class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Dashboard View</p>
-                    <select
+                    <select name="select"
                         class="w-full bg-slate-700 text-slate-200 text-xs rounded px-2 py-1.5 border border-slate-600 focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer"
                         :value="page.props.impersonation?.viewing_as_dept ?? 'it_admin'"
                         @change="(e) => axios.post('/super-admin/view-as', { department: (e.target as HTMLSelectElement).value }).then(() => router.reload())"
