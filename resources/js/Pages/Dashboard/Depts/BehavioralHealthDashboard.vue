@@ -2,10 +2,10 @@
 // ─── BehavioralHealthDashboard.vue ───────────────────────────────────────────
 // Behavioral Health department live dashboard.
 // Endpoints:
-//   GET /dashboards/behavioral-health/caseload     → { participants[] }
-//   GET /dashboards/behavioral-health/alerts       → { alerts[] }
-//   GET /dashboards/behavioral-health/docs         → { unsigned_notes[] }
-//   GET /dashboards/behavioral-health/assessments  → { overdue_assessments[] }
+//   GET /dashboards/behavioral-health/schedule     → { appointments[] }
+//   GET /dashboards/behavioral-health/assessments  → { overdue[], due_soon[], overdue_count, due_soon_count }
+//   GET /dashboards/behavioral-health/sdrs         → { sdrs[], overdue_count, open_count }
+//   GET /dashboards/behavioral-health/goals        → { goals[] }
 // ─────────────────────────────────────────────────────────────────────────────
 import { ref, onMounted, computed } from 'vue'
 import axios from 'axios'
@@ -15,107 +15,111 @@ import type { ActionItem } from '@/Components/Dashboard/ActionWidget.vue'
 defineProps<{ departmentLabel: string; role: string }>()
 
 const loading = ref(true)
-const participants = ref<any[]>([])
-const alerts = ref<any[]>([])
-const unsignedNotes = ref<any[]>([])
+const appointments = ref<any[]>([])
 const overdueAssessments = ref<any[]>([])
+const dueSoonAssessments = ref<any[]>([])
+const sdrs = ref<any[]>([])
+const goals = ref<any[]>([])
 
 onMounted(() => {
     Promise.all([
-        axios.get('/dashboards/behavioral-health/caseload'),
-        axios.get('/dashboards/behavioral-health/alerts'),
-        axios.get('/dashboards/behavioral-health/docs'),
+        axios.get('/dashboards/behavioral-health/schedule'),
         axios.get('/dashboards/behavioral-health/assessments'),
-    ])
-        .then(([r1, r2, r3, r4]) => {
-            participants.value = r1.data.participants ?? r1.data ?? []
-            alerts.value = r2.data.alerts ?? r2.data ?? []
-            unsignedNotes.value = r3.data.unsigned_notes ?? []
-            overdueAssessments.value = r4.data.overdue_assessments ?? []
-        })
-        .finally(() => (loading.value = false))
+        axios.get('/dashboards/behavioral-health/sdrs'),
+        axios.get('/dashboards/behavioral-health/goals'),
+    ]).then(([r1, r2, r3, r4]) => {
+        appointments.value = r1.data.appointments ?? []
+        overdueAssessments.value = r2.data.overdue ?? []
+        dueSoonAssessments.value = r2.data.due_soon ?? []
+        sdrs.value = r3.data.sdrs ?? []
+        goals.value = r4.data.goals ?? []
+    }).finally(() => loading.value = false)
 })
 
-const caseloadItems = computed<ActionItem[]>(() =>
-    participants.value.map((p) => ({
-        label: p.name ?? '-',
-        sublabel: [`MRN: ${p.mrn ?? '-'}`, p.site].filter(Boolean).join(' | ') || undefined,
-        badge: p.enrollment_status === 'enrolled' ? 'Enrolled' : (p.enrollment_status ?? '-'),
-        badgeColor:
-            p.enrollment_status === 'enrolled'
-                ? 'bg-green-100 dark:bg-green-900/60 text-green-700 dark:text-green-300'
-                : 'bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300',
-    })),
+const scheduleItems = computed<ActionItem[]>(() =>
+    appointments.value.map(a => ({
+        label: `${a.participant?.name ?? '-'} - ${a.type_label ?? '-'}`,
+        sublabel: a.scheduled_start ?? undefined,
+        badge: a.status === 'confirmed' ? 'Confirmed'
+            : a.status === 'scheduled' ? 'Scheduled'
+            : (a.status ?? '-'),
+        badgeColor: a.status === 'confirmed'
+            ? 'bg-green-100 dark:bg-green-900/60 text-green-700 dark:text-green-300'
+            : 'bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300',
+    }))
 )
 
-const alertItems = computed<ActionItem[]>(() =>
-    alerts.value.map((a) => ({
-        label: `${a.participant?.name ?? 'System'} — ${a.type_label ?? '-'}`,
-        sublabel: a.created_at ?? undefined,
-        badge: a.severity ?? '-',
-        badgeColor:
-            a.severity === 'critical'
-                ? 'bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300'
-                : a.severity === 'warning'
-                  ? 'bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300'
-                  : 'bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300',
-    })),
-)
-
-const noteItems = computed<ActionItem[]>(() =>
-    unsignedNotes.value.map((n) => ({
-        label: `${n.participant?.name ?? '-'} — ${n.type_label ?? '-'}`,
-        sublabel: n.visit_date ?? n.created_at ?? undefined,
-        badge: n.author ? undefined : 'Unassigned',
-        badgeColor: 'bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300',
-    })),
-)
-
-const assessmentItems = computed<ActionItem[]>(() =>
-    overdueAssessments.value.map((a) => ({
-        label: `${a.participant?.name ?? '-'} — ${a.type_label ?? '-'}`,
+const assessmentItems = computed<ActionItem[]>(() => [
+    ...overdueAssessments.value.map((a: any) => ({
+        label: `${a.participant?.name ?? '-'} - ${a.type_label ?? '-'}`,
         sublabel: a.next_due_date ? `Due ${a.next_due_date}` : undefined,
-        badge: `${a.days_overdue ?? 0}d overdue`,
-        badgeColor: 'bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300',
+        badge: a.days_overdue != null ? `${a.days_overdue}d overdue` : 'Overdue',
+        badgeColor: 'bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300' as const,
     })),
+    ...dueSoonAssessments.value.map((a: any) => ({
+        label: `${a.participant?.name ?? '-'} - ${a.type_label ?? '-'}`,
+        sublabel: undefined,
+        badge: a.next_due_date ? `Due ${a.next_due_date}` : 'Due soon',
+        badgeColor: 'bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300' as const,
+    })),
+])
+
+const sdrItems = computed<ActionItem[]>(() =>
+    sdrs.value.map(s => ({
+        label: `${s.participant?.name ?? '-'} - ${s.type_label ?? '-'}`,
+        sublabel: `Priority: ${s.priority ?? '-'}`,
+        badge: s.is_overdue ? 'Overdue' : `${s.hours_remaining}h left`,
+        badgeColor: s.is_overdue
+            ? 'bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300'
+            : 'bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300',
+    }))
+)
+
+const goalItems = computed<ActionItem[]>(() =>
+    goals.value.map(g => ({
+        label: `${g.participant?.name ?? '-'} - BH Goal`,
+        sublabel: g.goal_description ?? undefined,
+        badge: g.target_date ? `Due ${g.target_date}` : undefined,
+        badgeColor: 'bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300',
+    }))
 )
 </script>
 
 <template>
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <ActionWidget
-            title="Active Caseload"
-            description="Participants currently assigned to Behavioral Health."
-            :items="caseloadItems"
-            empty-message="No participants in active caseload."
-            view-all-href="/participants"
-            :loading="loading"
-        />
-
-        <ActionWidget
-            title="Active Alerts"
-            description="Alerts requiring behavioral health attention."
-            :items="alertItems"
-            empty-message="No active alerts."
-            view-all-href="/participants"
-            :loading="loading"
-        />
-
-        <ActionWidget
-            title="Unsigned Notes"
-            description="Behavioral health notes pending provider signature."
-            :items="noteItems"
-            empty-message="No unsigned notes."
-            view-all-href="/clinical/notes"
+            title="Today's Sessions"
+            description="Behavioral health and counseling sessions scheduled today."
+            :items="scheduleItems"
+            emptyMessage="No BH sessions today."
+            viewAllHref="/schedule"
             :loading="loading"
         />
 
         <ActionWidget
             title="Overdue Assessments"
-            description="Assessments past their due date."
+            description="PHQ-9, GAD-7, and MMSE assessments that are past due. Required per 42 CFR 460.68."
             :items="assessmentItems"
-            empty-message="No overdue assessments."
-            view-all-href="/clinical/assessments"
+            emptyMessage="No overdue or upcoming assessments."
+            viewAllHref="/clinical/assessments"
+            :loading="loading"
+        />
+
+        <ActionWidget
+            title="Overdue SDRs"
+            description="SDRs assigned to behavioral health past their 72-hour deadline."
+            :items="sdrItems"
+            emptyMessage="No open SDRs."
+            viewAllHref="/sdrs"
+            :loading="loading"
+        />
+
+        <ActionWidget
+            title="Goals Due"
+            description="Behavioral health care plan goals with target dates within 14 days or past due."
+            :items="goalItems"
+            emptyMessage="No active BH goals due soon."
+            viewAllHref="/clinical/care-plans"
             :loading="loading"
         />
     </div>

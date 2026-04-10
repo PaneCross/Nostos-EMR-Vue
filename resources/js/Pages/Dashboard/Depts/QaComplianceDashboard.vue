@@ -2,10 +2,10 @@
 // ─── QaComplianceDashboard.vue ────────────────────────────────────────────────
 // QA / Compliance department live dashboard.
 // Endpoints:
-//   GET /dashboards/qa-compliance/incidents     → { incidents[] }
-//   GET /dashboards/qa-compliance/overdue-docs  → { unsigned_notes[], overdue_assessments[] }
-//   GET /dashboards/qa-compliance/grievances    → { grievances[] }
-//   GET /dashboards/qa-compliance/alerts        → { alerts[] }
+//   GET /dashboards/qa-compliance/metrics    → { sdr_compliance_rate, overdue_assessments_count, unsigned_notes_count, open_incidents_count, overdue_care_plans_count, hospitalizations_count }
+//   GET /dashboards/qa-compliance/incidents  → { incidents[], open_count, rca_pending_count }
+//   GET /dashboards/qa-compliance/docs       → { unsigned_notes[], unsigned_count, overdue_assessments[], overdue_assess_count }
+//   GET /dashboards/qa-compliance/care-plans → { care_plans[], overdue_count }
 // ─────────────────────────────────────────────────────────────────────────────
 import { ref, onMounted, computed } from 'vue'
 import axios from 'axios'
@@ -15,147 +15,147 @@ import type { ActionItem } from '@/Components/Dashboard/ActionWidget.vue'
 defineProps<{ departmentLabel: string; role: string }>()
 
 const loading = ref(true)
-const incidents = ref<any[]>([])
-const unsignedNotes = ref<any[]>([])
-const overdueAssessments = ref<any[]>([])
-const grievances = ref<any[]>([])
-const alerts = ref<any[]>([])
+const kpis = ref<any>(null)
+const incidentsData = ref<any>(null)
+const docsData = ref<any>(null)
+const carePlansData = ref<any>(null)
 
 onMounted(() => {
     Promise.all([
+        axios.get('/dashboards/qa-compliance/metrics'),
         axios.get('/dashboards/qa-compliance/incidents'),
-        axios.get('/dashboards/qa-compliance/overdue-docs'),
-        axios.get('/dashboards/qa-compliance/grievances'),
-        axios.get('/dashboards/qa-compliance/alerts'),
-    ])
-        .then(([r1, r2, r3, r4]) => {
-            incidents.value = r1.data.incidents ?? []
-            unsignedNotes.value = r2.data.unsigned_notes ?? []
-            overdueAssessments.value = r2.data.overdue_assessments ?? []
-            grievances.value = r3.data.grievances ?? []
-            alerts.value = r4.data.alerts ?? r4.data ?? []
-        })
-        .finally(() => (loading.value = false))
+        axios.get('/dashboards/qa-compliance/docs'),
+        axios.get('/dashboards/qa-compliance/care-plans'),
+    ]).then(([r1, r2, r3, r4]) => {
+        kpis.value = r1.data
+        incidentsData.value = r2.data
+        docsData.value = r3.data
+        carePlansData.value = r4.data
+    }).finally(() => loading.value = false)
 })
 
+function kpiColor(value: number, threshold: number): string {
+    if (value === 0) return 'bg-green-50 dark:bg-green-950/60 border-green-200 dark:border-green-800 text-green-800 dark:text-green-300'
+    if (value <= threshold) return 'bg-amber-50 dark:bg-amber-950/60 border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300'
+    return 'bg-red-50 dark:bg-red-950/60 border-red-200 dark:border-red-800 text-red-800 dark:text-red-300'
+}
+
+function sdrColor(value: number): string {
+    if (value >= 95) return 'bg-green-50 dark:bg-green-950/60 border-green-200 dark:border-green-800 text-green-800 dark:text-green-300'
+    if (value >= 80) return 'bg-amber-50 dark:bg-amber-950/60 border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300'
+    return 'bg-red-50 dark:bg-red-950/60 border-red-200 dark:border-red-800 text-red-800 dark:text-red-300'
+}
+
 const incidentItems = computed<ActionItem[]>(() =>
-    incidents.value.map((i) => {
+    (incidentsData.value?.incidents ?? []).map((i: any) => {
         const rcaPending = i.rca_required && !i.rca_completed
-        let badge: string
-        let badgeColor: string
-        if (rcaPending) {
-            badge = 'RCA Pending'
-            badgeColor = 'bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300'
-        } else if (i.status === 'open') {
-            badge = 'Open'
-            badgeColor = 'bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300'
-        } else if (i.status === 'under_review') {
-            badge = 'Under Review'
-            badgeColor = 'bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300'
-        } else {
-            badge = i.status ?? '-'
-            badgeColor = 'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300'
-        }
         return {
-            label: `${i.participant?.name ?? 'System'} — ${i.incident_type ?? '-'}`,
-            sublabel: [i.occurred_at, i.severity ?? '-'].filter(Boolean).join(' | ') || undefined,
-            badge,
-            badgeColor,
+            label: `${i.participant?.name ?? 'N/A'} : ${(i.incident_type ?? '-').replace(/_/g, ' ')}`,
+            sublabel: `${(i.status ?? '-').replace(/_/g, ' ')}${i.occurred_at ? ` | ${i.occurred_at}` : ''}`,
+            badge: rcaPending ? 'RCA Due' : (i.status ?? '-').replace(/_/g, ' '),
+            badgeColor: rcaPending
+                ? 'bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300'
+                : 'bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300',
         }
-    }),
+    })
 )
 
-const unsignedNoteItems = computed<ActionItem[]>(() =>
-    unsignedNotes.value.map((n) => ({
-        label: `${n.participant?.name ?? '-'} — ${n.type_label ?? '-'}`,
-        sublabel: n.visit_date ?? n.created_at ?? undefined,
-        badge: 'Unsigned',
+const docItems = computed<ActionItem[]>(() => [
+    ...(docsData.value?.unsigned_notes ?? []).map((n: any) => ({
+        label: `${n.participant?.name ?? '-'} : ${(n.note_type ?? '-').replace(/_/g, ' ')}`,
+        sublabel: (n.department ?? '-').replace(/_/g, ' '),
+        badge: `${n.hours_old ?? 0}h`,
         badgeColor: 'bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300',
     })),
-)
-
-const overdueAssessmentItems = computed<ActionItem[]>(() =>
-    overdueAssessments.value.map((a) => ({
-        label: `${a.participant?.name ?? '-'} — ${a.type_label ?? '-'}`,
-        sublabel: a.next_due_date ? `Due ${a.next_due_date}` : undefined,
+    ...(docsData.value?.overdue_assessments ?? []).map((a: any) => ({
+        label: `${a.participant?.name ?? '-'} : ${(a.assessment_type ?? '-').replace(/_/g, ' ')}`,
+        sublabel: a.next_due_date ?? undefined,
         badge: `${a.days_overdue ?? 0}d overdue`,
         badgeColor: 'bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300',
     })),
-)
+])
 
-const grievanceItems = computed<ActionItem[]>(() =>
-    grievances.value.map((g) => ({
-        label: g.participant?.name ?? g.filed_by_name ?? '-',
-        sublabel: [g.category, g.filed_at].filter(Boolean).join(' | ') || undefined,
-        badge: g.priority === 'urgent' ? 'Urgent' : 'Standard',
-        badgeColor:
-            g.priority === 'urgent'
-                ? 'bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300'
-                : 'bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300',
-    })),
-)
-
-const alertItems = computed<ActionItem[]>(() =>
-    alerts.value.map((a) => ({
-        label: `${a.participant?.name ?? 'System'} — ${a.type_label ?? '-'}`,
-        sublabel: a.created_at ?? undefined,
-        badge: a.severity ?? '-',
-        badgeColor:
-            a.severity === 'critical'
-                ? 'bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300'
-                : a.severity === 'warning'
-                  ? 'bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300'
-                  : 'bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300',
-    })),
+const carePlanItems = computed<ActionItem[]>(() =>
+    (carePlansData.value?.care_plans ?? []).map((p: any) => ({
+        label: p.participant?.name ?? '-',
+        sublabel: (p.status ?? '-').replace(/_/g, ' '),
+        badge: `${p.days_overdue ?? 0}d overdue`,
+        badgeColor: 'bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300',
+    }))
 )
 </script>
 
 <template>
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <ActionWidget
-            title="Open Incidents"
-            description="Incidents requiring QA review or RCA completion."
-            :items="incidentItems"
-            empty-message="No open incidents."
-            view-all-href="/qa/dashboard"
-            :loading="loading"
-        />
+    <div class="space-y-6">
 
-        <div class="flex flex-col gap-4">
+        <!-- KPI Card Row -->
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+            <template v-if="loading || !kpis">
+                <div v-for="i in 6" :key="i" class="h-20 bg-slate-100 dark:bg-slate-800 rounded-xl animate-pulse" />
+            </template>
+            <template v-else>
+                <div :class="`rounded-xl border p-3 ${sdrColor(kpis.sdr_compliance_rate ?? 0)}`">
+                    <p class="text-[10px] font-semibold uppercase tracking-wide opacity-70">SDR Compliance</p>
+                    <p class="text-2xl font-bold mt-1">{{ kpis.sdr_compliance_rate ?? 0 }}%</p>
+                    <p class="text-[10px] mt-0.5 opacity-60">30-day rate</p>
+                </div>
+                <div :class="`rounded-xl border p-3 ${kpiColor(kpis.overdue_assessments_count ?? 0, 5)}`">
+                    <p class="text-[10px] font-semibold uppercase tracking-wide opacity-70">Overdue Assessments</p>
+                    <p class="text-2xl font-bold mt-1">{{ kpis.overdue_assessments_count ?? 0 }}</p>
+                    <p class="text-[10px] mt-0.5 opacity-60">Past due date</p>
+                </div>
+                <div :class="`rounded-xl border p-3 ${kpiColor(kpis.unsigned_notes_count ?? 0, 3)}`">
+                    <p class="text-[10px] font-semibold uppercase tracking-wide opacity-70">Unsigned Notes &gt;24h</p>
+                    <p class="text-2xl font-bold mt-1">{{ kpis.unsigned_notes_count ?? 0 }}</p>
+                    <p class="text-[10px] mt-0.5 opacity-60">Documentation gap</p>
+                </div>
+                <div :class="`rounded-xl border p-3 ${kpiColor(kpis.open_incidents_count ?? 0, 5)}`">
+                    <p class="text-[10px] font-semibold uppercase tracking-wide opacity-70">Open Incidents</p>
+                    <p class="text-2xl font-bold mt-1">{{ kpis.open_incidents_count ?? 0 }}</p>
+                    <p class="text-[10px] mt-0.5 opacity-60">All statuses</p>
+                </div>
+                <div :class="`rounded-xl border p-3 ${kpiColor(kpis.overdue_care_plans_count ?? 0, 3)}`">
+                    <p class="text-[10px] font-semibold uppercase tracking-wide opacity-70">Overdue Care Plans</p>
+                    <p class="text-2xl font-bold mt-1">{{ kpis.overdue_care_plans_count ?? 0 }}</p>
+                    <p class="text-[10px] mt-0.5 opacity-60">Review past due</p>
+                </div>
+                <div :class="`rounded-xl border p-3 ${kpiColor(kpis.hospitalizations_count ?? 0, 2)}`">
+                    <p class="text-[10px] font-semibold uppercase tracking-wide opacity-70">Hospital/ER (Month)</p>
+                    <p class="text-2xl font-bold mt-1">{{ kpis.hospitalizations_count ?? 0 }}</p>
+                    <p class="text-[10px] mt-0.5 opacity-60">This calendar month</p>
+                </div>
+            </template>
+        </div>
+
+        <!-- Widget Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <ActionWidget
-                title="Unsigned Notes"
-                description="Clinical notes pending provider signature."
-                :items="unsignedNoteItems"
-                empty-message="No unsigned notes."
-                view-all-href="/clinical/notes"
+                title="Open Incidents"
+                description="Open incidents requiring review or RCA completion. Red = RCA required per CMS 42 CFR 460.136."
+                :items="incidentItems"
+                emptyMessage="No open incidents."
+                viewAllHref="/qa/dashboard"
                 :loading="loading"
             />
+
             <ActionWidget
-                title="Overdue Assessments"
-                description="Assessments past their due date."
-                :items="overdueAssessmentItems"
-                empty-message="No overdue assessments."
-                view-all-href="/clinical/assessments"
+                title="Documentation Compliance"
+                description="Unsigned notes older than 24h and overdue assessments. QA monitors these for audit readiness."
+                :items="docItems"
+                emptyMessage="No documentation gaps."
+                viewAllHref="/qa/dashboard"
+                :loading="loading"
+            />
+
+            <ActionWidget
+                title="Overdue Care Plans"
+                description="Active care plans with overdue or upcoming review dates. Reviewed at IDT."
+                :items="carePlanItems"
+                emptyMessage="No overdue care plans."
+                viewAllHref="/clinical/care-plans"
                 :loading="loading"
             />
         </div>
 
-        <ActionWidget
-            title="Open Grievances"
-            description="Participant grievances requiring resolution."
-            :items="grievanceItems"
-            empty-message="No open grievances."
-            view-all-href="/qa/dashboard"
-            :loading="loading"
-        />
-
-        <ActionWidget
-            title="Active Alerts"
-            description="Compliance and clinical alerts requiring attention."
-            :items="alertItems"
-            empty-message="No active alerts."
-            view-all-href="/qa/dashboard"
-            :loading="loading"
-        />
     </div>
 </template>

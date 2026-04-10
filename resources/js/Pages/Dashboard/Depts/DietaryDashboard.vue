@@ -2,10 +2,10 @@
 // ─── DietaryDashboard.vue ─────────────────────────────────────────────────────
 // Dietary department live dashboard.
 // Endpoints:
-//   GET /dashboards/dietary/assessments  → { overdue_assessments[] }
-//   GET /dashboards/dietary/alerts       → { alerts[] }
-//   GET /dashboards/dietary/allergies    → { allergies[] }
-//   GET /dashboards/dietary/docs         → { unsigned_notes[] }
+//   GET /dashboards/dietary/assessments   → { overdue[], due_soon[], overdue_count, due_soon_count }
+//   GET /dashboards/dietary/goals         → { goals[] }
+//   GET /dashboards/dietary/restrictions  → { counts_by_type, critical_food_allergies[] }
+//   GET /dashboards/dietary/sdrs          → { sdrs[], overdue_count, open_count }
 // ─────────────────────────────────────────────────────────────────────────────
 import { ref, onMounted, computed } from 'vue'
 import axios from 'axios'
@@ -16,119 +16,106 @@ defineProps<{ departmentLabel: string; role: string }>()
 
 const loading = ref(true)
 const overdueAssessments = ref<any[]>([])
-const alerts = ref<any[]>([])
-const allergies = ref<any[]>([])
-const unsignedNotes = ref<any[]>([])
+const dueSoonAssessments = ref<any[]>([])
+const goals = ref<any[]>([])
+const criticalFoodAllergies = ref<any[]>([])
+const sdrs = ref<any[]>([])
 
 onMounted(() => {
     Promise.all([
         axios.get('/dashboards/dietary/assessments'),
-        axios.get('/dashboards/dietary/alerts'),
-        axios.get('/dashboards/dietary/allergies'),
-        axios.get('/dashboards/dietary/docs'),
-    ])
-        .then(([r1, r2, r3, r4]) => {
-            overdueAssessments.value = r1.data.overdue_assessments ?? []
-            alerts.value = r2.data.alerts ?? r2.data ?? []
-            allergies.value = r3.data.allergies ?? []
-            unsignedNotes.value = r4.data.unsigned_notes ?? []
-        })
-        .finally(() => (loading.value = false))
+        axios.get('/dashboards/dietary/goals'),
+        axios.get('/dashboards/dietary/restrictions'),
+        axios.get('/dashboards/dietary/sdrs'),
+    ]).then(([r1, r2, r3, r4]) => {
+        overdueAssessments.value = r1.data.overdue ?? []
+        dueSoonAssessments.value = r1.data.due_soon ?? []
+        goals.value = r2.data.goals ?? []
+        criticalFoodAllergies.value = r3.data.critical_food_allergies ?? []
+        sdrs.value = r4.data.sdrs ?? []
+    }).finally(() => loading.value = false)
 })
 
-const assessmentItems = computed<ActionItem[]>(() =>
-    overdueAssessments.value.map((a) => ({
-        label: `${a.participant?.name ?? '-'} — ${a.type_label ?? '-'}`,
+const assessmentItems = computed<ActionItem[]>(() => [
+    ...overdueAssessments.value.map((a: any) => ({
+        label: `${a.participant?.name ?? '-'} - Nutritional Assessment`,
         sublabel: a.next_due_date ? `Due ${a.next_due_date}` : undefined,
-        badge: `${a.days_overdue ?? 0}d overdue`,
-        badgeColor: 'bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300',
+        badge: a.days_overdue != null ? `${a.days_overdue}d overdue` : 'Overdue',
+        badgeColor: 'bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300' as const,
     })),
-)
-
-const alertItems = computed<ActionItem[]>(() =>
-    alerts.value.map((a) => ({
-        label: `${a.participant?.name ?? 'System'} — ${a.type_label ?? '-'}`,
-        sublabel: a.created_at ?? undefined,
-        badge: a.severity ?? '-',
-        badgeColor:
-            a.severity === 'critical'
-                ? 'bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300'
-                : a.severity === 'warning'
-                  ? 'bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300'
-                  : 'bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300',
+    ...dueSoonAssessments.value.map((a: any) => ({
+        label: `${a.participant?.name ?? '-'} - Nutritional Assessment`,
+        sublabel: undefined,
+        badge: a.next_due_date ? `Due ${a.next_due_date}` : 'Due soon',
+        badgeColor: 'bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300' as const,
     })),
-)
+])
 
-const allergyItems = computed<ActionItem[]>(() =>
-    allergies.value.map((a) => ({
-        label: `${a.participant?.name ?? '-'} — ${a.allergen_name ?? '-'}`,
-        sublabel: a.reaction_description ?? undefined,
-        badge:
-            a.severity === 'life-threatening'
-                ? 'Life-Threatening'
-                : a.severity === 'severe'
-                  ? 'Severe'
-                  : a.severity === 'moderate'
-                    ? 'Moderate'
-                    : a.severity === 'mild'
-                      ? 'Mild'
-                      : (a.severity ?? '-'),
-        badgeColor:
-            a.severity === 'life-threatening'
-                ? 'bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300'
-                : a.severity === 'severe'
-                  ? 'bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300'
-                  : a.severity === 'moderate'
-                    ? 'bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300'
-                    : 'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300',
-    })),
-)
-
-const noteItems = computed<ActionItem[]>(() =>
-    unsignedNotes.value.map((n) => ({
-        label: `${n.participant?.name ?? '-'} — ${n.type_label ?? '-'}`,
-        sublabel: n.visit_date ?? n.created_at ?? undefined,
-        badge: n.author ? undefined : 'Unassigned',
+const goalItems = computed<ActionItem[]>(() =>
+    goals.value.map(g => ({
+        label: `${g.participant?.name ?? '-'} - Dietary Goal`,
+        sublabel: g.goal_description ?? undefined,
+        badge: g.target_date ? `Due ${g.target_date}` : undefined,
         badgeColor: 'bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300',
-    })),
+    }))
+)
+
+const restrictionItems = computed<ActionItem[]>(() =>
+    criticalFoodAllergies.value.map(a => ({
+        label: `${a.participant?.name ?? '-'} - ${a.allergen ?? '-'}`,
+        sublabel: a.reaction ?? undefined,
+        badge: 'Life-threatening',
+        badgeColor: 'bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300',
+    }))
+)
+
+const sdrItems = computed<ActionItem[]>(() =>
+    sdrs.value.map(s => ({
+        label: `${s.participant?.name ?? '-'} - ${s.type_label ?? '-'}`,
+        sublabel: `Priority: ${s.priority ?? '-'}`,
+        badge: s.is_overdue ? 'Overdue' : `${s.hours_remaining}h left`,
+        badgeColor: s.is_overdue
+            ? 'bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300'
+            : 'bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300',
+    }))
 )
 </script>
 
 <template>
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <ActionWidget
-            title="Overdue Nutrition Assessments"
-            description="Nutritional assessments past their due date."
+            title="Overdue Assessments"
+            description="Nutritional assessments past their due date. Required annually per care plan."
             :items="assessmentItems"
-            empty-message="No overdue nutrition assessments."
-            view-all-href="/clinical/assessments"
+            emptyMessage="No overdue or upcoming assessments."
+            viewAllHref="/clinical/assessments"
             :loading="loading"
         />
 
         <ActionWidget
-            title="Active Alerts"
-            description="Alerts requiring dietary attention."
-            :items="alertItems"
-            empty-message="No active alerts."
-            view-all-href="/participants"
+            title="Goals Due"
+            description="Dietary care plan goals with target dates within 14 days or past due."
+            :items="goalItems"
+            emptyMessage="No active dietary goals due soon."
+            viewAllHref="/clinical/care-plans"
             :loading="loading"
         />
 
         <ActionWidget
-            title="Food Allergies and Intolerances"
-            description="Known food allergies and dietary restrictions."
-            :items="allergyItems"
-            empty-message="No food allergies on record."
-            view-all-href="/participants"
+            title="Dietary Restrictions"
+            description="Active food allergies and dietary restrictions across enrolled participants."
+            :items="restrictionItems"
+            emptyMessage="No critical food allergies on record."
+            viewAllHref="/participants"
             :loading="loading"
         />
 
         <ActionWidget
-            title="Unsigned Notes"
-            description="Dietary notes pending provider signature."
-            :items="noteItems"
-            empty-message="No unsigned notes."
-            view-all-href="/clinical/notes"
+            title="Overdue SDRs"
+            description="SDRs assigned to dietary past their 72-hour deadline."
+            :items="sdrItems"
+            emptyMessage="No open SDRs."
+            viewAllHref="/sdrs"
             :loading="loading"
         />
     </div>

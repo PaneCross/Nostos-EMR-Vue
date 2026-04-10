@@ -2,11 +2,11 @@
 // ─── ItAdminDashboard.vue ─────────────────────────────────────────────────────
 // IT Admin department live dashboard.
 // Endpoints:
-//   GET /dashboards/it-admin/users        → { users[] }
-//   GET /dashboards/it-admin/integrations → { integrations[] }
+//   GET /dashboards/it-admin/users        → { recently_provisioned[], recently_deactivated[], total_active, total_inactive }
+//   GET /dashboards/it-admin/integrations → { connectors[{ connector_type, last_status, error_count, is_healthy, total_today, last_message_at }] }
 //   GET /dashboards/it-admin/audit        → { entries[] }
-//   GET /dashboards/it-admin/config       → { config{} }
-//   GET /dashboards/it-admin/break-glass  → { events[], unreviewed_count }
+//   GET /dashboards/it-admin/config       → { transport_mode, auto_logout_minutes, sites[], site_count }
+//   GET /dashboards/it-admin/break-glass  → { events[], unreviewed_count, total_today }
 // ─────────────────────────────────────────────────────────────────────────────
 import { ref, onMounted, computed } from 'vue'
 import axios from 'axios'
@@ -16,121 +16,160 @@ import type { ActionItem } from '@/Components/Dashboard/ActionWidget.vue'
 defineProps<{ departmentLabel: string; role: string }>()
 
 const loading = ref(true)
-const users = ref<any[]>([])
-const integrations = ref<any[]>([])
-const auditEntries = ref<any[]>([])
-const breakGlassEvents = ref<any[]>([])
-const unreviewedCount = ref(0)
+const usersData = ref<any>(null)
+const integrationsData = ref<any>(null)
+const auditData = ref<any>(null)
+const configData = ref<any>(null)
+const breakGlassData = ref<any>(null)
+
+const CONNECTOR_LABELS: Record<string, string> = {
+    hl7_adt:        'HL7 ADT',
+    lab_results:    'Lab Results',
+    pharmacy_ncpdp: 'Pharmacy NCPDP',
+    other:          'Other',
+}
 
 onMounted(() => {
     Promise.all([
         axios.get('/dashboards/it-admin/users'),
         axios.get('/dashboards/it-admin/integrations'),
         axios.get('/dashboards/it-admin/audit'),
+        axios.get('/dashboards/it-admin/config'),
         axios.get('/dashboards/it-admin/break-glass'),
-    ])
-        .then(([r1, r2, r3, r4]) => {
-            users.value = r1.data.users ?? []
-            integrations.value = r2.data.integrations ?? []
-            auditEntries.value = r3.data.entries ?? r3.data.audit ?? []
-            breakGlassEvents.value = r4.data.events ?? []
-            unreviewedCount.value = r4.data.unreviewed_count ?? 0
-        })
-        .catch(() => {
-            // Non-blocking — widgets will show empty state
-        })
-        .finally(() => (loading.value = false))
+    ]).then(([r1, r2, r3, r4, r5]) => {
+        usersData.value = r1.data
+        integrationsData.value = r2.data
+        auditData.value = r3.data
+        configData.value = r4.data
+        breakGlassData.value = r5.data
+    }).catch(() => {
+        // Non-blocking — widgets will show empty state
+    }).finally(() => loading.value = false)
 })
 
-const userItems = computed<ActionItem[]>(() =>
-    users.value.map((u) => ({
-        label: `${u.first_name ?? ''} ${u.last_name ?? ''}`.trim() || '-',
-        sublabel:
-            [u.department_label, `Last: ${u.last_login_at ?? 'Never'}`]
-                .filter(Boolean)
-                .join(' | ') || undefined,
-        badge: u.is_active ? 'Active' : 'Inactive',
-        badgeColor: u.is_active
-            ? 'bg-green-100 dark:bg-green-900/60 text-green-700 dark:text-green-300'
-            : 'bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300',
-    })),
-)
+const userItems = computed<ActionItem[]>(() => {
+    if (!usersData.value) return []
+    return [
+        ...(usersData.value.recently_provisioned ?? []).map((u: any) => ({
+            label: u.name ?? '-',
+            sublabel: (u.department ?? '-').replace(/_/g, ' '),
+            badge: 'Provisioned',
+            badgeColor: 'bg-green-100 dark:bg-green-900/60 text-green-700 dark:text-green-300',
+        })),
+        ...(usersData.value.recently_deactivated ?? []).map((u: any) => ({
+            label: u.name ?? '-',
+            sublabel: u.updated_at ?? undefined,
+            badge: 'Deactivated',
+            badgeColor: 'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300',
+        })),
+    ]
+})
 
 const integrationItems = computed<ActionItem[]>(() =>
-    integrations.value.map((i) => ({
-        label: i.connector_type ?? '-',
-        sublabel: [i.direction, i.created_at].filter(Boolean).join(' | ') || undefined,
-        badge: i.status ?? '-',
-        badgeColor:
-            i.status === 'processed'
-                ? 'bg-green-100 dark:bg-green-900/60 text-green-700 dark:text-green-300'
-                : i.status === 'failed'
-                  ? 'bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300'
-                  : 'bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300',
-    })),
+    (integrationsData.value?.connectors ?? []).map((c: any) => ({
+        label: CONNECTOR_LABELS[c.connector_type] ?? c.connector_type ?? '-',
+        sublabel: `${c.last_message_at ?? 'Never'} | ${c.total_today ?? 0} today`,
+        badge: c.is_healthy ? 'Healthy' : `${c.error_count ?? 0} errors`,
+        badgeColor: c.is_healthy
+            ? 'bg-green-100 dark:bg-green-900/60 text-green-700 dark:text-green-300'
+            : 'bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300',
+    }))
 )
 
 const auditItems = computed<ActionItem[]>(() =>
-    auditEntries.value.map((e) => ({
+    (auditData.value?.entries ?? []).map((e: any) => ({
         label: e.action ?? '-',
-        sublabel: [e.user_name, e.created_at].filter(Boolean).join(' | ') || undefined,
+        sublabel: `${e.user?.name ?? 'System'} | ${e.created_at ?? ''}`,
         badge: e.resource_type ?? undefined,
         badgeColor: 'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300',
-        href: '/it-admin/audit',
-    })),
+    }))
 )
 
+const configItems = computed<ActionItem[]>(() => {
+    if (!configData.value) return []
+    return [
+        {
+            label: `Transport Mode: ${configData.value.transport_mode ?? '-'}`,
+            badge: configData.value.transport_mode ?? '-',
+            badgeColor: configData.value.transport_mode === 'broker'
+                ? 'bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300'
+                : 'bg-green-100 dark:bg-green-900/60 text-green-700 dark:text-green-300',
+        },
+        {
+            label: `Auto-Logout: ${configData.value.auto_logout_minutes ?? '-'} min`,
+            badge: `${configData.value.auto_logout_minutes ?? '-'}m`,
+            badgeColor: 'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300',
+        },
+        ...(configData.value.sites ?? []).map((s: any) => ({
+            label: s.name ?? '-',
+            sublabel: 'Site',
+            badge: s.mrn_prefix ?? '-',
+            badgeColor: 'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300',
+        })),
+    ]
+})
+
 const breakGlassItems = computed<ActionItem[]>(() =>
-    breakGlassEvents.value.map((e) => ({
-        label: `${e.participant?.name ?? '-'} — ${e.user?.name ?? '-'}`,
-        sublabel:
-            [e.access_granted_at, (e.justification ?? '').slice(0, 40)]
-                .filter(Boolean)
-                .join(' | ') || undefined,
-        badge: e.acknowledged_at ? 'Reviewed' : 'Unreviewed',
-        badgeColor: e.acknowledged_at
-            ? 'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300'
+    (breakGlassData.value?.events ?? []).map((e: any) => ({
+        label: `${e.user?.name ?? 'Unknown user'} accessed ${e.participant?.name ?? 'unknown participant'}`,
+        sublabel: [e.participant?.mrn, e.accessed_at ?? e.access_granted_at].filter(Boolean).join(' | ') || undefined,
+        badge: (e.is_acknowledged || e.acknowledged_at) ? 'Reviewed' : 'Unreviewed',
+        badgeColor: (e.is_acknowledged || e.acknowledged_at)
+            ? 'bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300'
             : 'bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300',
-    })),
+    }))
 )
+
+const breakGlassTitle = computed(() => {
+    const count = breakGlassData.value?.unreviewed_count
+    return count ? `Break-the-Glass Access (${count} Unreviewed)` : 'Break-the-Glass Access'
+})
 </script>
 
 <template>
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <ActionWidget
-            title="Recent User Activity"
-            description="User accounts and their recent login activity."
+            title="User Management"
+            description="Recently provisioned or recently deactivated users needing follow-up."
             :items="userItems"
-            empty-message="No user activity found."
-            view-all-href="/it-admin/users"
+            emptyMessage="No recent user changes."
+            viewAllHref="/it-admin/users"
             :loading="loading"
         />
 
         <ActionWidget
-            title="Integration Status"
-            description="Recent inbound and outbound integration events."
+            title="Integration Health"
+            description="Failed or retryable integration messages (HL7 ADT, lab results). Click to review and retry."
             :items="integrationItems"
-            empty-message="No integration events found."
-            view-all-href="/it-admin/integrations"
+            emptyMessage="No integration data."
+            viewAllHref="/it-admin/integrations"
             :loading="loading"
         />
 
         <ActionWidget
-            title="Recent Audit Log"
-            description="Recent system audit events."
+            title="Recent Audit Activity"
+            description="Recent security and configuration events in the audit log."
             :items="auditItems"
-            empty-message="No audit entries found."
-            view-all-href="/it-admin/audit"
+            emptyMessage="No recent audit entries."
+            viewAllHref="/it-admin/audit"
             :loading="loading"
-            class="lg:col-span-2"
         />
 
         <ActionWidget
-            :title="`Break-Glass Events (${unreviewedCount} Unreviewed)`"
-            description="Emergency record access events requiring review."
+            title="Tenant Configuration"
+            description="Active site configurations and system parameters."
+            :items="configItems"
+            emptyMessage="No configuration data."
+            viewAllHref="/it-admin/users"
+            :loading="loading"
+        />
+
+        <ActionWidget
+            :title="breakGlassTitle"
+            description="Emergency access events bypassing normal RBAC. Unreviewed events require IT Admin acknowledgment for HIPAA compliance."
             :items="breakGlassItems"
-            empty-message="No break-glass events on record."
-            view-all-href="/it-admin/break-glass"
+            emptyMessage="No break-the-glass events."
+            viewAllHref="/it-admin/break-glass"
             :loading="loading"
             class="lg:col-span-2"
         />

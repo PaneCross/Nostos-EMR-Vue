@@ -31,27 +31,25 @@ onMounted(() => {
         axios.get('/dashboards/pharmacy/controlled'),
         axios.get('/dashboards/pharmacy/refills'),
         axios.get('/dashboards/pharmacy/orders'),
-    ])
-        .then(([r1, r2, r3, r4, r5]) => {
-            newOrders.value = r1.data.new_orders ?? []
-            discontinued.value = r1.data.discontinued ?? []
-            interactionAlerts.value = r2.data.alerts ?? []
-            controlledRecords.value = r3.data.records ?? []
-            refillMedications.value = r4.data.medications ?? []
-            orders.value = r5.data.orders ?? []
-            statCount.value = r5.data.stat_count ?? 0
-        })
-        .finally(() => (loading.value = false))
+    ]).then(([r1, r2, r3, r4, r5]) => {
+        newOrders.value = r1.data.new_orders ?? []
+        discontinued.value = r1.data.discontinued ?? []
+        interactionAlerts.value = r2.data.alerts ?? []
+        controlledRecords.value = r3.data.records ?? []
+        refillMedications.value = r4.data.medications ?? []
+        orders.value = r5.data.orders ?? []
+        statCount.value = r5.data.stat_count ?? 0
+    }).finally(() => loading.value = false)
 })
 
 const medChangeItems = computed<ActionItem[]>(() => {
-    const newItems: ActionItem[] = newOrders.value.map((m) => ({
+    const newItems: ActionItem[] = newOrders.value.map(m => ({
         label: `${m.participant?.name ?? '-'} — ${m.drug_name ?? '-'}`,
         sublabel: m.prescriber ?? undefined,
         badge: 'New',
         badgeColor: 'bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300',
     }))
-    const dcItems: ActionItem[] = discontinued.value.map((m) => ({
+    const dcItems: ActionItem[] = discontinued.value.map(m => ({
         label: `${m.participant?.name ?? '-'} — ${m.drug_name ?? '-'}`,
         sublabel: m.discontinued_reason ?? undefined,
         badge: 'D/C',
@@ -61,26 +59,22 @@ const medChangeItems = computed<ActionItem[]>(() => {
 })
 
 const interactionItems = computed<ActionItem[]>(() =>
-    interactionAlerts.value.map((a) => ({
+    interactionAlerts.value.map(a => ({
         label: `${a.drug_name_1 ?? '-'} : ${a.drug_name_2 ?? '-'}`,
         sublabel: [a.participant?.name, a.created_at].filter(Boolean).join(' | ') || undefined,
-        badge:
-            a.severity === 'contraindicated'
-                ? 'Contraindicated'
-                : a.severity === 'major'
-                  ? 'Major'
-                  : (a.severity ?? '-'),
-        badgeColor:
-            a.severity === 'contraindicated'
-                ? 'bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300'
-                : a.severity === 'major'
-                  ? 'bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300'
-                  : 'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300',
-    })),
+        badge: a.severity === 'contraindicated' ? 'Contraindicated'
+            : a.severity === 'major' ? 'Major'
+            : (a.severity ?? '-'),
+        badgeColor: a.severity === 'contraindicated'
+            ? 'bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300'
+            : a.severity === 'major'
+            ? 'bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300'
+            : 'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300',
+    }))
 )
 
 const controlledItems = computed<ActionItem[]>(() =>
-    controlledRecords.value.map((r) => {
+    controlledRecords.value.map(r => {
         const sublabelParts = [r.controlled_schedule, r.status, r.scheduled_time].filter(Boolean)
         return {
             label: `${r.participant?.name ?? '-'} : ${r.drug_name ?? '-'}`,
@@ -90,38 +84,33 @@ const controlledItems = computed<ActionItem[]>(() =>
                 ? 'bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300'
                 : 'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300',
         }
-    }),
+    })
 )
 
 const refillItems = computed<ActionItem[]>(() =>
-    refillMedications.value.map((m) => ({
+    refillMedications.value.map(m => ({
         label: `${m.participant?.name ?? '-'} : ${m.drug_name ?? '-'}`,
         sublabel: m.last_filled_date ? `Last filled: ${m.last_filled_date}` : 'Never filled',
-        badge:
-            m.refills_remaining === 0
-                ? '0 refills'
-                : m.days_since_filled != null
-                  ? `${m.days_since_filled}d`
-                  : '-',
-        badgeColor:
-            m.refills_remaining === 0
-                ? 'bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300'
-                : 'bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300',
-    })),
+        badge: m.refills_remaining === 0 ? '0 refills'
+            : m.days_since_filled != null ? `${m.days_since_filled}d`
+            : '-',
+        badgeColor: m.refills_remaining === 0
+            ? 'bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300'
+            : 'bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300',
+    }))
 )
 
 const orderItems = computed<ActionItem[]>(() =>
-    orders.value.map((o) => ({
+    orders.value.map(o => ({
         label: `${o.participant_first_name ?? ''} ${o.participant_last_name ?? ''} — ${o.order_type_label ?? '-'}`.trim(),
         sublabel: o.is_overdue ? 'OVERDUE' : (o.status ?? undefined),
         badge: o.priority?.toUpperCase() ?? '-',
-        badgeColor:
-            o.priority === 'stat'
-                ? 'bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300'
-                : o.priority === 'urgent'
-                  ? 'bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300'
-                  : 'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300',
-    })),
+        badgeColor: o.priority === 'stat'
+            ? 'bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300'
+            : o.priority === 'urgent'
+            ? 'bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300'
+            : 'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300',
+    }))
 )
 </script>
 
@@ -131,8 +120,8 @@ const orderItems = computed<ActionItem[]>(() =>
             title="Medication Changes Today"
             description="New orders and discontinuations recorded today."
             :items="medChangeItems"
-            empty-message="No medication changes today."
-            view-all-href="/clinical/medications"
+            emptyMessage="No medication changes today."
+            viewAllHref="/clinical/medications"
             :loading="loading"
         />
 
@@ -140,8 +129,8 @@ const orderItems = computed<ActionItem[]>(() =>
             title="Drug Interaction Alerts"
             description="Active drug-drug interaction alerts requiring review."
             :items="interactionItems"
-            empty-message="No active drug interaction alerts."
-            view-all-href="/clinical/medications"
+            emptyMessage="No active drug interaction alerts."
+            viewAllHref="/clinical/medications"
             :loading="loading"
         />
 
@@ -149,8 +138,8 @@ const orderItems = computed<ActionItem[]>(() =>
             title="Controlled Substance Log: Today"
             description="Controlled substance administrations recorded today."
             :items="controlledItems"
-            empty-message="No controlled substance records today."
-            view-all-href="/clinical/medications"
+            emptyMessage="No controlled substance records today."
+            viewAllHref="/clinical/medications"
             :loading="loading"
         />
 
@@ -158,8 +147,8 @@ const orderItems = computed<ActionItem[]>(() =>
             title="Refill Attention Required"
             description="Medications with low or zero refills remaining."
             :items="refillItems"
-            empty-message="No refills require attention."
-            view-all-href="/clinical/medications"
+            emptyMessage="No refills require attention."
+            viewAllHref="/clinical/medications"
             :loading="loading"
         />
 
@@ -167,8 +156,8 @@ const orderItems = computed<ActionItem[]>(() =>
             :title="`Medication Change Orders (${statCount} STAT)`"
             description="Open medication orders by priority."
             :items="orderItems"
-            empty-message="No open medication orders."
-            view-all-href="/orders"
+            emptyMessage="No open medication orders."
+            viewAllHref="/orders"
             :loading="loading"
             class="lg:col-span-2"
         />
