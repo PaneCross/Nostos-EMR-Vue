@@ -27,6 +27,7 @@ use App\Http\Requests\StoreReferralRequest;
 use App\Http\Requests\TransitionReferralRequest;
 use App\Http\Requests\UpdateReferralRequest;
 use App\Models\AuditLog;
+use App\Models\ReferralStatusHistory;
 use App\Models\Participant;
 use App\Models\Referral;
 use App\Services\EnrollmentService;
@@ -98,6 +99,15 @@ class ReferralController extends Controller
             description: "Referral created for '{$referral->referred_by_name}' via {$referral->referral_source}",
         );
 
+        // Seed initial status history entry for 'new' state
+        ReferralStatusHistory::create([
+            'referral_id'             => $referral->id,
+            'tenant_id'               => $referral->tenant_id,
+            'from_status'             => null,
+            'to_status'               => 'new',
+            'transitioned_by_user_id' => $request->user()->id,
+        ]);
+
         return response()->json($referral->load(['assignedTo:id,first_name,last_name']), 201);
     }
 
@@ -111,6 +121,20 @@ class ReferralController extends Controller
         $this->authorizeTenant($referral, $request->user());
 
         $referral->load(['assignedTo:id,first_name,last_name', 'participant:id,mrn,first_name,last_name', 'createdBy:id,first_name,last_name', 'site:id,name']);
+
+        $statusHistory = ReferralStatusHistory::where('referral_id', $referral->id)
+            ->with('transitionedBy:id,first_name,last_name')
+            ->orderBy('created_at', 'asc')
+            ->get()
+            ->map(fn ($h) => [
+                'id'           => $h->id,
+                'from_status'  => $h->from_status,
+                'to_status'    => $h->to_status,
+                'transitioned_by' => $h->transitionedBy
+                    ? ['first_name' => $h->transitionedBy->first_name, 'last_name' => $h->transitionedBy->last_name]
+                    : null,
+                'created_at'   => $h->created_at?->toIso8601String(),
+            ]);
 
         $currentStatus    = $referral->status;
         $validTransitions = EnrollmentService::VALID_TRANSITIONS[$currentStatus] ?? [];
@@ -146,6 +170,7 @@ class ReferralController extends Controller
             'validTransitions' => $validTransitions,
             'statusLabels'     => Referral::STATUS_LABELS,
             'pipelineSteps'    => ['new', 'intake_scheduled', 'intake_in_progress', 'intake_complete', 'eligibility_pending', 'pending_enrollment', 'enrolled'],
+            'statusHistory'    => $statusHistory,
         ]);
     }
 

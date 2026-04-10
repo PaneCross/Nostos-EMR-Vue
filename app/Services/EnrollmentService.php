@@ -37,6 +37,7 @@ use App\Models\Sdr;
 use App\Models\User;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Log;
+use App\Models\ReferralStatusHistory;
 
 class EnrollmentService
 {
@@ -95,7 +96,17 @@ class EnrollmentService
             $updates['notes'] = $extra['notes'];
         }
 
+        $fromStatus = $referral->getOriginal('status');
         $referral->update($updates);
+
+        // Record status history (append-only audit trail for the stepper)
+        ReferralStatusHistory::create([
+            'referral_id'              => $referral->id,
+            'tenant_id'                => $referral->tenant_id,
+            'from_status'              => $fromStatus,
+            'to_status'                => $newStatus,
+            'transitioned_by_user_id'  => $user->id,
+        ]);
 
         // Audit every status transition
         AuditLog::record(
@@ -104,7 +115,7 @@ class EnrollmentService
             userId: $user->id,
             resourceType: 'referral',
             resourceId: $referral->id,
-            description: "Referral status changed from '{$referral->getOriginal('status')}' to '{$newStatus}'",
+            description: "Referral status changed from '{$fromStatus}' to '{$newStatus}'",
         );
 
         // ── Side effects for enrollment ────────────────────────────────────

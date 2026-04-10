@@ -36,11 +36,20 @@ interface ReferralData {
     updated_at: string | null
 }
 
+interface StatusHistoryEntry {
+    id: number
+    from_status: string | null
+    to_status: string
+    transitioned_by: { first_name: string; last_name: string } | null
+    created_at: string | null
+}
+
 const props = defineProps<{
     referral: ReferralData
     validTransitions: string[]
     statusLabels: Record<string, string>
     pipelineSteps: string[]
+    statusHistory: StatusHistoryEntry[]
 }>()
 
 // ── Status stepper ─────────────────────────────────────────────────────────────
@@ -133,22 +142,19 @@ function fmtDate(val: string | null | undefined): string {
 }
 
 function fmtDateTime(val: string | null | undefined): string {
-    if (!val) return ''
-    return new Date(val).toLocaleDateString('en-US', {
-        month: 'short', day: 'numeric', year: 'numeric',
-    })
+    if (!val) return '-'
+    const d = new Date(val)
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+        + ' ' + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
 }
 
 /**
- * Returns the timestamp to display under a stepper step, if available.
- * - Step 0 (new): use created_at — that's when the referral was filed
- * - Current step: use updated_at — last recorded transition
- * - All other completed steps: no exact timestamp available (no history table)
+ * Returns the timestamp to display under a stepper step.
+ * Uses real history data: finds the entry where to_status matches the step.
  */
-function stepTimestamp(idx: number): string {
-    if (idx === 0) return fmtDateTime(props.referral.created_at)
-    if (idx === currentStepIndex.value && idx > 0) return fmtDateTime(props.referral.updated_at)
-    return ''
+function stepTimestamp(step: string): string {
+    const entry = props.statusHistory.find(h => h.to_status === step)
+    return entry ? fmtDateTime(entry.created_at) : ''
 }
 
 const STATUS_BADGE: Record<string, string> = {
@@ -224,11 +230,11 @@ const STATUS_BADGE: Record<string, string> = {
                                         ? 'text-green-600 dark:text-green-400'
                                         : 'text-gray-400 dark:text-slate-500',
                             ]">{{ statusLabels[step] ?? step }}</span>
-                            <!-- Timestamp under step label (only where available) -->
+                            <!-- Timestamp under step label (from real history data) -->
                             <span
-                                v-if="stepTimestamp(idx)"
+                                v-if="stepTimestamp(step)"
                                 class="text-[10px] text-gray-400 dark:text-slate-500 mt-0.5 text-center max-w-[4.5rem] leading-tight"
-                            >{{ stepTimestamp(idx) }}</span>
+                            >{{ stepTimestamp(step) }}</span>
                         </div>
                         <!-- Connector line (not after last step) -->
                         <div
@@ -362,6 +368,43 @@ const STATUS_BADGE: Record<string, string> = {
                         <dd class="text-sm text-gray-900 dark:text-slate-100 whitespace-pre-wrap">{{ referral.notes }}</dd>
                     </div>
                 </dl>
+            </div>
+
+            <!-- ── Status History ── -->
+            <div v-if="statusHistory.length > 0" class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 overflow-hidden">
+                <div class="px-5 py-3 border-b border-gray-100 dark:border-slate-700">
+                    <h2 class="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">Status History</h2>
+                </div>
+                <table class="w-full text-sm">
+                    <thead class="bg-gray-50 dark:bg-slate-700/50">
+                        <tr>
+                            <th class="px-5 py-2.5 text-left text-xs font-medium text-gray-500 dark:text-slate-400">Step</th>
+                            <th class="px-5 py-2.5 text-left text-xs font-medium text-gray-500 dark:text-slate-400">Date &amp; Time</th>
+                            <th class="px-5 py-2.5 text-left text-xs font-medium text-gray-500 dark:text-slate-400">Progressed By</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100 dark:divide-slate-700">
+                        <tr v-for="entry in statusHistory" :key="entry.id" class="hover:bg-gray-50 dark:hover:bg-slate-700/30 transition-colors">
+                            <td class="px-5 py-3">
+                                <div class="flex items-center gap-2">
+                                    <span v-if="entry.from_status" class="text-xs text-gray-400 dark:text-slate-500">
+                                        {{ statusLabels[entry.from_status] ?? entry.from_status }}
+                                    </span>
+                                    <span v-if="entry.from_status" class="text-gray-300 dark:text-slate-600 text-xs">&#8594;</span>
+                                    <span class="font-medium text-gray-800 dark:text-slate-200">
+                                        {{ statusLabels[entry.to_status] ?? entry.to_status }}
+                                    </span>
+                                </div>
+                            </td>
+                            <td class="px-5 py-3 text-gray-600 dark:text-slate-300 tabular-nums">
+                                {{ fmtDateTime(entry.created_at) }}
+                            </td>
+                            <td class="px-5 py-3 text-gray-600 dark:text-slate-300">
+                                {{ entry.transitioned_by ? entry.transitioned_by.first_name + ' ' + entry.transitioned_by.last_name : '-' }}
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
         </div>
 
