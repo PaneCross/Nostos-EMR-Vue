@@ -588,7 +588,8 @@ function handleGlobalKey(e: KeyboardEvent) {
                         <option value="home_care">Home Care</option>
                         <option value="therapies">Therapies</option>
                         <option value="social_work">Social Work</option>
-                        <option value="nutrition">Nutrition</option>
+                        <option value="dietary">Dietary / Nutrition</option>
+                        <option value="activities">Activities</option>
                         <option value="behavioral_health">Behavioral Health</option>
                         <option value="idt">IDT</option>
                         <option value="transportation">Transportation</option>
