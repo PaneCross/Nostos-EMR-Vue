@@ -154,7 +154,7 @@ function goTo(id: number) {
                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
                         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
                     </svg>
-                    <kbd class="hidden sm:inline-flex items-center px-1.5 py-0.5 text-[10px] font-medium text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded">
+                    <kbd class="hidden sm:inline-flex items-center px-1.5 py-0.5 text-xs font-medium text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded">
                         ESC
                     </kbd>
                 </div>
@@ -196,7 +196,7 @@ function goTo(id: number) {
                             <div class="flex items-center gap-2 flex-wrap">
                                 <span class="text-sm font-medium text-slate-800 dark:text-slate-100 truncate">{{ r.name }}</span>
                                 <span class="font-mono text-xs text-slate-500 dark:text-slate-400">{{ r.mrn }}</span>
-                                <span :class="['inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium', STATUS_COLORS[r.enrollment_status] ?? 'bg-gray-100 text-gray-600']">
+                                <span :class="['inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium', STATUS_COLORS[r.enrollment_status] ?? 'bg-gray-100 text-gray-600']">
                                     {{ r.enrollment_status }}
                                 </span>
                             </div>
@@ -206,11 +206,11 @@ function goTo(id: number) {
                                     <span
                                         v-for="flag in r.flags.slice(0, 3)"
                                         :key="flag"
-                                        :class="['inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium', flagColor(flag)]"
+                                        :class="['inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium', flagColor(flag)]"
                                     >
                                         {{ flagLabel(flag) }}
                                     </span>
-                                    <span v-if="r.flags.length > 3" class="text-[10px] text-slate-500">+{{ r.flags.length - 3 }}</span>
+                                    <span v-if="r.flags.length > 3" class="text-xs text-slate-500">+{{ r.flags.length - 3 }}</span>
                                 </div>
                             </div>
                         </div>
@@ -222,7 +222,7 @@ function goTo(id: number) {
                 </ul>
 
                 <!-- Keyboard hints -->
-                <div v-if="query.trim().length < 2" class="px-4 py-3 flex items-center gap-4 text-[11px] text-slate-400 dark:text-slate-500 border-t border-slate-100 dark:border-slate-700">
+                <div v-if="query.trim().length < 2" class="px-4 py-3 flex items-center gap-4 text-xs text-slate-400 dark:text-slate-500 border-t border-slate-100 dark:border-slate-700">
                     <span><kbd class="px-1 py-0.5 bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded text-slate-500 dark:text-slate-400">↑↓</kbd> navigate</span>
                     <span><kbd class="px-1 py-0.5 bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded text-slate-500 dark:text-slate-400">↵</kbd> open</span>
                     <span><kbd class="px-1 py-0.5 bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded text-slate-500 dark:text-slate-400">ESC</kbd> close</span>

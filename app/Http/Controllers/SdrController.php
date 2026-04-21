@@ -200,4 +200,33 @@ class SdrController extends Controller
 
         return response()->noContent();
     }
+
+    /**
+     * POST /sdrs/{sdr}/deny
+     * Deny the SDR and issue a CMS-style denial notice per 42 CFR §460.122.
+     * Idempotent: if the SDR is already denied, issues a new (additional) notice.
+     */
+    public function deny(\App\Http\Requests\DenySdrRequest $request, Sdr $sdr): JsonResponse
+    {
+        $user = $request->user();
+        $this->authorizeForTenant($sdr, $user);
+
+        abort_if(in_array($sdr->status, ['completed', 'cancelled'], true),
+            422, 'Cannot deny an SDR that is already completed or cancelled.');
+
+        /** @var \App\Services\ServiceDenialNoticeService $svc */
+        $svc = app(\App\Services\ServiceDenialNoticeService::class);
+        $notice = $svc->issueForSdr(
+            sdr:             $sdr,
+            reasonCode:      $request->validated('reason_code'),
+            reasonNarrative: $request->validated('reason_narrative'),
+            issuedBy:        $user,
+            deliveryMethod:  $request->validated('delivery_method') ?? \App\Services\ServiceDenialNoticeService::DEFAULT_DELIVERY_METHOD,
+        );
+
+        return response()->json([
+            'sdr'    => $sdr->fresh(),
+            'notice' => $notice,
+        ], 201);
+    }
 }

@@ -57,14 +57,17 @@ const isQaAdmin = computed(() =>
   !!user.value?.is_super_admin
 )
 
-// ── Kanban columns ────────────────────────────────────────────────────────
+// ── Status rows (ladder layout) ───────────────────────────────────────────
+// Displayed as a vertical stack — one row per status. Cards within a row
+// wrap responsively to fit the available width. This avoids the horizontal
+// scrollbar the old Kanban-columns layout produced on standard displays.
 
 const COLUMNS = [
-  { key: 'planning',     label: 'Planning' },
-  { key: 'active',       label: 'Active' },
-  { key: 'remeasuring',  label: 'Remeasuring' },
-  { key: 'completed',    label: 'Completed' },
-  { key: 'suspended',    label: 'Suspended' },
+  { key: 'planning',     label: 'Planning',    accent: 'border-l-blue-400 dark:border-l-blue-500' },
+  { key: 'active',       label: 'Active',      accent: 'border-l-green-500 dark:border-l-green-400' },
+  { key: 'remeasuring',  label: 'Remeasuring', accent: 'border-l-amber-500 dark:border-l-amber-400' },
+  { key: 'completed',    label: 'Completed',   accent: 'border-l-slate-400 dark:border-l-slate-500' },
+  { key: 'suspended',    label: 'Suspended',   accent: 'border-l-red-500 dark:border-l-red-400' },
 ]
 
 function projectsInColumn(colKey: string): Project[] {
@@ -258,62 +261,67 @@ function fmt(d: string | null): string {
         </div>
       </div>
 
-      <!-- Kanban board -->
-      <div class="flex gap-4 overflow-x-auto pb-4">
-        <div
+      <!-- Status ladder: one row per status, cards wrap responsively inside -->
+      <div class="space-y-5">
+        <section
           v-for="col in COLUMNS"
           :key="col.key"
-          class="shrink-0 w-72 bg-gray-50 dark:bg-slate-800/60 rounded-xl border border-gray-200 dark:border-slate-700"
+          :class="['bg-gray-50 dark:bg-slate-800/60 rounded-xl border border-gray-200 dark:border-slate-700 border-l-4', col.accent]"
         >
-          <!-- Column header -->
-          <div class="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-slate-700">
-            <h3 class="text-sm font-semibold text-gray-700 dark:text-slate-200">{{ col.label }}</h3>
-            <span class="text-xs px-1.5 py-0.5 rounded-full bg-gray-200 dark:bg-slate-700 text-gray-600 dark:text-slate-400 font-medium">
-              {{ projectsInColumn(col.key).length }}
-            </span>
+          <!-- Row header -->
+          <div class="flex items-center justify-between px-5 py-3 border-b border-gray-200 dark:border-slate-700">
+            <div class="flex items-center gap-3">
+              <h3 class="text-sm font-semibold text-gray-700 dark:text-slate-200 uppercase tracking-wide">{{ col.label }}</h3>
+              <span class="text-xs px-2 py-0.5 rounded-full bg-gray-200 dark:bg-slate-700 text-gray-600 dark:text-slate-400 font-semibold tabular-nums">
+                {{ projectsInColumn(col.key).length }}
+              </span>
+            </div>
           </div>
 
-          <!-- Cards -->
-          <div class="p-3 space-y-3 min-h-32">
+          <!-- Cards grid — responsive: 1 col mobile, 2 md, 3 lg, 4 xl -->
+          <div class="px-4 py-4">
             <div
-              v-for="project in projectsInColumn(col.key)"
-              :key="project.id"
-              class="bg-white dark:bg-slate-800 rounded-lg border border-gray-200 dark:border-slate-700 p-3 cursor-pointer hover:shadow-md transition"
-              @click="openDetail(project)"
+              v-if="projectsInColumn(col.key).length === 0"
+              class="py-4 text-center text-xs text-gray-400 dark:text-slate-500 italic"
             >
-              <!-- Domain badge -->
-              <span :class="['inline-block px-2 py-0.5 rounded-full text-xs font-medium mb-2', domainClass(project.domain)]">
-                {{ props.domains[project.domain] ?? project.domain }}
-              </span>
+              No projects in this status
+            </div>
+            <div
+              v-else
+              class="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+            >
+              <div
+                v-for="project in projectsInColumn(col.key)"
+                :key="project.id"
+                class="bg-white dark:bg-slate-800 rounded-lg border border-gray-200 dark:border-slate-700 p-3 cursor-pointer hover:shadow-md hover:border-blue-300 dark:hover:border-blue-700 transition"
+                @click="openDetail(project)"
+              >
+                <!-- Domain badge -->
+                <span :class="['inline-block px-2 py-0.5 rounded-full text-xs font-medium mb-2', domainClass(project.domain)]">
+                  {{ props.domains[project.domain] ?? project.domain }}
+                </span>
 
-              <h4 class="text-sm font-semibold text-gray-900 dark:text-slate-100 leading-snug">{{ project.title }}</h4>
+                <h4 class="text-sm font-semibold text-gray-900 dark:text-slate-100 leading-snug line-clamp-2">{{ project.title }}</h4>
 
-              <p v-if="project.aim_statement" class="mt-1 text-xs text-gray-500 dark:text-slate-400 line-clamp-2">
-                {{ project.aim_statement }}
-              </p>
+                <p v-if="project.aim_statement" class="mt-1 text-xs text-gray-500 dark:text-slate-400 line-clamp-2">
+                  {{ project.aim_statement }}
+                </p>
 
-              <div class="mt-2 space-y-1 text-xs text-gray-500 dark:text-slate-400">
-                <div v-if="project.lead_name" class="flex items-center gap-1">
-                  Lead: <span class="text-gray-700 dark:text-slate-300">{{ project.lead_name }}</span>
-                </div>
-                <div v-if="project.current_metric" class="flex items-center gap-1">
-                  Current: <span class="font-medium text-gray-700 dark:text-slate-300">{{ project.current_metric }}</span>
-                </div>
-                <div v-if="project.target_date" class="flex items-center gap-1">
-                  Target: {{ fmt(project.target_date) }}
+                <div class="mt-2 space-y-1 text-xs text-gray-500 dark:text-slate-400">
+                  <div v-if="project.lead_name" class="truncate">
+                    Lead: <span class="text-gray-700 dark:text-slate-300">{{ project.lead_name }}</span>
+                  </div>
+                  <div v-if="project.current_metric" class="truncate">
+                    Current: <span class="font-medium text-gray-700 dark:text-slate-300">{{ project.current_metric }}</span>
+                  </div>
+                  <div v-if="project.target_date">
+                    Target: {{ fmt(project.target_date) }}
+                  </div>
                 </div>
               </div>
             </div>
-
-            <!-- Empty column placeholder -->
-            <div
-              v-if="projectsInColumn(col.key).length === 0"
-              class="py-6 text-center text-xs text-gray-400 dark:text-slate-500"
-            >
-              No projects
-            </div>
           </div>
-        </div>
+        </section>
       </div>
     </div>
 

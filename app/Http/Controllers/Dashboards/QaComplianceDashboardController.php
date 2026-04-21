@@ -200,4 +200,44 @@ class QaComplianceDashboardController extends Controller
             'overdue_count' => $this->qaMetrics->getCarePlansOverdue($tenantId)->count(),
         ]);
     }
+
+    /**
+     * Phase 1 (MVP roadmap). Open §460.122 appeals sorted by decision-window
+     * consumption (most-aged first). Drives the qa_compliance.appeals widget.
+     */
+    public function appeals(): JsonResponse
+    {
+        $this->requireDept();
+        $tenantId = Auth::user()->tenant_id;
+
+        $appeals = \App\Models\Appeal::forTenant($tenantId)
+            ->open()
+            ->with('participant:id,mrn,first_name,last_name')
+            ->orderBy('internal_decision_due_at')
+            ->take(15)
+            ->get()
+            ->map(function (\App\Models\Appeal $a) {
+                return [
+                    'id'              => $a->id,
+                    'participant'     => $a->participant ? [
+                        'id'   => $a->participant->id,
+                        'name' => $a->participant->first_name . ' ' . $a->participant->last_name,
+                        'mrn'  => $a->participant->mrn,
+                    ] : null,
+                    'type'            => $a->type,
+                    'status'          => $a->status,
+                    'due_at'          => $a->internal_decision_due_at?->toIso8601String(),
+                    'window_pct'      => $a->windowElapsedPercent(),
+                    'overdue'         => $a->isOverdue(),
+                    'continuation_of_benefits' => $a->continuation_of_benefits,
+                    'href'            => "/appeals/{$a->id}",
+                ];
+            });
+
+        return response()->json([
+            'appeals'       => $appeals->values(),
+            'open_count'    => \App\Models\Appeal::forTenant($tenantId)->open()->count(),
+            'overdue_count' => \App\Models\Appeal::forTenant($tenantId)->overdue()->count(),
+        ]);
+    }
 }

@@ -58,6 +58,7 @@ const scheduleItems = computed<ActionItem[]>(() =>
         badgeColor: a.status === 'confirmed'
             ? 'bg-green-100 dark:bg-green-900/60 text-green-700 dark:text-green-300'
             : 'bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300',
+        href: a.href ?? (a.participant?.id ? `/participants/${a.participant.id}` : '/schedule'),
     }))
 )
 
@@ -71,6 +72,7 @@ const alertItems = computed<ActionItem[]>(() =>
             : a.severity === 'warning'
             ? 'bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300'
             : 'bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300',
+        href: a.href ?? (a.participant?.id ? `/participants/${a.participant.id}` : '/participants'),
     }))
 )
 
@@ -80,6 +82,7 @@ const unsignedNoteItems = computed<ActionItem[]>(() =>
         sublabel: n.visit_date ?? n.created_at ?? undefined,
         badge: n.author ? undefined : 'Unassigned',
         badgeColor: 'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300',
+        href: n.href ?? (n.participant?.id ? `/participants/${n.participant.id}` : '/clinical/notes'),
     }))
 )
 
@@ -89,6 +92,7 @@ const overdueAssessmentItems = computed<ActionItem[]>(() =>
         sublabel: a.next_due_date ? `Due ${a.next_due_date}` : undefined,
         badge: `${a.days_overdue ?? 0}d overdue`,
         badgeColor: 'bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300',
+        href: a.href ?? (a.participant?.id ? `/participants/${a.participant.id}` : '/clinical/assessments'),
     }))
 )
 
@@ -103,6 +107,7 @@ const vitalItems = computed<ActionItem[]>(() =>
             sublabel: parts.join(' | ') || undefined,
             badge: v.out_of_range ? 'Out of range' : undefined,
             badgeColor: 'bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300',
+            href: v.href ?? (v.participant?.id ? `/participants/${v.participant.id}` : '/clinical/vitals'),
         }
     })
 )
@@ -117,6 +122,7 @@ const orderItems = computed<ActionItem[]>(() =>
             : o.priority === 'urgent'
             ? 'bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300'
             : 'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300',
+        href: o.href ?? (o.participant_id ? `/participants/${o.participant_id}` : '/orders'),
     }))
 )
 
@@ -128,12 +134,13 @@ const woundItems = computed<ActionItem[]>(() =>
         badgeColor: w.is_critical
             ? 'bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300'
             : 'bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300',
+        href: w.href ?? (w.participant?.id ? `/participants/${w.participant.id}` : '/participants'),
     }))
 )
 </script>
 
 <template>
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 grid-flow-dense gap-6">
         <ActionWidget
             title="Today's Schedule"
             description="Appointments scheduled for today."
@@ -152,24 +159,23 @@ const woundItems = computed<ActionItem[]>(() =>
             :loading="loading"
         />
 
-        <div class="flex flex-col gap-4">
-            <ActionWidget
-                title="Unsigned Notes"
-                description="Clinical notes pending provider signature."
-                :items="unsignedNoteItems"
-                emptyMessage="No unsigned notes."
-                viewAllHref="/clinical/notes"
-                :loading="loading"
-            />
-            <ActionWidget
-                title="Overdue Assessments"
-                description="Assessments past their due date."
-                :items="overdueAssessmentItems"
-                emptyMessage="No overdue assessments."
-                viewAllHref="/clinical/assessments"
-                :loading="loading"
-            />
-        </div>
+        <ActionWidget
+            title="Unsigned Notes"
+            description="Clinical notes pending provider signature."
+            :items="unsignedNoteItems"
+            emptyMessage="No unsigned notes."
+            viewAllHref="/clinical/notes"
+            :loading="loading"
+        />
+
+        <ActionWidget
+            title="Overdue Assessments"
+            description="Assessments past their due date."
+            :items="overdueAssessmentItems"
+            emptyMessage="No overdue assessments."
+            viewAllHref="/clinical/assessments"
+            :loading="loading"
+        />
 
         <ActionWidget
             title="Recent Vitals"

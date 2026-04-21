@@ -30,30 +30,56 @@ interface Participant {
   site: { name: string }
 }
 
-const props = defineProps<{ participant: Participant }>()
+const props = withDefaults(defineProps<{
+  participant: Participant
+  // Grouped reason labels from the backend (App\Support\DisenrollmentTaxonomy).
+  // Shape: { death: {death:'Death'}, voluntary: {...}, involuntary: {...} }
+  disenrollmentReasons?: Record<string, Record<string, string>>
+}>(), {
+  disenrollmentReasons: () => ({}),
+})
 
+// 42 CFR §460.160(b): death is a reason, not a status. 'disenrolled' is the only
+// terminal status now; legacy 'deceased'/'transferred' kept for old records.
 const isDisenrolled = computed(() =>
-  ['disenrolled', 'deceased', 'transferred'].includes(props.participant.enrollment_status)
+  ['disenrolled', 'deceased', 'transferred'].includes(props.participant.enrollment_status),
 )
 
 const isEnrolled = computed(() => props.participant.enrollment_status === 'enrolled')
 
-const REASON_LABELS: Record<string, string> = {
-  voluntary:      'Voluntary Disenrollment',
-  involuntary:    'Involuntary Disenrollment',
-  deceased:       'Deceased',
-  moved:          'Moved Out of Service Area',
-  nf_admission:   'Nursing Facility Admission',
-  other:          'Other',
-  // Legacy values from older records
-  moved_out_of_area:      'Moved Out of Service Area',
-  nursing_facility:       'Nursing Facility Admission',
-  hospitalization:        'Extended Hospitalization',
-  transferred:            'Transferred to Another PACE',
-  non_compliance:         'Non-Compliance',
-  medicaid_ineligibility: 'Loss of Medicaid Eligibility',
-  medicare_ineligibility: 'Loss of Medicare Eligibility',
+// Canonical + legacy reason labels. Canonical comes from the server prop;
+// the inline map handles historical rows with free-text or old-enum reasons.
+const LEGACY_REASON_LABELS: Record<string, string> = {
+  voluntary:              'Voluntary Disenrollment (legacy)',
+  involuntary:            'Involuntary Disenrollment (legacy)',
+  deceased:               'Death (legacy)',
+  moved:                  'Moved Out of Service Area (legacy)',
+  nf_admission:           'Nursing Facility Admission (legacy)',
+  other:                  'Other (legacy)',
+  moved_out_of_area:      'Moved Out of Service Area (legacy)',
+  nursing_facility:       'Nursing Facility Admission (legacy)',
+  hospitalization:        'Extended Hospitalization (legacy)',
+  transferred:            'Transferred to Another PACE (legacy)',
+  non_compliance:         'Non-Compliance (legacy)',
+  medicaid_ineligibility: 'Loss of Medicaid Eligibility (legacy)',
+  medicare_ineligibility: 'Loss of Medicare Eligibility (legacy)',
 }
+
+// Flatten the server-provided grouped labels into one lookup for display.
+const REASON_LABELS = computed<Record<string, string>>(() => {
+  const flat: Record<string, string> = { ...LEGACY_REASON_LABELS }
+  for (const group of Object.values(props.disenrollmentReasons ?? {})) {
+    for (const [k, v] of Object.entries(group)) flat[k] = v
+  }
+  return flat
+})
+
+// Order groups in the select: death | voluntary | involuntary.
+const REASON_GROUPS: Array<{ key: string; label: string }> = [
+  { key: 'death',       label: 'Death (42 CFR §460.160(b))' },
+  { key: 'voluntary',   label: 'Voluntary (42 CFR §460.162)' },
+  { key: 'involuntary', label: 'Involuntary (42 CFR §460.164)' },
+]
 
 function fmtDate(val: string | null): string {
   if (!val) return '-'
@@ -66,8 +92,10 @@ function fmtDate(val: string | null): string {
 const showDisenrollModal = ref(false)
 const disenrollSaving    = ref(false)
 const disenrollError     = ref('')
+// Default reason is a canonical voluntary code — staff pick the specific
+// sub-reason from the grouped dropdown.
 const disenrollForm = ref({
-  reason:                    'voluntary',
+  reason:                    'voluntary_other',
   effective_date:            new Date().toISOString().slice(0, 10),
   notes:                     '',
   cms_notification_required: true,
@@ -75,7 +103,7 @@ const disenrollForm = ref({
 
 function openDisenrollModal() {
   disenrollForm.value = {
-    reason: 'voluntary',
+    reason: 'voluntary_other',
     effective_date: new Date().toISOString().slice(0, 10),
     notes: '',
     cms_notification_required: true,
@@ -83,6 +111,10 @@ function openDisenrollModal() {
   disenrollError.value    = ''
   showDisenrollModal.value = true
 }
+
+// When the chosen reason is 'death', relax the effective-date rule per
+// 42 CFR §460.160(b) — date of death is the canonical disenrollment date.
+const isDeathReason = computed(() => disenrollForm.value.reason === 'death')
 
 async function submitDisenroll() {
   disenrollSaving.value = true; disenrollError.value = ''
@@ -240,26 +272,46 @@ async function submitReenroll() {
               <label class="block text-xs font-medium text-gray-700 dark:text-slate-300 mb-1">
                 Reason <span class="text-red-500">*</span>
               </label>
+              <!-- Canonical CMS reasons, grouped by type. See App\Support\DisenrollmentTaxonomy. -->
               <select name="reason" v-model="disenrollForm.reason"
                 class="w-full text-sm border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-2 bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-100">
-                <option value="voluntary">Voluntary Disenrollment</option>
-                <option value="involuntary">Involuntary Disenrollment</option>
-                <option value="deceased">Deceased</option>
-                <option value="moved">Moved Out of Service Area</option>
-                <option value="nf_admission">Nursing Facility Admission</option>
-                <option value="other">Other</option>
+                <template v-for="group in REASON_GROUPS" :key="group.key">
+                  <optgroup
+                    v-if="disenrollmentReasons[group.key] && Object.keys(disenrollmentReasons[group.key]).length"
+                    :label="group.label"
+                  >
+                    <option
+                      v-for="(label, code) in disenrollmentReasons[group.key]"
+                      :key="code"
+                      :value="code"
+                    >
+                      {{ label }}
+                    </option>
+                  </optgroup>
+                </template>
               </select>
+              <p class="mt-1 text-xs text-gray-500 dark:text-slate-400">
+                Per 42 CFR §460.160-164. Selecting <strong>Death</strong> skips the transition plan (§460.116).
+              </p>
             </div>
 
             <div>
               <label class="block text-xs font-medium text-gray-700 dark:text-slate-300 mb-1">
-                Effective Date <span class="text-red-500">*</span>
+                {{ isDeathReason ? 'Date of Death' : 'Effective Date' }} <span class="text-red-500">*</span>
               </label>
               <input
                 v-model="disenrollForm.effective_date"
                 type="date"
                 class="w-full text-sm border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-2 bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-100"
               />
+              <p class="mt-1 text-xs text-gray-500 dark:text-slate-400">
+                <template v-if="isDeathReason">
+                  Per 42 CFR §460.160(b): for death, the disenrollment date is the actual date of death (no "1st of month" rule).
+                </template>
+                <template v-else>
+                  Effective date is typically the 1st of the month following the request (42 CFR §460.162(b) / §460.164(c)).
+                </template>
+              </p>
             </div>
 
             <div>

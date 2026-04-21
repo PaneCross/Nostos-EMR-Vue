@@ -24,7 +24,8 @@ import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { Head } from '@inertiajs/vue3'
 import axios from 'axios'
 import AppShell from '@/Layouts/AppShell.vue'
-import { TruckIcon } from '@heroicons/vue/24/outline'
+import LocationCombobox from '@/Components/LocationCombobox.vue'
+import { TruckIcon, ExclamationTriangleIcon, ChevronDownIcon } from '@heroicons/vue/24/outline'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -32,13 +33,21 @@ interface LocationSummary {
   id: number
   name: string
   location_type: string
+  site_id: number | null
+  city?: string | null
 }
 
 interface ParticipantSummary {
   id: number
   mrn: string
-  first_name: string
-  last_name: string
+  name?: string          // Full name from search endpoint
+  first_name?: string    // When passed from other sources
+  last_name?: string
+  dob?: string
+  age?: number
+  enrollment_status?: string
+  site_id?: number | null
+  site_name?: string | null
 }
 
 interface ProviderSummary {
@@ -201,7 +210,51 @@ function hourLabel(h: number): string {
 const weekStart    = ref<Date>(getWeekStart(new Date()))
 const appointments = ref<AppointmentItem[]>([])
 const loading      = ref(false)
-const filterType   = ref('')
+// Multi-select type filter. selectedTypes holds the types to SHOW.
+// Defaults to all types — each type is a checkbox; uncheck to hide that type.
+const selectedTypes    = ref<Set<string>>(new Set(props.appointmentTypes))
+const typeFilterOpen   = ref(false)
+const typeFilterRootEl = ref<HTMLElement | null>(null)
+
+function toggleType(t: string) {
+    const next = new Set(selectedTypes.value)
+    if (next.has(t)) next.delete(t)
+    else             next.add(t)
+    selectedTypes.value = next
+}
+function selectAllTypes() { selectedTypes.value = new Set(props.appointmentTypes) }
+function clearAllTypes()  { selectedTypes.value = new Set() }
+
+const allTypesSelected = computed(() => selectedTypes.value.size === props.appointmentTypes.length)
+const noTypesSelected  = computed(() => selectedTypes.value.size === 0)
+
+// Label shown on the filter button
+const typeFilterLabel = computed(() => {
+    if (allTypesSelected.value) return 'All Types'
+    if (noTypesSelected.value)  return 'No Types'
+    const n = selectedTypes.value.size
+    if (n === 1) {
+        const t = [...selectedTypes.value][0]
+        return props.typeLabels[t] ?? t
+    }
+    return `${n} selected`
+})
+
+function isTypeShown(type: string): boolean {
+    return selectedTypes.value.has(type)
+}
+
+// Click-outside to close the filter dropdown
+function onDocClickForTypeFilter(e: MouseEvent) {
+    if (!typeFilterRootEl.value) return
+    if (!typeFilterRootEl.value.contains(e.target as Node)) {
+        typeFilterOpen.value = false
+    }
+}
+watch(typeFilterOpen, (o) => {
+    if (o) document.addEventListener('mousedown', onDocClickForTypeFilter)
+    else   document.removeEventListener('mousedown', onDocClickForTypeFilter)
+})
 
 const weekDays = computed(() => Array.from({ length: 7 }, (_, i) => addDays(weekStart.value, i)))
 const weekEnd  = computed(() => addDays(weekStart.value, 6))
@@ -209,7 +262,9 @@ const today    = formatDateParam(new Date())
 
 function appointmentsForDay(day: Date): AppointmentItem[] {
   const dayStr = formatDateParam(day)
-  return appointments.value.filter(a => a.scheduled_start.startsWith(dayStr))
+  return appointments.value.filter(a =>
+    a.scheduled_start.startsWith(dayStr) && isTypeShown(a.appointment_type),
+  )
 }
 
 async function fetchAppointments() {
@@ -219,7 +274,6 @@ async function fetchAppointments() {
       params: {
         start_date: formatDateParam(weekStart.value),
         end_date:   formatDateParam(weekEnd.value),
-        ...(filterType.value ? { type: filterType.value } : {}),
       },
     })
     appointments.value = res.data
@@ -230,7 +284,7 @@ async function fetchAppointments() {
   }
 }
 
-watch([weekStart, filterType], fetchAppointments)
+watch(weekStart, fetchAppointments)
 
 function prevWeek() { weekStart.value = addDays(weekStart.value, -7) }
 function nextWeek() { weekStart.value = addDays(weekStart.value, 7) }
@@ -379,15 +433,60 @@ function resetBooking() {
 }
 
 function openBooking() { resetBooking(); showBooking.value = true }
-function closeBooking() { showBooking.value = false }
+function closeBooking() {
+  showBooking.value = false
+  showCrossSiteConfirm.value = false
+  crossSiteConfirmed.value = false
+}
+
+// ── Click-outside guard for the booking modal ────────────────────────────────
+// Instead of closing on outside clicks (which loses in-progress form data),
+// shake the modal + flash the X button to guide the user to close deliberately.
+const modalShaking = ref(false)
+const closeBtnFlashing = ref(false)
+
+function handleBackdropClick() {
+    modalShaking.value = true
+    closeBtnFlashing.value = true
+    setTimeout(() => { modalShaking.value = false }, 500)
+    setTimeout(() => { closeBtnFlashing.value = false }, 1400)
+}
+
+// ── Cross-site detection ─────────────────────────────────────────────────────
+const showCrossSiteConfirm = ref(false)
+const crossSiteConfirmed   = ref(false)
+
+const crossSiteInfo = computed(() => {
+  const p = selectedParticipant.value
+  if (!p?.site_id) return null
+  const locId = Number(bookingForm.value.location_id)
+  if (!locId) return null
+  const loc = props.locations.find(l => l.id === locId)
+  if (!loc?.site_id) return null
+  if (loc.site_id === p.site_id) return null
+  return {
+    participantName: p.name || `${p.first_name ?? ''} ${p.last_name ?? ''}`.trim() || 'Participant',
+    homeSiteName:    p.site_name ?? 'Home site',
+    hostSiteName:    loc.name,
+  }
+})
 
 async function submitBooking() {
   if (!selectedParticipant.value) { bookingError.value = 'Please select a participant first.'; return }
+
+  // Cross-site interstitial — user must explicitly confirm before the POST fires.
+  if (crossSiteInfo.value && !crossSiteConfirmed.value) {
+    showCrossSiteConfirm.value = true
+    return
+  }
+
   bookingSaving.value = true; bookingError.value = ''
   try {
+    const payload = { ...bookingForm.value } as any
+    if (crossSiteInfo.value) payload.cross_site_confirmed = true
     const res = await axios.post(
       `/participants/${selectedParticipant.value.id}/appointments`,
-      bookingForm.value,
+      payload,
     )
     appointments.value = [...appointments.value, res.data]
     closeBooking()
@@ -404,8 +503,10 @@ async function submitBooking() {
   <AppShell>
     <Head title="Schedule" />
 
+    <div class="flex flex-col h-full">
+
     <!-- Page header -->
-    <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800">
+    <div class="flex-shrink-0 flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800">
       <div class="flex items-center gap-3">
         <h1 class="text-xl font-semibold text-gray-900 dark:text-slate-100">Schedule</h1>
         <span class="text-sm text-gray-500 dark:text-slate-400">
@@ -435,16 +536,70 @@ async function submitBooking() {
           Next &rsaquo;
         </button>
 
-        <!-- Appointment type filter -->
-        <select name="filterType"
-          v-model="filterType"
-          class="border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-1.5 text-sm text-gray-700 dark:text-slate-300 bg-white dark:bg-slate-800"
-        >
-          <option value="">All Types</option>
-          <option v-for="t in props.appointmentTypes" :key="t" :value="t">
-            {{ props.typeLabels[t] || t }}
-          </option>
-        </select>
+        <!-- Appointment type multi-select filter -->
+        <div ref="typeFilterRootEl" class="relative">
+          <button
+            type="button"
+            class="inline-flex items-center gap-2 border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-1.5 text-sm text-gray-700 dark:text-slate-300 bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-slate-700 min-w-[9rem] justify-between"
+            @click="typeFilterOpen = !typeFilterOpen"
+          >
+            <span class="truncate">{{ typeFilterLabel }}</span>
+            <ChevronDownIcon class="w-4 h-4 text-gray-400 dark:text-slate-500 shrink-0" />
+          </button>
+
+          <div
+            v-if="typeFilterOpen"
+            class="absolute right-0 top-full mt-1 z-30 w-72 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg shadow-lg overflow-hidden"
+          >
+            <!-- Actions -->
+            <div class="flex items-center justify-between px-3 py-2 border-b border-gray-100 dark:border-slate-700 bg-gray-50 dark:bg-slate-700/50">
+              <span class="text-sm font-semibold text-gray-700 dark:text-slate-300">Appointment Types</span>
+              <div class="flex items-center gap-2">
+                <button
+                  type="button"
+                  class="text-sm text-blue-600 dark:text-blue-400 hover:underline disabled:opacity-40 disabled:no-underline"
+                  :disabled="allTypesSelected"
+                  @click="selectAllTypes"
+                >
+                  Select all
+                </button>
+                <span class="text-gray-300 dark:text-slate-600">·</span>
+                <button
+                  type="button"
+                  class="text-sm text-blue-600 dark:text-blue-400 hover:underline disabled:opacity-40 disabled:no-underline"
+                  :disabled="noTypesSelected"
+                  @click="clearAllTypes"
+                >
+                  Clear
+                </button>
+              </div>
+            </div>
+
+            <!-- Checklist -->
+            <ul class="max-h-[36rem] overflow-y-auto py-1">
+              <li v-for="t in props.appointmentTypes" :key="t">
+                <label
+                  class="flex items-center gap-2 px-3 py-1.5 text-sm cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-900 dark:text-slate-100"
+                >
+                  <input
+                    type="checkbox"
+                    :checked="selectedTypes.has(t)"
+                    class="rounded border-gray-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500"
+                    @change="toggleType(t)"
+                  />
+                  <span
+                    class="inline-block w-2.5 h-2.5 rounded-sm border shrink-0"
+                    :class="[
+                      (COLOR_CLASS_MAP[props.typeColors[t]] ?? COLOR_CLASS_MAP.gray).bg,
+                      (COLOR_CLASS_MAP[props.typeColors[t]] ?? COLOR_CLASS_MAP.gray).border,
+                    ]"
+                  />
+                  <span class="truncate flex-1">{{ props.typeLabels[t] || t }}</span>
+                </label>
+              </li>
+            </ul>
+          </div>
+        </div>
 
         <!-- New Appointment -->
         <button
@@ -456,8 +611,11 @@ async function submitBooking() {
       </div>
     </div>
 
-    <!-- Calendar grid -->
-    <div class="flex flex-1 overflow-hidden">
+    <!-- Calendar + detail panel wrapper -->
+    <div class="flex flex-1 min-h-0 overflow-hidden">
+
+    <!-- Calendar grid (squeezes when detail panel is open) -->
+    <div class="flex flex-1 min-w-0 overflow-hidden">
 
       <!-- Time gutter -->
       <div class="w-14 flex-shrink-0 border-r border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/60">
@@ -574,12 +732,18 @@ async function submitBooking() {
           </div>
         </div>
       </div>
-    </div>
+    </div><!-- end calendar grid -->
 
-    <!-- Appointment detail slide-over panel -->
+    <!-- Appointment detail slide panel (inline, squeezes calendar) -->
+    <div
+      :class="[
+        'flex-shrink-0 transition-[width] duration-300 ease-in-out overflow-hidden border-l border-gray-200 dark:border-slate-700',
+        selectedAppt ? 'w-96' : 'w-0 border-l-0',
+      ]"
+    >
     <div
       v-if="selectedAppt"
-      class="fixed inset-y-0 right-0 z-40 w-96 bg-white dark:bg-slate-800 shadow-2xl flex flex-col"
+      class="w-96 h-full bg-white dark:bg-slate-800 shadow-lg flex flex-col"
     >
       <!-- Panel header (colored by appointment type) -->
       <div
@@ -729,19 +893,34 @@ async function submitBooking() {
         </template>
       </div>
     </div>
+    </div><!-- end slide panel wrapper -->
+
+    </div><!-- end calendar + detail panel wrapper -->
 
     <!-- Booking modal -->
     <div
       v-if="showBooking"
       class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
-      @click.self="closeBooking"
+      @click.self="handleBackdropClick"
     >
-      <div class="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-lg" role="dialog" aria-modal="true">
+      <div
+        :class="[
+          'bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-lg',
+          modalShaking ? 'animate-shake' : '',
+        ]"
+        role="dialog"
+        aria-modal="true"
+      >
         <!-- Modal header -->
         <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-slate-700">
           <h2 class="text-lg font-semibold text-gray-900 dark:text-slate-100">New Appointment</h2>
           <button
-            class="text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-300 text-xl font-bold"
+            :class="[
+              'text-xl font-bold rounded-full w-8 h-8 flex items-center justify-center transition-all',
+              closeBtnFlashing
+                ? 'bg-red-500 text-white ring-4 ring-red-300 dark:ring-red-600 scale-110'
+                : 'text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700',
+            ]"
             aria-label="Close"
             @click="closeBooking"
           >
@@ -769,11 +948,21 @@ async function submitBooking() {
                 <li v-for="p in participantResults" :key="p.id">
                   <button
                     type="button"
-                    class="w-full text-left px-3 py-2 text-sm text-gray-900 dark:text-slate-100 hover:bg-blue-50 dark:hover:bg-slate-700"
+                    class="w-full text-left px-3 py-2 text-sm text-gray-900 dark:text-slate-100 hover:bg-blue-50 dark:hover:bg-slate-700 flex items-center justify-between gap-3"
                     @click="selectParticipant(p)"
                   >
-                    <span class="font-medium">{{ p.first_name }} {{ p.last_name }}</span>
-                    <span class="text-gray-500 dark:text-slate-400 ml-2 text-xs">{{ p.mrn }}</span>
+                    <div class="min-w-0 flex-1">
+                      <p class="font-medium truncate">{{ p.name || `${p.first_name ?? ''} ${p.last_name ?? ''}`.trim() || 'Unknown' }}</p>
+                      <p class="text-sm text-gray-500 dark:text-slate-400 truncate">
+                        {{ p.mrn }}<span v-if="p.dob"> &middot; DOB {{ p.dob }}</span><span v-if="p.age != null"> ({{ p.age }} yrs)</span>
+                      </p>
+                    </div>
+                    <span
+                      v-if="p.enrollment_status"
+                      class="inline-flex shrink-0 items-center px-1.5 py-0.5 rounded text-sm font-medium bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300 capitalize"
+                    >
+                      {{ p.enrollment_status.replace(/_/g, ' ') }}
+                    </span>
                   </button>
                 </li>
               </ul>
@@ -786,9 +975,9 @@ async function submitBooking() {
             <!-- Selected participant chip with change button -->
             <div class="flex items-center gap-2 p-2 bg-blue-50 dark:bg-blue-950/60 rounded-lg">
               <span class="text-sm font-medium text-blue-800 dark:text-blue-300">
-                {{ selectedParticipant.first_name }} {{ selectedParticipant.last_name }}
+                {{ selectedParticipant.name || `${selectedParticipant.first_name ?? ''} ${selectedParticipant.last_name ?? ''}`.trim() || 'Unknown' }}
               </span>
-              <span class="text-xs text-blue-600 dark:text-blue-400">{{ selectedParticipant.mrn }}</span>
+              <span class="text-sm text-blue-600 dark:text-blue-400">{{ selectedParticipant.mrn }}</span>
               <button
                 type="button"
                 class="ml-auto text-xs text-blue-600 dark:text-blue-400 hover:underline"
@@ -833,13 +1022,12 @@ async function submitBooking() {
 
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Location</label>
-              <select name="location_id"
-                v-model="bookingForm.location_id"
-                class="w-full border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-700"
-              >
-                <option value="">No location</option>
-                <option v-for="l in props.locations" :key="l.id" :value="l.id">{{ l.name }}</option>
-              </select>
+              <LocationCombobox
+                :locations="props.locations"
+                :model-value="bookingForm.location_id || null"
+                placeholder="Search locations — type to filter..."
+                @update:model-value="bookingForm.location_id = $event == null ? '' : String($event)"
+              />
             </div>
 
             <div class="flex items-center gap-3 p-3 rounded-lg border border-gray-200 dark:border-slate-600">
@@ -893,6 +1081,55 @@ async function submitBooking() {
         </div>
       </div>
     </div>
+
+    <!-- Cross-site confirmation modal -->
+    <div
+      v-if="showCrossSiteConfirm && crossSiteInfo"
+      class="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4"
+    >
+      <div class="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-md" role="dialog" aria-modal="true">
+        <div class="px-6 pt-5 pb-4 border-b border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/40 rounded-t-xl">
+          <div class="flex items-start gap-3">
+            <ExclamationTriangleIcon class="w-6 h-6 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+            <div>
+              <h2 class="text-base font-semibold text-amber-800 dark:text-amber-200">Cross-Site Appointment</h2>
+              <p class="text-sm text-amber-700 dark:text-amber-300 mt-1">
+                This participant is enrolled at a different PACE site.
+              </p>
+            </div>
+          </div>
+        </div>
+        <div class="px-6 py-5 space-y-3 text-sm text-gray-700 dark:text-slate-300">
+          <p>
+            You're scheduling
+            <span class="font-semibold text-gray-900 dark:text-slate-100">{{ crossSiteInfo.participantName }}</span>
+            (enrolled at
+            <span class="font-semibold text-gray-900 dark:text-slate-100">{{ crossSiteInfo.homeSiteName }}</span>)
+            at
+            <span class="font-semibold text-gray-900 dark:text-slate-100">{{ crossSiteInfo.hostSiteName }}</span>.
+          </p>
+          <p class="text-sm text-gray-500 dark:text-slate-400">
+            This visit will be logged as cross-site on the participant's audit trail. Their attendance that day will appear on the host site's day-center roster.
+          </p>
+        </div>
+        <div class="px-6 py-4 border-t border-gray-100 dark:border-slate-700 flex justify-end gap-2">
+          <button
+            class="px-4 py-2 text-sm text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-200"
+            @click="showCrossSiteConfirm = false"
+          >
+            Cancel
+          </button>
+          <button
+            class="px-4 py-2 text-sm bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-medium"
+            @click="crossSiteConfirmed = true; showCrossSiteConfirm = false; submitBooking()"
+          >
+            Yes, Schedule Cross-Site
+          </button>
+        </div>
+      </div>
+    </div>
+
+    </div><!-- end flex column wrapper -->
 
   </AppShell>
 </template>

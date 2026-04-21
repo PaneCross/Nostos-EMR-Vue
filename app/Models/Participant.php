@@ -10,8 +10,10 @@
 // MRN: auto-generated on creation by MrnService using the site's mrn_prefix +
 // a zero-padded sequence (e.g., "SRP-000042"). Once set it is never changed.
 //
-// Enrollment lifecycle:
-//   pending → enrolled → (deceased | disenrolled | transferred)
+// Enrollment lifecycle (42 CFR §460.150-§460.164):
+//   referred → intake → pending → enrolled → disenrolled
+//   Death is a disenrollment REASON, not a top-level status (§460.160(b)).
+//   disenrollment_type rolls up reasons as: voluntary | involuntary | death.
 //   Only 'enrolled' participants appear in the active census.
 //   Soft deletes preserve the record for audit purposes; use is_active=false
 //   to hide a participant from views without deleting the row.
@@ -46,7 +48,7 @@ class Participant extends Model
         'ssn_last_four', 'medicare_id', 'medicare_a_start_date', 'medicare_b_start_date',
         'medicaid_id', 'county_fips_code', 'pace_contract_id', 'h_number',
         'primary_language', 'interpreter_needed', 'interpreter_language',
-        'enrollment_status', 'enrollment_date', 'disenrollment_date', 'disenrollment_reason',
+        'enrollment_status', 'enrollment_date', 'disenrollment_date', 'disenrollment_reason', 'disenrollment_type',
         'nursing_facility_eligible', 'nf_certification_date',
         'photo_path', 'is_active', 'created_by_user_id',
         // Phase 11B: advance directive structured fields
@@ -77,6 +79,11 @@ class Participant extends Model
         'ssn_last_four'                 => 'encrypted',
         'medicare_id'                   => 'encrypted',
         'medicaid_id'                   => 'encrypted',
+        // Recurring day-center schedule: JSONB column holding weekday codes like
+        // ['mon','wed','fri']. Without this cast, the value is returned as a JSON
+        // string and every in_array()/foreach consumer (DayCenterController,
+        // attendance seeder, test fixtures) silently skips the participant.
+        'day_center_days'               => 'array',
     ];
 
     // ─── Auto-generate MRN on creation ────────────────────────────────────────
@@ -333,9 +340,15 @@ class Participant extends Model
         return $this->dob->age;
     }
 
+    /**
+     * True when the participant was disenrolled with reason=death.
+     * Per 42 CFR §460.160(b), death is a disenrollment reason, not a top-level status
+     * (see feedback_pace_disenrollment_taxonomy.md).
+     */
     public function isDeceased(): bool
     {
-        return $this->enrollment_status === 'deceased';
+        return $this->enrollment_status === 'disenrolled'
+            && ($this->disenrollment_type === 'death' || $this->disenrollment_reason === 'death');
     }
 
     /** Whether participant has a DNR specifically (not POLST/living will). */

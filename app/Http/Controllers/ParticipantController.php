@@ -83,6 +83,24 @@ class ParticipantController extends Controller
             $query->whereHas('activeFlags');
         }
 
+        // IDT Due filter — mirrors Participant::idtReviewOverdue() in SQL.
+        // 42 CFR §460.104(c): enrolled participants must be reassessed every 6 months.
+        // Overdue = enrolled AND no review in the last 180 days AND (enrolled >180 days ago
+        // OR has any prior review on record).
+        if ($request->boolean('idt_due')) {
+            $cutoff = now()->subDays(180);
+            $query->where('enrollment_status', 'enrolled')
+                ->whereDoesntHave('idtParticipantReviews', function ($q) use ($cutoff) {
+                    $q->where('reviewed_at', '>=', $cutoff);
+                })
+                ->where(function ($q) use ($cutoff) {
+                    $q->where('enrollment_date', '<', $cutoff)
+                      ->orWhereHas('idtParticipantReviews', function ($r) {
+                          $r->whereNotNull('reviewed_at');
+                      });
+                });
+        }
+
         $participants = $query->paginate(50)->withQueryString()->through(
             // W4-5: Append idt_review_overdue computed flag so Participants/Index.tsx
             // can show an amber "IDT Due" badge for enrolled participants overdue for their
@@ -105,7 +123,7 @@ class ParticipantController extends Controller
         return Inertia::render('Participants/Index', [
             'participants' => $participants,
             'sites'        => Site::where('tenant_id', $tenantId)->get(['id', 'name']),
-            'filters'      => $request->only(['search', 'status', 'site_id', 'has_flags']),
+            'filters'      => $request->only(['search', 'status', 'site_id', 'has_flags', 'idt_due']),
             'canCreate'    => $user->department === 'enrollment',
         ]);
     }
@@ -190,7 +208,9 @@ class ParticipantController extends Controller
             'allergies'                    => $participant->allergies()
                 ->with('verifiedBy:id,first_name,last_name')
                 ->where('is_active', true)
-                ->get(),
+                ->orderByRaw("CASE severity WHEN 'life_threatening' THEN 0 WHEN 'severe' THEN 1 WHEN 'moderate' THEN 2 WHEN 'mild' THEN 3 ELSE 4 END")
+                ->get()
+                ->groupBy('allergy_type'),
             'lifeThreateningAllergyCount'  => $lifeThreateningAllergyCount,
             'vitals'                       => $participant->vitals()
                 ->with('recordedBy:id,first_name,last_name')
@@ -244,6 +264,9 @@ class ParticipantController extends Controller
             'canDelete'    => $user->department === 'enrollment' && $user->isAdmin()
                           || $user->department === 'it_admin',
             'canViewAudit' => $canViewAudit,
+            // CMS disenrollment taxonomy for the Disenrollment tab modal.
+            // Single source of truth — see App\Support\DisenrollmentTaxonomy.
+            'disenrollmentReasons' => \App\Support\DisenrollmentTaxonomy::groupedLabels(),
         ]);
     }
 
@@ -309,7 +332,7 @@ class ParticipantController extends Controller
         $tenantId = $user->tenant_id;
 
         $query = Participant::forTenant($tenantId)
-            ->with('activeFlags')
+            ->with(['activeFlags', 'site:id,name'])
             ->limit(15);
 
         // DOB search
@@ -326,6 +349,8 @@ class ParticipantController extends Controller
             'dob'               => $p->dob->format('Y-m-d'),
             'age'               => $p->age(),
             'enrollment_status' => $p->enrollment_status,
+            'site_id'           => $p->site_id,
+            'site_name'         => $p->site?->name,
             'flags'             => $p->activeFlags->pluck('flag_type')->toArray(),
         ]);
 

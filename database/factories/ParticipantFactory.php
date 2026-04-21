@@ -143,25 +143,39 @@ class ParticipantFactory extends Factory
 
     public function disenrolled(): static
     {
-        return $this->state(fn () => [
-            'enrollment_status'    => 'disenrolled',
-            'disenrollment_date'   => $this->faker->dateTimeBetween('-2 years', '-1 month')->format('Y-m-d'),
-            'disenrollment_reason' => $this->faker->randomElement([
-                'Moved out of service area',
-                'Transferred to SNF',
-                'Requested voluntary disenrollment',
-                'No longer meets PACE eligibility',
-            ]),
-            'is_active'            => false,
-        ]);
+        return $this->state(function () {
+            // Pick a canonical reason per 42 CFR §460.162 (voluntary) / §460.164 (involuntary),
+            // tag it with the matching disenrollment_type so rollups work immediately.
+            $options = [
+                ['reason' => 'voluntary_moved_out_of_area',            'type' => 'voluntary'],
+                ['reason' => 'voluntary_dissatisfied',                 'type' => 'voluntary'],
+                ['reason' => 'voluntary_elected_hospice_outside_pace', 'type' => 'voluntary'],
+                ['reason' => 'involuntary_out_of_service_area',        'type' => 'involuntary'],
+                ['reason' => 'involuntary_loss_of_nf_loc_eligibility', 'type' => 'involuntary'],
+            ];
+            $pick = $this->faker->randomElement($options);
+
+            return [
+                'enrollment_status'    => 'disenrolled',
+                'disenrollment_date'   => $this->faker->dateTimeBetween('-2 years', '-1 month')->format('Y-m-d'),
+                'disenrollment_reason' => $pick['reason'],
+                'disenrollment_type'   => $pick['type'],
+                'is_active'            => false,
+            ];
+        });
     }
 
+    /**
+     * @deprecated Death is a disenrollment reason, not a top-level status
+     * (42 CFR §460.160(b)). Kept for test back-compat; writes canonical form.
+     */
     public function deceased(): static
     {
         return $this->state(fn () => [
-            'enrollment_status'    => 'deceased',
+            'enrollment_status'    => 'disenrolled',
             'disenrollment_date'   => $this->faker->dateTimeBetween('-1 year', '-1 month')->format('Y-m-d'),
-            'disenrollment_reason' => 'Participant deceased',
+            'disenrollment_reason' => 'death',
+            'disenrollment_type'   => 'death',
             'is_active'            => false,
         ]);
     }

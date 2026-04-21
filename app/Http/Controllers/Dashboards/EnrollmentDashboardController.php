@@ -135,13 +135,30 @@ class EnrollmentDashboardController extends Controller
                 'enrollment_status'   => $p->enrollment_status,
                 'disenrollment_date'  => $p->disenrollment_date?->toDateString(),
                 'days_until'          => abs((int) now()->startOfDay()->diffInDays($p->disenrollment_date)),
+                'disenrollment_type'  => $p->disenrollment_type,
                 'disenrollment_reason'=> $p->disenrollment_reason,
                 'href'                => "/participants/{$p->id}",
             ]);
 
+        // Rolling 12-month voluntary vs involuntary vs death counts — the grain
+        // CMS HPMS reporting and NPA metrics aggregate at.
+        $yearAgo = now()->subYear()->toDateString();
+        $rollup = Participant::where('tenant_id', $tenantId)
+            ->where('enrollment_status', 'disenrolled')
+            ->whereNotNull('disenrollment_date')
+            ->where('disenrollment_date', '>=', $yearAgo)
+            ->selectRaw('disenrollment_type, COUNT(*) as count')
+            ->groupBy('disenrollment_type')
+            ->pluck('count', 'disenrollment_type');
+
         return response()->json([
             'participants' => $participants,
             'count'        => $participants->count(),
+            'rollup_12m'   => [
+                'voluntary'   => (int) ($rollup['voluntary']   ?? 0),
+                'involuntary' => (int) ($rollup['involuntary'] ?? 0),
+                'death'       => (int) ($rollup['death']       ?? 0),
+            ],
         ]);
     }
 

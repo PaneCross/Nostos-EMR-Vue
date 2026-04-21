@@ -179,6 +179,15 @@ class ReportsController extends Controller
                 'depts'       => ['idt', 'primary_care', 'qa_compliance', 'it_admin'],
                 'export_url'  => '/reports/export?type=care_plan_status',
             ],
+            // ── Administration / Site Operations ─────────────────────────────
+            [
+                'id'          => 'cross_site_attendance',
+                'title'       => 'Cross-Site Attendance',
+                'description' => 'Participants attending a PACE site other than their enrolled home site. Date-range filterable with home/host/date breakdown.',
+                'category'    => 'Administration',
+                'depts'       => ['qa_compliance', 'it_admin', 'executive', 'enrollment', 'finance'],
+                'export_url'  => '/reports/export?type=cross_site_attendance',
+            ],
             // ── Audit & Administration ───────────────────────────────────────
             [
                 'id'          => 'user_activity',
@@ -218,11 +227,12 @@ class ReportsController extends Controller
         }
 
         return match ($type) {
-            'census'           => $this->exportCensus($tid),
-            'disenrollments'   => $this->exportDisenrollments($tid),
-            'sdr_compliance'   => $this->exportSdrCompliance($tid),
-            'care_plan_status' => $this->exportCarePlanStatus($tid),
-            default            => abort(400, 'Unknown report type.'),
+            'census'                => $this->exportCensus($tid),
+            'disenrollments'        => $this->exportDisenrollments($tid),
+            'sdr_compliance'        => $this->exportSdrCompliance($tid),
+            'care_plan_status'      => $this->exportCarePlanStatus($tid),
+            'cross_site_attendance' => $this->exportCrossSiteAttendance($tid, $request),
+            default                 => abort(400, 'Unknown report type.'),
         };
     }
 
@@ -264,8 +274,9 @@ class ReportsController extends Controller
     /** CSV: all disenrolled participants with reason and timeline. */
     private function exportDisenrollments(int $tid): StreamedResponse
     {
+        // 42 CFR §460.160(b): death is a disenrollment reason, not a status.
         $participants = Participant::where('tenant_id', $tid)
-            ->whereIn('enrollment_status', ['disenrolled', 'deceased', 'withdrawn'])
+            ->where('enrollment_status', 'disenrolled')
             ->whereNotNull('disenrollment_date')
             ->with('site:id,name')
             ->orderByDesc('disenrollment_date')
@@ -275,7 +286,7 @@ class ReportsController extends Controller
             $out = fopen('php://output', 'w');
             fputcsv($out, [
                 'Last Name', 'First Name', 'MRN', 'DOB',
-                'Site', 'Enrollment Date', 'Disenrollment Date', 'Reason',
+                'Site', 'Enrollment Date', 'Disenrollment Date', 'Type', 'Reason',
             ]);
             foreach ($participants as $p) {
                 fputcsv($out, [
@@ -286,6 +297,7 @@ class ReportsController extends Controller
                     $p->site?->name ?? '-',
                     $p->enrollment_date?->format('Y-m-d') ?? '-',
                     $p->disenrollment_date?->format('Y-m-d') ?? '-',
+                    $p->disenrollment_type ?? '-',
                     $p->disenrollment_reason ?? '-',
                 ]);
             }
@@ -498,6 +510,60 @@ class ReportsController extends Controller
                     $t->toSite?->name ?? '-',
                     $t->effective_date?->format('Y-m-d') ?? '-',
                     $t->transfer_reason ?? '-',
+                ]);
+            }
+            fclose($out);
+        }, 200, $headers);
+    }
+
+    /**
+     * CSV: Cross-site attendance — participants who attended a PACE site other
+     * than their enrolled home site. Uses the participant.cross_site_attendance
+     * audit entries as the source of truth (one per attendance event).
+     *
+     * Query params:
+     *   from (YYYY-MM-DD, default: first of current month)
+     *   to   (YYYY-MM-DD, default: today)
+     */
+    private function exportCrossSiteAttendance(int $tid, Request $request): StreamedResponse
+    {
+        $from = $request->query('from', now()->startOfMonth()->toDateString());
+        $to   = $request->query('to',   now()->toDateString());
+
+        $events = \App\Models\AuditLog::where('tenant_id', $tid)
+            ->where('action', 'participant.cross_site_attendance')
+            ->whereBetween('created_at', [$from . ' 00:00:00', $to . ' 23:59:59'])
+            ->orderBy('created_at')
+            ->get();
+
+        $participantIds = $events->pluck('resource_id')->unique()->toArray();
+        $participants = Participant::whereIn('id', $participantIds)
+            ->get(['id', 'mrn', 'first_name', 'last_name'])
+            ->keyBy('id');
+
+        $filename = "cross_site_attendance_{$from}_to_{$to}.csv";
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ];
+
+        return response()->stream(function () use ($events, $participants) {
+            $out = fopen('php://output', 'w');
+            fputcsv($out, [
+                'Date', 'Participant Name', 'MRN',
+                'Enrolled (Home) Site', 'Attended At (Host) Site',
+                'Status',
+            ]);
+            foreach ($events as $e) {
+                $p = $participants[$e->resource_id] ?? null;
+                $v = is_array($e->new_values) ? $e->new_values : [];
+                fputcsv($out, [
+                    $v['date']              ?? $e->created_at?->toDateString() ?? '-',
+                    $p ? "{$p->last_name}, {$p->first_name}" : '-',
+                    $p?->mrn ?? '-',
+                    $v['home_site_name']    ?? '-',
+                    $v['host_site_name']    ?? '-',
+                    $v['status']            ?? '-',
                 ]);
             }
             fclose($out);

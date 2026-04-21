@@ -51,10 +51,15 @@ class DayCenterAttendanceTest extends TestCase
             'role'       => 'standard',
             'is_active'  => true,
         ]);
+        // Roster endpoint requires day_center_days matching the current weekday,
+        // an appointment override, or an existing attendance record. Seed a full
+        // week of day-center days so the roster test is day-of-week agnostic.
         $this->participant = Participant::factory()->enrolled()
             ->forTenant($this->tenant->id)
             ->forSite($this->site->id)
-            ->create();
+            ->create([
+                'day_center_days' => ['mon', 'tue', 'wed', 'thu', 'fri'],
+            ]);
     }
 
     // ── Index ─────────────────────────────────────────────────────────────────

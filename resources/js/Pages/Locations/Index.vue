@@ -18,13 +18,20 @@ interface Location {
   label: string | null
   location_type: string
   type_label: string
+  site_id: number | null
   street: string | null
+  apartment: string | null
+  suite: string | null
+  building: string | null
+  floor: string | null
+  unit: string | null
   city: string | null
   state: string | null
   zip: string | null
   phone: string | null
   contact_name: string | null
   notes: string | null
+  access_notes: string | null
   is_active: boolean
   deleted_at: string | null
 }
@@ -33,20 +40,31 @@ interface FormState {
   name: string
   label: string
   location_type: string
+  site_id: number | null
   street: string
+  apartment: string
+  suite: string
+  building: string
+  floor: string
+  unit: string
   city: string
   state: string
   zip: string
   phone: string
   contact_name: string
   notes: string
+  access_notes: string
   is_active: boolean
 }
+
+interface SiteOption { id: number; name: string }
 
 interface Props {
   locations: Location[]
   location_types: Record<string, string>
+  sites: SiteOption[]
   can_write: boolean
+  can_deactivate: boolean
 }
 
 const props = defineProps<Props>()
@@ -79,9 +97,12 @@ const saving       = ref(false)
 const confirmArchive = ref<Location | null>(null)
 
 const blankForm = (): FormState => ({
-  name: '', label: '', location_type: 'pace_center',
-  street: '', city: '', state: '', zip: '',
-  phone: '', contact_name: '', notes: '', is_active: true,
+  name: '', label: '', location_type: 'pace_center', site_id: null,
+  street: '', apartment: '', suite: '', building: '', floor: '', unit: '',
+  city: '', state: '', zip: '',
+  phone: '', contact_name: '',
+  notes: '', access_notes: '',
+  is_active: true,
 })
 
 const form   = ref<FormState>(blankForm())
@@ -102,7 +123,15 @@ const filtered = computed(() => {
 
 function formatAddress(loc: Location): string {
   if (!loc.street) return ''
-  return `${loc.street}, ${loc.city ?? ''} ${loc.state ?? ''} ${loc.zip ?? ''}`.trim()
+  const streetParts: string[] = [loc.street]
+  if (loc.apartment) streetParts.push(`Apt ${loc.apartment}`)
+  if (loc.suite)     streetParts.push(`Ste ${loc.suite}`)
+  if (loc.building)  streetParts.push(`Bldg ${loc.building}`)
+  if (loc.floor)     streetParts.push(`Fl ${loc.floor}`)
+  if (loc.unit)      streetParts.push(loc.unit)
+  const line1 = streetParts.join(', ')
+  const line2 = `${loc.city ?? ''} ${loc.state ?? ''} ${loc.zip ?? ''}`.replace(/\s+/g, ' ').trim()
+  return line2 ? `${line1}, ${line2}` : line1
 }
 
 // ── Modal helpers ─────────────────────────────────────────────────────────────
@@ -119,13 +148,20 @@ function openEdit(loc: Location) {
     name:          loc.name,
     label:         loc.label ?? '',
     location_type: loc.location_type,
+    site_id:       loc.site_id ?? null,
     street:        loc.street ?? '',
+    apartment:     loc.apartment ?? '',
+    suite:         loc.suite ?? '',
+    building:      loc.building ?? '',
+    floor:         loc.floor ?? '',
+    unit:          loc.unit ?? '',
     city:          loc.city ?? '',
     state:         loc.state ?? '',
     zip:           loc.zip ?? '',
     phone:         loc.phone ?? '',
     contact_name:  loc.contact_name ?? '',
     notes:         loc.notes ?? '',
+    access_notes:  loc.access_notes ?? '',
     is_active:     loc.is_active,
   }
   errors.value = {}
@@ -252,8 +288,19 @@ function handleArchive(loc: Location) {
             :class="{ 'opacity-50': loc.deleted_at }"
           >
             <td class="px-4 py-3 font-medium text-slate-900 dark:text-slate-100">
-              {{ loc.name }}
-              <span v-if="loc.label" class="ml-1.5 text-xs text-slate-400">({{ loc.label }})</span>
+              <div class="flex items-center gap-2">
+                <span>
+                  {{ loc.name }}
+                  <span v-if="loc.label" class="ml-1.5 text-xs text-slate-400">({{ loc.label }})</span>
+                </span>
+                <span
+                  v-if="loc.site_id"
+                  class="inline-flex items-center px-1.5 py-0.5 rounded text-sm font-medium bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300"
+                  :title="'Linked to PACE site: ' + (sites.find(s => s.id === loc.site_id)?.name ?? '')"
+                >
+                  {{ sites.find(s => s.id === loc.site_id)?.name ?? 'PACE Site' }}
+                </span>
+              </div>
             </td>
             <td class="px-4 py-3">
               <span
@@ -284,9 +331,10 @@ function handleArchive(loc: Location) {
                   <PencilIcon class="w-4 h-4" />
                 </button>
                 <button
+                  v-if="can_deactivate"
                   @click="confirmArchive = loc"
                   class="text-slate-400 hover:text-red-600 transition-colors"
-                  title="Archive"
+                  title="Archive (Transportation Team only)"
                 >
                   <ArchiveBoxIcon class="w-4 h-4" />
                 </button>
@@ -341,6 +389,23 @@ function handleArchive(loc: Location) {
             </div>
           </div>
 
+          <!-- PACE Site link (optional) — enables cross-site detection and Day Center roster routing -->
+          <div>
+            <label class="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+              PACE Site <span class="text-slate-400 dark:text-slate-500 font-normal">(optional)</span>
+            </label>
+            <select name="site_id"
+              v-model="form.site_id"
+              class="w-full rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-700 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+            >
+              <option :value="null">None (external location)</option>
+              <option v-for="s in sites" :key="s.id" :value="s.id">{{ s.name }}</option>
+            </select>
+            <p class="text-xs text-slate-400 dark:text-slate-500 mt-1">
+              Set this for PACE-owned locations (e.g. day centers). External locations like hospitals should leave this blank.
+            </p>
+          </div>
+
           <!-- Short Label -->
           <div>
             <label class="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
@@ -358,9 +423,55 @@ function handleArchive(loc: Location) {
             <label class="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">Street Address</label>
             <input
               v-model="form.street"
-              class="w-full rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-700 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              class="w-full rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none dark:bg-slate-700 dark:border-slate-600"
+              :class="errors.street ? 'border-red-400' : 'border-slate-300'"
               placeholder="123 Main St"
             />
+            <p v-if="errors.street" class="mt-1 text-xs text-red-600 dark:text-red-400">{{ errors.street }}</p>
+          </div>
+
+          <!-- Apartment / Suite / Building / Floor row -->
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div>
+              <label class="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+                Apartment <span class="text-slate-400 font-normal">(opt)</span>
+              </label>
+              <input
+                v-model="form.apartment"
+                placeholder="5B"
+                class="w-full rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-700 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              />
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+                Suite <span class="text-slate-400 font-normal">(opt)</span>
+              </label>
+              <input
+                v-model="form.suite"
+                placeholder="200"
+                class="w-full rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-700 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              />
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+                Building <span class="text-slate-400 font-normal">(opt)</span>
+              </label>
+              <input
+                v-model="form.building"
+                placeholder="East Wing"
+                class="w-full rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-700 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              />
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+                Floor <span class="text-slate-400 font-normal">(opt)</span>
+              </label>
+              <input
+                v-model="form.floor"
+                placeholder="3"
+                class="w-full rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-700 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              />
+            </div>
           </div>
 
           <!-- City / State / ZIP -->
@@ -371,11 +482,24 @@ function handleArchive(loc: Location) {
             </div>
             <div>
               <label class="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">State</label>
-              <input v-model="form.state" maxlength="2" placeholder="CA" class="w-full rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-700 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+              <input
+                v-model="form.state"
+                maxlength="2"
+                placeholder="CA"
+                class="w-full rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none dark:bg-slate-700 dark:border-slate-600"
+                :class="errors.state ? 'border-red-400' : 'border-slate-300'"
+              />
+              <p v-if="errors.state" class="mt-1 text-xs text-red-600 dark:text-red-400">{{ errors.state }}</p>
             </div>
             <div>
               <label class="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">ZIP</label>
-              <input v-model="form.zip" placeholder="90210" class="w-full rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-700 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+              <input
+                v-model="form.zip"
+                placeholder="90210"
+                class="w-full rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none dark:bg-slate-700 dark:border-slate-600"
+                :class="errors.zip ? 'border-red-400' : 'border-slate-300'"
+              />
+              <p v-if="errors.zip" class="mt-1 text-xs text-red-600 dark:text-red-400">{{ errors.zip }}</p>
             </div>
           </div>
 
@@ -398,6 +522,19 @@ function handleArchive(loc: Location) {
               v-model="form.notes"
               rows="2"
               placeholder="Any relevant notes about this location..."
+              class="w-full rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-700 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none resize-none"
+            />
+          </div>
+
+          <!-- Access Notes (driver / transport guidance) -->
+          <div>
+            <label class="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+              Access Notes <span class="text-slate-400 font-normal">(for transport / drivers)</span>
+            </label>
+            <textarea
+              v-model="form.access_notes"
+              rows="2"
+              placeholder="Gate code, parking instructions, door entry, etc."
               class="w-full rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-700 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none resize-none"
             />
           </div>

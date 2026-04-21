@@ -412,7 +412,7 @@ watch(loadingMsgs, (isLoading) => {
                                 :aria-label="`Start direct message with ${u.name}`"
                             >
                                 <span class="font-medium text-slate-800 dark:text-slate-200">{{ u.name }}</span>
-                                <span class="ml-1.5 text-[10px] px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400">
+                                <span class="ml-1.5 text-xs px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400">
                                     {{ u.department.replace(/_/g, ' ') }}
                                 </span>
                             </button>
@@ -424,7 +424,7 @@ watch(loadingMsgs, (isLoading) => {
                 <nav class="flex-1 overflow-y-auto py-2" aria-label="Chat channels">
                     <template v-for="type in CHANNEL_TYPE_ORDER" :key="type">
                         <div v-if="grouped[type]">
-                            <p class="px-4 pt-3 pb-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                            <p class="px-4 pt-3 pb-1 text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
                                 {{ CHANNEL_TYPE_LABELS[type] }}
                             </p>
                             <button
@@ -443,7 +443,7 @@ watch(loadingMsgs, (isLoading) => {
                                 <!-- Urgent badge -->
                                 <span
                                     v-if="ch.urgent_unread_count > 0"
-                                    class="flex-shrink-0 px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-red-500 text-white"
+                                    class="flex-shrink-0 px-1.5 py-0.5 rounded-full text-xs font-bold bg-red-500 text-white"
                                     :aria-label="`${ch.urgent_unread_count} urgent unread`"
                                 >
                                     {{ ch.urgent_unread_count }}
@@ -451,7 +451,7 @@ watch(loadingMsgs, (isLoading) => {
                                 <!-- Unread badge -->
                                 <span
                                     v-else-if="ch.unread_count > 0"
-                                    class="flex-shrink-0 px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-blue-500 text-white"
+                                    class="flex-shrink-0 px-1.5 py-0.5 rounded-full text-xs font-bold bg-blue-500 text-white"
                                     :aria-label="`${ch.unread_count} unread`"
                                 >
                                     {{ ch.unread_count }}
@@ -513,7 +513,7 @@ watch(loadingMsgs, (isLoading) => {
                             >
                                 <!-- Avatar -->
                                 <div
-                                    class="flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold text-white"
+                                    class="flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white"
                                     :style="{ backgroundColor: msg.sender_user_id === me?.id ? '#3b82f6' : '#6b7280' }"
                                     aria-hidden="true"
                                 >
@@ -524,10 +524,10 @@ watch(loadingMsgs, (isLoading) => {
                                     <!-- Header row -->
                                     <div class="flex items-baseline gap-2 mb-0.5">
                                         <span class="text-xs font-semibold text-slate-800 dark:text-slate-200">{{ msg.sender_name }}</span>
-                                        <span class="text-[10px] text-slate-400">{{ formatTime(msg.sent_at) }}</span>
+                                        <span class="text-xs text-slate-400">{{ formatTime(msg.sent_at) }}</span>
                                         <span
                                             v-if="msg.priority === 'urgent'"
-                                            class="text-[9px] font-bold uppercase tracking-wide bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300 px-1.5 py-0.5 rounded"
+                                            class="text-xs font-bold uppercase tracking-wide bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300 px-1.5 py-0.5 rounded"
                                         >
                                             URGENT
                                         </span>

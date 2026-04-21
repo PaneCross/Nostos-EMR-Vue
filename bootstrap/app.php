@@ -22,6 +22,10 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->validateCsrfTokens(except: [
             '/auth/request-otp',
             '/auth/verify-otp',
+            '/super-admin/view-as',             // Auth-gated by requireSuperAdmin(); CSRF redundant
+            '/billing/hos-m',                   // Auth-gated by finance/primary_care/it_admin
+            '/billing/hos-m/*',                 // Includes update + submit routes
+            '/scheduling/day-center/manage/bulk',// Auth-gated by activities/it_admin
         ]);
 
         $middleware->alias([

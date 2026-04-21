@@ -51,7 +51,7 @@ class DisenrollmentTransitionTest extends TestCase
     private function disenrollRequest(array $overrides = []): array
     {
         return array_merge([
-            'reason'                   => 'voluntary',
+            'reason'                   => 'voluntary_other',
             'effective_date'           => now()->toDateString(),
             'notes'                    => 'Test disenrollment',
             'cms_notification_required' => false,
@@ -77,7 +77,7 @@ class DisenrollmentTransitionTest extends TestCase
         $this->assertDatabaseHas('emr_disenrollment_records', [
             'participant_id' => $participant->id,
             'tenant_id'      => $user->tenant_id,
-            'reason'         => 'voluntary',
+            'reason'         => 'voluntary_other',
         ]);
     }
 
@@ -91,7 +91,7 @@ class DisenrollmentTransitionTest extends TestCase
         $participant = $this->enrolledParticipant($user);
 
         $this->actingAs($user)
-            ->postJson("/participants/{$participant->id}/disenroll", $this->disenrollRequest(['reason' => 'voluntary']))
+            ->postJson("/participants/{$participant->id}/disenroll", $this->disenrollRequest(['reason' => 'voluntary_other']))
             ->assertOk();
 
         $record = DisenrollmentRecord::where('participant_id', $participant->id)->first();
@@ -110,7 +110,7 @@ class DisenrollmentTransitionTest extends TestCase
         $participant = $this->enrolledParticipant($user);
 
         $this->actingAs($user)
-            ->postJson("/participants/{$participant->id}/disenroll", $this->disenrollRequest(['reason' => 'deceased']))
+            ->postJson("/participants/{$participant->id}/disenroll", $this->disenrollRequest(['reason' => 'death']))
             ->assertOk();
 
         $record = DisenrollmentRecord::where('participant_id', $participant->id)->first();
@@ -276,7 +276,7 @@ class DisenrollmentTransitionTest extends TestCase
 
         $this->actingAs($enrollUser)
             ->postJson("/participants/{$participant->id}/disenroll", [
-                'reason'                    => 'voluntary',
+                'reason'                    => 'voluntary_other',
                 'effective_date'            => now()->subDays(10)->toDateString(), // 10 days ago = past 7-day window
                 'notes'                     => null,
                 'cms_notification_required' => true,

@@ -269,6 +269,13 @@ class DemoEnvironmentSeeder extends Seeder
         $this->command->info('  Seeding W5-4 tab CRUD demo data (consents, docs, immunizations, procedures, SDOH)...');
         $this->call(W54DataSeeder::class);
 
+        // ─── Day Center Attendance (past 2 weeks) ──────────────────────────────
+        // Gives the Day Center page, summary endpoint, and activity dashboards
+        // something real to display instead of empty rosters.
+        $this->command->info('');
+        $this->command->info('  Seeding day-center attendance for the past 14 days...');
+        $this->call(DayCenterAttendanceSeeder::class);
+
         // ─── Participant Photos ────────────────────────────────────────────────
         // Downloads pravatar.cc placeholder images for the first 15 enrolled
         // participants so the photo upload feature is visually testable.

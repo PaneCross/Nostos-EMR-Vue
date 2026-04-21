@@ -263,7 +263,7 @@ function clearFilters() {
                                 <span
                                     v-for="(flag, i) in p.flags"
                                     :key="i"
-                                    :class="['inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] font-medium ring-1 ring-inset', FLAG_CONFIG[flag.flag_type]?.classes ?? '']"
+                                    :class="['inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-xs font-medium ring-1 ring-inset', FLAG_CONFIG[flag.flag_type]?.classes ?? '']"
                                     :title="flag.description ?? FLAG_CONFIG[flag.flag_type]?.label ?? flag.flag_type"
                                 >
                                     <span

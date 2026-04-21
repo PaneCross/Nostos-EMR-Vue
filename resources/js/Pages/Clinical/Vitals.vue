@@ -83,21 +83,21 @@ function fmtNum(val: number | null, unit = ''): string {
 
 // Out-of-range text classes
 function bpClass(systolic: number | null): string {
-    if (systolic == null) return ''
+    if (systolic == null) return 'text-gray-600 dark:text-slate-400'
     if (systolic > 160 || systolic < 90) return 'text-red-600 dark:text-red-400 font-semibold'
-    return ''
+    return 'text-gray-900 dark:text-slate-100'
 }
 
 function o2Class(o2: number | null): string {
-    if (o2 == null) return ''
+    if (o2 == null) return 'text-gray-600 dark:text-slate-400'
     if (o2 < 94) return 'text-red-600 dark:text-red-400 font-semibold'
-    return ''
+    return 'text-gray-900 dark:text-slate-100'
 }
 
 function painClass(pain: number | null): string {
-    if (pain == null) return ''
+    if (pain == null) return 'text-gray-600 dark:text-slate-400'
     if (pain > 6) return 'text-amber-600 dark:text-amber-400 font-semibold'
-    return ''
+    return 'text-gray-900 dark:text-slate-100'
 }
 
 // Counts

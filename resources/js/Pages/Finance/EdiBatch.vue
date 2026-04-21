@@ -36,7 +36,7 @@ function loadBatches() {
     loading.value = true
     error.value = null
     axios
-        .get('/billing/edi-batches')
+        .get('/billing/batches')
         .then((res) => {
             batches.value = res.data?.data ?? res.data ?? []
         })
@@ -56,7 +56,7 @@ function generateBatch() {
     generating.value = true
     error.value = null
     axios
-        .post('/billing/edi-batches')
+        .post('/billing/batches')
         .then(() => {
             loadBatches()
         })

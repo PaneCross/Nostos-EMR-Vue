@@ -52,6 +52,7 @@ const eligibilityItems = computed<ActionItem[]>(() =>
         badgeColor: (r.days_pending ?? 0) > 30
             ? 'bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300'
             : 'bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300',
+        href: r.href ?? (r.id ? `/enrollment/referrals/${r.id}` : '/enrollment'),
     }))
 )
 
@@ -63,6 +64,7 @@ const disenrollItems = computed<ActionItem[]>(() =>
         badgeColor: (p.days_until ?? 0) <= 7
             ? 'bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300'
             : 'bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300',
+        href: p.href ?? (p.id ? `/participants/${p.id}` : '/enrollment'),
     }))
 )
 
@@ -72,12 +74,13 @@ const newReferralItems = computed<ActionItem[]>(() =>
         sublabel: [r.source, r.created_at].filter(Boolean).join(' | ') || undefined,
         badge: r.status_label ?? r.status ?? '-',
         badgeColor: COLUMN_COLORS[r.status] ?? 'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300',
+        href: r.href ?? (r.id ? `/enrollment/referrals/${r.id}` : '/enrollment'),
     }))
 )
 </script>
 
 <template>
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 grid-flow-dense gap-6">
         <!-- Pipeline Summary — KPI stat grid, not a list of clickable items -->
         <div class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 shadow-sm p-5">
             <h3 class="text-sm font-semibold text-gray-900 dark:text-slate-100 mb-3">Referral Pipeline</h3>
@@ -87,7 +90,7 @@ const newReferralItems = computed<ActionItem[]>(() =>
                 </div>
             </template>
             <template v-else-if="!pipeline">
-                <p class="text-xs text-gray-400 dark:text-slate-500 py-4 text-center">No pipeline data</p>
+                <p class="text-sm text-gray-400 dark:text-slate-500 py-4 text-center">No pipeline data</p>
             </template>
             <template v-else>
                 <div class="space-y-2">
@@ -96,17 +99,17 @@ const newReferralItems = computed<ActionItem[]>(() =>
                             v-for="col in (pipeline.pipeline ?? [])"
                             :key="col.status"
                             :href="`/enrollment?status=${col.status}`"
-                            :class="`flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs ${COLUMN_COLORS[col.status] ?? 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'} hover:opacity-80 transition-opacity`"
+                            :class="`flex items-center gap-1.5 px-2 py-1 rounded-lg text-sm ${COLUMN_COLORS[col.status] ?? 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'} hover:opacity-80 transition-opacity`"
                         >
                             <span class="font-bold">{{ col.count }}</span>
                             <span>{{ col.status_label }}</span>
                         </a>
                     </div>
-                    <div class="flex gap-4 pt-1 border-t border-slate-100 dark:border-slate-700 text-[10px] text-slate-400">
+                    <div class="flex gap-4 pt-1 border-t border-slate-100 dark:border-slate-700 text-sm text-slate-400">
                         <span>{{ pipeline.declined_this_month ?? 0 }} declined this month</span>
                         <span>{{ pipeline.withdrawn_this_month ?? 0 }} withdrawn this month</span>
                     </div>
-                    <a href="/enrollment" class="text-xs text-blue-600 dark:text-blue-400 hover:underline block">
+                    <a href="/enrollment" class="text-sm text-blue-600 dark:text-blue-400 hover:underline block">
                         View full Kanban board
                     </a>
                 </div>

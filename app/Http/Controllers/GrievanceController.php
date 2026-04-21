@@ -493,7 +493,7 @@ class GrievanceController extends Controller
 
         $grievances = Grievance::forTenant(Auth::user()->tenant_id)
             ->where('participant_id', $participant->id)
-            ->with(['receivedBy:id,first_name,last_name', 'assignedTo:id,first_name,last_name'])
+            ->with(['submittedBy:id,first_name,last_name', 'assignedTo:id,first_name,last_name'])
             ->orderBy('filed_at', 'desc')
             ->get();
 

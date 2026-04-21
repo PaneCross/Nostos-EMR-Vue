@@ -165,6 +165,15 @@ async function toggleCmsFlag() {
 }
 
 async function submitToCms() {
+  // Tracking flag only — the EMR does NOT transmit to CMS. Staff must have
+  // already submitted externally via HPMS per 42 CFR §460.120 before marking
+  // this here. Clear confirmation language prevents accidental misuse.
+  if (!confirm(
+    `Mark this grievance as submitted to CMS?\n\n` +
+    `IMPORTANT: This does NOT transmit data to CMS. It only records that you have ` +
+    `already submitted this grievance externally via HPMS per 42 CFR §460.120.\n\n` +
+    `Only confirm if the external submission has actually been completed.`
+  )) return
   await postAction('submit-cms')
 }
 
@@ -482,9 +491,10 @@ function fmtDateTime(d: string | null): string {
                 v-if="props.grievance.cms_reportable && !props.grievance.cms_submitted_at"
                 @click="submitToCms()"
                 :disabled="actionLoading"
+                :title="'Records that you have already submitted this grievance to CMS externally via HPMS. Does not transmit data.'"
                 class="px-4 py-2 text-sm rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 transition"
               >
-                Submit to CMS
+                Mark CMS Submitted
               </button>
             </div>
           </div>

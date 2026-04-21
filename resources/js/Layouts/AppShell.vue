@@ -249,6 +249,14 @@ function navigate(href: string) {
     hoveredGroup.value = null
 }
 
+function switchDashboardView(e: Event) {
+    const dept = (e.target as HTMLSelectElement).value
+    if (!dept) return
+    axios.post('/super-admin/view-as', { department: dept }).then(() => {
+        location.href = '/'
+    })
+}
+
 // ── Sidebar collapse ───────────────────────────────────────────────────────────
 // Default: expanded. Persisted per-user in localStorage.
 const collapsed = ref(false)
@@ -311,9 +319,20 @@ const showAlerts = ref(false)
 
 async function loadAlerts() {
     try {
-        const res = await axios.get('/alerts?unread=1&limit=5')
-        alerts.value = res.data.alerts ?? []
-        alertCount.value = res.data.total_unread ?? 0
+        // Two concurrent calls:
+        //  - /alerts/unread-count: authoritative badge number (matches the "View All" page's unread filter)
+        //  - /alerts?unread_only=1&per_page=5: first 5 unread alerts for the dropdown preview
+        // Both match AlertController::index() / unreadCount() server-side param names.
+        const [countRes, listRes] = await Promise.all([
+            axios.get('/alerts/unread-count'),
+            axios.get('/alerts', {
+                headers: { Accept: 'application/json' },
+                params: { unread_only: '1', per_page: 5 },
+            }),
+        ])
+        alertCount.value = countRes.data?.count ?? 0
+        // AlertController returns a Laravel paginator envelope: { data: [...], total, ... }.
+        alerts.value = (listRes.data?.data ?? []).slice(0, 5)
     } catch { /* non-blocking */ }
 }
 
@@ -578,11 +597,11 @@ function handleGlobalKey(e: KeyboardEvent) {
                     v-if="user?.is_super_admin && !impersonation.active && !collapsed"
                     class="rounded-lg bg-slate-800 border border-slate-700 p-2.5 space-y-1.5"
                 >
-                    <p class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Dashboard View</p>
-                    <select name="select"
+                    <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Dashboard View</p>
+                    <select name="dashboard-view"
                         class="w-full bg-slate-700 text-slate-200 text-xs rounded px-2 py-1.5 border border-slate-600 focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer"
                         :value="page.props.impersonation?.viewing_as_dept ?? 'it_admin'"
-                        @change="(e) => axios.post('/super-admin/view-as', { department: (e.target as HTMLSelectElement).value }).then(() => router.reload())"
+                        @change="switchDashboardView"
                     >
                         <option value="primary_care">Primary Care</option>
                         <option value="home_care">Home Care</option>
@@ -600,7 +619,7 @@ function handleGlobalKey(e: KeyboardEvent) {
                         <option value="it_admin">IT Admin</option>
                         <option value="executive">Executive</option>
                     </select>
-                    <p class="text-[10px] text-slate-500 leading-tight">
+                    <p class="text-xs text-slate-500 leading-tight">
                         Controls dashboard module cards only. All pages remain accessible.
                     </p>
                 </div>
@@ -611,12 +630,12 @@ function handleGlobalKey(e: KeyboardEvent) {
                         {{ user.first_name }} {{ user.last_name }}
                     </p>
                     <div class="flex items-center gap-1 flex-wrap">
-                        <span class="text-[10px] bg-indigo-700/60 text-indigo-300 px-1.5 py-0.5 rounded">
+                        <span class="text-xs bg-indigo-700/60 text-indigo-300 px-1.5 py-0.5 rounded">
                             {{ user.department_label }}
                         </span>
                         <span
                             v-if="user.is_super_admin"
-                            class="text-[10px] bg-amber-700/60 text-amber-300 px-1.5 py-0.5 rounded"
+                            class="text-xs bg-amber-700/60 text-amber-300 px-1.5 py-0.5 rounded"
                         >
                             super_admin
                         </span>
@@ -647,7 +666,7 @@ function handleGlobalKey(e: KeyboardEvent) {
                 @mouseenter="keepFlyoutOpen"
                 @mouseleave="scheduleFlyoutHide"
             >
-                <p class="px-3 pt-1 pb-1.5 text-[10px] font-semibold text-slate-400 uppercase tracking-wider border-b border-slate-700">
+                <p class="px-3 pt-1 pb-1.5 text-xs font-semibold text-slate-400 uppercase tracking-wider border-b border-slate-700">
                     {{ hoveredGroup.label }}
                 </p>
                 <div class="py-1">
@@ -726,7 +745,7 @@ function handleGlobalKey(e: KeyboardEvent) {
                             @click="switchSite(site.id)"
                         >
                             {{ site.name }}
-                            <span v-if="switchingSite === site.id" class="ml-auto text-[10px] text-slate-400">Switching...</span>
+                            <span v-if="switchingSite === site.id" class="ml-auto text-xs text-slate-400">Switching...</span>
                         </button>
                     </div>
                 </div>
@@ -739,7 +758,7 @@ function handleGlobalKey(e: KeyboardEvent) {
                 >
                     <SearchIcon class="w-4 h-4" aria-hidden="true" />
                     <span>Search participants...</span>
-                    <kbd class="ml-1 px-1.5 py-0.5 text-[10px] font-medium bg-white dark:bg-slate-600 border border-slate-200 dark:border-slate-500 rounded">
+                    <kbd class="ml-1 px-1.5 py-0.5 text-xs font-medium bg-white dark:bg-slate-600 border border-slate-200 dark:border-slate-500 rounded">
                         ⌘K
                     </kbd>
                 </button>
@@ -800,14 +819,14 @@ function handleGlobalKey(e: KeyboardEvent) {
                                     :disabled="imitateStarting === u.id"
                                     @click="startImpersonation(u.id)"
                                 >
-                                    <div class="w-7 h-7 rounded-full bg-slate-200 dark:bg-slate-600 text-slate-600 dark:text-slate-300 flex items-center justify-center text-[10px] font-semibold shrink-0">
+                                    <div class="w-7 h-7 rounded-full bg-slate-200 dark:bg-slate-600 text-slate-600 dark:text-slate-300 flex items-center justify-center text-xs font-semibold shrink-0">
                                         {{ u.first_name[0] }}{{ u.last_name[0] }}
                                     </div>
                                     <div class="flex-1 min-w-0">
                                         <p class="text-xs font-medium text-slate-800 dark:text-slate-100 truncate">{{ u.first_name }} {{ u.last_name }}</p>
-                                        <p class="text-[10px] text-slate-500 dark:text-slate-400 truncate">{{ u.department_label }} · {{ u.role }}</p>
+                                        <p class="text-xs text-slate-500 dark:text-slate-400 truncate">{{ u.department_label }} · {{ u.role }}</p>
                                     </div>
-                                    <span v-if="imitateStarting === u.id" class="text-[10px] text-blue-500">Starting...</span>
+                                    <span v-if="imitateStarting === u.id" class="text-xs text-blue-500">Starting...</span>
                                 </button>
                             </div>
                         </div>
@@ -824,7 +843,7 @@ function handleGlobalKey(e: KeyboardEvent) {
                             <BellIcon class="w-5 h-5" aria-hidden="true" />
                             <span
                                 v-if="alertCount > 0"
-                                class="absolute top-0.5 right-0.5 bg-red-500 text-white text-[9px] font-bold rounded-full w-4 h-4 flex items-center justify-center"
+                                class="absolute top-0.5 right-0.5 bg-red-500 text-white text-xs font-bold rounded-full w-4 h-4 flex items-center justify-center"
                                 aria-hidden="true"
                             >
                                 {{ alertCount > 9 ? '9+' : alertCount }}
@@ -906,7 +925,7 @@ function handleGlobalKey(e: KeyboardEvent) {
                             </div>
                             <div class="hidden sm:block text-right">
                                 <p class="text-xs font-medium text-slate-800 dark:text-slate-100 leading-none">{{ user?.first_name }} {{ user?.last_name }}</p>
-                                <p class="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">{{ user?.department_label }}</p>
+                                <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{{ user?.department_label }}</p>
                             </div>
                             <ChevronDownIcon class="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 hidden sm:block" :class="{ 'rotate-180': showUserMenu }" aria-hidden="true" />
                         </button>
@@ -917,7 +936,7 @@ function handleGlobalKey(e: KeyboardEvent) {
                         >
                             <div class="px-4 py-3 border-b border-slate-100 dark:border-slate-700">
                                 <p class="text-xs font-semibold text-slate-900 dark:text-slate-100 truncate">{{ user?.first_name }} {{ user?.last_name }}</p>
-                                <p class="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">{{ user?.department_label }}</p>
+                                <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{{ user?.department_label }}</p>
                             </div>
                             <button
                                 class="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors text-left"
@@ -941,7 +960,7 @@ function handleGlobalKey(e: KeyboardEvent) {
             </header>
 
             <!-- Page content -->
-            <main class="flex-1 overflow-y-auto">
+            <main class="flex-1 flex flex-col overflow-y-auto">
                 <slot />
             </main>
         </div>

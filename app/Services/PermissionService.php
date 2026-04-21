@@ -175,6 +175,7 @@ class PermissionService
                 'items' => [
                     ['label' => 'Appointments',     'module' => 'appointments',     'href' => '/schedule'],
                     ['label' => 'Day Center',       'module' => 'day_center',       'href' => '/scheduling/day-center'],
+                    ['label' => 'Schedule Setup',   'module' => 'day_center_manage','href' => '/scheduling/day-center/manage'],
                 ],
             ],
             [
@@ -223,6 +224,8 @@ class PermissionService
                 'icon'  => 'clipboard',
                 'items' => [
                     ['label' => 'Grievances',    'module' => 'grievances',    'href' => '/grievances'],
+                    // Phase 1 (MVP roadmap): §460.122 participant appeals of service denials
+                    ['label' => 'Appeals',       'module' => 'appeals',       'href' => '/appeals'],
                     // W4-6: QAPI project board (42 CFR §460.136–§460.140)
                     ['label' => 'QAPI Projects', 'module' => 'qapi_projects', 'href' => '/qapi/projects'],
                 ],

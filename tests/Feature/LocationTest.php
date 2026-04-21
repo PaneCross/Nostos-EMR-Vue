@@ -124,14 +124,19 @@ class LocationTest extends TestCase
         ]);
     }
 
-    public function test_non_transportation_user_cannot_create_location(): void
+    /**
+     * Any authenticated user may create a location (home care, primary care, etc.
+     * often need to add doctor offices, apartments, etc.). Only deactivation is
+     * restricted to the Transportation Team — see test_non_transportation_user_cannot_deactivate.
+     */
+    public function test_any_user_can_create_location(): void
     {
         $this->actingAs($this->clinicalUser)
             ->postJson('/locations', [
                 'location_type' => 'specialist',
                 'name'          => 'Test Clinic',
             ])
-            ->assertStatus(403);
+            ->assertStatus(201);
     }
 
     public function test_create_location_validates_required_fields(): void
@@ -171,13 +176,22 @@ class LocationTest extends TestCase
         ]);
     }
 
-    public function test_non_transportation_user_cannot_update_location(): void
+    /**
+     * Any authenticated user may update a location (see test_any_user_can_create_location).
+     * Only deactivation is transportation-team-only.
+     */
+    public function test_any_user_can_update_location(): void
     {
         $location = Location::factory()->create(['tenant_id' => $this->tenant->id]);
 
         $this->actingAs($this->clinicalUser)
-            ->putJson("/locations/{$location->id}", ['name' => 'Hack'])
-            ->assertStatus(403);
+            ->putJson("/locations/{$location->id}", ['name' => 'Updated By Clinical User'])
+            ->assertOk();
+
+        $this->assertDatabaseHas('emr_locations', [
+            'id'   => $location->id,
+            'name' => 'Updated By Clinical User',
+        ]);
     }
 
     public function test_cannot_update_location_from_different_tenant(): void

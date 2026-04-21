@@ -187,7 +187,7 @@ function fmtDate(dateStr: string): string {
                     {{ TYPE_LABELS[meeting.meeting_type] ?? meeting.meeting_type }}
                   </span>
                   <span
-                    :class="['inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-medium ring-1 ring-inset', STATUS_BADGE[meeting.status] ?? '']"
+                    :class="['inline-flex items-center rounded px-1.5 py-0.5 text-xs font-medium ring-1 ring-inset', STATUS_BADGE[meeting.status] ?? '']"
                   >
                     {{ meeting.status.replace('_', ' ').toUpperCase() }}
                   </span>

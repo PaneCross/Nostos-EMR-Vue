@@ -67,11 +67,13 @@ const activeRows = computed<Assessment[]>(() => {
 
 // ── Display helpers ────────────────────────────────────────────────────────────
 
-function fmtType(t: string): string {
+function fmtType(t: string | null | undefined): string {
+    if (!t) return '-'
     return t.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
 }
 
-function fmtStatus(s: string): string {
+function fmtStatus(s: string | null | undefined): string {
+    if (!s) return '-'
     return s.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
 }
 

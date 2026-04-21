@@ -24,6 +24,7 @@ use App\Http\Controllers\RemittanceController;
 use App\Http\Controllers\LabResultController;
 use App\Http\Controllers\SocialDeterminantController;
 use App\Http\Controllers\DayCenterController;
+use App\Http\Controllers\DayCenterScheduleController;
 use App\Http\Controllers\ClinicalOrderController;
 use App\Http\Controllers\ClinicalOverviewController;
 use App\Http\Controllers\ReportsController;
@@ -73,6 +74,7 @@ use App\Http\Controllers\IncidentController;
 use App\Http\Controllers\QaDashboardController;
 use App\Http\Controllers\QapiController;
 use App\Http\Controllers\ReferralController;
+use App\Http\Controllers\ReferralNoteController;
 use App\Http\Controllers\SdrController;
 use App\Http\Controllers\VitalController;
 use App\Http\Controllers\Dashboards\PrimaryCareDashboardController;
@@ -240,6 +242,8 @@ Route::middleware('auth')->group(function () {
             Route::get('/incidents',   [QaComplianceDashboardController::class, 'incidents'])->name('dashboards.qa-compliance.incidents');
             Route::get('/docs',        [QaComplianceDashboardController::class, 'docs'])->name('dashboards.qa-compliance.docs');
             Route::get('/care-plans',  [QaComplianceDashboardController::class, 'carePlans'])->name('dashboards.qa-compliance.care-plans');
+            // Phase 1 (MVP roadmap): §460.122 appeals widget
+            Route::get('/appeals',     [QaComplianceDashboardController::class, 'appeals'])->name('dashboards.qa-compliance.appeals');
         });
 
         Route::prefix('it-admin')->group(function () {
@@ -260,6 +264,7 @@ Route::middleware('auth')->group(function () {
             Route::get('/site-comparison',    [ExecutiveDashboardController::class, 'siteComparison'])->name('dashboards.executive.site-comparison');
             Route::get('/financial-overview', [ExecutiveDashboardController::class, 'financialOverview'])->name('dashboards.executive.financial-overview');
             Route::get('/sites-list',         [ExecutiveDashboardController::class, 'sitesList'])->name('dashboards.executive.sites-list');
+            Route::get('/dept-compliance',   [ExecutiveDashboardController::class, 'deptCompliance'])->name('dashboards.executive.dept-compliance');
         });
     });
 
@@ -501,6 +506,22 @@ Route::middleware('auth')->group(function () {
     Route::get('/sdrs/{sdr}',   [SdrController::class, 'show'])->name('sdrs.show');
     Route::patch('/sdrs/{sdr}', [SdrController::class, 'update'])->name('sdrs.update');
     Route::delete('/sdrs/{sdr}',[SdrController::class, 'destroy'])->name('sdrs.destroy');
+    // Phase 1 (MVP roadmap): §460.122 denial workflow
+    Route::post('/sdrs/{sdr}/deny', [SdrController::class, 'deny'])->name('sdrs.deny');
+
+    // ─── Phase 1 (MVP roadmap): Appeals workflow — 42 CFR §460.122 ───────────
+    Route::get ('/appeals',                        [\App\Http\Controllers\AppealController::class, 'index'])->name('appeals.index');
+    Route::post('/appeals',                        [\App\Http\Controllers\AppealController::class, 'store'])->name('appeals.store');
+    Route::get ('/appeals/{appeal}',               [\App\Http\Controllers\AppealController::class, 'show'])->name('appeals.show');
+    Route::post('/appeals/{appeal}/acknowledge',   [\App\Http\Controllers\AppealController::class, 'acknowledge'])->name('appeals.acknowledge');
+    Route::post('/appeals/{appeal}/begin-review',  [\App\Http\Controllers\AppealController::class, 'beginReview'])->name('appeals.begin-review');
+    Route::post('/appeals/{appeal}/decide',        [\App\Http\Controllers\AppealController::class, 'decide'])->name('appeals.decide');
+    Route::post('/appeals/{appeal}/request-external', [\App\Http\Controllers\AppealController::class, 'requestExternal'])->name('appeals.request-external');
+    Route::post('/appeals/{appeal}/withdraw',      [\App\Http\Controllers\AppealController::class, 'withdraw'])->name('appeals.withdraw');
+    Route::post('/appeals/{appeal}/close',         [\App\Http\Controllers\AppealController::class, 'close'])->name('appeals.close');
+    Route::get ('/appeals/{appeal}/acknowledgment.pdf', [\App\Http\Controllers\AppealController::class, 'downloadAckPdf'])->name('appeals.pdf.ack');
+    Route::get ('/appeals/{appeal}/decision.pdf',  [\App\Http\Controllers\AppealController::class, 'downloadDecisionPdf'])->name('appeals.pdf.decision');
+    Route::get ('/denial-notices/{notice}/download', [\App\Http\Controllers\AppealController::class, 'downloadNoticePdf'])->name('denial-notices.pdf');
 
     // ─── Phase 4: IDT Meetings ────────────────────────────────────────────────
     Route::get('/idt',                     [IdtMeetingController::class, 'index'])->name('idt.index');
@@ -526,6 +547,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/enrollment/referrals/{referral}',              [ReferralController::class, 'show'])->name('enrollment.referrals.show');
     Route::put('/enrollment/referrals/{referral}',              [ReferralController::class, 'update'])->name('enrollment.referrals.update');
     Route::post('/enrollment/referrals/{referral}/transition',  [ReferralController::class, 'transition'])->name('enrollment.referrals.transition');
+    Route::post('/enrollment/referrals/{referral}/notes',       [ReferralNoteController::class, 'store'])->name('enrollment.referrals.notes.store');
     // Redirect /enrollment → Kanban pipeline
     Route::get('/enrollment', fn () => redirect()->route('enrollment.referrals.index'))->name('enrollment.index');
 
@@ -602,6 +624,8 @@ Route::middleware('auth')->group(function () {
         Route::post('/day-center/check-in', [DayCenterController::class, 'checkIn'])->name('scheduling.day-center.check-in');
         Route::post('/day-center/absent',   [DayCenterController::class, 'markAbsent'])->name('scheduling.day-center.absent');
         Route::get('/day-center/summary',   [DayCenterController::class, 'summary'])->name('scheduling.day-center.summary');
+        Route::get("/day-center/manage",  [DayCenterScheduleController::class, "index"])->name("scheduling.day-center.manage");
+        Route::post("/day-center/manage/bulk", [DayCenterScheduleController::class, "bulkUpdate"])->name("scheduling.day-center.manage.bulk");
     });
 
     Route::prefix('idt')->group(function () {

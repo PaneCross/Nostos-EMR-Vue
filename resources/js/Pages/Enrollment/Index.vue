@@ -7,7 +7,7 @@
 
 import { ref, reactive } from 'vue'
 import { Head, router } from '@inertiajs/vue3'
-import { PlusIcon, XMarkIcon, UserIcon } from '@heroicons/vue/24/outline'
+import { PlusIcon, XMarkIcon, UserIcon, ChatBubbleLeftEllipsisIcon } from '@heroicons/vue/24/outline'
 import AppShell from '@/Layouts/AppShell.vue'
 import axios from 'axios'
 
@@ -16,22 +16,40 @@ import axios from 'axios'
 interface Referral {
     id: number
     referred_by_name: string
+    prospective_first_name: string | null
+    prospective_last_name: string | null
+    prospective_dob: string | null
     referral_source: string
     referral_date: string | null
     status: string
     priority: string | null
     notes: string | null
+    notes_count?: number  // from withCount('notes') on backend
     assigned_to: { id: number; first_name: string; last_name: string } | null
     participant: { id: number; mrn: string; first_name: string; last_name: string } | null
     created_by: { id: number; first_name: string; last_name: string } | null
 }
+
+interface SiteOption { id: number; name: string }
 
 const props = defineProps<{
     pipeline: Record<string, Referral[]>
     statuses: Record<string, string>
     sources: Record<string, string>
     pipelineOrder: string[]
+    sites: SiteOption[]
+    defaultSiteId: number | null
 }>()
+
+// Helper — potential enrollee's display name, with fallback.
+// Per NPA / 42 CFR §460.154, pre-enrollment individuals are "potential enrollees".
+// Internal DB columns use the shorter `prospective_*` prefix for brevity.
+function potentialEnrolleeName(r: Referral): string {
+    const full = `${r.prospective_first_name ?? ''} ${r.prospective_last_name ?? ''}`.trim()
+    if (full) return full
+    if (r.participant) return `${r.participant.first_name} ${r.participant.last_name}`
+    return 'Name pending'
+}
 
 // ── Column header color map ────────────────────────────────────────────────────
 
@@ -69,23 +87,35 @@ function fmtDate(val: string | null | undefined): string {
 
 const showModal = ref(false)
 const submitting = ref(false)
-const formErrors = ref<Record<string, string>>({})
+const formErrors = ref<Record<string, string | string[]>>({})
+const formGeneralError = ref('')
 
 const form = reactive({
+    site_id: '' as string | number,
+    prospective_first_name: '',
+    prospective_last_name: '',
+    prospective_dob: '',
     referred_by_name: '',
+    referred_by_org: '',
     referral_source: '',
-    referral_date: '',
+    referral_date: new Date().toISOString().slice(0, 10),  // default to today
     priority: 'routine',
     notes: '',
 })
 
 function openModal() {
+    form.site_id = props.defaultSiteId ?? (props.sites[0]?.id ?? '')
+    form.prospective_first_name = ''
+    form.prospective_last_name = ''
+    form.prospective_dob = ''
     form.referred_by_name = ''
+    form.referred_by_org = ''
     form.referral_source = ''
-    form.referral_date = ''
+    form.referral_date = new Date().toISOString().slice(0, 10)
     form.priority = 'routine'
     form.notes = ''
     formErrors.value = {}
+    formGeneralError.value = ''
     showModal.value = true
 }
 
@@ -96,6 +126,7 @@ function closeModal() {
 function submitReferral() {
     submitting.value = true
     formErrors.value = {}
+    formGeneralError.value = ''
     axios
         .post('/enrollment/referrals', { ...form })
         .then(() => {
@@ -103,8 +134,14 @@ function submitReferral() {
             router.reload()
         })
         .catch((err) => {
-            if (err.response?.status === 422) {
+            const status = err.response?.status
+            if (status === 422) {
                 formErrors.value = err.response.data.errors ?? {}
+                formGeneralError.value = 'Please fix the highlighted fields.'
+            } else {
+                formGeneralError.value = status
+                    ? `Save failed (HTTP ${status}): ${err.response?.data?.message ?? err.message}`
+                    : `Save failed: ${err.message}`
             }
         })
         .finally(() => {
@@ -181,14 +218,14 @@ function submitReferral() {
                                 :key="referral.id"
                                 class="p-3 bg-white dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-blue-900/20 cursor-pointer transition-colors"
                                 tabindex="0"
-                                :aria-label="`Open referral for ${referral.referred_by_name}`"
+                                :aria-label="`Open referral for ${potentialEnrolleeName(referral)}`"
                                 @click="router.visit('/enrollment/referrals/' + referral.id)"
                                 @keydown.enter="router.visit('/enrollment/referrals/' + referral.id)"
                             >
-                                <!-- Name + priority badge -->
+                                <!-- Potential enrollee name + priority badge -->
                                 <div class="flex items-start justify-between gap-1 mb-1">
-                                    <span class="text-sm font-semibold text-gray-800 dark:text-slate-100 leading-tight">
-                                        {{ referral.referred_by_name }}
+                                    <span class="text-sm font-semibold text-gray-800 dark:text-slate-100 leading-tight truncate">
+                                        {{ potentialEnrolleeName(referral) }}
                                     </span>
                                     <span
                                         v-if="referral.priority === 'urgent'"
@@ -204,8 +241,11 @@ function submitReferral() {
                                     </span>
                                 </div>
 
-                                <!-- Source -->
+                                <!-- Referrer + source -->
                                 <p class="text-xs text-gray-500 dark:text-slate-400 mb-1 truncate">
+                                    via {{ referral.referred_by_name }}
+                                </p>
+                                <p class="text-xs text-gray-400 dark:text-slate-500 mb-1 truncate">
                                     {{ sources[referral.referral_source] ?? referral.referral_source }}
                                 </p>
 
@@ -214,14 +254,25 @@ function submitReferral() {
                                     {{ fmtDate(referral.referral_date) }}
                                 </p>
 
-                                <!-- Assigned to -->
-                                <div
-                                    v-if="referral.assigned_to"
-                                    class="flex items-center gap-1 mt-1.5"
-                                >
-                                    <UserIcon class="w-3.5 h-3.5 text-gray-400 dark:text-slate-500 shrink-0" aria-hidden="true" />
-                                    <span class="text-xs text-gray-500 dark:text-slate-400 truncate">
-                                        {{ referral.assigned_to.first_name }} {{ referral.assigned_to.last_name }}
+                                <!-- Footer row: assigned-to + note-count chip -->
+                                <div class="flex items-center justify-between gap-2 mt-1.5">
+                                    <div
+                                        v-if="referral.assigned_to"
+                                        class="flex items-center gap-1 min-w-0"
+                                    >
+                                        <UserIcon class="w-3.5 h-3.5 text-gray-400 dark:text-slate-500 shrink-0" aria-hidden="true" />
+                                        <span class="text-xs text-gray-500 dark:text-slate-400 truncate">
+                                            {{ referral.assigned_to.first_name }} {{ referral.assigned_to.last_name }}
+                                        </span>
+                                    </div>
+                                    <span v-else></span>
+                                    <span
+                                        v-if="(referral.notes_count ?? 0) > 0"
+                                        class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 shrink-0"
+                                        :title="`${referral.notes_count} note${referral.notes_count === 1 ? '' : 's'}`"
+                                    >
+                                        <ChatBubbleLeftEllipsisIcon class="w-3 h-3" />
+                                        {{ referral.notes_count }}
                                     </span>
                                 </div>
                             </div>
@@ -267,114 +318,163 @@ function submitReferral() {
                     </div>
 
                     <!-- Form -->
-                    <form class="px-5 py-4 space-y-4" @submit.prevent="submitReferral">
-                        <!-- Referred by name -->
+                    <form class="px-5 py-4 space-y-4 max-h-[75vh] overflow-y-auto" @submit.prevent="submitReferral">
+
+                        <!-- General error banner -->
+                        <div
+                            v-if="formGeneralError"
+                            class="rounded-lg border border-red-300 dark:border-red-800 bg-red-50 dark:bg-red-950/60 px-3 py-2 text-sm text-red-700 dark:text-red-300"
+                        >
+                            {{ formGeneralError }}
+                        </div>
+
+                        <!-- ── Potential Enrollee (NPA / 42 CFR §460.154 term) ── -->
                         <div>
-                            <label
-                                for="referred_by_name"
-                                class="block text-xs font-medium text-gray-700 dark:text-slate-300 mb-1"
+                            <p class="text-sm font-semibold text-gray-900 dark:text-slate-100 mb-2">Potential Enrollee</p>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label for="prospective_first_name" class="block text-xs font-medium text-gray-700 dark:text-slate-300 mb-1">First Name <span class="text-red-500">*</span></label>
+                                    <input
+                                        id="prospective_first_name"
+                                        v-model="form.prospective_first_name"
+                                        type="text"
+                                        class="w-full text-sm border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-700 dark:text-slate-100"
+                                    />
+                                    <p v-if="formErrors.prospective_first_name" class="mt-1 text-xs text-red-600 dark:text-red-400">
+                                        {{ Array.isArray(formErrors.prospective_first_name) ? formErrors.prospective_first_name[0] : formErrors.prospective_first_name }}
+                                    </p>
+                                </div>
+                                <div>
+                                    <label for="prospective_last_name" class="block text-xs font-medium text-gray-700 dark:text-slate-300 mb-1">Last Name <span class="text-red-500">*</span></label>
+                                    <input
+                                        id="prospective_last_name"
+                                        v-model="form.prospective_last_name"
+                                        type="text"
+                                        class="w-full text-sm border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-700 dark:text-slate-100"
+                                    />
+                                    <p v-if="formErrors.prospective_last_name" class="mt-1 text-xs text-red-600 dark:text-red-400">
+                                        {{ Array.isArray(formErrors.prospective_last_name) ? formErrors.prospective_last_name[0] : formErrors.prospective_last_name }}
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="mt-2">
+                                <label for="prospective_dob" class="block text-xs font-medium text-gray-700 dark:text-slate-300 mb-1">
+                                    Date of Birth <span class="text-gray-400 dark:text-slate-500 font-normal">(if known)</span>
+                                </label>
+                                <input
+                                    id="prospective_dob"
+                                    v-model="form.prospective_dob"
+                                    type="date"
+                                    class="w-full text-sm border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-700 dark:text-slate-100"
+                                />
+                                <p v-if="formErrors.prospective_dob" class="mt-1 text-xs text-red-600 dark:text-red-400">
+                                    {{ Array.isArray(formErrors.prospective_dob) ? formErrors.prospective_dob[0] : formErrors.prospective_dob }}
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Site -->
+                        <div>
+                            <label for="site_id" class="block text-xs font-medium text-gray-700 dark:text-slate-300 mb-1">Site <span class="text-red-500">*</span></label>
+                            <select
+                                id="site_id"
+                                v-model="form.site_id"
+                                class="w-full text-sm border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-slate-100"
                             >
-                                Referred by
-                            </label>
-                            <input
-                                id="referred_by_name"
-                                v-model="form.referred_by_name"
-                                type="text"
-                                class="w-full text-sm border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-700 dark:text-slate-100 dark:placeholder-slate-400"
-                                placeholder="Referring party name"
-                            />
-                            <p
-                                v-if="formErrors.referred_by_name"
-                                class="mt-1 text-xs text-red-600 dark:text-red-400"
-                            >
-                                {{ formErrors.referred_by_name[0] ?? formErrors.referred_by_name }}
+                                <option value="">Select a site</option>
+                                <option v-for="s in props.sites" :key="s.id" :value="s.id">{{ s.name }}</option>
+                            </select>
+                            <p v-if="formErrors.site_id" class="mt-1 text-xs text-red-600 dark:text-red-400">
+                                {{ Array.isArray(formErrors.site_id) ? formErrors.site_id[0] : formErrors.site_id }}
                             </p>
+                        </div>
+
+                        <!-- ── Referrer info ── -->
+                        <div>
+                            <p class="text-sm font-semibold text-gray-900 dark:text-slate-100 mb-2">Referred By</p>
+                            <div class="space-y-2">
+                                <div>
+                                    <label for="referred_by_name" class="block text-xs font-medium text-gray-700 dark:text-slate-300 mb-1">Referrer Name <span class="text-red-500">*</span></label>
+                                    <input
+                                        id="referred_by_name"
+                                        v-model="form.referred_by_name"
+                                        type="text"
+                                        placeholder="Referring party (hospital SW, family member, self, etc.)"
+                                        class="w-full text-sm border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-700 dark:text-slate-100 dark:placeholder-slate-400"
+                                    />
+                                    <p v-if="formErrors.referred_by_name" class="mt-1 text-xs text-red-600 dark:text-red-400">
+                                        {{ Array.isArray(formErrors.referred_by_name) ? formErrors.referred_by_name[0] : formErrors.referred_by_name }}
+                                    </p>
+                                </div>
+                                <div>
+                                    <label for="referred_by_org" class="block text-xs font-medium text-gray-700 dark:text-slate-300 mb-1">
+                                        Organization <span class="text-gray-400 dark:text-slate-500 font-normal">(optional)</span>
+                                    </label>
+                                    <input
+                                        id="referred_by_org"
+                                        v-model="form.referred_by_org"
+                                        type="text"
+                                        placeholder="Hospital, clinic, agency, etc."
+                                        class="w-full text-sm border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-700 dark:text-slate-100 dark:placeholder-slate-400"
+                                    />
+                                </div>
+                            </div>
                         </div>
 
                         <!-- Referral source -->
                         <div>
-                            <label
-                                for="referral_source"
-                                class="block text-xs font-medium text-gray-700 dark:text-slate-300 mb-1"
-                            >
-                                Source
-                            </label>
+                            <label for="referral_source" class="block text-xs font-medium text-gray-700 dark:text-slate-300 mb-1">Source <span class="text-red-500">*</span></label>
                             <select
                                 id="referral_source"
                                 v-model="form.referral_source"
                                 class="w-full text-sm border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-slate-100"
                             >
                                 <option value="">Select a source</option>
-                                <option
-                                    v-for="(label, key) in sources"
-                                    :key="key"
-                                    :value="key"
+                                <option v-for="(label, key) in sources" :key="key" :value="key">{{ label }}</option>
+                            </select>
+                            <p v-if="formErrors.referral_source" class="mt-1 text-xs text-red-600 dark:text-red-400">
+                                {{ Array.isArray(formErrors.referral_source) ? formErrors.referral_source[0] : formErrors.referral_source }}
+                            </p>
+                        </div>
+
+                        <!-- Date + priority row -->
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label for="referral_date" class="block text-xs font-medium text-gray-700 dark:text-slate-300 mb-1">Referral Date <span class="text-red-500">*</span></label>
+                                <input
+                                    id="referral_date"
+                                    v-model="form.referral_date"
+                                    type="date"
+                                    class="w-full text-sm border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-700 dark:text-slate-100"
+                                />
+                                <p v-if="formErrors.referral_date" class="mt-1 text-xs text-red-600 dark:text-red-400">
+                                    {{ Array.isArray(formErrors.referral_date) ? formErrors.referral_date[0] : formErrors.referral_date }}
+                                </p>
+                            </div>
+                            <div>
+                                <label for="priority" class="block text-xs font-medium text-gray-700 dark:text-slate-300 mb-1">Priority</label>
+                                <select
+                                    id="priority"
+                                    v-model="form.priority"
+                                    class="w-full text-sm border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-slate-100"
                                 >
-                                    {{ label }}
-                                </option>
-                            </select>
-                            <p
-                                v-if="formErrors.referral_source"
-                                class="mt-1 text-xs text-red-600 dark:text-red-400"
-                            >
-                                {{ formErrors.referral_source[0] ?? formErrors.referral_source }}
-                            </p>
+                                    <option value="routine">Routine</option>
+                                    <option value="urgent">Urgent</option>
+                                </select>
+                            </div>
                         </div>
 
-                        <!-- Referral date -->
+                        <!-- Initial notes -->
                         <div>
-                            <label
-                                for="referral_date"
-                                class="block text-xs font-medium text-gray-700 dark:text-slate-300 mb-1"
-                            >
-                                Referral Date
-                            </label>
-                            <input
-                                id="referral_date"
-                                v-model="form.referral_date"
-                                type="date"
-                                class="w-full text-sm border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-700 dark:text-slate-100"
-                            />
-                            <p
-                                v-if="formErrors.referral_date"
-                                class="mt-1 text-xs text-red-600 dark:text-red-400"
-                            >
-                                {{ formErrors.referral_date[0] ?? formErrors.referral_date }}
-                            </p>
-                        </div>
-
-                        <!-- Priority -->
-                        <div>
-                            <label
-                                for="priority"
-                                class="block text-xs font-medium text-gray-700 dark:text-slate-300 mb-1"
-                            >
-                                Priority
-                            </label>
-                            <select
-                                id="priority"
-                                v-model="form.priority"
-                                class="w-full text-sm border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-slate-100"
-                            >
-                                <option value="routine">Routine</option>
-                                <option value="urgent">Urgent</option>
-                            </select>
-                        </div>
-
-                        <!-- Notes -->
-                        <div>
-                            <label
-                                for="notes"
-                                class="block text-xs font-medium text-gray-700 dark:text-slate-300 mb-1"
-                            >
-                                Notes
+                            <label for="notes" class="block text-xs font-medium text-gray-700 dark:text-slate-300 mb-1">
+                                Initial Notes <span class="text-gray-400 dark:text-slate-500 font-normal">(optional)</span>
                             </label>
                             <textarea
                                 id="notes"
                                 v-model="form.notes"
                                 rows="3"
+                                placeholder="Context from the referrer (e.g. discharge summary, reason for referral)"
                                 class="w-full text-sm border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-700 dark:text-slate-100 dark:placeholder-slate-400 resize-none"
-                                placeholder="Optional notes"
                             />
                         </div>
 

@@ -294,24 +294,24 @@ function fmtDate(val: string | null): string {
             <h4 class="text-sm font-semibold text-slate-800 dark:text-slate-200">{{ domainLabel }}</h4>
             <div class="flex items-center gap-1.5">
               <template v-if="goals.find(g => g.domain === domainId) as CarePlanGoal | undefined">
-                <span :class="['inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-medium ring-1 ring-inset', GOAL_STATUS_BADGE[goals.find(g => g.domain === domainId)!.status] ?? '']">
+                <span :class="['inline-flex items-center rounded px-1.5 py-0.5 text-xs font-medium ring-1 ring-inset', GOAL_STATUS_BADGE[goals.find(g => g.domain === domainId)!.status] ?? '']">
                   {{ goals.find(g => g.domain === domainId)!.status?.toUpperCase() }}
                 </span>
                 <button
                   v-if="isEditable && editDomain !== domainId"
-                  class="text-[11px] text-blue-600 dark:text-blue-400 hover:underline"
+                  class="text-xs text-blue-600 dark:text-blue-400 hover:underline"
                   @click="openEdit(goals.find(g => g.domain === domainId)!)"
                 >
                   Edit
                 </button>
-                <span v-else-if="plan.status === 'active' && editDomain !== domainId" class="text-[11px] text-gray-400 dark:text-slate-600">
+                <span v-else-if="plan.status === 'active' && editDomain !== domainId" class="text-xs text-gray-400 dark:text-slate-600">
                   Approved - read only
                 </span>
               </template>
               <template v-else>
                 <button
                   v-if="isEditable && editDomain !== domainId"
-                  class="text-[11px] text-blue-600 dark:text-blue-400 hover:underline"
+                  class="text-xs text-blue-600 dark:text-blue-400 hover:underline"
                   @click="openNewGoal(domainId)"
                 >
                   + Add Goal
@@ -323,7 +323,7 @@ function fmtDate(val: string | null): string {
           <!-- Inline edit form -->
           <div v-if="editDomain === domainId" class="space-y-2 pt-1">
             <div>
-              <label class="block text-[10px] font-medium text-slate-600 dark:text-slate-400 mb-0.5">Goal</label>
+              <label class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-0.5">Goal</label>
               <textarea
                 v-model="editForm.goal_description"
                 rows="2"
@@ -331,7 +331,7 @@ function fmtDate(val: string | null): string {
               />
             </div>
             <div>
-              <label class="block text-[10px] font-medium text-slate-600 dark:text-slate-400 mb-0.5">Outcomes</label>
+              <label class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-0.5">Outcomes</label>
               <textarea
                 v-model="editForm.measurable_outcomes"
                 rows="2"
@@ -340,7 +340,7 @@ function fmtDate(val: string | null): string {
             </div>
             <div class="grid grid-cols-2 gap-2">
               <div>
-                <label class="block text-[10px] font-medium text-slate-600 dark:text-slate-400 mb-0.5">Status</label>
+                <label class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-0.5">Status</label>
                 <select name="status"
                   v-model="editForm.status"
                   class="w-full text-xs border border-slate-300 dark:border-slate-600 rounded px-2 py-1 bg-white dark:bg-slate-700 dark:text-slate-100"
@@ -349,7 +349,7 @@ function fmtDate(val: string | null): string {
                 </select>
               </div>
               <div>
-                <label class="block text-[10px] font-medium text-slate-600 dark:text-slate-400 mb-0.5">Target Date</label>
+                <label class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-0.5">Target Date</label>
                 <input
                   v-model="editForm.target_date"
                   type="date"
@@ -360,13 +360,13 @@ function fmtDate(val: string | null): string {
             <div class="flex gap-2 pt-1">
               <button
                 :disabled="saving"
-                class="px-3 py-1 text-[11px] font-medium bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+                class="px-3 py-1 text-xs font-medium bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
                 @click="saveGoal"
               >
                 {{ saving ? 'Saving...' : 'Save' }}
               </button>
               <button
-                class="px-3 py-1 text-[11px] text-slate-600 dark:text-slate-400 border border-slate-300 dark:border-slate-600 rounded hover:bg-slate-50 dark:hover:bg-slate-700"
+                class="px-3 py-1 text-xs text-slate-600 dark:text-slate-400 border border-slate-300 dark:border-slate-600 rounded hover:bg-slate-50 dark:hover:bg-slate-700"
                 @click="editDomain = null; saveError = null"
               >
                 Cancel
@@ -381,12 +381,12 @@ function fmtDate(val: string | null): string {
                 {{ goals.find(g => g.domain === domainId)!.goal_description }}
               </p>
               <div v-if="goals.find(g => g.domain === domainId)!.measurable_outcomes">
-                <p class="text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Outcomes</p>
-                <p class="text-[11px] text-slate-600 dark:text-slate-400">
+                <p class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Outcomes</p>
+                <p class="text-xs text-slate-600 dark:text-slate-400">
                   {{ goals.find(g => g.domain === domainId)!.measurable_outcomes }}
                 </p>
               </div>
-              <p v-if="goals.find(g => g.domain === domainId)!.target_date" class="text-[10px] text-slate-400 dark:text-slate-500">
+              <p v-if="goals.find(g => g.domain === domainId)!.target_date" class="text-xs text-slate-400 dark:text-slate-500">
                 Target: {{ goals.find(g => g.domain === domainId)!.target_date?.split('T')[0] }}
               </p>
             </div>
@@ -394,7 +394,7 @@ function fmtDate(val: string | null): string {
 
           <!-- No goal placeholder -->
           <template v-else>
-            <p class="text-[11px] text-slate-400 dark:text-slate-500 italic">
+            <p class="text-xs text-slate-400 dark:text-slate-500 italic">
               {{ isEditable
                 ? 'No goal recorded. Use Add Goal to create one.'
                 : 'No goal recorded for this domain.' }}

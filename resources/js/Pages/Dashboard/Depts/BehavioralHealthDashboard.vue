@@ -46,6 +46,7 @@ const scheduleItems = computed<ActionItem[]>(() =>
         badgeColor: a.status === 'confirmed'
             ? 'bg-green-100 dark:bg-green-900/60 text-green-700 dark:text-green-300'
             : 'bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300',
+        href: a.href ?? (a.participant?.id ? `/participants/${a.participant.id}` : '/schedule'),
     }))
 )
 
@@ -55,12 +56,14 @@ const assessmentItems = computed<ActionItem[]>(() => [
         sublabel: a.next_due_date ? `Due ${a.next_due_date}` : undefined,
         badge: a.days_overdue != null ? `${a.days_overdue}d overdue` : 'Overdue',
         badgeColor: 'bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300' as const,
+        href: a.href ?? (a.participant?.id ? `/participants/${a.participant.id}` : '/clinical/assessments'),
     })),
     ...dueSoonAssessments.value.map((a: any) => ({
         label: `${a.participant?.name ?? '-'} - ${a.type_label ?? '-'}`,
         sublabel: undefined,
         badge: a.next_due_date ? `Due ${a.next_due_date}` : 'Due soon',
         badgeColor: 'bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300' as const,
+        href: a.href ?? (a.participant?.id ? `/participants/${a.participant.id}` : '/clinical/assessments'),
     })),
 ])
 
@@ -72,6 +75,7 @@ const sdrItems = computed<ActionItem[]>(() =>
         badgeColor: s.is_overdue
             ? 'bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300'
             : 'bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300',
+        href: s.href ?? (s.participant?.id ? `/participants/${s.participant.id}` : '/sdrs'),
     }))
 )
 
@@ -81,12 +85,13 @@ const goalItems = computed<ActionItem[]>(() =>
         sublabel: g.goal_description ?? undefined,
         badge: g.target_date ? `Due ${g.target_date}` : undefined,
         badgeColor: 'bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300',
+        href: g.href ?? (g.participant?.id ? `/participants/${g.participant.id}` : '/clinical/care-plans'),
     }))
 )
 </script>
 
 <template>
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 grid-flow-dense gap-6">
         <ActionWidget
             title="Today's Sessions"
             description="Behavioral health and counseling sessions scheduled today."

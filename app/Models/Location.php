@@ -63,17 +63,23 @@ class Location extends Model
 
     protected $fillable = [
         'tenant_id',
+        'site_id',
         'location_type',
         'name',
         'label',
         'street',
-        'unit',
+        'unit',       // legacy, kept for back-compat (apt/suite/etc. preferred)
+        'apartment',
+        'suite',
+        'building',
+        'floor',
         'city',
         'state',
         'zip',
         'phone',
         'contact_name',
         'notes',
+        'access_notes',
         'is_active',
     ];
 
@@ -86,6 +92,12 @@ class Location extends Model
     public function tenant(): BelongsTo
     {
         return $this->belongsTo(Tenant::class);
+    }
+
+    /** Parent PACE site (nullable — external locations have no site). */
+    public function site(): BelongsTo
+    {
+        return $this->belongsTo(Site::class, 'site_id');
     }
 
     /** Appointments scheduled at this location. */
@@ -125,8 +137,12 @@ class Location extends Model
     }
 
     /**
-     * Formatted full mailing address.
-     * Returns the label/name as fallback when street is not set (e.g. virtual locations).
+     * Formatted full mailing address with apartment/suite/building/floor detail.
+     * Returns the label/name as fallback when street is not set (virtual locations).
+     *
+     * Order on the street line:
+     *   <street>, Apt <apartment>, Ste <suite>, Bldg <building>, Fl <floor>, <unit>
+     * (Each subsegment is emitted only if populated.)
      */
     public function fullAddress(): string
     {
@@ -134,11 +150,31 @@ class Location extends Model
             return $this->label ?? $this->name;
         }
 
+        $streetParts = [$this->street];
+        if ($this->apartment) $streetParts[] = 'Apt '  . $this->apartment;
+        if ($this->suite)     $streetParts[] = 'Ste '  . $this->suite;
+        if ($this->building)  $streetParts[] = 'Bldg ' . $this->building;
+        if ($this->floor)     $streetParts[] = 'Fl '   . $this->floor;
+        if ($this->unit)      $streetParts[] = $this->unit;  // legacy free-form
+
         $lines = array_filter([
-            trim($this->street . ($this->unit ? ', ' . $this->unit : '')),
-            trim($this->city . ', ' . $this->state . ' ' . $this->zip),
+            implode(', ', $streetParts),
+            trim(($this->city ?? '') . ', ' . ($this->state ?? '') . ' ' . ($this->zip ?? '')),
         ]);
 
         return implode("\n", $lines);
+    }
+
+    /**
+     * Generate a normalized key used for duplicate detection.
+     * Case-insensitive concatenation of street + city on a single tenant.
+     * Returns null for virtual (no-address) locations to skip dedup.
+     */
+    public function normalizedAddressKey(): ?string
+    {
+        if (! $this->street || ! $this->city) {
+            return null;
+        }
+        return mb_strtolower(trim($this->street) . '|' . trim($this->city));
     }
 }

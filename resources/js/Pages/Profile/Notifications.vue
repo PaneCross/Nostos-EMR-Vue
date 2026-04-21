@@ -124,7 +124,7 @@ async function handleSave() {
                             ]"
                         >
                             <p class="text-xs font-medium">{{ VALUE_LABELS[val] }}</p>
-                            <p class="text-[10px] mt-0.5 opacity-70 leading-snug">
+                            <p class="text-xs mt-0.5 opacity-70 leading-snug">
                                 {{ VALUE_DESCRIPTIONS[val] }}
                             </p>
                         </button>

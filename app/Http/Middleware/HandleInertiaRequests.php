@@ -90,7 +90,7 @@ class HandleInertiaRequests extends Middleware
             ] : null,
             // viewing_as_dept: dashboard context when NOT impersonating a specific user
             'viewing_as_dept' => ($realUser?->isSuperAdmin() && ! $impersonatedUser)
-                ? $impersonation->getViewAsDepartment()
+                ? ($impersonation->hasViewAs() ? $impersonation->getViewAsDepartment() : null)
                 : null,
         ];
 

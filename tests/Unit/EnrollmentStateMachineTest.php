@@ -222,7 +222,7 @@ class EnrollmentStateMachineTest extends TestCase
 
         $this->service->disenroll(
             participant:             $participant,
-            reason:                  'deceased',
+            reason:                  'death',
             effectiveDate:           '2025-08-01',
             notes:                   'Participant passed away.',
             cmsNotificationRequired: true,
@@ -232,7 +232,8 @@ class EnrollmentStateMachineTest extends TestCase
         $fresh = $participant->fresh();
         $this->assertEquals('disenrolled', $fresh->enrollment_status);
         $this->assertEquals('2025-08-01', $fresh->disenrollment_date->format('Y-m-d'));
-        $this->assertEquals('deceased', $fresh->disenrollment_reason);
+        $this->assertEquals('death', $fresh->disenrollment_reason);
+        $this->assertEquals('death', $fresh->disenrollment_type);
         $this->assertFalse((bool) $fresh->is_active);
     }
 }

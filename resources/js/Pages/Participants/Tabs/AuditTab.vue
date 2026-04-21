@@ -20,12 +20,14 @@ const search = ref('')
 const filterAction = ref('')
 
 const ACTION_COLORS: Record<string, string> = {
-  'participant.profile.viewed': 'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300',
-  'participant.updated':        'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300',
-  'participant.created':        'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300',
-  'participant.deleted':        'bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300',
-  'note.created':               'bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300',
-  'break_glass.activated':      'bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300',
+  'participant.profile.viewed':        'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300',
+  'participant.updated':               'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300',
+  'participant.created':               'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300',
+  'participant.deleted':               'bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300',
+  'participant.cross_site_attendance': 'bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300',
+  'appointment.cross_site_scheduled':  'bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300',
+  'note.created':                      'bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300',
+  'break_glass.activated':             'bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300',
 }
 
 // Derive unique action category prefixes from the log for the filter dropdown

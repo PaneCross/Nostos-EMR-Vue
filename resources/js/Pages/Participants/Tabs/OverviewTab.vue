@@ -7,7 +7,9 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { computed, onMounted, onUnmounted, ref } from 'vue'
-import { PrinterIcon, ExclamationTriangleIcon, ShieldExclamationIcon } from '@heroicons/vue/24/outline'
+import { PrinterIcon, ExclamationTriangleIcon, ShieldExclamationIcon, PencilSquareIcon, CalendarDaysIcon } from '@heroicons/vue/24/outline'
+import { router } from '@inertiajs/vue3'
+import axios from 'axios'
 
 interface Participant {
   id: number; mrn: string; first_name: string; last_name: string
@@ -24,6 +26,7 @@ interface Participant {
   race: string | null; ethnicity: string | null; marital_status: string | null
   veteran_status: string | null; education_level: string | null
   religion: string | null; photo_path: string | null
+  day_center_days: string[] | null
   site: { id: number; name: string }
   tenant: { id: number; name: string }; created_at: string
 }
@@ -203,6 +206,50 @@ function age(dob: string): number {
   return a
 }
 
+// Format day_center_days array to readable label (e.g. ["mon","wed","fri"] → "Mon, Wed, Fri")
+function formatDayCenterDays(days: string[] | null | undefined): string {
+  if (!Array.isArray(days) || days.length === 0) return 'Not scheduled'
+  const order = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
+  const labels: Record<string, string> = { mon: 'Mon', tue: 'Tue', wed: 'Wed', thu: 'Thu', fri: 'Fri', sat: 'Sat', sun: 'Sun' }
+  return order.filter(d => days.includes(d)).map(d => labels[d]).join(', ')
+}
+
+// ── Inline Day Center schedule editor (focused mini-modal) ────────────────────
+const showScheduleEditor = ref(false)
+const scheduleDraft = ref<string[]>([])
+const scheduleSaving = ref(false)
+const scheduleError = ref('')
+const DAY_CODES = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
+const DAY_LABELS: Record<string, string> = { mon: 'Mon', tue: 'Tue', wed: 'Wed', thu: 'Thu', fri: 'Fri', sat: 'Sat', sun: 'Sun' }
+
+function openScheduleEditor() {
+  scheduleDraft.value = Array.isArray(props.participant.day_center_days) ? [...props.participant.day_center_days] : []
+  scheduleError.value = ''
+  showScheduleEditor.value = true
+}
+
+function toggleDay(code: string) {
+  const idx = scheduleDraft.value.indexOf(code)
+  if (idx >= 0) scheduleDraft.value.splice(idx, 1)
+  else scheduleDraft.value.push(code)
+}
+
+async function saveSchedule() {
+  scheduleSaving.value = true
+  scheduleError.value = ''
+  try {
+    await axios.patch(`/participants/${props.participant.id}`, {
+      day_center_days: scheduleDraft.value.length > 0 ? scheduleDraft.value : null,
+    })
+    showScheduleEditor.value = false
+    router.reload({ only: ['participant'] })
+  } catch (err: any) {
+    scheduleError.value = err.response?.data?.message ?? 'Failed to save schedule.'
+  } finally {
+    scheduleSaving.value = false
+  }
+}
+
 const printDate = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 
 // ── Computed ──────────────────────────────────────────────────────────────────
@@ -350,6 +397,10 @@ const DIRECTIVE_TYPE_LABELS: Record<string, string> = {
                 <span v-if="participant.interpreter_needed" class="text-amber-600 dark:text-amber-400 ml-1 font-medium">(interpreter needed)</span>
               </span>
               <span v-if="participant.nursing_facility_eligible" class="text-amber-600 dark:text-amber-300 font-semibold">NF Eligible</span>
+              <span v-if="Array.isArray(participant.day_center_days) && participant.day_center_days.length > 0">
+                Day Center:
+                <span class="text-slate-900 dark:text-white font-medium">{{ formatDayCenterDays(participant.day_center_days) }}</span>
+              </span>
             </div>
           </div>
         </div>
@@ -460,6 +511,21 @@ const DIRECTIVE_TYPE_LABELS: Record<string, string> = {
             <div v-if="participant.religion" class="flex gap-2">
               <dt class="text-gray-500 dark:text-slate-400 w-24 shrink-0 text-xs">Religion</dt>
               <dd class="text-gray-800 dark:text-slate-200 text-xs">{{ participant.religion }}</dd>
+            </div>
+            <div class="flex gap-2 items-center">
+              <dt class="text-gray-500 dark:text-slate-400 w-24 shrink-0 text-xs">Day Center</dt>
+              <dd class="text-gray-800 dark:text-slate-200 text-xs flex-1">
+                {{ formatDayCenterDays(participant.day_center_days) }}
+              </dd>
+              <button
+                type="button"
+                class="shrink-0 inline-flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 hover:underline print:hidden"
+                :title="'Edit day-center schedule'"
+                @click="openScheduleEditor"
+              >
+                <PencilSquareIcon class="w-3.5 h-3.5" />
+                Edit
+              </button>
             </div>
             <p v-if="!participant.race && !participant.ethnicity && !participant.marital_status && !participant.veteran_status && !participant.education_level && !participant.religion" class="text-xs text-gray-400 dark:text-slate-500 italic">
               No demographic details on file
@@ -622,6 +688,62 @@ const DIRECTIVE_TYPE_LABELS: Record<string, string> = {
         This document is intended solely for the care of the identified participant. Unauthorized disclosure is prohibited under HIPAA 45 CFR Part 164.
         {{ participant.tenant.name }} | Generated {{ printDate }}
       </p>
+    </div>
+
+    <!-- Day Center Schedule mini-modal (inline editor) -->
+    <div
+      v-if="showScheduleEditor"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 print:hidden"
+      @click.self="showScheduleEditor = false"
+    >
+      <div class="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-md" role="dialog" aria-modal="true">
+        <div class="px-6 pt-5 pb-4 border-b border-gray-100 dark:border-slate-700 flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <CalendarDaysIcon class="w-5 h-5 text-blue-600 dark:text-blue-400" />
+            <h2 class="text-sm font-semibold text-gray-900 dark:text-slate-100">Day Center Schedule</h2>
+          </div>
+          <button
+            class="text-gray-400 hover:text-gray-600 dark:text-slate-500 dark:hover:text-slate-300"
+            aria-label="Close"
+            @click="showScheduleEditor = false"
+          >&#x2715;</button>
+        </div>
+        <div class="px-6 py-5 space-y-4">
+          <p class="text-sm text-gray-600 dark:text-slate-400">
+            Select which weekdays {{ participant.first_name }} attends the day center. This controls the default roster; appointments can still override on specific dates.
+          </p>
+          <div class="flex flex-wrap gap-2">
+            <button
+              v-for="code in DAY_CODES"
+              :key="code"
+              type="button"
+              :class="[
+                'px-3 py-2 rounded-lg border text-sm font-medium transition-colors select-none',
+                scheduleDraft.includes(code)
+                  ? 'bg-blue-600 text-white border-blue-600'
+                  : 'bg-white dark:bg-slate-700 text-gray-700 dark:text-slate-300 border-gray-300 dark:border-slate-600 hover:bg-gray-50 dark:hover:bg-slate-600',
+              ]"
+              @click="toggleDay(code)"
+            >
+              {{ DAY_LABELS[code] }}
+            </button>
+          </div>
+          <p v-if="scheduleError" class="text-sm text-red-600 dark:text-red-400">{{ scheduleError }}</p>
+        </div>
+        <div class="px-6 py-4 border-t border-gray-100 dark:border-slate-700 flex justify-end gap-2">
+          <button
+            class="px-4 py-2 text-sm text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-200"
+            @click="showScheduleEditor = false"
+          >Cancel</button>
+          <button
+            :disabled="scheduleSaving"
+            class="px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium disabled:opacity-50"
+            @click="saveSchedule"
+          >
+            {{ scheduleSaving ? 'Saving...' : 'Save Schedule' }}
+          </button>
+        </div>
+      </div>
     </div>
 
   </div>

@@ -183,10 +183,16 @@ class EnrollmentService
         bool $cmsNotificationRequired,
         User $user,
     ): void {
+        // Derive rollup type from the canonical reason string
+        // (42 CFR §460.160(b): death is a reason, not a status — see DisenrollmentTaxonomy).
+        $type = \App\Support\DisenrollmentTaxonomy::typeForReason($reason);
+        $isDeath = $type === \App\Support\DisenrollmentTaxonomy::TYPE_DEATH;
+
         $participant->update([
             'enrollment_status'      => 'disenrolled',
             'disenrollment_date'     => $effectiveDate,
             'disenrollment_reason'   => $reason,
+            'disenrollment_type'     => $type,
             'is_active'              => false,
         ]);
 
@@ -201,10 +207,9 @@ class EnrollmentService
                 ($cmsNotificationRequired ? ' [CMS notification required]' : ''),
         );
 
-        // W4-5: Create DisenrollmentRecord for 42 CFR §460.116 transition plan tracking.
-        // Transition plan due = effective_date + 30 days.
-        // For deceased participants, transition plan status = 'not_required'.
-        $planStatus = $reason === 'deceased' ? DisenrollmentRecord::PLAN_NOT_REQUIRED : DisenrollmentRecord::PLAN_PENDING;
+        // 42 CFR §460.116 transition plan tracking. Death (§460.160(b)) does not
+        // require a transition plan — CMS Manual Ch. 4 treats it as terminal.
+        $planStatus = $isDeath ? DisenrollmentRecord::PLAN_NOT_REQUIRED : DisenrollmentRecord::PLAN_PENDING;
         $effectiveDateCarbon = Carbon::parse($effectiveDate);
 
         $disRecord = DisenrollmentRecord::create([
@@ -212,10 +217,11 @@ class EnrollmentService
             'tenant_id'                => $participant->tenant_id,
             'created_by_user_id'       => $user->id,
             'reason'                   => $reason,
+            'disenrollment_type'       => $type,
             'effective_date'           => $effectiveDate,
             'notes'                    => $notes,
             'transition_plan_status'   => $planStatus,
-            'transition_plan_due_date' => $reason !== 'deceased'
+            'transition_plan_due_date' => ! $isDeath
                 ? $effectiveDateCarbon->copy()->addDays(DisenrollmentRecord::TRANSITION_PLAN_DUE_DAYS)->toDateString()
                 : null,
             'cms_notification_required' => $cmsNotificationRequired,

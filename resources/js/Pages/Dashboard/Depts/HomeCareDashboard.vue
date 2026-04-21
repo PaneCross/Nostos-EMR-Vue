@@ -50,6 +50,7 @@ const scheduleItems = computed<ActionItem[]>(() =>
         badgeColor: a.status === 'confirmed'
             ? 'bg-green-100 dark:bg-green-900/60 text-green-700 dark:text-green-300'
             : 'bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300',
+        href: a.href ?? (a.participant?.id ? `/participants/${a.participant.id}` : '/schedule'),
     }))
 )
 
@@ -63,6 +64,7 @@ const adlAlertItems = computed<ActionItem[]>(() =>
             : a.severity === 'warning'
             ? 'bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300'
             : 'bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300',
+        href: a.href ?? (a.participant?.id ? `/participants/${a.participant.id}` : '/participants'),
     }))
 )
 
@@ -72,6 +74,7 @@ const goalItems = computed<ActionItem[]>(() =>
         sublabel: g.goal_description ?? undefined,
         badge: g.target_date ? `Due ${g.target_date}` : undefined,
         badgeColor: 'bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300',
+        href: g.href ?? (g.participant?.id ? `/participants/${g.participant.id}` : '/clinical/care-plans'),
     }))
 )
 
@@ -83,6 +86,7 @@ const sdrItems = computed<ActionItem[]>(() =>
         badgeColor: s.is_overdue
             ? 'bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300'
             : 'bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300',
+        href: s.href ?? (s.participant?.id ? `/participants/${s.participant.id}` : '/sdrs'),
     }))
 )
 
@@ -94,12 +98,13 @@ const woundItems = computed<ActionItem[]>(() =>
         badgeColor: w.is_critical
             ? 'bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300'
             : 'bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300',
+        href: w.href ?? (w.participant?.id ? `/participants/${w.participant.id}` : '/participants'),
     }))
 )
 </script>
 
 <template>
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 grid-flow-dense gap-6">
         <ActionWidget
             title="Today's Home Visits"
             description="Home visits scheduled for today. Complete visit documentation within 24h."
@@ -143,7 +148,6 @@ const woundItems = computed<ActionItem[]>(() =>
             emptyMessage="No open wound records."
             viewAllHref="/participants"
             :loading="loading"
-            class="lg:col-span-2"
         />
     </div>
 </template>

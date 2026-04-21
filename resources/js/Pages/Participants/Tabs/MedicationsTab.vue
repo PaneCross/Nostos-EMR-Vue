@@ -317,7 +317,7 @@ function fmtDate(val: string | null): string {
         <div v-if="showReviewed" class="divide-y divide-gray-100 dark:divide-slate-700">
           <div v-for="alert in reviewedAlerts" :key="alert.id" class="px-4 py-3">
             <div class="flex items-start gap-2">
-              <span :class="['text-[10px] font-bold uppercase px-1.5 py-0.5 rounded border', SEVERITY_COLORS[alert.severity] ?? 'bg-gray-100 dark:bg-slate-800 border-gray-200 dark:border-slate-700']">
+              <span :class="['text-xs font-bold uppercase px-1.5 py-0.5 rounded border', SEVERITY_COLORS[alert.severity] ?? 'bg-gray-100 dark:bg-slate-800 border-gray-200 dark:border-slate-700']">
                 {{ alert.severity }}
               </span>
               <span class="text-sm font-medium text-gray-800 dark:text-slate-200">

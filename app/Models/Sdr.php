@@ -41,7 +41,11 @@ class Sdr extends Model
     ];
 
     public const PRIORITIES = ['routine', 'urgent', 'emergent'];
-    public const STATUSES   = ['submitted', 'acknowledged', 'in_progress', 'completed', 'cancelled'];
+    public const STATUSES   = ['submitted', 'acknowledged', 'in_progress', 'completed', 'cancelled', 'denied'];
+
+    // Terminal statuses — no further state transitions after reaching one.
+    // 'denied' feeds the §460.122 denial notice → appeal workflow.
+    public const TERMINAL_STATUSES = ['completed', 'cancelled', 'denied'];
 
     // Human-readable type labels for dropdowns (dropdown-first per spec)
     public const TYPE_LABELS = [

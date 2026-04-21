@@ -42,12 +42,14 @@ const assessmentItems = computed<ActionItem[]>(() => [
         sublabel: a.next_due_date ? `Due ${a.next_due_date}` : undefined,
         badge: a.days_overdue != null ? `${a.days_overdue}d overdue` : 'Overdue',
         badgeColor: 'bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300' as const,
+        href: a.href ?? (a.participant?.id ? `/participants/${a.participant.id}` : '/clinical/assessments'),
     })),
     ...dueSoonAssessments.value.map((a: any) => ({
         label: `${a.participant?.name ?? '-'} - Nutritional Assessment`,
         sublabel: undefined,
         badge: a.next_due_date ? `Due ${a.next_due_date}` : 'Due soon',
         badgeColor: 'bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300' as const,
+        href: a.href ?? (a.participant?.id ? `/participants/${a.participant.id}` : '/clinical/assessments'),
     })),
 ])
 
@@ -57,6 +59,7 @@ const goalItems = computed<ActionItem[]>(() =>
         sublabel: g.goal_description ?? undefined,
         badge: g.target_date ? `Due ${g.target_date}` : undefined,
         badgeColor: 'bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300',
+        href: g.href ?? (g.participant?.id ? `/participants/${g.participant.id}` : '/clinical/care-plans'),
     }))
 )
 
@@ -66,6 +69,7 @@ const restrictionItems = computed<ActionItem[]>(() =>
         sublabel: a.reaction ?? undefined,
         badge: 'Life-threatening',
         badgeColor: 'bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300',
+        href: a.href ?? (a.participant?.id ? `/participants/${a.participant.id}` : '/participants'),
     }))
 )
 
@@ -77,12 +81,13 @@ const sdrItems = computed<ActionItem[]>(() =>
         badgeColor: s.is_overdue
             ? 'bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300'
             : 'bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300',
+        href: s.href ?? (s.participant?.id ? `/participants/${s.participant.id}` : '/sdrs'),
     }))
 )
 </script>
 
 <template>
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 grid-flow-dense gap-6">
         <ActionWidget
             title="Overdue Assessments"
             description="Nutritional assessments past their due date. Required annually per care plan."

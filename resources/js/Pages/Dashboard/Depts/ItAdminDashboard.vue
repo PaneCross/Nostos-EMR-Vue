@@ -55,12 +55,14 @@ const userItems = computed<ActionItem[]>(() => {
             sublabel: (u.department ?? '-').replace(/_/g, ' '),
             badge: 'Provisioned',
             badgeColor: 'bg-green-100 dark:bg-green-900/60 text-green-700 dark:text-green-300',
+            href: u.href ?? '/it-admin/users',
         })),
         ...(usersData.value.recently_deactivated ?? []).map((u: any) => ({
             label: u.name ?? '-',
             sublabel: u.updated_at ?? undefined,
             badge: 'Deactivated',
             badgeColor: 'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300',
+            href: u.href ?? '/it-admin/users',
         })),
     ]
 })
@@ -73,6 +75,7 @@ const integrationItems = computed<ActionItem[]>(() =>
         badgeColor: c.is_healthy
             ? 'bg-green-100 dark:bg-green-900/60 text-green-700 dark:text-green-300'
             : 'bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300',
+        href: c.href ?? '/it-admin/integrations',
     }))
 )
 
@@ -82,6 +85,7 @@ const auditItems = computed<ActionItem[]>(() =>
         sublabel: `${e.user?.name ?? 'System'} | ${e.created_at ?? ''}`,
         badge: e.resource_type ?? undefined,
         badgeColor: 'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300',
+        href: e.href ?? '/it-admin/audit',
     }))
 )
 
@@ -94,17 +98,20 @@ const configItems = computed<ActionItem[]>(() => {
             badgeColor: configData.value.transport_mode === 'broker'
                 ? 'bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300'
                 : 'bg-green-100 dark:bg-green-900/60 text-green-700 dark:text-green-300',
+            href: '/admin/settings',
         },
         {
             label: `Auto-Logout: ${configData.value.auto_logout_minutes ?? '-'} min`,
             badge: `${configData.value.auto_logout_minutes ?? '-'}m`,
             badgeColor: 'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300',
+            href: '/admin/settings',
         },
         ...(configData.value.sites ?? []).map((s: any) => ({
             label: s.name ?? '-',
             sublabel: 'Site',
             badge: s.mrn_prefix ?? '-',
             badgeColor: 'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300',
+            href: s.href ?? '/admin/locations',
         })),
     ]
 })
@@ -117,6 +124,7 @@ const breakGlassItems = computed<ActionItem[]>(() =>
         badgeColor: (e.is_acknowledged || e.acknowledged_at)
             ? 'bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300'
             : 'bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300',
+        href: e.href ?? '/it-admin/break-glass',
     }))
 )
 
@@ -127,7 +135,7 @@ const breakGlassTitle = computed(() => {
 </script>
 
 <template>
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 grid-flow-dense gap-6">
         <ActionWidget
             title="User Management"
             description="Recently provisioned or recently deactivated users needing follow-up."
@@ -171,7 +179,6 @@ const breakGlassTitle = computed(() => {
             emptyMessage="No break-the-glass events."
             viewAllHref="/it-admin/break-glass"
             :loading="loading"
-            class="lg:col-span-2"
         />
     </div>
 </template>

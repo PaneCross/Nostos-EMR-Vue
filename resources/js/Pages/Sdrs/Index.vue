@@ -118,7 +118,8 @@ function formatHours(hrs: number): string {
 }
 
 function isTerminal(status: string): boolean {
-  return status === 'completed' || status === 'cancelled'
+  // 'denied' added in Phase 1 (MVP roadmap) for §460.122 denial workflow.
+  return status === 'completed' || status === 'cancelled' || status === 'denied'
 }
 
 // ── Tab state ─────────────────────────────────────────────────────────────────
@@ -167,6 +168,36 @@ async function updateStatus(sdrId: number, status: string) {
     // Non-blocking: silently ignore update errors
   } finally {
     updatingId.value = null
+  }
+}
+
+// Phase 1 (MVP roadmap): Deny SDR + issue §460.122 denial notice
+const denyingSdr = ref<{ id: number } | null>(null)
+const denying = ref(false)
+const denyForm = ref({
+  reason_code: '',
+  reason_narrative: '',
+  delivery_method: 'mail',
+})
+function openDenyModal(sdr: { id: number }) {
+  denyingSdr.value = sdr
+  denyForm.value = { reason_code: '', reason_narrative: '', delivery_method: 'mail' }
+}
+async function submitDeny() {
+  if (!denyingSdr.value) return
+  if (!denyForm.value.reason_code.trim() || !denyForm.value.reason_narrative.trim()) {
+    alert('Reason code and narrative are required.')
+    return
+  }
+  denying.value = true
+  try {
+    await axios.post(`/sdrs/${denyingSdr.value.id}/deny`, denyForm.value)
+    denyingSdr.value = null
+    router.reload()
+  } catch (err: any) {
+    alert(err?.response?.data?.message ?? 'Failed to deny SDR.')
+  } finally {
+    denying.value = false
   }
 }
 
@@ -284,7 +315,7 @@ async function submitNewSdr() {
             <span
               v-if="t.count !== null && t.count > 0"
               :class="[
-                'ml-1.5 inline-flex items-center justify-center rounded-full px-1.5 py-0.5 text-[10px] font-bold min-w-[18px]',
+                'ml-1.5 inline-flex items-center justify-center rounded-full px-1.5 py-0.5 text-xs font-bold min-w-[18px]',
                 t.key === 'overdue'
                   ? 'bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300'
                   : 'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-400',
@@ -326,7 +357,7 @@ async function submitNewSdr() {
                 <span class="text-xs text-gray-400 dark:text-slate-500">· {{ sdr.participant.mrn }}</span>
                 <span
                   v-if="sdr.escalated"
-                  class="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300 rounded text-[10px] font-bold ring-1 ring-red-300 dark:ring-red-700"
+                  class="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300 rounded text-xs font-bold ring-1 ring-red-300 dark:ring-red-700"
                 >
                   ! ESCALATED
                 </span>
@@ -344,7 +375,7 @@ async function submitNewSdr() {
             <div class="flex flex-col items-end gap-1 shrink-0">
               <span
                 :class="[
-                  'inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-medium ring-1 ring-inset',
+                  'inline-flex items-center rounded px-1.5 py-0.5 text-xs font-medium ring-1 ring-inset',
                   PRIORITY_CLASSES[sdr.priority] ?? '',
                 ]"
               >
@@ -353,7 +384,7 @@ async function submitNewSdr() {
               <span
                 v-if="!isTerminal(sdr.status)"
                 :class="[
-                  'inline-flex items-center rounded px-2 py-0.5 text-[11px] font-semibold',
+                  'inline-flex items-center rounded px-2 py-0.5 text-xs font-semibold',
                   urgencyColor(hoursRemaining(sdr.due_at)),
                 ]"
               >
@@ -369,7 +400,7 @@ async function submitNewSdr() {
           <div class="flex items-center justify-between gap-2">
             <span
               :class="[
-                'inline-flex items-center rounded px-2 py-0.5 text-[11px] font-medium',
+                'inline-flex items-center rounded px-2 py-0.5 text-xs font-medium',
                 STATUS_CLASSES[sdr.status] ?? '',
               ]"
             >
@@ -380,7 +411,7 @@ async function submitNewSdr() {
               <button
                 v-if="sdr.status === 'submitted'"
                 :disabled="updatingId === sdr.id"
-                class="px-2 py-1 text-[11px] font-medium border border-gray-300 dark:border-slate-600 text-gray-700 dark:text-slate-300 rounded hover:bg-gray-50 dark:hover:bg-slate-700 disabled:opacity-50"
+                class="px-2 py-1 text-xs font-medium border border-gray-300 dark:border-slate-600 text-gray-700 dark:text-slate-300 rounded hover:bg-gray-50 dark:hover:bg-slate-700 disabled:opacity-50"
                 @click="updateStatus(sdr.id, 'acknowledged')"
               >
                 Acknowledge
@@ -388,7 +419,7 @@ async function submitNewSdr() {
               <button
                 v-if="sdr.status === 'submitted' || sdr.status === 'acknowledged'"
                 :disabled="updatingId === sdr.id"
-                class="px-2 py-1 text-[11px] font-medium bg-amber-600 text-white rounded hover:bg-amber-700 disabled:opacity-50"
+                class="px-2 py-1 text-xs font-medium bg-amber-600 text-white rounded hover:bg-amber-700 disabled:opacity-50"
                 @click="updateStatus(sdr.id, 'in_progress')"
               >
                 In Progress
@@ -396,16 +427,73 @@ async function submitNewSdr() {
               <button
                 v-if="sdr.status === 'in_progress'"
                 :disabled="updatingId === sdr.id"
-                class="px-2 py-1 text-[11px] font-medium bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
+                class="px-2 py-1 text-xs font-medium bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
                 @click="updateStatus(sdr.id, 'completed')"
               >
                 Complete
+              </button>
+              <!-- Phase 1 (MVP roadmap): §460.122 denial workflow. -->
+              <button
+                v-if="['submitted','acknowledged','in_progress'].includes(sdr.status)"
+                :disabled="updatingId === sdr.id"
+                class="px-2 py-1 text-xs font-medium bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50"
+                @click="openDenyModal(sdr)"
+                title="Deny this SDR and issue a CMS-style denial notice"
+              >
+                Deny
               </button>
             </div>
           </div>
         </div>
       </div>
 
+    </div>
+
+    <!-- Deny SDR modal (Phase 1) -->
+    <div
+      v-if="denyingSdr"
+      class="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4"
+      @click.self="denyingSdr = null"
+    >
+      <div class="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-lg max-h-[85vh] overflow-y-auto">
+        <div class="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-700">
+          <h3 class="font-semibold text-slate-900 dark:text-slate-100">Deny SDR-{{ denyingSdr.id }}</h3>
+          <button class="text-slate-400 hover:text-slate-600" @click="denyingSdr = null">✕</button>
+        </div>
+        <div class="px-6 py-5 space-y-4">
+          <p class="text-xs text-slate-500 dark:text-slate-400">
+            Denying this request will generate a CMS-style denial notice PDF and establish the
+            participant's right to appeal (42 CFR §460.122). The notice will be stored in the
+            participant's documents.
+          </p>
+          <div>
+            <label class="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">Reason Code</label>
+            <input v-model="denyForm.reason_code" class="w-full text-sm rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-700 px-3 py-2" placeholder="e.g. NOT_MEDICALLY_NECESSARY" />
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">Reason Narrative</label>
+            <textarea v-model="denyForm.reason_narrative" rows="5"
+              placeholder="Clear explanation to be included in the participant's denial letter..."
+              class="w-full text-sm rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-700 px-3 py-2" />
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">Delivery Method</label>
+            <select v-model="denyForm.delivery_method" class="w-full text-sm rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-700 px-3 py-2">
+              <option value="mail">Mail</option>
+              <option value="in_person">In person</option>
+              <option value="email">Email</option>
+              <option value="secure_portal">Secure portal</option>
+              <option value="phone_documented">Phone (documented)</option>
+            </select>
+          </div>
+        </div>
+        <div class="px-6 py-3 border-t border-slate-200 dark:border-slate-700 flex justify-end gap-2">
+          <button @click="denyingSdr = null" class="px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-600 text-sm">Cancel</button>
+          <button :disabled="denying" @click="submitDeny" class="px-3 py-1.5 rounded-lg bg-red-600 text-white text-sm font-medium hover:bg-red-700 disabled:opacity-50">
+            {{ denying ? 'Issuing notice...' : 'Deny + Issue Notice' }}
+          </button>
+        </div>
+      </div>
     </div>
 
     <!-- New SDR modal -->
@@ -511,7 +599,7 @@ async function submitNewSdr() {
               placeholder="Describe the service request, clinical context, and any urgency details."
               class="block w-full rounded-lg border border-gray-300 dark:border-slate-600 text-sm py-2 px-3 dark:bg-slate-700 resize-none"
             />
-            <p class="text-[10px] text-gray-400 dark:text-slate-500 mt-0.5">
+            <p class="text-xs text-gray-400 dark:text-slate-500 mt-0.5">
               This request will be due within 72 hours of submission (CMS requirement).
             </p>
           </div>

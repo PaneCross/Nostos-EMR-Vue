@@ -6,6 +6,9 @@
 //   GET /dashboards/finance/authorizations     → { authorizations[], expiring_count, expiring_this_week }
 //   GET /dashboards/finance/enrollment-changes → { enrolled_this_month, disenrolled_this_month, total_enrolled, net_change }
 //   GET /dashboards/finance/encounters         → { total_encounters, this_month_encounters, by_service_type{} }
+//   GET /dashboards/finance/open-denials       → { open_count, appealing_count, overdue_count, revenue_at_risk, items[] }
+//   GET /dashboards/finance/revenue-at-risk    → { total_at_risk, won_this_month, by_category[] }
+//   GET /dashboards/finance/recent-remittance  → { batches[], total_received_this_month }
 // ─────────────────────────────────────────────────────────────────────────────
 import { ref, onMounted, computed } from 'vue'
 import axios from 'axios'
@@ -19,6 +22,9 @@ const capitation = ref<any>(null)
 const authorizationsData = ref<any>(null)
 const enrollmentChanges = ref<any>(null)
 const encountersData = ref<any>(null)
+const denialsData = ref<any>(null)
+const revenueRiskData = ref<any>(null)
+const remittanceData = ref<any>(null)
 
 onMounted(() => {
     Promise.all([
@@ -26,11 +32,17 @@ onMounted(() => {
         axios.get('/dashboards/finance/authorizations'),
         axios.get('/dashboards/finance/enrollment-changes'),
         axios.get('/dashboards/finance/encounters'),
-    ]).then(([r1, r2, r3, r4]) => {
+        axios.get('/dashboards/finance/open-denials'),
+        axios.get('/dashboards/finance/revenue-at-risk'),
+        axios.get('/dashboards/finance/recent-remittance'),
+    ]).then(([r1, r2, r3, r4, r5, r6, r7]) => {
         capitation.value = r1.data
         authorizationsData.value = r2.data
         enrollmentChanges.value = r3.data
         encountersData.value = r4.data
+        denialsData.value = r5.data
+        revenueRiskData.value = r6.data
+        remittanceData.value = r7.data
     }).finally(() => loading.value = false)
 })
 
@@ -58,10 +70,42 @@ const encounterItems = computed<ActionItem[]>(() => {
         badgeColor: 'bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300',
     }))
 })
+
+const denialItems = computed<ActionItem[]>(() =>
+    (denialsData.value?.items ?? []).map((d: any) => ({
+        label: `${d.category_label} : ${formatCurrency(d.denied_amount)}`,
+        href: d.href ?? '/finance/denials',
+        badge: d.is_overdue ? 'Overdue' : `${d.days_until_deadline ?? 0}d`,
+        badgeColor: d.is_overdue
+            ? 'bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300'
+            : 'bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300',
+    }))
+)
+
+const revenueRiskItems = computed<ActionItem[]>(() =>
+    (revenueRiskData.value?.by_category ?? []).map((c: any) => ({
+        label: `${c.label} (${c.count})`,
+        href: '/finance/denials',
+        badge: formatCurrency(c.total_amount),
+        badgeColor: 'bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300',
+    }))
+)
+
+const remittanceItems = computed<ActionItem[]>(() =>
+    (remittanceData.value?.batches ?? []).map((b: any) => ({
+        label: `${b.payer_name ?? b.file_name}`,
+        sublabel: b.payment_date ?? undefined,
+        href: b.href ?? '/finance/remittance',
+        badge: formatCurrency(b.payment_amount),
+        badgeColor: b.denied_count > 0
+            ? 'bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300'
+            : 'bg-green-100 dark:bg-green-900/60 text-green-700 dark:text-green-300',
+    }))
+)
 </script>
 
 <template>
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 grid-flow-dense gap-6">
 
         <!-- Current Month Capitation — KPI stat widget, not a list -->
         <div class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 shadow-sm p-5">
@@ -72,7 +116,7 @@ const encounterItems = computed<ActionItem[]>(() => {
                 </div>
             </template>
             <template v-else-if="!capitation">
-                <p class="text-xs text-gray-400 dark:text-slate-500 py-4 text-center">No capitation data</p>
+                <p class="text-sm text-gray-400 dark:text-slate-500 py-4 text-center">No capitation data</p>
             </template>
             <template v-else>
                 <div class="space-y-3">
@@ -81,7 +125,7 @@ const encounterItems = computed<ActionItem[]>(() => {
                             <p class="text-2xl font-bold text-slate-900 dark:text-slate-100">
                                 {{ formatCurrency(capitation.current_total) }}
                             </p>
-                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                            <p class="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
                                 {{ capitation.current_participant_count }} participants | {{ capitation.current_month }}
                             </p>
                         </div>
@@ -92,13 +136,13 @@ const encounterItems = computed<ActionItem[]>(() => {
                             <p class="text-sm font-bold">
                                 {{ capitation.change_percent >= 0 ? '+' : '' }}{{ capitation.change_percent }}%
                             </p>
-                            <p class="text-[10px] text-slate-400">vs {{ capitation.prior_month }}</p>
+                            <p class="text-sm text-slate-400">vs {{ capitation.prior_month }}</p>
                         </div>
                     </div>
-                    <div class="text-[10px] text-slate-400 pt-1 border-t border-slate-100 dark:border-slate-700">
+                    <div class="text-sm text-slate-400 pt-1 border-t border-slate-100 dark:border-slate-700">
                         Prior month: {{ formatCurrency(capitation.prior_total) }}
                     </div>
-                    <a href="/finance/dashboard" class="text-xs text-blue-600 dark:text-blue-400 hover:underline block">
+                    <a href="/finance/dashboard" class="text-sm text-blue-600 dark:text-blue-400 hover:underline block">
                         View full Finance Dashboard
                     </a>
                 </div>
@@ -123,25 +167,25 @@ const encounterItems = computed<ActionItem[]>(() => {
                 </div>
             </template>
             <template v-else-if="!enrollmentChanges">
-                <p class="text-xs text-gray-400 dark:text-slate-500 py-4 text-center">No data</p>
+                <p class="text-sm text-gray-400 dark:text-slate-500 py-4 text-center">No data</p>
             </template>
             <template v-else>
                 <div class="space-y-3">
                     <div class="grid grid-cols-3 gap-3">
                         <div class="text-center p-3 rounded-lg bg-green-50 dark:bg-green-950/60 border border-green-200 dark:border-green-800">
                             <p class="text-xl font-bold text-green-700 dark:text-green-300">{{ enrollmentChanges.enrolled_this_month }}</p>
-                            <p class="text-[10px] text-green-600 dark:text-green-400 font-medium">Enrolled</p>
+                            <p class="text-sm text-green-600 dark:text-green-400 font-medium">Enrolled</p>
                         </div>
                         <div class="text-center p-3 rounded-lg bg-red-50 dark:bg-red-950/60 border border-red-200 dark:border-red-800">
                             <p class="text-xl font-bold text-red-700 dark:text-red-300">{{ enrollmentChanges.disenrolled_this_month }}</p>
-                            <p class="text-[10px] text-red-600 dark:text-red-400 font-medium">Disenrolled</p>
+                            <p class="text-sm text-red-600 dark:text-red-400 font-medium">Disenrolled</p>
                         </div>
                         <div class="text-center p-3 rounded-lg bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800">
                             <p class="text-xl font-bold text-blue-700 dark:text-blue-300">{{ enrollmentChanges.total_enrolled }}</p>
-                            <p class="text-[10px] text-blue-600 dark:text-blue-400 font-medium">Total</p>
+                            <p class="text-sm text-blue-600 dark:text-blue-400 font-medium">Total</p>
                         </div>
                     </div>
-                    <p class="text-xs text-slate-500 dark:text-slate-400 text-center">
+                    <p class="text-sm text-slate-500 dark:text-slate-400 text-center">
                         Net change:
                         <span :class="enrollmentChanges.net_change >= 0 ? 'text-green-600 dark:text-green-400 font-semibold' : 'text-red-600 dark:text-red-400 font-semibold'">
                             {{ enrollmentChanges.net_change >= 0 ? '+' : '' }}{{ enrollmentChanges.net_change }}
@@ -157,6 +201,33 @@ const encounterItems = computed<ActionItem[]>(() => {
             :items="encounterItems"
             emptyMessage="No encounter data."
             viewAllHref="/finance/encounters"
+            :loading="loading"
+        />
+
+        <ActionWidget
+            title="Open Denials"
+            description="Claim denials requiring action. Overdue items have passed their appeal deadline."
+            :items="denialItems"
+            emptyMessage="No open denials."
+            viewAllHref="/finance/denials"
+            :loading="loading"
+        />
+
+        <ActionWidget
+            title="Revenue at Risk"
+            description="Denied amounts by category. Focus on highest-value categories first."
+            :items="revenueRiskItems"
+            emptyMessage="No revenue at risk."
+            viewAllHref="/finance/denials"
+            :loading="loading"
+        />
+
+        <ActionWidget
+            title="Recent Remittance"
+            description="Latest ERA payment batches received from payers."
+            :items="remittanceItems"
+            emptyMessage="No recent remittance batches."
+            viewAllHref="/finance/remittance"
             :loading="loading"
         />
 

@@ -19,6 +19,7 @@ const kpis = ref<any>(null)
 const incidentsData = ref<any>(null)
 const docsData = ref<any>(null)
 const carePlansData = ref<any>(null)
+const appealsData = ref<any>(null)
 
 onMounted(() => {
     Promise.all([
@@ -26,11 +27,13 @@ onMounted(() => {
         axios.get('/dashboards/qa-compliance/incidents'),
         axios.get('/dashboards/qa-compliance/docs'),
         axios.get('/dashboards/qa-compliance/care-plans'),
-    ]).then(([r1, r2, r3, r4]) => {
+        axios.get('/dashboards/qa-compliance/appeals'),
+    ]).then(([r1, r2, r3, r4, r5]) => {
         kpis.value = r1.data
         incidentsData.value = r2.data
         docsData.value = r3.data
         carePlansData.value = r4.data
+        appealsData.value = r5.data
     }).finally(() => loading.value = false)
 })
 
@@ -56,6 +59,7 @@ const incidentItems = computed<ActionItem[]>(() =>
             badgeColor: rcaPending
                 ? 'bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300'
                 : 'bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300',
+            href: i.href ?? (i.participant?.id ? `/participants/${i.participant.id}` : '/qa/dashboard'),
         }
     })
 )
@@ -66,12 +70,14 @@ const docItems = computed<ActionItem[]>(() => [
         sublabel: (n.department ?? '-').replace(/_/g, ' '),
         badge: `${n.hours_old ?? 0}h`,
         badgeColor: 'bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300',
+        href: n.href ?? (n.participant?.id ? `/participants/${n.participant.id}` : '/clinical/notes'),
     })),
     ...(docsData.value?.overdue_assessments ?? []).map((a: any) => ({
         label: `${a.participant?.name ?? '-'} : ${(a.assessment_type ?? '-').replace(/_/g, ' ')}`,
         sublabel: a.next_due_date ?? undefined,
         badge: `${a.days_overdue ?? 0}d overdue`,
         badgeColor: 'bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300',
+        href: a.href ?? (a.participant?.id ? `/participants/${a.participant.id}` : '/clinical/assessments'),
     })),
 ])
 
@@ -81,7 +87,28 @@ const carePlanItems = computed<ActionItem[]>(() =>
         sublabel: (p.status ?? '-').replace(/_/g, ' '),
         badge: `${p.days_overdue ?? 0}d overdue`,
         badgeColor: 'bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300',
+        href: p.href ?? (p.participant?.id ? `/participants/${p.participant.id}` : '/clinical/care-plans'),
     }))
+)
+
+// Phase 1 (MVP roadmap): §460.122 appeals widget
+const appealItems = computed<ActionItem[]>(() =>
+    (appealsData.value?.appeals ?? []).map((a: any) => {
+        const pct = a.window_pct ?? 0
+        const badgeColor =
+            a.overdue      ? 'bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300' :
+            pct >= 75      ? 'bg-orange-100 dark:bg-orange-900/60 text-orange-700 dark:text-orange-300' :
+            pct >= 50      ? 'bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300' :
+                             'bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300'
+        const badge = a.overdue ? 'overdue' : a.type === 'expedited' ? `exp ${pct}%` : `${pct}%`
+        return {
+            label: a.participant?.name ?? '—',
+            sublabel: `${(a.status ?? '').replace(/_/g, ' ')}${a.continuation_of_benefits ? ' · COB' : ''}`,
+            badge,
+            badgeColor,
+            href: a.href ?? `/appeals/${a.id}`,
+        }
+    })
 )
 </script>
 
@@ -95,40 +122,40 @@ const carePlanItems = computed<ActionItem[]>(() =>
             </template>
             <template v-else>
                 <div :class="`rounded-xl border p-3 ${sdrColor(kpis.sdr_compliance_rate ?? 0)}`">
-                    <p class="text-[10px] font-semibold uppercase tracking-wide opacity-70">SDR Compliance</p>
+                    <p class="text-sm font-semibold uppercase tracking-wide opacity-70">SDR Compliance</p>
                     <p class="text-2xl font-bold mt-1">{{ kpis.sdr_compliance_rate ?? 0 }}%</p>
-                    <p class="text-[10px] mt-0.5 opacity-60">30-day rate</p>
+                    <p class="text-sm mt-0.5 opacity-60">30-day rate</p>
                 </div>
                 <div :class="`rounded-xl border p-3 ${kpiColor(kpis.overdue_assessments_count ?? 0, 5)}`">
-                    <p class="text-[10px] font-semibold uppercase tracking-wide opacity-70">Overdue Assessments</p>
+                    <p class="text-sm font-semibold uppercase tracking-wide opacity-70">Overdue Assessments</p>
                     <p class="text-2xl font-bold mt-1">{{ kpis.overdue_assessments_count ?? 0 }}</p>
-                    <p class="text-[10px] mt-0.5 opacity-60">Past due date</p>
+                    <p class="text-sm mt-0.5 opacity-60">Past due date</p>
                 </div>
                 <div :class="`rounded-xl border p-3 ${kpiColor(kpis.unsigned_notes_count ?? 0, 3)}`">
-                    <p class="text-[10px] font-semibold uppercase tracking-wide opacity-70">Unsigned Notes &gt;24h</p>
+                    <p class="text-sm font-semibold uppercase tracking-wide opacity-70">Unsigned Notes &gt;24h</p>
                     <p class="text-2xl font-bold mt-1">{{ kpis.unsigned_notes_count ?? 0 }}</p>
-                    <p class="text-[10px] mt-0.5 opacity-60">Documentation gap</p>
+                    <p class="text-sm mt-0.5 opacity-60">Documentation gap</p>
                 </div>
                 <div :class="`rounded-xl border p-3 ${kpiColor(kpis.open_incidents_count ?? 0, 5)}`">
-                    <p class="text-[10px] font-semibold uppercase tracking-wide opacity-70">Open Incidents</p>
+                    <p class="text-sm font-semibold uppercase tracking-wide opacity-70">Open Incidents</p>
                     <p class="text-2xl font-bold mt-1">{{ kpis.open_incidents_count ?? 0 }}</p>
-                    <p class="text-[10px] mt-0.5 opacity-60">All statuses</p>
+                    <p class="text-sm mt-0.5 opacity-60">All statuses</p>
                 </div>
                 <div :class="`rounded-xl border p-3 ${kpiColor(kpis.overdue_care_plans_count ?? 0, 3)}`">
-                    <p class="text-[10px] font-semibold uppercase tracking-wide opacity-70">Overdue Care Plans</p>
+                    <p class="text-sm font-semibold uppercase tracking-wide opacity-70">Overdue Care Plans</p>
                     <p class="text-2xl font-bold mt-1">{{ kpis.overdue_care_plans_count ?? 0 }}</p>
-                    <p class="text-[10px] mt-0.5 opacity-60">Review past due</p>
+                    <p class="text-sm mt-0.5 opacity-60">Review past due</p>
                 </div>
                 <div :class="`rounded-xl border p-3 ${kpiColor(kpis.hospitalizations_count ?? 0, 2)}`">
-                    <p class="text-[10px] font-semibold uppercase tracking-wide opacity-70">Hospital/ER (Month)</p>
+                    <p class="text-sm font-semibold uppercase tracking-wide opacity-70">Hospital/ER (Month)</p>
                     <p class="text-2xl font-bold mt-1">{{ kpis.hospitalizations_count ?? 0 }}</p>
-                    <p class="text-[10px] mt-0.5 opacity-60">This calendar month</p>
+                    <p class="text-sm mt-0.5 opacity-60">This calendar month</p>
                 </div>
             </template>
         </div>
 
         <!-- Widget Grid -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 grid-flow-dense gap-6">
             <ActionWidget
                 title="Open Incidents"
                 description="Open incidents requiring review or RCA completion. Red = RCA required per CMS 42 CFR 460.136."
@@ -153,6 +180,16 @@ const carePlanItems = computed<ActionItem[]>(() =>
                 :items="carePlanItems"
                 emptyMessage="No overdue care plans."
                 viewAllHref="/clinical/care-plans"
+                :loading="loading"
+            />
+
+            <!-- Phase 1 (MVP roadmap): §460.122 appeals -->
+            <ActionWidget
+                title="Open Appeals"
+                description="§460.122 participant appeals of service denials. Clock-aged; overdue first."
+                :items="appealItems"
+                emptyMessage="No open appeals."
+                viewAllHref="/appeals"
                 :loading="loading"
             />
         </div>

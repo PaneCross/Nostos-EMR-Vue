@@ -49,6 +49,7 @@ class DisenrollmentRecord extends Model
         'tenant_id',
         'created_by_user_id',
         'reason',
+        'disenrollment_type',
         'effective_date',
         'notes',
         'transition_plan_status',

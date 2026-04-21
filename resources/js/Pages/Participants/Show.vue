@@ -88,6 +88,7 @@ const props = defineProps<{
   icd10Codes?:          unknown[]
   noteTemplates?:       Record<string, unknown>
   auditLogs?:           AuditEntry[]
+  disenrollmentReasons?: Record<string, Record<string, string>>
 }>()
 
 // ── Tab definitions ────────────────────────────────────────────────────────────
@@ -254,7 +255,7 @@ const auth = computed(() => (page.props as Record<string, unknown>).auth as { us
             <!-- CLINICAL row -->
             <div class="border-b border-gray-100 dark:border-slate-700/60 overflow-x-auto scrollbar-none">
               <div class="flex items-end px-3 min-w-max" role="tablist" aria-label="Clinical tabs">
-                <span class="text-[10px] font-bold text-blue-500 uppercase tracking-widest px-2 pb-2 pt-1.5 mr-1 shrink-0 self-end">Clinical</span>
+                <span class="text-xs font-bold text-blue-500 uppercase tracking-widest px-2 pb-2 pt-1.5 mr-1 shrink-0 self-end">Clinical</span>
                 <button
                   v-for="tab in CLINICAL_TABS"
                   :key="tab.key"
@@ -277,7 +278,7 @@ const auth = computed(() => (page.props as Record<string, unknown>).auth as { us
             <!-- ADMIN row -->
             <div class="overflow-x-auto scrollbar-none">
               <div class="flex items-end px-3 min-w-max" role="tablist" aria-label="Admin tabs">
-                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-2 pb-2 pt-1.5 mr-1 shrink-0 self-end">Admin</span>
+                <span class="text-xs font-bold text-slate-400 uppercase tracking-widest px-2 pb-2 pt-1.5 mr-1 shrink-0 self-end">Admin</span>
                 <button
                   v-for="tab in ADMIN_TABS"
                   :key="tab.key"
@@ -331,6 +332,7 @@ const auth = computed(() => (page.props as Record<string, unknown>).auth as { us
         :can-edit="canEdit ?? false"
         :can-view-audit="canViewAudit ?? false"
         :audit-logs="auditLogs ?? []"
+        :disenrollment-reasons="disenrollmentReasons ?? {}"
         @tab-change="switchTab"
       />
     </div>

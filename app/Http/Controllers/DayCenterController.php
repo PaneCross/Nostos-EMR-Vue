@@ -14,9 +14,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Appointment;
 use App\Models\DayCenterAttendance;
 use App\Models\Participant;
+use App\Models\Site;
 use App\Models\AuditLog;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -75,31 +78,109 @@ class DayCenterController extends Controller
         $date   = $request->query('date', now()->toDateString());
         $siteId = (int) $request->query('site_id', $user->site_id);
 
-        // Enrolled participants at this site
-        $participants = Participant::where('tenant_id', $user->tenant_id)
+        // Weekday code for the selected date (mon, tue, wed, ...)
+        $weekday = strtolower(substr(Carbon::parse($date)->format('D'), 0, 3));
+
+        // ── Home-site enrolled participants ──────────────────────────────────
+        $homeParticipants = Participant::where('tenant_id', $user->tenant_id)
             ->where('site_id', $siteId)
             ->where('enrollment_status', 'enrolled')
             ->where('is_active', true)
-            ->select('id', 'mrn', 'first_name', 'last_name', 'preferred_name')
+            ->select('id', 'site_id', 'mrn', 'first_name', 'last_name', 'preferred_name', 'day_center_days')
             ->orderBy('last_name')
             ->get();
 
-        // Existing attendance records for the date
+        // ── Home-site day_center_attendance appointments for this date ───────
+        // (Any location — overrides recurring pattern.)
+        $homeApptIds = Appointment::where('tenant_id', $user->tenant_id)
+            ->where('appointment_type', 'day_center_attendance')
+            ->whereDate('scheduled_start', $date)
+            ->whereNotIn('status', ['cancelled'])
+            ->pluck('participant_id')
+            ->unique()
+            ->toArray();
+
+        // ── Cross-site visitors: appointments whose LOCATION belongs to this site
+        // This pulls in participants enrolled at OTHER sites who are coming here.
+        $crossSiteApptParticipants = Appointment::where('emr_appointments.tenant_id', $user->tenant_id)
+            ->where('appointment_type', 'day_center_attendance')
+            ->whereDate('scheduled_start', $date)
+            ->whereNotIn('emr_appointments.status', ['cancelled'])
+            ->join('emr_locations', 'emr_locations.id', '=', 'emr_appointments.location_id')
+            ->where('emr_locations.site_id', $siteId)
+            ->join('emr_participants', 'emr_participants.id', '=', 'emr_appointments.participant_id')
+            ->where('emr_participants.site_id', '!=', $siteId)
+            ->select(
+                'emr_participants.id', 'emr_participants.site_id', 'emr_participants.mrn',
+                'emr_participants.first_name', 'emr_participants.last_name',
+                'emr_participants.preferred_name', 'emr_participants.day_center_days',
+            )
+            ->distinct()
+            ->get();
+
+        // ── Existing attendance records for the host site + date ─────────────
         $records = DayCenterAttendance::forTenant($user->tenant_id)
             ->forDate($date)
             ->forSite($siteId)
             ->pluck('status', 'participant_id')
             ->toArray();
 
-        $roster = $participants->map(fn ($p) => [
-            'id'             => $p->id,
-            'mrn'            => $p->mrn,
-            'name'           => "{$p->last_name}, {$p->first_name}",
-            'preferred_name' => $p->preferred_name,
-            'attendance'     => $records[$p->id] ?? null,
-        ]);
+        // Home-site roster: recurring schedule OR appointment override OR already recorded
+        $homeRoster = $homeParticipants->filter(function ($p) use ($weekday, $homeApptIds, $records) {
+            $scheduled = is_array($p->day_center_days) && in_array($weekday, $p->day_center_days, true);
+            $hasAppt   = in_array($p->id, $homeApptIds, true);
+            $hasRecord = isset($records[$p->id]);
+            return $scheduled || $hasAppt || $hasRecord;
+        })->map(function ($p) use ($weekday, $homeApptIds, $records) {
+            $scheduled = is_array($p->day_center_days) && in_array($weekday, $p->day_center_days, true);
+            $hasAppt   = in_array($p->id, $homeApptIds, true);
 
-        return response()->json(['roster' => $roster]);
+            $source = match (true) {
+                $scheduled => 'scheduled',
+                $hasAppt   => 'appointment',
+                default    => 'override',
+            };
+
+            return [
+                'id'             => $p->id,
+                'mrn'            => $p->mrn,
+                'name'           => "{$p->last_name}, {$p->first_name}",
+                'preferred_name' => $p->preferred_name,
+                'attendance'     => $records[$p->id] ?? null,
+                'source'         => $source,
+                'home_site'      => null, // Home-site — no chip needed
+            ];
+        });
+
+        // Cache home sites for cross-site visitors so we can show "Home: X" chip
+        $crossSiteIds = $crossSiteApptParticipants->pluck('site_id')->unique()->toArray();
+        $sitesById = Site::whereIn('id', $crossSiteIds)->pluck('name', 'id')->toArray();
+
+        // Cross-site visitor rows — participants at OTHER sites with appts at THIS site
+        $crossRoster = $crossSiteApptParticipants->map(function ($p) use ($records, $sitesById) {
+            return [
+                'id'             => $p->id,
+                'mrn'            => $p->mrn,
+                'name'           => "{$p->last_name}, {$p->first_name}",
+                'preferred_name' => $p->preferred_name,
+                'attendance'     => $records[$p->id] ?? null,
+                'source'         => 'cross_site',
+                'home_site'      => [
+                    'id'   => $p->site_id,
+                    'name' => $sitesById[$p->site_id] ?? "Site {$p->site_id}",
+                ],
+            ];
+        });
+
+        // Union, de-dup by participant id (cross-site wins over home if any
+        // conflict — shouldn't happen since cross-site filters by site_id != host).
+        $roster = $homeRoster
+            ->concat($crossRoster)
+            ->unique('id')
+            ->sortBy('name')
+            ->values();
+
+        return response()->json(['roster' => $roster, 'weekday' => $weekday]);
     }
 
     /**
@@ -144,6 +225,8 @@ class DayCenterController extends Controller
             tenantId: $user->tenant_id,
             newValues: ['status' => $validated['status'], 'date' => $validated['attendance_date']],
         );
+
+        $this->recordCrossSiteAttendanceAuditIfApplicable($validated['participant_id'], $validated['site_id'], $validated['attendance_date'], $validated['status'], $user);
 
         return response()->json(['attendance' => $attendance]);
     }
@@ -194,7 +277,47 @@ class DayCenterController extends Controller
             newValues: ['status' => $validated['status'], 'reason' => $validated['absent_reason']],
         );
 
+        $this->recordCrossSiteAttendanceAuditIfApplicable($validated['participant_id'], $validated['site_id'], $validated['attendance_date'], $validated['status'], $user);
+
         return response()->json(['attendance' => $attendance]);
+    }
+
+    /**
+     * Record a participant-scoped audit entry when attendance is recorded at a
+     * site different from the participant's enrolled home site. Visible in the
+     * participant's Audit tab so home-site staff can see cross-site activity.
+     */
+    private function recordCrossSiteAttendanceAuditIfApplicable(int $participantId, int $attendedSiteId, string $date, string $status, mixed $user): void
+    {
+        $participant = Participant::find($participantId);
+        if (! $participant || $participant->site_id === $attendedSiteId) {
+            return;
+        }
+
+        $homeSite = Site::find($participant->site_id);
+        $hostSite = Site::find($attendedSiteId);
+
+        AuditLog::record(
+            action:       'participant.cross_site_attendance',
+            tenantId:     $user->tenant_id,
+            userId:       $user->id,
+            resourceType: 'participant',
+            resourceId:   $participant->id,
+            description:  sprintf('Attended at %s (home: %s) on %s — status: %s',
+                $hostSite?->name ?? "Site {$attendedSiteId}",
+                $homeSite?->name ?? "Site {$participant->site_id}",
+                $date,
+                $status,
+            ),
+            newValues: [
+                'date'             => $date,
+                'status'           => $status,
+                'home_site_id'     => $participant->site_id,
+                'home_site_name'   => $homeSite?->name,
+                'host_site_id'     => $attendedSiteId,
+                'host_site_name'   => $hostSite?->name,
+            ],
+        );
     }
 
     /**

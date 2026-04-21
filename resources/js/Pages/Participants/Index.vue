@@ -27,6 +27,7 @@ interface Participant {
     preferred_name: string | null
     dob: string
     enrollment_status: string
+    disenrollment_type: string | null
     is_active: boolean
     photo_path: string | null
     site: { id: number; name: string }
@@ -52,7 +53,7 @@ interface Paginator<T> {
 const props = defineProps<{
     participants: Paginator<Participant>
     sites: { id: number; name: string }[]
-    filters: { search?: string; status?: string; site_id?: string; has_flags?: string }
+    filters: { search?: string; status?: string; site_id?: string; has_flags?: string; idt_due?: string }
     canCreate: boolean
 }>()
 
@@ -61,9 +62,10 @@ const search = ref(props.filters.search ?? '')
 const status = ref(props.filters.status ?? '')
 const siteId = ref(props.filters.site_id ?? '')
 const hasFlags = ref(props.filters.has_flags === '1')
+const idtDue = ref(props.filters.idt_due === '1')
 
 const hasActiveFilters = computed(
-    () => search.value || status.value || siteId.value || hasFlags.value,
+    () => search.value || status.value || siteId.value || hasFlags.value || idtDue.value,
 )
 
 function applyFilters(overrides: Record<string, string | boolean> = {}) {
@@ -74,6 +76,7 @@ function applyFilters(overrides: Record<string, string | boolean> = {}) {
             status: overrides.status ?? status.value,
             site_id: overrides.site_id ?? siteId.value,
             has_flags: overrides.has_flags ?? (hasFlags.value ? '1' : ''),
+            idt_due: overrides.idt_due ?? (idtDue.value ? '1' : ''),
         },
         { preserveState: true, replace: true },
     )
@@ -84,8 +87,7 @@ function handleSearch(e: Event) {
     applyFilters()
 }
 
-function onStatusChange(e: Event) {
-    const val = (e.target as HTMLSelectElement).value
+function setStatus(val: string) {
     status.value = val
     applyFilters({ status: val })
 }
@@ -96,10 +98,14 @@ function onSiteChange(e: Event) {
     applyFilters({ site_id: val })
 }
 
-function onFlagsChange(e: Event) {
-    const checked = (e.target as HTMLInputElement).checked
-    hasFlags.value = checked
-    applyFilters({ has_flags: checked ? '1' : '' })
+function toggleFlags() {
+    hasFlags.value = !hasFlags.value
+    applyFilters({ has_flags: hasFlags.value ? '1' : '' })
+}
+
+function toggleIdtDue() {
+    idtDue.value = !idtDue.value
+    applyFilters({ idt_due: idtDue.value ? '1' : '' })
 }
 
 function clearFilters() {
@@ -107,6 +113,7 @@ function clearFilters() {
     status.value = ''
     siteId.value = ''
     hasFlags.value = false
+    idtDue.value = false
     router.get('/participants', {}, { preserveState: false })
 }
 
@@ -132,8 +139,9 @@ function calcAge(dob: string): number {
     return a
 }
 
-function rowBg(s: string): string {
-    if (s === 'deceased') return 'bg-gray-50 dark:bg-slate-700/50 opacity-60'
+function rowBg(s: string, type?: string | null): string {
+    // Faded styling for deceased rows (reason=death is the CMS-canonical "deceased" state).
+    if (s === 'disenrolled' && type === 'death') return 'bg-gray-50 dark:bg-slate-700/50 opacity-60'
     if (s === 'disenrolled') return 'bg-gray-50 dark:bg-slate-700/50'
     return 'bg-white dark:bg-slate-800'
 }
@@ -146,17 +154,21 @@ const STATUS_COLORS: Record<string, string> = {
     intake: 'bg-indigo-100 dark:bg-indigo-900/60 text-indigo-800 dark:text-indigo-300',
     pending: 'bg-yellow-100 dark:bg-yellow-900/60 text-yellow-800 dark:text-yellow-300',
     disenrolled: 'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-400',
-    deceased: 'bg-gray-100 dark:bg-slate-700 text-gray-400 dark:text-slate-500',
 }
 
+// Severity → dot color. Flags render as uniform 10px circles so the row's flag
+// column stays the same visual weight regardless of label length; the full
+// label (flag name) is shown in the native tooltip on hover.
 const FLAG_COLORS: Record<string, string> = {
-    low: 'bg-blue-500 text-white',
-    medium: 'bg-amber-500 text-white',
-    high: 'bg-orange-500 text-white',
-    critical: 'bg-red-600 text-white',
+    low: 'bg-blue-500',
+    medium: 'bg-amber-500',
+    high: 'bg-orange-500',
+    critical: 'bg-red-600',
 }
 
-const STATUSES = ['enrolled', 'referred', 'intake', 'pending', 'disenrolled', 'deceased']
+// Lifecycle statuses per 42 CFR §460.150-164. Death is a disenrollment reason,
+// not a status (see feedback_pace_disenrollment_taxonomy.md memory file).
+const STATUSES = ['referred', 'intake', 'pending', 'enrolled', 'disenrolled']
 </script>
 
 <template>
@@ -186,8 +198,8 @@ const STATUSES = ['enrolled', 'referred', 'intake', 'pending', 'disenrolled', 'd
                 </a>
             </div>
 
-            <!-- ── Search + filter bar ── -->
-            <form class="flex flex-wrap items-center gap-2 mb-4" @submit.prevent="handleSearch">
+            <!-- ── Search + site + submit row ── -->
+            <form class="flex flex-wrap items-center gap-2 mb-3" @submit.prevent="handleSearch">
                 <!-- Search input -->
                 <div class="relative flex-1 min-w-[260px]">
                     <MagnifyingGlassIcon
@@ -203,20 +215,7 @@ const STATUSES = ['enrolled', 'referred', 'intake', 'pending', 'disenrolled', 'd
                     />
                 </div>
 
-                <!-- Status filter -->
-                <select name="select"
-                    :value="status"
-                    aria-label="Filter by status"
-                    class="text-sm border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-slate-100"
-                    @change="onStatusChange"
-                >
-                    <option value="">All Statuses</option>
-                    <option v-for="s in STATUSES" :key="s" :value="s">
-                        {{ s.charAt(0).toUpperCase() + s.slice(1) }}
-                    </option>
-                </select>
-
-                <!-- Site filter -->
+                <!-- Site filter (kept as dropdown — scales better than pills for many sites) -->
                 <select name="select"
                     :value="siteId"
                     aria-label="Filter by site"
@@ -228,17 +227,6 @@ const STATUSES = ['enrolled', 'referred', 'intake', 'pending', 'disenrolled', 'd
                         {{ s.name }}
                     </option>
                 </select>
-
-                <!-- Flags checkbox -->
-                <label class="flex items-center gap-1.5 text-sm text-gray-700 dark:text-slate-300 cursor-pointer">
-                    <input
-                        type="checkbox"
-                        :checked="hasFlags"
-                        class="rounded border-gray-300 text-blue-600 dark:text-blue-400"
-                        @change="onFlagsChange"
-                    />
-                    Active flags only
-                </label>
 
                 <button
                     type="submit"
@@ -256,6 +244,89 @@ const STATUSES = ['enrolled', 'referred', 'intake', 'pending', 'disenrolled', 'd
                     Clear
                 </button>
             </form>
+
+            <!-- ── Status + toggle pill row ── -->
+            <div class="flex flex-wrap items-center gap-2 mb-4" role="group" aria-label="Status filters">
+                <!-- All Statuses pill -->
+                <button
+                    type="button"
+                    :aria-pressed="status === ''"
+                    :class="[
+                        'px-3 py-1 rounded-full text-xs font-semibold border transition-colors',
+                        status === ''
+                            ? 'bg-blue-600 border-blue-600 text-white shadow-sm'
+                            : 'bg-white dark:bg-slate-700 border-gray-200 dark:border-slate-600 text-gray-600 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-600',
+                    ]"
+                    @click="setStatus('')"
+                >
+                    All
+                </button>
+
+                <!-- Per-status pills -->
+                <button
+                    v-for="s in STATUSES"
+                    :key="s"
+                    type="button"
+                    :aria-pressed="status === s"
+                    :class="[
+                        'px-3 py-1 rounded-full text-xs font-semibold border transition-colors capitalize',
+                        status === s
+                            ? 'bg-blue-600 border-blue-600 text-white shadow-sm'
+                            : 'bg-white dark:bg-slate-700 border-gray-200 dark:border-slate-600 text-gray-600 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-600',
+                    ]"
+                    @click="setStatus(s)"
+                >
+                    {{ s }}
+                </button>
+
+                <!-- Visual separator between status filters and toggles -->
+                <span class="h-5 w-px bg-gray-200 dark:bg-slate-600 mx-1" aria-hidden="true" />
+
+                <!-- Active Flags toggle pill -->
+                <button
+                    type="button"
+                    :aria-pressed="hasFlags"
+                    :class="[
+                        'inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border transition-colors',
+                        hasFlags
+                            ? 'bg-orange-100 dark:bg-orange-900/60 border-orange-300 dark:border-orange-700 text-orange-800 dark:text-orange-200 shadow-sm'
+                            : 'bg-white dark:bg-slate-700 border-gray-200 dark:border-slate-600 text-gray-600 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-600',
+                    ]"
+                    @click="toggleFlags"
+                >
+                    <span
+                        :class="[
+                            'inline-block h-2 w-2 rounded-full',
+                            hasFlags ? 'bg-orange-500' : 'bg-gray-300 dark:bg-slate-500',
+                        ]"
+                        aria-hidden="true"
+                    />
+                    Active Flags
+                </button>
+
+                <!-- IDT Due toggle pill — 42 CFR §460.104(c) 6-month reassessment -->
+                <button
+                    type="button"
+                    :aria-pressed="idtDue"
+                    title="Enrolled participants overdue for their 6-month IDT reassessment (42 CFR §460.104(c))"
+                    :class="[
+                        'inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border transition-colors',
+                        idtDue
+                            ? 'bg-amber-100 dark:bg-amber-900/60 border-amber-300 dark:border-amber-700 text-amber-800 dark:text-amber-200 shadow-sm'
+                            : 'bg-white dark:bg-slate-700 border-gray-200 dark:border-slate-600 text-gray-600 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-600',
+                    ]"
+                    @click="toggleIdtDue"
+                >
+                    <span
+                        :class="[
+                            'inline-block h-2 w-2 rounded-full',
+                            idtDue ? 'bg-amber-500' : 'bg-gray-300 dark:bg-slate-500',
+                        ]"
+                        aria-hidden="true"
+                    />
+                    IDT Due
+                </button>
+            </div>
 
             <!-- ── Table ── -->
             <div class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 overflow-hidden shadow-sm">
@@ -284,7 +355,7 @@ const STATUSES = ['enrolled', 'referred', 'intake', 'pending', 'disenrolled', 'd
                         <tr
                             v-for="ppt in participants.data"
                             :key="ppt.id"
-                            :class="[rowBg(ppt.enrollment_status), 'hover:bg-blue-50 dark:hover:bg-blue-900/20 cursor-pointer transition-colors']"
+                            :class="[rowBg(ppt.enrollment_status, ppt.disenrollment_type), 'hover:bg-blue-50 dark:hover:bg-blue-900/20 cursor-pointer transition-colors']"
                             tabindex="0"
                             :aria-label="`Open profile for ${ppt.last_name}, ${ppt.first_name}`"
                             @click="router.visit(`/participants/${ppt.id}`)"
@@ -306,7 +377,7 @@ const STATUSES = ['enrolled', 'referred', 'intake', 'pending', 'disenrolled', 'd
                                     />
                                     <div
                                         v-else
-                                        class="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-[11px] font-semibold flex-shrink-0"
+                                        class="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-xs font-semibold flex-shrink-0"
                                         aria-hidden="true"
                                     >
                                         {{ (ppt.first_name?.[0] ?? '?').toUpperCase() }}{{ (ppt.last_name?.[0] ?? '').toUpperCase() }}
@@ -342,27 +413,28 @@ const STATUSES = ['enrolled', 'referred', 'intake', 'pending', 'disenrolled', 'd
                                 </span>
                             </td>
 
-                            <!-- Flags -->
+                            <!-- Flags: uniform severity dots (hover for label) + optional IDT Due badge -->
                             <td class="px-4 py-3">
-                                <div class="flex flex-wrap gap-1">
+                                <div class="flex flex-wrap items-center gap-1.5">
                                     <span
                                         v-for="(f, i) in ppt.active_flags.slice(0, 4)"
                                         :key="i"
-                                        :class="['inline-flex px-2.5 py-1 rounded-full text-xs font-semibold shadow-sm', FLAG_COLORS[f.severity] ?? 'bg-slate-500 text-white']"
-                                        :title="f.label"
-                                    >
-                                        {{ f.label }}
-                                    </span>
+                                        :class="['inline-block h-2.5 w-2.5 rounded-full shadow-sm shrink-0', FLAG_COLORS[f.severity] ?? 'bg-slate-500']"
+                                        :title="`${f.label} (${f.severity})`"
+                                        aria-hidden="false"
+                                        role="img"
+                                    />
                                     <span
                                         v-if="ppt.active_flags.length > 4"
-                                        class="text-xs text-gray-400 dark:text-slate-500"
+                                        class="text-xs text-gray-400 dark:text-slate-500 tabular-nums"
+                                        :title="`${ppt.active_flags.length - 4} additional flag(s)`"
                                     >
                                         +{{ ppt.active_flags.length - 4 }}
                                     </span>
                                     <!-- IDT reassessment overdue — 42 CFR §460.104(c) -->
                                     <span
                                         v-if="ppt.idt_review_overdue"
-                                        class="inline-flex px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300"
+                                        class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300 whitespace-nowrap"
                                         title="IDT reassessment overdue (42 CFR §460.104(c) — 6-month required)"
                                     >
                                         IDT Due

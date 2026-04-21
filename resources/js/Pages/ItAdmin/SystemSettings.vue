@@ -29,16 +29,18 @@ interface MedicaidConfigRow {
     is_active: boolean
 }
 
-interface IntegrationStatus {
-    hl7_adt: string
-    lab_result: string
+interface IntegrationRow {
+    name: string
+    description: string
+    status: 'configured' | 'pending' | 'error' | string
+    endpoint: string | null
 }
 
 interface Props {
     tenant: TenantSettings
     medicaidConfigs: MedicaidConfigRow[]
     canEdit: boolean
-    integrationStatus: IntegrationStatus
+    integrationStatus: IntegrationRow[]
 }
 
 const props = defineProps<Props>()
@@ -53,11 +55,6 @@ const US_TIMEZONES = [
     'Pacific/Honolulu',
 ]
 
-const INTEGRATION_LABELS: Record<string, string> = {
-    hl7_adt: 'HL7 ADT Connector',
-    lab_result: 'Lab Results Connector',
-}
-
 const integrationIcon = (status: string) => {
     if (status === 'configured') return CheckCircleIcon
     if (status === 'error') return ExclamationTriangleIcon
@@ -68,6 +65,12 @@ const integrationClass = (status: string) => {
     if (status === 'configured') return 'text-green-600 dark:text-green-400'
     if (status === 'error') return 'text-red-600 dark:text-red-400'
     return 'text-yellow-600 dark:text-yellow-400'
+}
+
+const integrationBadgeClass = (status: string) => {
+    if (status === 'configured') return 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300'
+    if (status === 'error')      return 'bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300'
+    return 'bg-yellow-100 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-300'
 }
 
 const form = useForm({
@@ -207,13 +210,37 @@ const submit = () => {
                     <div class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 shadow-sm p-6">
                         <h2 class="text-base font-semibold text-gray-900 dark:text-slate-100 mb-4">Integration Status</h2>
                         <div class="space-y-3">
-                            <div v-for="(status, key) in props.integrationStatus" :key="key"
-                                class="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-slate-700/50">
-                                <span class="text-sm text-gray-700 dark:text-slate-300">{{ INTEGRATION_LABELS[key] ?? key }}</span>
-                                <div class="flex items-center gap-1">
-                                    <component :is="integrationIcon(status)" class="w-4 h-4" :class="integrationClass(status)" />
-                                    <span class="text-xs capitalize" :class="integrationClass(status)">{{ status }}</span>
+                            <div
+                                v-for="integration in props.integrationStatus"
+                                :key="integration.name"
+                                class="p-3 rounded-lg bg-gray-50 dark:bg-slate-700/50"
+                            >
+                                <div class="flex items-start justify-between gap-2 mb-1">
+                                    <span class="text-sm font-medium text-gray-800 dark:text-slate-200 leading-snug">
+                                        {{ integration.name }}
+                                    </span>
+                                    <span
+                                        :class="[
+                                            'shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium capitalize',
+                                            integrationBadgeClass(integration.status),
+                                        ]"
+                                    >
+                                        <component
+                                            :is="integrationIcon(integration.status)"
+                                            class="w-3.5 h-3.5"
+                                        />
+                                        {{ integration.status }}
+                                    </span>
                                 </div>
+                                <p class="text-xs text-gray-500 dark:text-slate-400 leading-relaxed">
+                                    {{ integration.description }}
+                                </p>
+                                <p
+                                    v-if="integration.endpoint"
+                                    class="mt-1 text-xs font-mono text-gray-500 dark:text-slate-400 break-all"
+                                >
+                                    {{ integration.endpoint }}
+                                </p>
                             </div>
                         </div>
                         <div class="mt-4">

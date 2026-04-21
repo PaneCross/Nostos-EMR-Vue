@@ -48,12 +48,14 @@ const medChangeItems = computed<ActionItem[]>(() => {
         sublabel: m.prescriber ?? undefined,
         badge: 'New',
         badgeColor: 'bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300',
+        href: m.href ?? (m.participant?.id ? `/participants/${m.participant.id}` : '/clinical/medications'),
     }))
     const dcItems: ActionItem[] = discontinued.value.map(m => ({
         label: `${m.participant?.name ?? '-'} — ${m.drug_name ?? '-'}`,
         sublabel: m.discontinued_reason ?? undefined,
         badge: 'D/C',
         badgeColor: 'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300',
+        href: m.href ?? (m.participant?.id ? `/participants/${m.participant.id}` : '/clinical/medications'),
     }))
     return [...newItems, ...dcItems]
 })
@@ -70,6 +72,7 @@ const interactionItems = computed<ActionItem[]>(() =>
             : a.severity === 'major'
             ? 'bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300'
             : 'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300',
+        href: a.href ?? (a.participant?.id ? `/participants/${a.participant.id}` : '/clinical/medications'),
     }))
 )
 
@@ -83,6 +86,7 @@ const controlledItems = computed<ActionItem[]>(() =>
             badgeColor: r.needs_witness
                 ? 'bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300'
                 : 'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300',
+            href: r.href ?? (r.participant?.id ? `/participants/${r.participant.id}` : '/clinical/medications'),
         }
     })
 )
@@ -97,6 +101,7 @@ const refillItems = computed<ActionItem[]>(() =>
         badgeColor: m.refills_remaining === 0
             ? 'bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300'
             : 'bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300',
+        href: m.href ?? (m.participant?.id ? `/participants/${m.participant.id}` : '/clinical/medications'),
     }))
 )
 
@@ -110,12 +115,13 @@ const orderItems = computed<ActionItem[]>(() =>
             : o.priority === 'urgent'
             ? 'bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300'
             : 'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300',
+        href: o.href ?? (o.participant_id ? `/participants/${o.participant_id}` : '/orders'),
     }))
 )
 </script>
 
 <template>
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 grid-flow-dense gap-6">
         <ActionWidget
             title="Medication Changes Today"
             description="New orders and discontinuations recorded today."
@@ -159,7 +165,6 @@ const orderItems = computed<ActionItem[]>(() =>
             emptyMessage="No open medication orders."
             viewAllHref="/orders"
             :loading="loading"
-            class="lg:col-span-2"
         />
     </div>
 </template>

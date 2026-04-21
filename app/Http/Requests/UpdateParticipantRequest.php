@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests;
 
+use App\Support\DisenrollmentTaxonomy;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class UpdateParticipantRequest extends FormRequest
 {
@@ -49,10 +51,12 @@ class UpdateParticipantRequest extends FormRequest
             'medicaid_id'        => ['nullable', 'string', 'max:20'],
             'pace_contract_id'   => ['nullable', 'string', 'max:20'],
             'h_number'           => ['nullable', 'string', 'max:20'],
-            'enrollment_status'  => ['in:referred,intake,pending,enrolled,disenrolled,deceased'],
-            'enrollment_date'    => ['nullable', 'date'],
-            'disenrollment_date' => ['nullable', 'date'],
-            'disenrollment_reason'=> ['nullable', 'string'],
+            // Per 42 CFR §460.160(b): death is a disenrollment reason, not a status.
+            'enrollment_status'    => ['in:referred,intake,pending,enrolled,disenrolled'],
+            'enrollment_date'      => ['nullable', 'date'],
+            'disenrollment_date'   => ['nullable', 'date', 'required_if:enrollment_status,disenrolled'],
+            'disenrollment_reason' => ['nullable', 'string', 'required_if:enrollment_status,disenrolled', Rule::in(DisenrollmentTaxonomy::REASONS)],
+            'disenrollment_type'   => ['nullable', Rule::in(DisenrollmentTaxonomy::TYPES)],
             'nursing_facility_eligible' => ['boolean'],
             'nf_certification_date'     => ['nullable', 'date'],
         ];

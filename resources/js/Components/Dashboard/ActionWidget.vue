@@ -12,7 +12,9 @@ import { ArrowRightIcon } from '@heroicons/vue/24/outline'
 
 export interface ActionItem {
     label: string       // Primary row text (e.g. 'Mildred Testpatient — SOAP Note')
-    href: string        // Direct link to the specific item
+    href?: string       // Direct link to the specific item. When omitted, the row
+                        // renders as non-interactive (most dept dashboards don't
+                        // yet wire up per-item deep links — see backlog).
     badge?: string      // Optional badge text (e.g. '3d overdue', 'Critical')
     badgeColor?: string // Tailwind classes for the badge chip
     sublabel?: string   // Secondary text shown below label (e.g. 'MRN 00042 | 09:30')
@@ -34,7 +36,12 @@ const props = withDefaults(defineProps<{
 const visible = computed(() => props.items.slice(0, props.maxItems))
 const overflow = computed(() => props.items.length - props.maxItems)
 
-function navigate(href: string) {
+function navigate(href: string | undefined) {
+    if (!href) {
+        // Item without a deep link — silently no-op rather than crash.
+        // Backlog: wire per-item href on dept dashboards (see ItAdminDashboard etc.)
+        return
+    }
     router.visit(href)
 }
 </script>
@@ -50,12 +57,12 @@ function navigate(href: string) {
                 </h3>
                 <span
                     v-if="!loading && items.length > 0"
-                    class="text-xs font-medium text-gray-400 dark:text-slate-500 tabular-nums shrink-0"
+                    class="text-sm font-medium text-gray-400 dark:text-slate-500 tabular-nums shrink-0"
                 >
                     {{ items.length }}
                 </span>
             </div>
-            <p v-if="description" class="text-xs italic text-gray-400 dark:text-slate-500 mt-0.5 leading-relaxed">
+            <p v-if="description" class="text-sm italic text-gray-400 dark:text-slate-500 mt-0.5 leading-relaxed">
                 {{ description }}
             </p>
         </div>
@@ -71,7 +78,7 @@ function navigate(href: string) {
             </div>
 
             <!-- Empty state -->
-            <p v-else-if="items.length === 0" class="text-xs text-gray-400 dark:text-slate-500 py-4 text-center">
+            <p v-else-if="items.length === 0" class="text-sm text-gray-400 dark:text-slate-500 py-4 text-center">
                 {{ emptyMessage }}
             </p>
 
@@ -80,26 +87,37 @@ function navigate(href: string) {
                 <li v-for="(item, idx) in visible" :key="idx">
                     <button
                         type="button"
-                        class="w-full flex items-center justify-between gap-3 py-2.5 group hover:bg-gray-50 dark:hover:bg-slate-700/50 -mx-4 px-4 transition-colors text-left"
+                        :disabled="!item.href"
+                        :class="[
+                            'w-full flex items-center justify-between gap-3 py-2.5 group -mx-4 px-4 transition-colors text-left',
+                            item.href
+                                ? 'hover:bg-gray-50 dark:hover:bg-slate-700/50 cursor-pointer'
+                                : 'cursor-default',
+                        ]"
                         @click="navigate(item.href)"
                     >
                         <div class="min-w-0 flex-1">
-                            <p class="text-xs font-medium text-gray-800 dark:text-slate-200 truncate group-hover:text-blue-600 dark:group-hover:text-blue-400">
+                            <p
+                                :class="[
+                                    'text-sm font-medium text-gray-800 dark:text-slate-200 truncate',
+                                    item.href ? 'group-hover:text-blue-600 dark:group-hover:text-blue-400' : '',
+                                ]"
+                            >
                                 {{ item.label }}
                             </p>
-                            <p v-if="item.sublabel" class="text-[10px] text-gray-400 dark:text-slate-500 mt-0.5 truncate">
+                            <p v-if="item.sublabel" class="text-sm text-gray-400 dark:text-slate-500 mt-0.5 truncate">
                                 {{ item.sublabel }}
                             </p>
                         </div>
                         <span
                             v-if="item.badge"
-                            :class="['inline-flex shrink-0 items-center px-1.5 py-0.5 rounded text-[10px] font-semibold', item.badgeColor ?? 'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300']"
+                            :class="['inline-flex shrink-0 items-center px-1.5 py-0.5 rounded text-sm font-semibold', item.badgeColor ?? 'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300']"
                         >
                             {{ item.badge }}
                         </span>
                     </button>
                 </li>
-                <li v-if="overflow > 0" class="py-2 text-[10px] text-gray-400 dark:text-slate-500 text-center">
+                <li v-if="overflow > 0" class="py-2 text-sm text-gray-400 dark:text-slate-500 text-center">
                     and {{ overflow }} more...
                 </li>
             </ul>
@@ -109,7 +127,7 @@ function navigate(href: string) {
         <div v-if="viewAllHref" class="px-4 py-2.5 border-t border-gray-100 dark:border-slate-700/60">
             <button
                 type="button"
-                class="inline-flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400 hover:underline"
+                class="inline-flex items-center gap-1 text-sm text-blue-600 dark:text-blue-400 hover:underline"
                 @click="navigate(viewAllHref)"
             >
                 View all

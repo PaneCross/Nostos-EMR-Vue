@@ -50,14 +50,21 @@ class EmarTest extends TestCase
             ->forSite($this->site->id)
             ->create();
 
+        // Override is_controlled/controlled_schedule explicitly. The factory
+        // picks a random drug from a list that includes controlled substances
+        // (Oxycodone Sched II, Lorazepam Sched IV) and would otherwise leave
+        // those flags set even when the test overrides drug_name to a
+        // non-controlled value — causing requiresWitness() to trigger a 422.
         $this->medication = Medication::factory()
             ->forParticipant($this->participant->id)
             ->forTenant($this->tenant->id)
             ->create([
-                'drug_name'  => 'Lisinopril',
-                'status'     => 'active',
-                'is_prn'     => false,
-                'frequency'  => 'daily',
+                'drug_name'           => 'Lisinopril',
+                'status'              => 'active',
+                'is_prn'              => false,
+                'frequency'           => 'daily',
+                'is_controlled'       => false,
+                'controlled_schedule' => null,
             ]);
     }
 

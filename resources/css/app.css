@@ -21,4 +21,88 @@
     select {
         padding-right: 2rem;
     }
+
+    /* ── Custom scrollbars ──────────────────────────────────────────────────── */
+    /* Webkit (Chrome, Edge, Safari) */
+    ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+        background: rgb(203 213 225); /* slate-300 */
+        border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+        background: rgb(148 163 184); /* slate-400 */
+    }
+    ::-webkit-scrollbar-corner {
+        background: transparent;
+    }
+
+    /* Dark mode — webkit */
+    .dark ::-webkit-scrollbar-thumb {
+        background: rgb(71 85 105); /* slate-600 */
+    }
+    .dark ::-webkit-scrollbar-thumb:hover {
+        background: rgb(100 116 139); /* slate-500 */
+    }
+
+    /* Firefox */
+    * {
+        scrollbar-width: thin;
+        scrollbar-color: rgb(203 213 225) transparent;
+    }
+    .dark * {
+        scrollbar-color: rgb(71 85 105) transparent;
+    }
+}
+
+/* ── Modal shake animation ─────────────────────────────────────────────────── */
+/* Used when users click outside a form-bearing modal to signal that the close
+   button is the intended exit path. Prevents accidental data loss. */
+@keyframes modal-shake {
+    0%, 100%   { transform: translateX(0); }
+    15%, 55%   { transform: translateX(-8px); }
+    30%, 70%   { transform: translateX(8px); }
+    45%, 85%   { transform: translateX(-4px); }
+}
+.animate-shake {
+    animation: modal-shake 0.5s ease-in-out;
+}
+
+/* ── Slide-reveal transition (used by pending banners, inline alerts) ──────── */
+/* Smoothly expands a block into the flow — height, padding, margin, border,
+   and opacity all transition together so sibling content slides rather than
+   jumps. Parent's space-y-* gap is neutralized during collapsed state. */
+.slide-reveal-enter-active,
+.slide-reveal-leave-active {
+    transition:
+        max-height  0.3s ease-in-out,
+        opacity     0.25s ease-in-out,
+        margin-top  0.3s ease-in-out,
+        margin-bottom 0.3s ease-in-out,
+        padding-top 0.3s ease-in-out,
+        padding-bottom 0.3s ease-in-out,
+        border-top-width 0.3s ease-in-out,
+        border-bottom-width 0.3s ease-in-out;
+    overflow: hidden;
+}
+.slide-reveal-enter-from,
+.slide-reveal-leave-to {
+    max-height: 0 !important;
+    opacity: 0 !important;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    border-top-width: 0 !important;
+    border-bottom-width: 0 !important;
+}
+.slide-reveal-enter-to,
+.slide-reveal-leave-from {
+    max-height: 300px;
+    opacity: 1;
 }

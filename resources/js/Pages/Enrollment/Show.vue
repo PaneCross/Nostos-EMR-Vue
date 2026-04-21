@@ -10,7 +10,7 @@
 
 import { ref, computed } from 'vue'
 import { Head, Link, router } from '@inertiajs/vue3'
-import { ArrowLeftIcon, UserIcon, CheckCircleIcon, XCircleIcon } from '@heroicons/vue/24/outline'
+import { ArrowLeftIcon, UserIcon, CheckCircleIcon, XCircleIcon, ChatBubbleLeftEllipsisIcon } from '@heroicons/vue/24/outline'
 import AppShell from '@/Layouts/AppShell.vue'
 import axios from 'axios'
 
@@ -19,6 +19,11 @@ import axios from 'axios'
 interface ReferralData {
     id: number
     referred_by_name: string
+    referred_by_org: string | null
+    prospective_first_name: string | null
+    prospective_last_name: string | null
+    prospective_dob: string | null
+    potential_enrollee_name: string  // backend-computed display name with fallback (NPA term per 42 CFR §460.154)
     referral_source: string
     source_label: string
     referral_date: string | null
@@ -44,12 +49,22 @@ interface StatusHistoryEntry {
     created_at: string | null
 }
 
+interface NoteEntry {
+    id: number
+    content: string
+    referral_status: string | null   // pipeline status at the time the note was written
+    created_at: string | null
+    user: { id: number; first_name: string; last_name: string; department: string } | null
+}
+
 const props = defineProps<{
     referral: ReferralData
     validTransitions: string[]
     statusLabels: Record<string, string>
     pipelineSteps: string[]
     statusHistory: StatusHistoryEntry[]
+    notes: NoteEntry[]
+    canAddNote: boolean
 }>()
 
 // ── Status stepper ─────────────────────────────────────────────────────────────
@@ -157,6 +172,52 @@ function stepTimestamp(step: string): string {
     return entry ? fmtDateTime(entry.created_at) : ''
 }
 
+// ── Notes thread (enrollment comment log) ────────────────────────────────────
+// Append-only: once posted, notes are immutable. Displayed newest-first.
+const noteList      = ref<NoteEntry[]>([...(props.notes ?? [])])
+const noteDraft     = ref('')
+const noteSaving    = ref(false)
+const noteError     = ref('')
+
+async function submitNote() {
+    const content = noteDraft.value.trim()
+    if (!content) { noteError.value = 'Please enter a note.'; return }
+    if (content.length > 2000) { noteError.value = 'Note must be 2000 characters or less.'; return }
+
+    noteSaving.value = true
+    noteError.value  = ''
+    try {
+        const res = await axios.post(`/enrollment/referrals/${props.referral.id}/notes`, { content })
+        const newNote: NoteEntry = res.data?.note
+        if (newNote) noteList.value = [newNote, ...noteList.value]
+        noteDraft.value = ''
+    } catch (err: any) {
+        noteError.value = err.response?.data?.message ?? 'Failed to save note. Please try again.'
+    } finally {
+        noteSaving.value = false
+    }
+}
+
+function relativeTime(iso: string | null): string {
+    if (!iso) return ''
+    const d   = new Date(iso).getTime()
+    const now = Date.now()
+    const min = Math.floor((now - d) / 60000)
+    if (min < 1)    return 'just now'
+    if (min < 60)   return `${min} min ago`
+    const hr = Math.floor(min / 60)
+    if (hr  < 24)   return `${hr} hr ago`
+    const days = Math.floor(hr / 24)
+    if (days < 30)  return `${days} day${days === 1 ? '' : 's'} ago`
+    return fmtDateTime(iso)
+}
+
+function authorLabel(note: NoteEntry): string {
+    if (!note.user) return 'Unknown'
+    const dept = note.user.department ? ` · ${note.user.department.replace(/_/g, ' ')}` : ''
+    return `${note.user.first_name} ${note.user.last_name}${dept}`
+}
+
 const STATUS_BADGE: Record<string, string> = {
     new:                'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300',
     intake_scheduled:   'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300',
@@ -171,7 +232,7 @@ const STATUS_BADGE: Record<string, string> = {
 </script>
 
 <template>
-    <Head :title="`Referral: ${referral.referred_by_name}`" />
+    <Head :title="`Referral: ${referral.potential_enrollee_name}`" />
 
     <AppShell>
         <template #header>
@@ -183,7 +244,7 @@ const STATUS_BADGE: Record<string, string> = {
                     <ArrowLeftIcon class="w-4 h-4" />
                 </Link>
                 <h1 class="text-base font-semibold text-gray-800 dark:text-slate-200">
-                    {{ referral.referred_by_name }}
+                    {{ referral.potential_enrollee_name }}
                 </h1>
                 <span :class="['inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold', STATUS_BADGE[referral.status] ?? 'bg-gray-100 dark:bg-slate-700 text-gray-500']">
                     {{ referral.status_label }}
@@ -233,7 +294,7 @@ const STATUS_BADGE: Record<string, string> = {
                             <!-- Timestamp under step label (from real history data) -->
                             <span
                                 v-if="stepTimestamp(step)"
-                                class="text-[10px] text-gray-400 dark:text-slate-500 mt-0.5 text-center max-w-[4.5rem] leading-tight"
+                                class="text-xs text-gray-400 dark:text-slate-500 mt-0.5 text-center max-w-[4.5rem] leading-tight"
                             >{{ stepTimestamp(step) }}</span>
                         </div>
                         <!-- Connector line (not after last step) -->
@@ -320,6 +381,27 @@ const STATUS_BADGE: Record<string, string> = {
                 </Link>
             </div>
 
+            <!-- ── Potential Enrollee (NPA / 42 CFR §460.154 term for pre-enrollment individual) ── -->
+            <div class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 divide-y divide-gray-100 dark:divide-slate-700">
+                <div class="px-5 py-3">
+                    <h2 class="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">Potential Enrollee</h2>
+                </div>
+                <dl class="grid grid-cols-2 sm:grid-cols-3 gap-0 divide-y divide-gray-100 dark:divide-slate-700">
+                    <div class="px-5 py-3">
+                        <dt class="text-xs text-gray-500 dark:text-slate-400 mb-0.5">First Name</dt>
+                        <dd class="text-sm font-medium text-gray-900 dark:text-slate-100">{{ referral.prospective_first_name ?? '-' }}</dd>
+                    </div>
+                    <div class="px-5 py-3">
+                        <dt class="text-xs text-gray-500 dark:text-slate-400 mb-0.5">Last Name</dt>
+                        <dd class="text-sm font-medium text-gray-900 dark:text-slate-100">{{ referral.prospective_last_name ?? '-' }}</dd>
+                    </div>
+                    <div class="px-5 py-3">
+                        <dt class="text-xs text-gray-500 dark:text-slate-400 mb-0.5">Date of Birth</dt>
+                        <dd class="text-sm text-gray-900 dark:text-slate-100">{{ fmtDate(referral.prospective_dob) }}</dd>
+                    </div>
+                </dl>
+            </div>
+
             <!-- ── Referral details ── -->
             <div class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 divide-y divide-gray-100 dark:divide-slate-700">
                 <div class="px-5 py-3">
@@ -329,7 +411,12 @@ const STATUS_BADGE: Record<string, string> = {
                 <dl class="grid grid-cols-2 sm:grid-cols-3 gap-0 divide-y divide-gray-100 dark:divide-slate-700">
                     <div class="px-5 py-3 col-span-2 sm:col-span-1">
                         <dt class="text-xs text-gray-500 dark:text-slate-400 mb-0.5">Referred By</dt>
-                        <dd class="text-sm font-medium text-gray-900 dark:text-slate-100">{{ referral.referred_by_name }}</dd>
+                        <dd class="text-sm font-medium text-gray-900 dark:text-slate-100">
+                            {{ referral.referred_by_name }}
+                            <span v-if="referral.referred_by_org" class="text-xs text-gray-500 dark:text-slate-400 font-normal block">
+                                {{ referral.referred_by_org }}
+                            </span>
+                        </dd>
                     </div>
                     <div class="px-5 py-3">
                         <dt class="text-xs text-gray-500 dark:text-slate-400 mb-0.5">Source</dt>
@@ -406,6 +493,86 @@ const STATUS_BADGE: Record<string, string> = {
                     </tbody>
                 </table>
             </div>
+
+            <!-- ── Notes (append-only comment thread) ── -->
+            <div class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 overflow-hidden">
+                <div class="px-5 py-3 border-b border-gray-100 dark:border-slate-700 flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <ChatBubbleLeftEllipsisIcon class="w-4 h-4 text-gray-400 dark:text-slate-500" />
+                        <h2 class="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">Notes</h2>
+                        <span
+                            class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300"
+                        >
+                            {{ noteList.length }}
+                        </span>
+                    </div>
+                    <span class="text-xs text-gray-400 dark:text-slate-500">Append-only log · visible to enrollment staff</span>
+                </div>
+
+                <!-- Add note form -->
+                <div v-if="canAddNote" class="px-5 py-4 border-b border-gray-100 dark:border-slate-700 space-y-2">
+                    <textarea
+                        v-model="noteDraft"
+                        rows="3"
+                        maxlength="2000"
+                        placeholder="Add a note — context, blockers, follow-up, next steps..."
+                        class="w-full text-sm border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-2 bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-100 resize-y focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <span class="text-xs text-gray-400 dark:text-slate-500 tabular-nums">
+                                {{ noteDraft.length }} / 2000
+                            </span>
+                            <span v-if="noteError" class="text-xs text-red-600 dark:text-red-400">{{ noteError }}</span>
+                        </div>
+                        <button
+                            type="button"
+                            :disabled="noteSaving || noteDraft.trim().length === 0"
+                            class="text-sm px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium disabled:opacity-50 transition-colors"
+                            @click="submitNote"
+                        >
+                            {{ noteSaving ? 'Saving...' : 'Add Note' }}
+                        </button>
+                    </div>
+                </div>
+                <div v-else class="px-5 py-3 border-b border-gray-100 dark:border-slate-700 bg-gray-50 dark:bg-slate-700/30">
+                    <p class="text-xs text-gray-500 dark:text-slate-400">
+                        You have read-only access to enrollment notes. Contact an enrollment staff member to add one.
+                    </p>
+                </div>
+
+                <!-- Note thread (newest first) -->
+                <div v-if="noteList.length === 0" class="px-5 py-8 text-center">
+                    <p class="text-sm text-gray-400 dark:text-slate-500 italic">
+                        No notes yet. {{ canAddNote ? 'Add the first note above.' : '' }}
+                    </p>
+                </div>
+                <ul v-else class="divide-y divide-gray-100 dark:divide-slate-700">
+                    <li v-for="note in noteList" :key="note.id" class="px-5 py-3">
+                        <div class="flex items-start justify-between gap-3 mb-1 flex-wrap">
+                            <div class="flex items-center gap-2 flex-wrap">
+                                <p class="text-sm font-semibold text-gray-900 dark:text-slate-100 capitalize">
+                                    {{ authorLabel(note) }}
+                                </p>
+                                <span
+                                    v-if="note.referral_status"
+                                    :class="['inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium', STATUS_BADGE[note.referral_status] ?? 'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300']"
+                                    :title="'Referral status when note was written'"
+                                >
+                                    {{ statusLabels[note.referral_status] ?? note.referral_status }}
+                                </span>
+                            </div>
+                            <p
+                                class="text-xs text-gray-400 dark:text-slate-500 shrink-0 tabular-nums"
+                                :title="fmtDateTime(note.created_at)"
+                            >
+                                {{ relativeTime(note.created_at) }}
+                            </p>
+                        </div>
+                        <p class="text-sm text-gray-700 dark:text-slate-300 whitespace-pre-wrap">{{ note.content }}</p>
+                    </li>
+                </ul>
+            </div>
         </div>
 
         <!-- ── Decline / Withdraw modal ── -->
@@ -418,7 +585,7 @@ const STATUS_BADGE: Record<string, string> = {
                     <p class="text-sm text-gray-600 dark:text-slate-400">
                         {{ exitType === 'declined'
                             ? 'This referral will be marked as declined. Please provide a reason.'
-                            : 'This referral will be marked as withdrawn by the prospective participant or family.' }}
+                            : 'This referral will be marked as withdrawn by the potential enrollee or family.' }}
                     </p>
                     <div>
                         <label class="block text-xs font-medium text-gray-700 dark:text-slate-300 mb-1">

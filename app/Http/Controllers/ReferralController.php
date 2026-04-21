@@ -57,6 +57,7 @@ class ReferralController extends Controller
         // Load all referrals for the tenant (including terminal for history)
         $referrals = Referral::forTenant($tenantId)
             ->with(['assignedTo:id,first_name,last_name', 'participant:id,mrn,first_name,last_name', 'createdBy:id,first_name,last_name'])
+            ->withCount(['referralNotes as notes_count'])  // Kanban card note-count chip
             ->orderBy('referral_date', 'desc')
             ->get();
 
@@ -66,11 +67,19 @@ class ReferralController extends Controller
                 $status => $referrals->where('status', $status)->values(),
             ]);
 
+        // Sites the current user can reference when creating a referral.
+        $sites = \App\Models\Site::where('tenant_id', $tenantId)
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get(['id', 'name']);
+
         return Inertia::render('Enrollment/Index', [
             'pipeline'      => $pipeline,
             'statuses'      => Referral::STATUS_LABELS,
             'sources'       => Referral::SOURCE_LABELS,
             'pipelineOrder' => Referral::PIPELINE_STATUSES,
+            'sites'         => $sites,
+            'defaultSiteId' => $request->user()->site_id,
         ]);
     }
 
@@ -118,9 +127,16 @@ class ReferralController extends Controller
      */
     public function show(Request $request, Referral $referral): Response
     {
-        $this->authorizeTenant($referral, $request->user());
+        $user = $request->user();
+        $this->authorizeTenant($referral, $user);
 
-        $referral->load(['assignedTo:id,first_name,last_name', 'participant:id,mrn,first_name,last_name', 'createdBy:id,first_name,last_name', 'site:id,name']);
+        $referral->load([
+            'assignedTo:id,first_name,last_name',
+            'participant:id,mrn,first_name,last_name',
+            'createdBy:id,first_name,last_name',
+            'site:id,name',
+            'referralNotes.user:id,first_name,last_name,department',
+        ]);
 
         $statusHistory = ReferralStatusHistory::where('referral_id', $referral->id)
             ->with('transitionedBy:id,first_name,last_name')
@@ -143,6 +159,11 @@ class ReferralController extends Controller
             'referral' => [
                 'id'               => $referral->id,
                 'referred_by_name' => $referral->referred_by_name,
+                'referred_by_org'  => $referral->referred_by_org,
+                'prospective_first_name'  => $referral->prospective_first_name,
+                'prospective_last_name'   => $referral->prospective_last_name,
+                'prospective_dob'         => $referral->prospective_dob?->toDateString(),
+                'potential_enrollee_name' => $referral->potentialEnrolleeName(),
                 'referral_source'  => $referral->referral_source,
                 'source_label'     => $referral->sourceLabel(),
                 'referral_date'    => $referral->referral_date?->toDateString(),
@@ -171,6 +192,20 @@ class ReferralController extends Controller
             'statusLabels'     => Referral::STATUS_LABELS,
             'pipelineSteps'    => ['new', 'intake_scheduled', 'intake_in_progress', 'intake_complete', 'eligibility_pending', 'pending_enrollment', 'enrolled'],
             'statusHistory'    => $statusHistory,
+            'notes'            => $referral->referralNotes->map(fn ($n) => [
+                'id'              => $n->id,
+                'content'         => $n->content,
+                'referral_status' => $n->referral_status,
+                'created_at'      => $n->created_at?->toIso8601String(),
+                'user'            => $n->user ? [
+                    'id'         => $n->user->id,
+                    'first_name' => $n->user->first_name,
+                    'last_name'  => $n->user->last_name,
+                    'department' => $n->user->department,
+                ] : null,
+            ])->values(),
+            'canAddNote' => $user->role === 'super_admin'
+                || in_array($user->department, ['enrollment', 'it_admin', 'super_admin'], true),
         ]);
     }
 

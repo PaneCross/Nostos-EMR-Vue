@@ -62,7 +62,7 @@ class AppointmentController extends Controller
             'locations'        => Location::forTenant($user->tenant_id)
                 ->active()
                 ->orderBy('name')
-                ->get(['id', 'name', 'location_type']),
+                ->get(['id', 'name', 'location_type', 'site_id', 'city']),
         ]);
     }
 
@@ -159,6 +159,29 @@ class AppointmentController extends Controller
         $start = \Carbon\Carbon::parse($data['scheduled_start']);
         $end   = \Carbon\Carbon::parse($data['scheduled_end']);
 
+        // ── Cross-site guard ─────────────────────────────────────────────────
+        // If the chosen location has a site_id different from the participant's
+        // enrolled site, require explicit client confirmation. Prevents silent
+        // cross-site bookings.
+        $crossSite     = null;
+        $crossSiteName = null;
+        if (! empty($data['location_id'])) {
+            $loc = Location::find($data['location_id']);
+            if ($loc && $loc->site_id && $loc->site_id !== $participant->site_id) {
+                if (empty($data['cross_site_confirmed'])) {
+                    return response()->json([
+                        'message' => 'Cross-site appointment requires confirmation. Please confirm in the UI.',
+                        'error'   => 'cross_site_unconfirmed',
+                    ], 422);
+                }
+                $crossSite     = $loc;
+                $crossSiteName = $loc->site?->name ?? "Site {$loc->site_id}";
+            }
+        }
+
+        // Strip the confirmation flag — it's not an Appointment column.
+        unset($data['cross_site_confirmed']);
+
         // ── Conflict check: participant cannot have overlapping appointments ──
         if ($this->conflictService->checkParticipantConflict($participant->id, $start, $end)) {
             return response()->json([
@@ -194,6 +217,28 @@ class AppointmentController extends Controller
             description:  "Appointment ({$appointment->appointment_type}) created for {$participant->mrn} at {$start->format('Y-m-d H:i')}",
             newValues:    $data,
         );
+
+        // Cross-site audit entry — surfaces on the participant's audit tab so
+        // home-site staff can see the participant is going elsewhere that day.
+        if ($crossSite) {
+            AuditLog::record(
+                action:       'appointment.cross_site_scheduled',
+                tenantId:     $user->tenant_id,
+                userId:       $user->id,
+                resourceType: 'participant',
+                resourceId:   $participant->id,
+                description:  "Cross-site appointment scheduled at {$crossSiteName} ({$appointment->appointment_type}, {$start->format('Y-m-d H:i')})",
+                newValues:    [
+                    'appointment_id'  => $appointment->id,
+                    'home_site_id'    => $participant->site_id,
+                    'host_site_id'    => $crossSite->site_id,
+                    'host_site_name'  => $crossSiteName,
+                    'location_id'     => $crossSite->id,
+                    'location_name'   => $crossSite->name,
+                    'scheduled_start' => $start->toIso8601String(),
+                ],
+            );
+        }
 
         return response()->json(
             $appointment->load(['provider:id,first_name,last_name', 'location:id,name']),

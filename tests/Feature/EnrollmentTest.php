@@ -95,11 +95,15 @@ class EnrollmentTest extends TestCase
         $user = $this->makeUser();
         $site = Site::factory()->create(['tenant_id' => $user->tenant_id]);
 
+        // prospective_first_name/last_name are required by StoreReferralRequest
+        // since migration 2026_04_16_000004 added NPA "Potential Enrollee" fields.
         $payload = [
-            'site_id'          => $site->id,
-            'referred_by_name' => 'Dr. Jane Smith',
-            'referral_date'    => '2025-06-01',
-            'referral_source'  => 'physician',
+            'site_id'                => $site->id,
+            'referred_by_name'       => 'Dr. Jane Smith',
+            'referral_date'          => '2025-06-01',
+            'referral_source'        => 'physician',
+            'prospective_first_name' => 'Prospective',
+            'prospective_last_name'  => 'Participant',
         ];
 
         $response = $this->actingAs($user)->postJson('/enrollment/referrals', $payload);
@@ -121,10 +125,12 @@ class EnrollmentTest extends TestCase
         $site = Site::factory()->create(['tenant_id' => $user->tenant_id]);
 
         $payload = [
-            'site_id'          => $site->id,
-            'referred_by_name' => 'Test Referrer',
-            'referral_date'    => '2025-06-01',
-            'referral_source'  => 'hospital',
+            'site_id'                => $site->id,
+            'referred_by_name'       => 'Test Referrer',
+            'referral_date'          => '2025-06-01',
+            'referral_source'        => 'hospital',
+            'prospective_first_name' => 'Prospective',
+            'prospective_last_name'  => 'Participant',
         ];
 
         $response = $this->actingAs($user)->postJson('/enrollment/referrals', $payload);
@@ -297,7 +303,7 @@ class EnrollmentTest extends TestCase
         $response = $this->actingAs($user)->postJson(
             "/participants/{$participant->id}/disenroll",
             [
-                'reason'                   => 'voluntary',
+                'reason'                   => 'voluntary_other',
                 'effective_date'           => '2025-07-01',
                 'cms_notification_required'=> true,
                 'notes'                    => 'Participant requested disenrollment.',
@@ -309,7 +315,8 @@ class EnrollmentTest extends TestCase
         $fresh = $participant->fresh();
         $this->assertEquals('disenrolled', $fresh->enrollment_status);
         $this->assertEquals('2025-07-01', $fresh->disenrollment_date->format('Y-m-d'));
-        $this->assertEquals('voluntary', $fresh->disenrollment_reason);
+        $this->assertEquals('voluntary_other', $fresh->disenrollment_reason);
+        $this->assertEquals('voluntary', $fresh->disenrollment_type);
         $this->assertFalse((bool) $fresh->is_active);
     }
 
@@ -324,7 +331,7 @@ class EnrollmentTest extends TestCase
         $response = $this->actingAs($user)->postJson(
             "/participants/{$participant->id}/disenroll",
             [
-                'reason'                    => 'voluntary',
+                'reason'                    => 'voluntary_other',
                 'effective_date'            => '2025-07-01',
                 'cms_notification_required' => false,
             ],
@@ -344,7 +351,7 @@ class EnrollmentTest extends TestCase
         $response = $this->actingAs($user)->postJson(
             "/participants/{$participant->id}/disenroll",
             [
-                'reason'                    => 'voluntary',
+                'reason'                    => 'voluntary_other',
                 'effective_date'            => '2025-07-01',
                 'cms_notification_required' => false,
             ],

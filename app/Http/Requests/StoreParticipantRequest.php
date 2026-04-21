@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests;
 
+use App\Support\DisenrollmentTaxonomy;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreParticipantRequest extends FormRequest
 {
@@ -29,8 +31,12 @@ class StoreParticipantRequest extends FormRequest
             'primary_language'   => ['nullable', 'string', 'max:50'],
             'interpreter_needed' => ['boolean'],
             'interpreter_language'=> ['nullable', 'string', 'max:50'],
-            'enrollment_status'  => ['required', 'in:referred,intake,pending,enrolled,disenrolled,deceased'],
+            // Per 42 CFR §460.160(b): death is a disenrollment reason, not a top-level status.
+            'enrollment_status'  => ['required', 'in:referred,intake,pending,enrolled,disenrolled'],
             'enrollment_date'    => ['nullable', 'date'],
+            'disenrollment_date'   => ['nullable', 'date', 'required_if:enrollment_status,disenrolled'],
+            'disenrollment_reason' => ['nullable', 'string', 'required_if:enrollment_status,disenrolled', Rule::in(DisenrollmentTaxonomy::REASONS)],
+            'disenrollment_type'   => ['nullable', Rule::in(['voluntary', 'involuntary', 'death'])],
             'nursing_facility_eligible' => ['boolean'],
 
             // Address (optional at creation)

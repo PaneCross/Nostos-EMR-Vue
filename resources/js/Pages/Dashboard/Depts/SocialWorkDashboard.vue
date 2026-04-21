@@ -44,6 +44,7 @@ const scheduleItems = computed<ActionItem[]>(() =>
         badgeColor: a.status === 'confirmed'
             ? 'bg-green-100 dark:bg-green-900/60 text-green-700 dark:text-green-300'
             : 'bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300',
+        href: a.href ?? (a.participant?.id ? `/participants/${a.participant.id}` : '/schedule'),
     }))
 )
 
@@ -57,6 +58,7 @@ const alertItems = computed<ActionItem[]>(() =>
             : a.severity === 'warning'
             ? 'bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300'
             : 'bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300',
+        href: a.href ?? (a.participant?.id ? `/participants/${a.participant.id}` : '/participants'),
     }))
 )
 
@@ -68,6 +70,7 @@ const sdrItems = computed<ActionItem[]>(() =>
         badgeColor: s.is_overdue
             ? 'bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300'
             : 'bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300',
+        href: s.href ?? (s.participant?.id ? `/participants/${s.participant.id}` : '/sdrs'),
     }))
 )
 
@@ -79,12 +82,13 @@ const incidentItems = computed<ActionItem[]>(() =>
         badgeColor: i.rca_required
             ? 'bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300'
             : 'bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300',
+        href: i.href ?? (i.participant?.id ? `/participants/${i.participant.id}` : '/qa/dashboard'),
     }))
 )
 </script>
 
 <template>
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 grid-flow-dense gap-6">
         <ActionWidget
             title="Today's Schedule"
             description="Social work and home visit appointments scheduled today."

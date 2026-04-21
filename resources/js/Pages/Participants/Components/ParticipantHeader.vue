@@ -37,6 +37,7 @@ interface Participant {
   enrollment_date: string | null
   disenrollment_date: string | null; disenrollment_reason: string | null
   nursing_facility_eligible: boolean; nf_certification_date: string | null
+  day_center_days: string[] | null
   race: string | null; ethnicity: string | null; race_detail: string | null
   marital_status: string | null; veteran_status: string | null
   education_level: string | null; religion: string | null
@@ -146,6 +147,8 @@ function blankForm() {
     disenrollment_reason:      p.disenrollment_reason   ?? '',
     nursing_facility_eligible: p.nursing_facility_eligible,
     nf_certification_date:     p.nf_certification_date  ?? '',
+    // Day Center schedule (array of weekday codes)
+    day_center_days:           Array.isArray(p.day_center_days) ? [...p.day_center_days] : [],
     // Advance Directive
     advance_directive_status:      p.advance_directive_status      ?? '',
     advance_directive_type:        p.advance_directive_type        ?? '',
@@ -201,6 +204,7 @@ function submitEdit() {
       disenrollment_reason:      nullIfEmpty(f.disenrollment_reason),
       nursing_facility_eligible: f.nursing_facility_eligible,
       nf_certification_date:     nullIfEmpty(f.nf_certification_date),
+      day_center_days:           (f.day_center_days ?? []).length > 0 ? f.day_center_days : null,
       advance_directive_status:      nullIfEmpty(f.advance_directive_status),
       advance_directive_type:        nullIfEmpty(f.advance_directive_type),
       advance_directive_reviewed_at: nullIfEmpty(f.advance_directive_reviewed_at),
@@ -476,6 +480,42 @@ const sectionHdr = 'text-xs font-bold text-slate-500 dark:text-slate-400 upperca
             <div>
               <label class="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">NF Certification Date</label>
               <input v-model="editForm.nf_certification_date" type="date" :class="inputCls" />
+            </div>
+
+            <!-- Day Center recurring schedule -->
+            <div class="col-span-2">
+              <label class="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">Day Center Schedule</label>
+              <div class="flex flex-wrap gap-2">
+                <label
+                  v-for="day in [
+                    { code: 'mon', label: 'Mon' },
+                    { code: 'tue', label: 'Tue' },
+                    { code: 'wed', label: 'Wed' },
+                    { code: 'thu', label: 'Thu' },
+                    { code: 'fri', label: 'Fri' },
+                    { code: 'sat', label: 'Sat' },
+                    { code: 'sun', label: 'Sun' },
+                  ]"
+                  :key="day.code"
+                  :class="[
+                    'inline-flex items-center justify-center px-3 py-1.5 rounded-lg border cursor-pointer text-sm font-medium transition-colors select-none',
+                    editForm.day_center_days?.includes(day.code)
+                      ? 'bg-blue-600 text-white border-blue-600'
+                      : 'bg-white dark:bg-slate-700 text-gray-700 dark:text-slate-300 border-gray-300 dark:border-slate-600 hover:bg-gray-50 dark:hover:bg-slate-600',
+                  ]"
+                >
+                  <input
+                    :value="day.code"
+                    v-model="editForm.day_center_days"
+                    type="checkbox"
+                    class="sr-only"
+                  />
+                  {{ day.label }}
+                </label>
+              </div>
+              <p class="text-xs text-gray-400 dark:text-slate-500 mt-1">
+                Which weekdays this participant is scheduled to attend the day center. Overrides available via appointments.
+              </p>
             </div>
           </div>
 

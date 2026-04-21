@@ -47,21 +47,38 @@ class LocationController extends Controller
                 'label'         => $l->label,
                 'location_type' => $l->location_type,
                 'type_label'    => $l->typeLabel(),
+                'site_id'       => $l->site_id,
                 'street'        => $l->street,
+                'apartment'     => $l->apartment,
+                'suite'         => $l->suite,
+                'building'      => $l->building,
+                'floor'         => $l->floor,
+                'unit'          => $l->unit,
                 'city'          => $l->city,
                 'state'         => $l->state,
                 'zip'           => $l->zip,
                 'phone'         => $l->phone,
                 'contact_name'  => $l->contact_name,
                 'notes'         => $l->notes,
+                'access_notes'  => $l->access_notes,
                 'is_active'     => $l->is_active,
                 'deleted_at'    => $l->deleted_at?->toIso8601String(),
             ]);
 
+        $sites = \App\Models\Site::where('tenant_id', $user->tenant_id)
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get(['id', 'name']);
+
         return Inertia::render('Locations/Index', [
-            'locations'     => $locations,
+            'locations'      => $locations,
             'location_types' => Location::TYPE_LABELS,
-            'can_write'     => $user->department === 'transportation' || $user->isSuperAdmin() || $user->isDeptSuperAdmin(),
+            'sites'          => $sites,
+            // Any authenticated user can create + update locations (e.g. home
+            // care staff adding a new patient's apartment). Deactivation is
+            // transport-only (see `can_deactivate`).
+            'can_write'      => true,
+            'can_deactivate' => $user->department === 'transportation' || $user->isSuperAdmin() || $user->isDeptSuperAdmin(),
         ]);
     }
 
@@ -91,12 +108,12 @@ class LocationController extends Controller
 
     /**
      * POST /locations
-     * Creates a new location. Restricted to Transportation Team.
+     * Creates a new location. Open to any authenticated user (home care staff,
+     * primary care, etc. all add addresses). Only deactivation is restricted.
      */
     public function store(StoreLocationRequest $request): JsonResponse
     {
         $user = $request->user();
-        $this->authorizeTransportTeam($user);
 
         $location = Location::create(array_merge($request->validated(), [
             'tenant_id' => $user->tenant_id,
@@ -130,13 +147,12 @@ class LocationController extends Controller
 
     /**
      * PUT /locations/{location}
-     * Updates location details. Restricted to Transportation Team.
+     * Updates location details. Open to any authenticated user.
      */
     public function update(UpdateLocationRequest $request, Location $location): JsonResponse
     {
         $user = $request->user();
         abort_if($location->tenant_id !== $user->tenant_id, 403);
-        $this->authorizeTransportTeam($user);
 
         $old = $location->only(array_keys($request->validated()));
         $location->update($request->validated());
@@ -157,14 +173,15 @@ class LocationController extends Controller
 
     /**
      * DELETE /locations/{location}
-     * Soft-deletes (deactivates) a location. Restricted to Transportation Team.
-     * Past appointments referencing this location are preserved.
+     * Soft-deletes (deactivates) a location. Transportation Team only — other
+     * staff can add addresses but should not be able to remove records they
+     * didn't originate. Past appointments referencing this location are preserved.
      */
     public function destroy(Request $request, Location $location): JsonResponse
     {
         $user = $request->user();
         abort_if($location->tenant_id !== $user->tenant_id, 403);
-        $this->authorizeTransportTeam($user);
+        $this->authorizeDeactivate($user);
 
         $location->delete();
 
@@ -182,9 +199,18 @@ class LocationController extends Controller
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
-    /** Write operations on locations are restricted to the Transportation Team. */
-    private function authorizeTransportTeam($user): void
+    /**
+     * Deactivating a location is restricted to the Transportation Team (plus
+     * super-admins). Other staff can create + update, but not deactivate.
+     */
+    private function authorizeDeactivate($user): void
     {
-        abort_unless($user->department === 'transportation', 403, 'Only the Transportation Team can manage locations.');
+        abort_unless(
+            $user->department === 'transportation'
+                || $user->isSuperAdmin()
+                || $user->isDeptSuperAdmin(),
+            403,
+            'Only the Transportation Team can deactivate locations.'
+        );
     }
 }

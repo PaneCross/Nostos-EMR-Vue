@@ -62,6 +62,31 @@ class MedicationFactory extends Factory
         ];
     }
 
+    /**
+     * When a test overrides drug_name, re-derive the controlled flags from the
+     * canonical DRUGS list so we never end up with, e.g., "Lisinopril" flagged
+     * as Schedule II because Faker had picked Oxycodone first. This preserves
+     * the factory's original randomness but keeps the record self-consistent.
+     */
+    public function configure(): static
+    {
+        return $this->afterMaking(function (Medication $med) {
+            // Only re-derive if the caller explicitly overrode drug_name AND didn't
+            // also explicitly set the controlled flags themselves.
+            foreach (self::DRUGS as $drug) {
+                if ($drug['name'] !== $med->drug_name) continue;
+                // Match found — align controlled flags with the named drug.
+                $med->is_controlled       = isset($drug['controlled']);
+                $med->controlled_schedule = $drug['controlled'] ?? null;
+                return;
+            }
+            // drug_name override doesn't match any known drug — default to non-controlled
+            // to avoid leaking prior random state.
+            $med->is_controlled       = false;
+            $med->controlled_schedule = null;
+        });
+    }
+
     // ─── States ───────────────────────────────────────────────────────────────
 
     /** Simulate a PRN (as-needed) medication — not pre-scheduled in eMAR. */

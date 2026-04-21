@@ -1,7 +1,9 @@
 <?php
 
 // ─── Referral Model ────────────────────────────────────────────────────────────
-// Represents a prospective PACE participant from initial referral through enrollment.
+// Represents a potential enrollee (42 CFR §460.154) from initial referral through
+// enrollment. Once enrolled, a linked Participant record is created and the
+// referral transitions to the terminal `enrolled` state.
 //
 // CMS enrollment state machine (enforced by EnrollmentService, not the model):
 //   new → intake_scheduled → intake_in_progress → intake_complete
@@ -20,6 +22,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Referral extends Model
 {
@@ -95,6 +98,9 @@ class Referral extends Model
         'site_id',
         'referred_by_name',
         'referred_by_org',
+        'prospective_first_name',
+        'prospective_last_name',
+        'prospective_dob',
         'referral_date',
         'referral_source',
         'participant_id',
@@ -107,8 +113,25 @@ class Referral extends Model
     ];
 
     protected $casts = [
-        'referral_date' => 'date',
+        'referral_date'    => 'date',
+        'prospective_dob'  => 'date',
     ];
+
+    /**
+     * Display name of the potential enrollee — falls back when not yet set.
+     *
+     * NPA/CMS terminology note: "potential enrollee" is the 42 CFR §460.154 term
+     * for a pre-enrollment individual. Internal DB columns use the shorter
+     * `prospective_*` prefix, but user-facing strings must use "Potential
+     * Enrollee" or "Participant" (the latter ONLY after enrollment).
+     */
+    public function potentialEnrolleeName(): string
+    {
+        $full = trim(($this->prospective_first_name ?? '') . ' ' . ($this->prospective_last_name ?? ''));
+        if ($full !== '') return $full;
+        if ($this->participant) return $this->participant->first_name . ' ' . $this->participant->last_name;
+        return 'Potential enrollee (name pending)';
+    }
 
     // ── Relationships ─────────────────────────────────────────────────────────
 
@@ -138,6 +161,19 @@ class Referral extends Model
     public function createdBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by_user_id');
+    }
+
+    /**
+     * Chronological thread of notes attached to this referral (newest first).
+     * NOTE: the relationship is named `referralNotes` — NOT `notes` — because
+     * `emr_referrals` has an existing `notes` TEXT column for the initial
+     * referral narrative, and Eloquent resolves attributes before relationship
+     * methods. Calling `$referral->notes` returns the string; call
+     * `$referral->referralNotes` for the thread collection.
+     */
+    public function referralNotes(): HasMany
+    {
+        return $this->hasMany(ReferralNote::class)->latest('created_at');
     }
 
     // ── Business Logic ────────────────────────────────────────────────────────

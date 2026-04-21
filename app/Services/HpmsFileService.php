@@ -151,17 +151,22 @@ class HpmsFileService
         $periodStart  = Carbon::createFromDate($year, $mon, 1)->startOfMonth();
         $periodEnd    = $periodStart->copy()->endOfMonth();
 
-        // Participants who reached a terminal enrollment status this month
+        // Participants who reached a terminal enrollment status this month.
+        // Per 42 CFR §460.160(b), death is a disenrollment reason — not a status.
         $participants = Participant::where('tenant_id', $tenantId)
-            ->whereIn('enrollment_status', ['disenrolled', 'deceased', 'transferred'])
+            ->where('enrollment_status', 'disenrolled')
             ->whereBetween('updated_at', [$periodStart, $periodEnd])
             ->get();
 
         $lines = ["HPMS_DISENROLLMENT|{$month}|PACE|V2025.1"];
         foreach ($participants as $p) {
-            $reason = match ($p->enrollment_status) {
-                'deceased'    => 'DEATH',
-                'transferred' => 'TRANSFER',
+            // Roll the canonical disenrollment_type into HPMS-legacy 3-way code.
+            // NOTE: these string values are placeholders pending verification against the
+            // real HPMS PACE technical spec (see feedback_cms_labeling_standard.md).
+            $reason = match ($p->disenrollment_type) {
+                'death'       => 'DEATH',
+                'involuntary' => 'INVOLUNTARY',
+                'voluntary'   => 'VOLUNTARY',
                 default       => 'VOLUNTARY',
             };
             $lines[] = implode('|', [

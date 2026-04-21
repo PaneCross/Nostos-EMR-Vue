@@ -52,6 +52,7 @@ const meetingItems = computed<ActionItem[]>(() =>
             badgeColor: m.status === 'in_progress'
                 ? 'bg-green-100 dark:bg-green-900/60 text-green-700 dark:text-green-300'
                 : 'bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300',
+            href: m.href ?? (m.id ? `/idt/meetings/${m.id}` : '/idt/meetings'),
         }
     })
 )
@@ -66,6 +67,7 @@ const escalatedSdrItems = computed<ActionItem[]>(() => {
                 sublabel: dept.department?.replace(/_/g, ' ') ?? undefined,
                 badge: `${s.hours_overdue ?? 0}h overdue`,
                 badgeColor: 'bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300',
+                href: s.href ?? (s.participant?.id ? `/participants/${s.participant.id}` : '/sdrs'),
             })
         })
     })
@@ -84,6 +86,7 @@ const carePlanItems = computed<ActionItem[]>(() =>
             badgeColor: isOverdue
                 ? 'bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300'
                 : 'bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300',
+            href: cp.href ?? (cp.participant?.id ? `/participants/${cp.participant.id}` : '/clinical/care-plans'),
         }
     })
 )
@@ -98,6 +101,7 @@ const alertItems = computed<ActionItem[]>(() =>
             : a.severity === 'warning'
             ? 'bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300'
             : 'bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300',
+        href: a.href ?? (a.participant?.id ? `/participants/${a.participant.id}` : '/qa/dashboard'),
     }))
 )
 
@@ -109,6 +113,7 @@ const idtReviewItems = computed<ActionItem[]>(() =>
             sublabel: sublabelParts.join(' | ') || undefined,
             badge: p.days_overdue != null ? `${p.days_overdue}d overdue` : 'No review on record',
             badgeColor: 'bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300',
+            href: p.href ?? (p.id ? `/participants/${p.id}` : '/participants'),
         }
     })
 )
@@ -135,13 +140,14 @@ const significantChangeItems = computed<ActionItem[]>(() =>
             sublabel: sublabelParts.join(' | ') || undefined,
             badge,
             badgeColor,
+            href: e.href ?? (e.participant?.id ? `/participants/${e.participant.id}` : '/idt'),
         }
     })
 )
 </script>
 
 <template>
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 grid-flow-dense gap-6">
         <ActionWidget
             title="Today's IDT Meetings"
             description="Interdisciplinary team meetings scheduled today."

@@ -48,15 +48,36 @@ class HosMSurveyController extends Controller
     public function index(Request $request): InertiaResponse
     {
         $this->authorizeAccess($request);
-        $tenantId = $request->user()->tenant_id;
-        $year     = now()->year;
+        $tenantId    = $request->user()->tenant_id;
+        $currentYear = now()->year;
 
+        // Year selector: defaults to current year, clamps to valid range.
+        $selectedYear = (int) ($request->query('year') ?? $currentYear);
+        // Allow viewing up to one year ahead of the current year (for planning);
+        // lower bound of 2020 covers all realistic historical PACE data.
+        if ($selectedYear < 2020 || $selectedYear > $currentYear + 1) {
+            $selectedYear = $currentYear;
+        }
+
+        // Distinct years we have survey data for (plus the current year), sorted desc.
+        $dataYears = HosMSurvey::forTenant($tenantId)
+            ->select('survey_year')
+            ->distinct()
+            ->pluck('survey_year')
+            ->toArray();
+        $availableYears = collect(array_merge($dataYears, [$currentYear, $selectedYear]))
+            ->unique()
+            ->sortDesc()
+            ->values()
+            ->all();
+
+        // Full list of surveys for the selected year — drives the table.
         $surveys = HosMSurvey::forTenant($tenantId)
+            ->forYear($selectedYear)
             ->with([
                 'participant:id,mrn,first_name,last_name',
                 'administeredBy:id,first_name,last_name',
             ])
-            ->orderBy('survey_year', 'desc')
             ->orderBy('administered_at', 'desc')
             ->get();
 
@@ -65,16 +86,29 @@ class HosMSurveyController extends Controller
             ->count();
 
         $stats = [
-            'total_enrolled'      => $enrolled,
-            'surveyed_this_year'  => HosMSurvey::forTenant($tenantId)->forYear($year)->count(),
-            'completed_this_year' => HosMSurvey::forTenant($tenantId)->forYear($year)->where('completed', true)->count(),
-            'submitted_to_cms'    => HosMSurvey::forTenant($tenantId)->forYear($year)->where('submitted_to_cms', true)->count(),
+            'total_enrolled'   => $enrolled,
+            'surveyed'         => HosMSurvey::forTenant($tenantId)->forYear($selectedYear)->count(),
+            'completed'        => HosMSurvey::forTenant($tenantId)->forYear($selectedYear)->where('completed', true)->count(),
+            'submitted_to_cms' => HosMSurvey::forTenant($tenantId)->forYear($selectedYear)->where('submitted_to_cms', true)->count(),
         ];
 
+        // Enrolled participants for the "Add Survey" picker.
+        // HOS-M is a post-enrollment annual survey per CMS HPMS requirements —
+        // only enrolled participants (not potential enrollees) are eligible.
+        $enrolledParticipants = Participant::where('tenant_id', $tenantId)
+            ->where('enrollment_status', 'enrolled')
+            ->where('is_active', true)
+            ->orderBy('last_name')
+            ->orderBy('first_name')
+            ->get(['id', 'mrn', 'first_name', 'last_name']);
+
         return Inertia::render('Finance/HosMSurvey', [
-            'surveys'     => $surveys,
-            'stats'       => $stats,
-            'currentYear' => $year,
+            'surveys'              => $surveys,
+            'stats'                => $stats,
+            'selectedYear'         => $selectedYear,
+            'currentYear'          => $currentYear,
+            'availableYears'       => $availableYears,
+            'enrolledParticipants' => $enrolledParticipants,
         ]);
     }
 
@@ -93,7 +127,7 @@ class HosMSurveyController extends Controller
 
         $data = $request->validate([
             'participant_id'   => ['required', 'integer', 'exists:emr_participants,id'],
-            'survey_year'      => ['required', 'integer', 'min:2020', 'max:2035'],
+            'survey_year'      => ['required', 'integer', 'min:2020', 'max:' . (now()->year + 1)],
             'administered_at'  => ['required', 'date'],
             'completed'        => ['boolean'],
             'responses'        => ['nullable', 'array'],

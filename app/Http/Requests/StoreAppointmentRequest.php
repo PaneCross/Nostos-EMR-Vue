@@ -38,6 +38,9 @@ class StoreAppointmentRequest extends FormRequest
             'location_id'       => ['nullable', 'integer', 'exists:emr_locations,id'],
             'transport_required'=> ['boolean'],
             'notes'             => ['nullable', 'string', 'max:2000'],
+            // Cross-site confirmation flag — required from the client when the
+            // chosen location's site_id differs from the participant's site_id.
+            'cross_site_confirmed' => ['sometimes', 'boolean'],
         ];
     }
 }

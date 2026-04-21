@@ -8,7 +8,9 @@
 
 import { computed } from 'vue'
 import { Head, usePage } from '@inertiajs/vue3'
+import axios from 'axios'
 import AppShell from '@/Layouts/AppShell.vue'
+import { ArrowLeftIcon } from '@heroicons/vue/24/solid'
 import type { PageProps } from '@/types'
 
 // ── Clinical dept dashboard components (Phase 7A) ──────────────────────────────
@@ -74,6 +76,24 @@ const activeDashboard = computed(() => DEPT_COMPONENT_MAP[department.value] ?? n
 const formattedDate = computed(() =>
     new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })
 )
+
+const impersonation = computed(() => page.props.impersonation as { active: boolean; viewing_as_dept: string | null } | undefined)
+// "Back to Executive Dashboard" only makes semantic sense for users whose home
+// is the executive dashboard. Super-admins default to the IT Admin view; they
+// have the dashboard view selector for navigation, so we don't show this button
+// for them. Only show when an actual executive has clicked into a dept view.
+const isViewingAsDept = computed(() =>
+    user.value?.department === 'executive'
+    && impersonation.value?.viewing_as_dept
+    && impersonation.value.viewing_as_dept !== 'executive'
+    && department.value !== 'executive'
+)
+
+function backToExecutive() {
+    axios.post('/super-admin/view-as', { department: 'executive' }).then(() => {
+        location.href = '/'
+    })
+}
 </script>
 
 <template>
@@ -85,6 +105,17 @@ const formattedDate = computed(() =>
         <Head :title="departmentLabel" />
 
         <div class="p-6">
+            <!-- Back to Executive Dashboard button -->
+            <button
+                v-if="isViewingAsDept"
+                type="button"
+                class="mb-4 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-100 dark:hover:bg-indigo-950/60 transition-colors"
+                @click="backToExecutive"
+            >
+                <ArrowLeftIcon class="w-4 h-4" />
+                Back to Executive Dashboard
+            </button>
+
             <!-- Welcome header -->
             <div class="mb-6">
                 <div class="flex items-start justify-between">
@@ -93,10 +124,10 @@ const formattedDate = computed(() =>
                             Welcome back, {{ user?.first_name }}
                         </h1>
                         <div class="flex items-center gap-2 mt-1">
-                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300">
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-sm font-medium bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300">
                                 {{ departmentLabel }}
                             </span>
-                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300 capitalize">
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-sm font-medium bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300 capitalize">
                                 {{ role }}
                             </span>
                         </div>
