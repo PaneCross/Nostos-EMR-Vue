@@ -239,6 +239,8 @@ Route::middleware('auth')->group(function () {
             Route::get('/open-denials',        [FinanceWidgetController::class, 'openDenials'])->name('dashboards.finance.open-denials');
             Route::get('/revenue-at-risk',     [FinanceWidgetController::class, 'revenueAtRisk'])->name('dashboards.finance.revenue-at-risk');
             Route::get('/recent-remittance',   [FinanceWidgetController::class, 'recentRemittance'])->name('dashboards.finance.recent-remittance');
+            // Phase 6 (MVP roadmap): CMS enrollment reconciliation widget
+            Route::get('/cms-reconciliation',  [FinanceWidgetController::class, 'cmsReconciliation'])->name('dashboards.finance.cms-reconciliation');
         });
 
         Route::prefix('qa-compliance')->group(function () {
@@ -798,6 +800,13 @@ Route::middleware('auth')->group(function () {
         // Revenue Integrity Dashboard
         Route::get('/revenue-integrity',        [RevenueIntegrityController::class, 'index'])->name('billing.revenue-integrity.index');
         Route::get('/revenue-integrity/data',   [RevenueIntegrityController::class, 'data'])->name('billing.revenue-integrity.data');
+
+        // Phase 6 (MVP roadmap): CMS enrollment reconciliation (MMR / TRR ingest)
+        Route::get ('/reconciliation',                            [\App\Http\Controllers\EnrollmentReconciliationController::class, 'index'])->name('billing.reconciliation.index');
+        Route::post('/reconciliation/mmr',                        [\App\Http\Controllers\EnrollmentReconciliationController::class, 'uploadMmr'])->name('billing.reconciliation.mmr.upload');
+        Route::get ('/reconciliation/mmr/{file}',                 [\App\Http\Controllers\EnrollmentReconciliationController::class, 'showMmrFile'])->name('billing.reconciliation.mmr.show');
+        Route::post('/reconciliation/trr',                        [\App\Http\Controllers\EnrollmentReconciliationController::class, 'uploadTrr'])->name('billing.reconciliation.trr.upload');
+        Route::post('/reconciliation/discrepancies/{record}/resolve', [\App\Http\Controllers\EnrollmentReconciliationController::class, 'resolveDiscrepancy'])->name('billing.reconciliation.discrepancies.resolve');
 
         // Risk Adjustment (HCC RAF Tracking) — Phase 9C
         Route::get('/risk-adjustment',                          [RiskAdjustmentController::class, 'index'])->name('billing.risk-adjustment.index');

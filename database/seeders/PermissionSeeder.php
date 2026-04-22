@@ -75,6 +75,8 @@ class PermissionSeeder extends Seeder
         'qapi_projects'            => 'QAPI Projects',
         // Phase 3 (MVP roadmap): CMS Level I / Level II quarterly reporting
         'level_ii_reporting'       => 'Level I/II Reporting',
+        // Phase 6 (MVP roadmap): CMS enrollment reconciliation (MMR/TRR)
+        'cms_reconciliation'       => 'CMS Enrollment Reconciliation',
 
         // Reports + Audit
         'reports'                  => 'Reports',
@@ -172,6 +174,7 @@ class PermissionSeeder extends Seeder
         // W4-6: QA owns QAPI project management (42 CFR §460.136–§460.140)
         $qaBase['qapi_projects']    = $full();
         $qaBase['level_ii_reporting'] = $full();
+        $qaBase['cms_reconciliation'] = $full();
 
         // ─── Finance — billing CRUD, enrollment/participants read ─────────────
         $financeBase = [];
@@ -195,6 +198,7 @@ class PermissionSeeder extends Seeder
         $financeBase['denials']            = $full();
         // Phase 3 (MVP roadmap): finance co-owns Level I/II reporting with QA
         $financeBase['level_ii_reporting'] = $full();
+        $financeBase['cms_reconciliation'] = $full();
         $financeBase['reports']            = $cr();
         $financeBase['audit_log']          = $read();
         $financeBase['chat']               = $full();

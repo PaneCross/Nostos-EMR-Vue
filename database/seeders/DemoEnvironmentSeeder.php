@@ -291,6 +291,14 @@ class DemoEnvironmentSeeder extends Seeder
         $this->command->info('  Seeding staff credentials + training...');
         $this->call(StaffCredentialSeeder::class);
 
+        // ─── Phase 6 (MVP roadmap): CMS MMR/TRR reconciliation demo data ──────
+        // Generates a synthetic MMR + TRR for last month per tenant, with
+        // intentional discrepancies so the finance reconciliation UI has
+        // meaningful data to display.
+        $this->command->info('');
+        $this->command->info('  Seeding CMS MMR/TRR reconciliation demo files...');
+        $this->call(CmsReconciliationSeeder::class);
+
         // ─── Participant Photos ────────────────────────────────────────────────
         // Downloads pravatar.cc placeholder images for the first 15 enrolled
         // participants so the photo upload feature is visually testable.

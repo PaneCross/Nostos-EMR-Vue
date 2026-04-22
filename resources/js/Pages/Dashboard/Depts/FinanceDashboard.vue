@@ -25,6 +25,7 @@ const encountersData = ref<any>(null)
 const denialsData = ref<any>(null)
 const revenueRiskData = ref<any>(null)
 const remittanceData = ref<any>(null)
+const cmsReconciliationData = ref<any>(null)
 
 onMounted(() => {
     Promise.all([
@@ -35,7 +36,8 @@ onMounted(() => {
         axios.get('/dashboards/finance/open-denials'),
         axios.get('/dashboards/finance/revenue-at-risk'),
         axios.get('/dashboards/finance/recent-remittance'),
-    ]).then(([r1, r2, r3, r4, r5, r6, r7]) => {
+        axios.get('/dashboards/finance/cms-reconciliation'),
+    ]).then(([r1, r2, r3, r4, r5, r6, r7, r8]) => {
         capitation.value = r1.data
         authorizationsData.value = r2.data
         enrollmentChanges.value = r3.data
@@ -43,6 +45,7 @@ onMounted(() => {
         denialsData.value = r5.data
         revenueRiskData.value = r6.data
         remittanceData.value = r7.data
+        cmsReconciliationData.value = r8.data
     }).finally(() => loading.value = false)
 })
 
@@ -102,6 +105,61 @@ const remittanceItems = computed<ActionItem[]>(() =>
             : 'bg-green-100 dark:bg-green-900/60 text-green-700 dark:text-green-300',
     }))
 )
+
+// Phase 6 (MVP roadmap): CMS enrollment reconciliation widget
+const DISC_LABELS: Record<string, string> = {
+    cms_enrolled_not_local:           'CMS Enrolled, Not Local',
+    cms_disenrolled_local_enrolled:   'CMS Disenrolled, Locally Enrolled',
+    capitation_variance:              'Capitation Variance',
+    retroactive_adjustment:           'Retroactive Adjustment',
+    unmatched_mbi:                    'Unmatched MBI',
+}
+
+const cmsReconciliationItems = computed<ActionItem[]>(() => {
+    const data = cmsReconciliationData.value
+    if (!data) return []
+
+    const rows: ActionItem[] = []
+
+    // Row 1: latest MMR summary
+    if (data.latest_mmr) {
+        rows.push({
+            label: `Latest MMR: ${data.latest_mmr.label}`,
+            sublabel: `${data.latest_mmr.record_count} records · ${formatCurrency(data.latest_mmr.total_capitation_amount)}`,
+            badge: data.latest_mmr.discrepancy_count > 0
+                ? `${data.latest_mmr.discrepancy_count} flagged`
+                : 'clean',
+            badgeColor: data.latest_mmr.discrepancy_count > 0
+                ? 'bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300'
+                : 'bg-green-100 dark:bg-green-900/60 text-green-700 dark:text-green-300',
+            href: '/billing/reconciliation',
+        })
+    }
+
+    // Row 2+: open discrepancy counts by type
+    for (const [type, count] of Object.entries(data.open_by_type ?? {})) {
+        rows.push({
+            label: DISC_LABELS[type] ?? type,
+            sublabel: 'open discrepancy',
+            badge: String(count),
+            badgeColor: 'bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300',
+            href: '/billing/reconciliation',
+        })
+    }
+
+    // Row: TRR rejected
+    if ((data.trr_rejected_last_30d ?? 0) > 0) {
+        rows.push({
+            label: 'TRR rejections (30d)',
+            sublabel: 'CMS rejected transactions',
+            badge: String(data.trr_rejected_last_30d),
+            badgeColor: 'bg-orange-100 dark:bg-orange-900/60 text-orange-700 dark:text-orange-300',
+            href: '/billing/reconciliation',
+        })
+    }
+
+    return rows
+})
 </script>
 
 <template>
@@ -228,6 +286,16 @@ const remittanceItems = computed<ActionItem[]>(() =>
             :items="remittanceItems"
             emptyMessage="No recent remittance batches."
             viewAllHref="/finance/remittance"
+            :loading="loading"
+        />
+
+        <!-- Phase 6 (MVP roadmap): CMS enrollment reconciliation -->
+        <ActionWidget
+            title="CMS Reconciliation"
+            description="MMR discrepancies + TRR rejections. Finance must reconcile before close."
+            :items="cmsReconciliationItems"
+            emptyMessage="No CMS reconciliation activity."
+            viewAllHref="/billing/reconciliation"
             :loading="loading"
         />
 

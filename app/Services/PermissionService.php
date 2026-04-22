@@ -208,6 +208,8 @@ class PermissionService
                     ['label' => 'HPMS Files',          'module' => 'hpms_submissions',     'href' => '/billing/hpms'],
                     ['label' => 'HOS-M Surveys',       'module' => 'hos_m_surveys',        'href' => '/billing/hos-m'],
                     ['label' => 'Revenue Integrity',   'module' => 'revenue_integrity',    'href' => '/billing/revenue-integrity'],
+                    // Phase 6 (MVP roadmap): CMS MMR/TRR reconciliation
+                    ['label' => 'CMS Reconciliation',  'module' => 'cms_reconciliation',   'href' => '/billing/reconciliation'],
                 ],
             ],
             [

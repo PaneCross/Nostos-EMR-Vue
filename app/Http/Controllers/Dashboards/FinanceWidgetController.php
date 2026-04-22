@@ -311,4 +311,46 @@ class FinanceWidgetController extends Controller
             'total_received_this_month' => (float) $totalReceivedThisMonth,
         ]);
     }
+
+    /**
+     * Phase 6 (MVP roadmap): CMS enrollment reconciliation widget.
+     */
+    public function cmsReconciliation(): JsonResponse
+    {
+        $user     = \Illuminate\Support\Facades\Auth::user();
+        $tenantId = $user->tenant_id;
+
+        $open = \App\Models\MmrRecord::forTenant($tenantId)
+            ->openDiscrepancies()
+            ->selectRaw('discrepancy_type, COUNT(*) AS c')
+            ->groupBy('discrepancy_type')
+            ->pluck('c', 'discrepancy_type')
+            ->toArray();
+
+        $latest = \App\Models\MmrFile::where('tenant_id', $tenantId)
+            ->orderByDesc('period_year')
+            ->orderByDesc('period_month')
+            ->orderByDesc('received_at')
+            ->first();
+
+        $rejectedTrr30d = \App\Models\TrrRecord::forTenant($tenantId)
+            ->rejected()
+            ->where('created_at', '>=', now()->subDays(30))
+            ->count();
+
+        return response()->json([
+            'open_discrepancies_total' => array_sum($open),
+            'open_by_type'             => $open,
+            'latest_mmr'               => $latest ? [
+                'id'                       => $latest->id,
+                'label'                    => $latest->label(),
+                'status'                   => $latest->status,
+                'record_count'             => $latest->record_count,
+                'discrepancy_count'        => $latest->discrepancy_count,
+                'total_capitation_amount'  => (float) $latest->total_capitation_amount,
+                'received_at'              => $latest->received_at?->toIso8601String(),
+            ] : null,
+            'trr_rejected_last_30d'    => $rejectedTrr30d,
+        ]);
+    }
 }
