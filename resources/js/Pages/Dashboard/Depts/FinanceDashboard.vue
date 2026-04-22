@@ -26,6 +26,7 @@ const denialsData = ref<any>(null)
 const revenueRiskData = ref<any>(null)
 const remittanceData = ref<any>(null)
 const cmsReconciliationData = ref<any>(null)
+const spendDownData = ref<any>(null)
 
 onMounted(() => {
     Promise.all([
@@ -37,7 +38,8 @@ onMounted(() => {
         axios.get('/dashboards/finance/revenue-at-risk'),
         axios.get('/dashboards/finance/recent-remittance'),
         axios.get('/dashboards/finance/cms-reconciliation'),
-    ]).then(([r1, r2, r3, r4, r5, r6, r7, r8]) => {
+        axios.get('/dashboards/finance/spend-down-overdue'),
+    ]).then(([r1, r2, r3, r4, r5, r6, r7, r8, r9]) => {
         capitation.value = r1.data
         authorizationsData.value = r2.data
         enrollmentChanges.value = r3.data
@@ -46,6 +48,7 @@ onMounted(() => {
         revenueRiskData.value = r6.data
         remittanceData.value = r7.data
         cmsReconciliationData.value = r8.data
+        spendDownData.value = r9.data
     }).finally(() => loading.value = false)
 })
 
@@ -160,6 +163,19 @@ const cmsReconciliationItems = computed<ActionItem[]>(() => {
 
     return rows
 })
+
+// Phase 7 (MVP roadmap): Medicaid spend-down overdue worklist
+const spendDownItems = computed<ActionItem[]>(() =>
+    (spendDownData.value?.overdue ?? []).map((r: any) => ({
+        label: `${r.name} · ${r.period}`,
+        sublabel: `${r.state ?? '—'} · ${formatCurrency(r.paid)} of ${formatCurrency(r.obligation)} paid`,
+        href: r.href,
+        badge: `${formatCurrency(r.remaining)} (${r.days_overdue}d)`,
+        badgeColor: r.days_overdue > 30
+            ? 'bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300'
+            : 'bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300',
+    }))
+)
 </script>
 
 <template>
@@ -296,6 +312,15 @@ const cmsReconciliationItems = computed<ActionItem[]>(() => {
             :items="cmsReconciliationItems"
             emptyMessage="No CMS reconciliation activity."
             viewAllHref="/billing/reconciliation"
+            :loading="loading"
+        />
+
+        <!-- Phase 7 (MVP roadmap): Medicaid spend-down overdue -->
+        <ActionWidget
+            title="Spend-Down Overdue"
+            description="Dual-eligible participants with unmet Medicaid share-of-cost / spend-down obligation. Capitation blocked until met."
+            :items="spendDownItems"
+            emptyMessage="No overdue spend-down obligations."
             :loading="loading"
         />
 

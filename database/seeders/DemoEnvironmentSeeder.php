@@ -299,6 +299,14 @@ class DemoEnvironmentSeeder extends Seeder
         $this->command->info('  Seeding CMS MMR/TRR reconciliation demo files...');
         $this->call(CmsReconciliationSeeder::class);
 
+        // ─── Medicaid Spend-Down / Share-of-Cost (Phase 7) ─────────────────────
+        // Configures a handful of dual-eligible participants with state-specific
+        // Medicaid spend-down obligations + payment history so the Insurance-tab
+        // sub-panel and Finance "Spend-Down Overdue" widget have data to show.
+        $this->command->info('');
+        $this->command->info('  Seeding Medicaid spend-down / share-of-cost demo data...');
+        $this->call(SpendDownDemoSeeder::class);
+
         // ─── Participant Photos ────────────────────────────────────────────────
         // Downloads pravatar.cc placeholder images for the first 15 enrolled
         // participants so the photo upload feature is visually testable.

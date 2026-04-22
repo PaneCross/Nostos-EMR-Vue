@@ -313,6 +313,38 @@ class FinanceWidgetController extends Controller
     }
 
     /**
+     * Phase 7 (MVP roadmap): Medicaid spend-down overdue worklist.
+     */
+    public function spendDownOverdue(\App\Services\SpendDownService $service): JsonResponse
+    {
+        $user     = \Illuminate\Support\Facades\Auth::user();
+        $tenantId = $user->tenant_id;
+
+        $overdue = $service->overdueForTenant($tenantId, 3);
+
+        $rows = array_map(function ($row) {
+            return [
+                'participant_id' => $row['participant_id'],
+                'name'           => $row['name'],
+                'mrn'            => $row['mrn'] ?? null,
+                'period'         => $row['period'],
+                'obligation'     => (float) $row['obligation'],
+                'paid'           => (float) $row['paid'],
+                'remaining'      => (float) $row['remaining'],
+                'state'          => $row['state'] ?? null,
+                'days_overdue'   => (int) $row['days_overdue'],
+                'href'           => '/participants/' . $row['participant_id'] . '?tab=insurance',
+            ];
+        }, $overdue);
+
+        return response()->json([
+            'overdue'         => $rows,
+            'count'           => count($rows),
+            'total_remaining' => array_sum(array_column($rows, 'remaining')),
+        ]);
+    }
+
+    /**
      * Phase 6 (MVP roadmap): CMS enrollment reconciliation widget.
      */
     public function cmsReconciliation(): JsonResponse

@@ -5,9 +5,11 @@
 // Add/edit insurance form with plan name, payer_id, group/member numbers.
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import axios from 'axios'
-import { PlusIcon } from '@heroicons/vue/24/outline'
+import {
+    PlusIcon, BanknotesIcon, CheckBadgeIcon, ExclamationTriangleIcon,
+} from '@heroicons/vue/24/outline'
 
 interface InsuranceCoverage {
   id: number; insurance_type: string; plan_name: string; payer_id: string | null
@@ -109,10 +111,333 @@ async function submit() {
     saving.value = false
   }
 }
+
+// ─── Phase 7 (MVP roadmap): Medicaid spend-down / share-of-cost sub-panel ────
+
+interface SpendDownStatus {
+    obligation: number; paid: number; remaining: number; met: boolean
+    state: string | null; period: string; coverage_id: number
+}
+interface SpendDownPaymentRow {
+    id: number; amount: number; paid_at: string | null; period: string
+    payment_method: string; method_label: string
+    reference_number: string | null; notes: string | null
+    recorded_by: string | null
+}
+interface SpendDownPayload {
+    coverage: null | {
+        id: number; has_spend_down: boolean
+        share_of_cost_monthly_amount: number
+        spend_down_threshold: number
+        spend_down_period_start: string | null
+        spend_down_period_end: string | null
+        spend_down_state: string | null
+        plan_name: string | null
+    }
+    current_status: SpendDownStatus | null
+    payments: SpendDownPaymentRow[]
+    methods: Record<string, string>
+}
+
+const spendDown = ref<SpendDownPayload | null>(null)
+const spendDownLoading = ref(false)
+
+async function loadSpendDown() {
+    spendDownLoading.value = true
+    try {
+        const res = await axios.get(`/participants/${props.participant.id}/spend-down`)
+        spendDown.value = res.data
+    } catch { /* silent */ }
+    finally { spendDownLoading.value = false }
+}
+
+onMounted(loadSpendDown)
+
+// Payment form
+const paymentForm = ref({
+    amount: '' as string | number,
+    paid_at: new Date().toISOString().slice(0, 10),
+    period_month_year: new Date().toISOString().slice(0, 7),
+    payment_method: 'check',
+    reference_number: '',
+    notes: '',
+})
+const savingPayment = ref(false)
+const showPaymentForm = ref(false)
+
+async function submitPayment() {
+    if (!paymentForm.value.amount) { alert('Amount is required'); return }
+    savingPayment.value = true
+    try {
+        await axios.post(`/participants/${props.participant.id}/spend-down/payments`, paymentForm.value)
+        showPaymentForm.value = false
+        paymentForm.value.amount = ''
+        paymentForm.value.reference_number = ''
+        paymentForm.value.notes = ''
+        await loadSpendDown()
+    } catch (err: any) {
+        alert(err?.response?.data?.message ?? 'Failed to record payment.')
+    } finally {
+        savingPayment.value = false
+    }
+}
+
+async function deletePayment(id: number) {
+    if (!confirm('Delete this payment record?')) return
+    try {
+        await axios.delete(`/spend-down/payments/${id}`)
+        await loadSpendDown()
+    } catch (err: any) {
+        alert(err?.response?.data?.message ?? 'Failed to delete.')
+    }
+}
+
+// Coverage config modal
+const showCoverageForm = ref(false)
+const savingCoverage = ref(false)
+const coverageForm = ref({
+    coverage_id: 0,
+    share_of_cost_monthly_amount: '' as string | number,
+    spend_down_threshold: '' as string | number,
+    spend_down_period_start: '',
+    spend_down_period_end: '',
+    spend_down_state: '',
+})
+
+function openCoverageForm() {
+    const cov = spendDown.value?.coverage
+    coverageForm.value = {
+        coverage_id: cov?.id ?? 0,
+        share_of_cost_monthly_amount: cov?.share_of_cost_monthly_amount ?? '',
+        spend_down_threshold: cov?.spend_down_threshold ?? '',
+        spend_down_period_start: cov?.spend_down_period_start ?? '',
+        spend_down_period_end: cov?.spend_down_period_end ?? '',
+        spend_down_state: cov?.spend_down_state ?? '',
+    }
+    showCoverageForm.value = true
+}
+
+async function submitCoverage() {
+    if (!coverageForm.value.coverage_id) {
+        alert('No active Medicaid coverage on file — add one first.')
+        return
+    }
+    savingCoverage.value = true
+    try {
+        await axios.post(`/participants/${props.participant.id}/spend-down/coverage`, coverageForm.value)
+        showCoverageForm.value = false
+        await loadSpendDown()
+    } catch (err: any) {
+        alert(err?.response?.data?.message ?? 'Failed to update coverage.')
+    } finally {
+        savingCoverage.value = false
+    }
+}
+
+const progressPct = computed(() => {
+    const s = spendDown.value?.current_status
+    if (!s || s.obligation === 0) return 0
+    return Math.min(100, Math.round((s.paid / s.obligation) * 100))
+})
+
+function money(n: number): string {
+    return '$' + (n ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+}
 </script>
 
 <template>
   <div class="p-6">
+
+    <!-- Phase 7 (MVP roadmap): Medicaid spend-down / share-of-cost panel -->
+    <section v-if="spendDown && spendDown.coverage?.has_spend_down"
+             class="mb-6 rounded-xl border p-5 shadow-sm"
+             :class="spendDown.current_status?.met
+               ? 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800'
+               : 'bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800'">
+      <div class="flex items-start justify-between gap-4 flex-wrap">
+        <div class="flex items-start gap-3">
+          <BanknotesIcon class="w-6 h-6 text-amber-600 dark:text-amber-300 mt-0.5" />
+          <div>
+            <h3 class="text-base font-semibold text-slate-900 dark:text-slate-100">
+              Medicaid Spend-Down / Share-of-Cost
+              <span v-if="spendDown.coverage.spend_down_state" class="text-xs font-medium text-slate-500 ml-1">
+                ({{ spendDown.coverage.spend_down_state }})
+              </span>
+            </h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+              Period {{ spendDown.current_status?.period ?? '—' }} ·
+              <template v-if="spendDown.current_status?.met">
+                <span class="text-emerald-700 dark:text-emerald-300 inline-flex items-center gap-1 font-semibold">
+                  <CheckBadgeIcon class="w-3.5 h-3.5" /> Obligation Met
+                </span>
+              </template>
+              <template v-else>
+                <span class="text-amber-700 dark:text-amber-300 inline-flex items-center gap-1 font-semibold">
+                  <ExclamationTriangleIcon class="w-3.5 h-3.5" /> Capitation Blocked
+                </span>
+              </template>
+            </p>
+          </div>
+        </div>
+        <div class="flex gap-2">
+          <button
+            class="text-xs px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"
+            @click="openCoverageForm"
+          >Edit Obligation</button>
+          <button
+            class="text-xs px-3 py-1.5 rounded-lg bg-indigo-600 text-white font-medium hover:bg-indigo-700"
+            @click="showPaymentForm = !showPaymentForm"
+          >{{ showPaymentForm ? 'Cancel' : 'Record Payment' }}</button>
+        </div>
+      </div>
+
+      <!-- Progress bar -->
+      <div class="mt-4">
+        <div class="flex items-center justify-between text-xs text-slate-600 dark:text-slate-300 mb-1">
+          <span>Paid this period</span>
+          <span class="tabular-nums">
+            {{ money(spendDown.current_status?.paid ?? 0) }} /
+            {{ money(spendDown.current_status?.obligation ?? 0) }}
+            <span v-if="!spendDown.current_status?.met && (spendDown.current_status?.remaining ?? 0) > 0"
+                  class="text-amber-700 dark:text-amber-300 font-semibold ml-1">
+              · {{ money(spendDown.current_status.remaining) }} remaining
+            </span>
+          </span>
+        </div>
+        <div class="h-3 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden">
+          <div class="h-full transition-all"
+               :class="spendDown.current_status?.met
+                 ? 'bg-emerald-500'
+                 : progressPct > 50 ? 'bg-amber-400' : 'bg-orange-500'"
+               :style="{ width: progressPct + '%' }"></div>
+        </div>
+      </div>
+
+      <!-- Payment form -->
+      <div v-if="showPaymentForm" class="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700 grid grid-cols-1 sm:grid-cols-5 gap-3">
+        <div>
+          <label class="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">Amount</label>
+          <input v-model="paymentForm.amount" type="number" step="0.01" min="0"
+            class="w-full text-sm rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-700 px-3 py-2" />
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">Paid</label>
+          <input v-model="paymentForm.paid_at" type="date"
+            class="w-full text-sm rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-700 px-3 py-2" />
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">Period</label>
+          <input v-model="paymentForm.period_month_year" type="month"
+            class="w-full text-sm rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-700 px-3 py-2" />
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">Method</label>
+          <select v-model="paymentForm.payment_method"
+            class="w-full text-sm rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-700 px-3 py-2">
+            <option v-for="(label, key) in spendDown.methods" :key="key" :value="key">{{ label }}</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">Reference #</label>
+          <input v-model="paymentForm.reference_number" type="text" placeholder="check #, EFT ref, etc."
+            class="w-full text-sm rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-700 px-3 py-2" />
+        </div>
+        <div class="sm:col-span-5 flex justify-end">
+          <button :disabled="savingPayment" @click="submitPayment"
+            class="px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 disabled:opacity-50">
+            {{ savingPayment ? 'Saving...' : 'Record Payment' }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Payment history -->
+      <div v-if="spendDown.payments.length > 0" class="mt-5 border-t border-slate-200 dark:border-slate-700 pt-4">
+        <h4 class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-2">
+          Payment History (past 12 months)
+        </h4>
+        <table class="w-full text-xs">
+          <thead class="text-slate-500 dark:text-slate-400">
+            <tr>
+              <th class="px-2 py-1 text-left">Period</th>
+              <th class="px-2 py-1 text-left">Paid</th>
+              <th class="px-2 py-1 text-right">Amount</th>
+              <th class="px-2 py-1 text-left">Method</th>
+              <th class="px-2 py-1 text-left">Reference</th>
+              <th class="px-2 py-1"></th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100 dark:divide-slate-700">
+            <tr v-for="p in spendDown.payments" :key="p.id">
+              <td class="px-2 py-1 font-semibold">{{ p.period }}</td>
+              <td class="px-2 py-1 text-slate-500">{{ p.paid_at ?? '—' }}</td>
+              <td class="px-2 py-1 text-right tabular-nums">{{ money(p.amount) }}</td>
+              <td class="px-2 py-1 text-slate-600 dark:text-slate-300">{{ p.method_label }}</td>
+              <td class="px-2 py-1 text-slate-500 dark:text-slate-400 truncate">{{ p.reference_number ?? '—' }}</td>
+              <td class="px-2 py-1 text-right">
+                <button @click="deletePayment(p.id)" class="text-slate-400 hover:text-red-600 text-xs">Delete</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Offer to configure spend-down if a Medicaid coverage exists but spend-down isn't set -->
+    <div v-else-if="spendDown && spendDown.coverage && !spendDown.coverage.has_spend_down"
+         class="mb-4 flex items-center justify-between rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 px-4 py-3">
+      <p class="text-xs text-slate-600 dark:text-slate-300">
+        <BanknotesIcon class="w-4 h-4 inline -mt-1 mr-1 text-slate-500" />
+        Medicaid coverage on file. If this participant has a share-of-cost obligation, configure it here.
+      </p>
+      <button class="text-xs px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"
+              @click="openCoverageForm">Configure Spend-Down</button>
+    </div>
+
+    <!-- Coverage config modal -->
+    <div v-if="showCoverageForm"
+         class="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4"
+         @click.self="showCoverageForm = false">
+      <div class="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-lg">
+        <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
+          <h3 class="font-semibold text-slate-900 dark:text-slate-100">Configure Spend-Down / Share-of-Cost</h3>
+        </div>
+        <div class="px-6 py-5 grid grid-cols-2 gap-4">
+          <div class="col-span-2">
+            <label class="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">Monthly Share-of-Cost Amount</label>
+            <input v-model="coverageForm.share_of_cost_monthly_amount" type="number" step="0.01" min="0"
+              class="w-full text-sm rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-700 px-3 py-2" />
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">State</label>
+            <input v-model="coverageForm.spend_down_state" maxlength="2" placeholder="CA"
+              class="w-full text-sm rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-700 px-3 py-2" />
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">Threshold (optional)</label>
+            <input v-model="coverageForm.spend_down_threshold" type="number" step="0.01" min="0"
+              class="w-full text-sm rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-700 px-3 py-2" />
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">Period Start</label>
+            <input v-model="coverageForm.spend_down_period_start" type="date"
+              class="w-full text-sm rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-700 px-3 py-2" />
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">Period End</label>
+            <input v-model="coverageForm.spend_down_period_end" type="date"
+              class="w-full text-sm rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-700 px-3 py-2" />
+          </div>
+        </div>
+        <div class="px-6 py-3 border-t border-slate-200 dark:border-slate-700 flex justify-end gap-2">
+          <button @click="showCoverageForm = false" class="px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-600 text-sm">Cancel</button>
+          <button @click="submitCoverage" :disabled="savingCoverage"
+            class="px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 disabled:opacity-50">
+            {{ savingCoverage ? 'Saving...' : 'Save' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
     <div class="flex items-center justify-between mb-4">
       <h2 class="text-base font-semibold text-gray-900 dark:text-slate-100">Insurance</h2>
       <button

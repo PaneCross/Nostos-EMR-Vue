@@ -241,6 +241,8 @@ Route::middleware('auth')->group(function () {
             Route::get('/recent-remittance',   [FinanceWidgetController::class, 'recentRemittance'])->name('dashboards.finance.recent-remittance');
             // Phase 6 (MVP roadmap): CMS enrollment reconciliation widget
             Route::get('/cms-reconciliation',  [FinanceWidgetController::class, 'cmsReconciliation'])->name('dashboards.finance.cms-reconciliation');
+            // Phase 7 (MVP roadmap): Medicaid spend-down overdue worklist
+            Route::get('/spend-down-overdue',  [FinanceWidgetController::class, 'spendDownOverdue'])->name('dashboards.finance.spend-down-overdue');
         });
 
         Route::prefix('qa-compliance')->group(function () {
@@ -472,6 +474,12 @@ Route::middleware('auth')->group(function () {
     Route::get ('/participants/{participant}/ehi-export/history', [EhiExportController::class, 'history'])->name('participants.ehi_export.history');
     Route::post('/participants/{participant}/ehi-export',         [EhiExportController::class, 'request'])->name('participants.ehi_export.request');
     Route::get ('/participants/{participant}/ehi-export/{token}/download', [EhiExportController::class, 'download'])->name('participants.ehi_export.download');
+
+    // Phase 7 (MVP roadmap): Medicaid spend-down / share-of-cost
+    Route::get ('/participants/{participant}/spend-down',            [\App\Http\Controllers\SpendDownController::class, 'show'])->name('participants.spend_down.show');
+    Route::post('/participants/{participant}/spend-down/coverage',   [\App\Http\Controllers\SpendDownController::class, 'updateCoverage'])->name('participants.spend_down.coverage.update');
+    Route::post('/participants/{participant}/spend-down/payments',   [\App\Http\Controllers\SpendDownController::class, 'storePayment'])->name('participants.spend_down.payments.store');
+    Route::delete('/spend-down/payments/{payment}',                  [\App\Http\Controllers\SpendDownController::class, 'destroyPayment'])->name('spend_down.payments.destroy');
 
     // ─── Phase 10A: Site Transfers (nested under participant) ─────────────────
     // View history: any authenticated user (dept check in controller for write ops).
