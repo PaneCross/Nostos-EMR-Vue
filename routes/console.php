@@ -1,5 +1,6 @@
 <?php
 
+use App\Jobs\DenialAppealDeadlineAlertJob;
 use App\Jobs\DigestNotificationJob;
 use App\Jobs\DocumentationComplianceJob;
 use App\Jobs\GrievanceOverdueJob;
@@ -117,4 +118,19 @@ Schedule::job(NfLocRecertAlertJob::class, 'compliance')->dailyAt('06:30')
 // 60/30/14/0/overdue thresholds. Dedup via metadata.staff_credential_id.
 Schedule::job(\App\Jobs\CredentialExpirationAlertJob::class, 'compliance')->dailyAt('06:45')
     ->name('staff-credential-expiration')
+    ->withoutOverlapping();
+
+// ─── Phase 12 (MVP roadmap): Clearinghouse workers ───────────────────────────
+// Pull new 835 ERA files from each tenant's active clearinghouse gateway
+// hourly; poll status + fetch 277CA acknowledgments every 15 minutes. Under
+// the default null_gateway both are no-ops (0 files). Nightly SLA check for
+// denials approaching the 120-day appeal deadline (42 CFR §405.942).
+Schedule::command('clearinghouse:ingest-remittance')->hourly()
+    ->name('clearinghouse-ingest-remittance')
+    ->withoutOverlapping();
+Schedule::command('clearinghouse:poll-status')->everyFifteenMinutes()
+    ->name('clearinghouse-poll-status')
+    ->withoutOverlapping();
+Schedule::job(DenialAppealDeadlineAlertJob::class, 'compliance')->dailyAt('07:15')
+    ->name('denial-appeal-deadline')
     ->withoutOverlapping();

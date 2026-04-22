@@ -498,6 +498,14 @@ Route::middleware('auth')->group(function () {
         [\App\Http\Controllers\AdvanceDirectivePdfController::class, 'generate'])
         ->name('participants.advance_directive.pdf');
 
+    // Phase 12 (MVP roadmap): Clearinghouse transmission
+    Route::post('/clearinghouse/batches/{batch}/transmit',
+        [\App\Http\Controllers\ClearinghouseTransmissionController::class, 'transmit'])
+        ->name('clearinghouse.transmit');
+    Route::get ('/clearinghouse/batches/{batch}/transmissions',
+        [\App\Http\Controllers\ClearinghouseTransmissionController::class, 'history'])
+        ->name('clearinghouse.history');
+
     // ─── Phase 10A: Site Transfers (nested under participant) ─────────────────
     // View history: any authenticated user (dept check in controller for write ops).
     // Request/Approve/Cancel: enrollment + it_admin + super_admin only.
@@ -951,6 +959,12 @@ Route::middleware('auth')->group(function () {
         Route::post('/state-config',              [StateMedicaidConfigController::class, 'store'])->name('it-admin.state-config.store');
         Route::put('/state-config/{config}',      [StateMedicaidConfigController::class, 'update'])->name('it-admin.state-config.update');
         Route::delete('/state-config/{config}',   [StateMedicaidConfigController::class, 'destroy'])->name('it-admin.state-config.destroy');
+        // Phase 12 (MVP roadmap): Clearinghouse configuration (IT admin only)
+        Route::get   ('/clearinghouse-config',              [\App\Http\Controllers\ClearinghouseConfigController::class, 'index'])->name('it-admin.clearinghouse-config.index');
+        Route::post  ('/clearinghouse-config',              [\App\Http\Controllers\ClearinghouseConfigController::class, 'store'])->name('it-admin.clearinghouse-config.store');
+        Route::put   ('/clearinghouse-config/{config}',     [\App\Http\Controllers\ClearinghouseConfigController::class, 'update'])->name('it-admin.clearinghouse-config.update');
+        Route::post  ('/clearinghouse-config/{config}/health-check', [\App\Http\Controllers\ClearinghouseConfigController::class, 'healthCheck'])->name('it-admin.clearinghouse-config.health');
+        Route::delete('/clearinghouse-config/{config}',     [\App\Http\Controllers\ClearinghouseConfigController::class, 'destroy'])->name('it-admin.clearinghouse-config.destroy');
         // W4-2: Security & Compliance — BAA tracking + SRA records + encryption status (BLOCKERs 01+03)
         Route::get('/security',                   [SecurityComplianceController::class, 'index'])->name('it-admin.security.index');
         Route::post('/baa',                       [SecurityComplianceController::class, 'baaStore'])->name('it-admin.baa.store');
