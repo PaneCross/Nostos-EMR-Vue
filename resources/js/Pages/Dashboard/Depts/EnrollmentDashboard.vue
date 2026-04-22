@@ -19,6 +19,7 @@ const pipeline = ref<any>(null)
 const eligibilityReferrals = ref<any[]>([])
 const disenrollmentParticipants = ref<any[]>([])
 const newReferrals = ref<any[]>([])
+const nfLocRecertItems = ref<any[]>([])
 
 const COLUMN_COLORS: Record<string, string> = {
     new:                 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300',
@@ -36,11 +37,13 @@ onMounted(() => {
         axios.get('/dashboards/enrollment/eligibility-pending'),
         axios.get('/dashboards/enrollment/disenrollments'),
         axios.get('/dashboards/enrollment/new-referrals'),
-    ]).then(([r1, r2, r3, r4]) => {
+        axios.get('/dashboards/enrollment/nf-loc-recert'),
+    ]).then(([r1, r2, r3, r4, r5]) => {
         pipeline.value = r1.data
         eligibilityReferrals.value = r2.data.referrals ?? []
         disenrollmentParticipants.value = r3.data.participants ?? []
         newReferrals.value = r4.data.referrals ?? []
+        nfLocRecertItems.value = r5.data.participants ?? []
     }).finally(() => loading.value = false)
 })
 
@@ -76,6 +79,28 @@ const newReferralItems = computed<ActionItem[]>(() =>
         badgeColor: COLUMN_COLORS[r.status] ?? 'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300',
         href: r.href ?? (r.id ? `/enrollment/referrals/${r.id}` : '/enrollment'),
     }))
+)
+
+// Phase 2 (MVP roadmap): NF-LOC recert within 60 days or overdue. §460.160(b)(2).
+const nfLocRecertWidgetItems = computed<ActionItem[]>(() =>
+    nfLocRecertItems.value.map((p: any) => {
+        const days = p.days_remaining
+        const badge = days < 0 ? `${Math.abs(days)}d overdue`
+            : days === 0    ? 'due today'
+            : `${days}d`
+        const badgeColor =
+            days < 0       ? 'bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300'   :
+            days <= 15     ? 'bg-orange-100 dark:bg-orange-900/60 text-orange-700 dark:text-orange-300' :
+            days <= 30     ? 'bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300'   :
+                             'bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300'
+        return {
+            label: p.name ?? '—',
+            sublabel: `MRN ${p.mrn} · expires ${p.expires_at ?? '—'}`,
+            badge,
+            badgeColor,
+            href: p.href ?? `/participants/${p.id}`,
+        }
+    })
 )
 </script>
 
@@ -140,6 +165,16 @@ const newReferralItems = computed<ActionItem[]>(() =>
             :items="newReferralItems"
             emptyMessage="No new referrals this week."
             viewAllHref="/enrollment"
+            :loading="loading"
+        />
+
+        <!-- Phase 2 (MVP roadmap): NF-LOC recertification tracker — §460.160(b)(2) -->
+        <ActionWidget
+            title="NF-LOC Recert Due"
+            description="Annual NF level-of-care recertification due in the next 60 days (or overdue). 42 CFR §460.160(b)(2)."
+            :items="nfLocRecertWidgetItems"
+            emptyMessage="No recertifications pending."
+            viewAllHref="/compliance/nf-loc-status"
             :loading="loading"
         />
     </div>

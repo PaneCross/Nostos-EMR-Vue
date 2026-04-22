@@ -56,26 +56,31 @@ class SdrDeadlineService
             return $this->escalate($sdr);
         }
 
-        // ── 8h warning (only if not already issued) ──────────────────────────
-        if ($hoursRemaining > 0 && $hoursRemaining <= 8) {
-            if ($this->alertAlreadyExists($sdr, 'sdr_warning_8h')) {
-                return null;
-            }
-            $this->createDeadlineAlert($sdr, 'sdr_warning_8h', 'warning',
-                "SDR due in less than 8 hours",
-                "Service Delivery Request for participant requires completion within 8 hours to avoid escalation.",
+        // Phase 2 (MVP roadmap): dual-clock thresholds per sdr_type.
+        //   Standard (72h):  info at ≤24h, warning at ≤8h (≈33% and ≈11% of window)
+        //   Expedited (24h): info at ≤8h,  warning at ≤3h
+        $isExpedited  = $sdr->sdr_type === Sdr::TYPE_EXPEDITED;
+        $warnThreshold = $isExpedited ? 3  : 8;
+        $infoThreshold = $isExpedited ? 8  : 24;
+        $warnKey = $isExpedited ? 'sdr_warning_3h'  : 'sdr_warning_8h';
+        $infoKey = $isExpedited ? 'sdr_warning_8h'  : 'sdr_warning_24h';
+
+        if ($hoursRemaining > 0 && $hoursRemaining <= $warnThreshold) {
+            if ($this->alertAlreadyExists($sdr, $warnKey)) return null;
+            $this->createDeadlineAlert($sdr, $warnKey, 'warning',
+                "SDR due in less than {$warnThreshold} hours" . ($isExpedited ? ' (EXPEDITED)' : ''),
+                'Service Delivery Request (' . ($isExpedited ? 'expedited 24h' : 'standard 72h')
+                    . ") due within {$warnThreshold} hours — escalation imminent.",
             );
             return 'warning';
         }
 
-        // ── 24h warning (only if not already issued) ─────────────────────────
-        if ($hoursRemaining > 8 && $hoursRemaining <= 24) {
-            if ($this->alertAlreadyExists($sdr, 'sdr_warning_24h')) {
-                return null;
-            }
-            $this->createDeadlineAlert($sdr, 'sdr_warning_24h', 'info',
-                "SDR due in less than 24 hours",
-                "Service Delivery Request for participant is due within 24 hours.",
+        if ($hoursRemaining > $warnThreshold && $hoursRemaining <= $infoThreshold) {
+            if ($this->alertAlreadyExists($sdr, $infoKey)) return null;
+            $this->createDeadlineAlert($sdr, $infoKey, 'info',
+                "SDR due in less than {$infoThreshold} hours" . ($isExpedited ? ' (EXPEDITED)' : ''),
+                'Service Delivery Request (' . ($isExpedited ? 'expedited 24h' : 'standard 72h')
+                    . ") due within {$infoThreshold} hours.",
             );
             return 'info';
         }

@@ -60,8 +60,25 @@ class Sdr extends Model
         'other'              => 'Other',
     ];
 
-    // 72-hour enforcement window in hours
+    // Legacy alias kept for backward compatibility with older job code.
+    // Maps to STANDARD_WINDOW_HOURS below.
     public const DUE_WINDOW_HOURS = 72;
+
+    // Phase 2 (MVP roadmap): §460.121 SDR dual clocks.
+    public const TYPE_STANDARD  = 'standard';
+    public const TYPE_EXPEDITED = 'expedited';
+    public const TYPES = [self::TYPE_STANDARD, self::TYPE_EXPEDITED];
+
+    public const STANDARD_WINDOW_HOURS  = 72;
+    public const EXPEDITED_WINDOW_HOURS = 24;
+
+    /** Window-hours for the given sdr_type. */
+    public static function windowHoursFor(string $sdrType): int
+    {
+        return $sdrType === self::TYPE_EXPEDITED
+            ? self::EXPEDITED_WINDOW_HOURS
+            : self::STANDARD_WINDOW_HOURS;
+    }
 
     protected $fillable = [
         'participant_id',
@@ -73,6 +90,7 @@ class Sdr extends Model
         'request_type',
         'description',
         'priority',
+        'sdr_type',
         'status',
         'submitted_at',
         'due_at',
@@ -97,25 +115,35 @@ class Sdr extends Model
     {
         parent::boot();
 
-        // On create: auto-set due_at if not explicitly provided
+        // On create: auto-set due_at based on sdr_type (72h std / 24h expedited)
         static::creating(function (Sdr $sdr) {
             if (empty($sdr->submitted_at)) {
                 $sdr->submitted_at = now();
             }
-            // Always enforce: due_at = submitted_at + 72h
-            $sdr->due_at = $sdr->submitted_at->copy()->addHours(self::DUE_WINDOW_HOURS);
+            if (empty($sdr->sdr_type)) {
+                $sdr->sdr_type = self::TYPE_STANDARD;
+            }
+            // due_at = submitted_at + per-type window
+            $hours = self::windowHoursFor($sdr->sdr_type);
+            $sdr->due_at = $sdr->submitted_at->copy()->addHours($hours);
         });
 
-        // On update: reject any attempt to push due_at beyond the 72h window
+        // On update: reject any attempt to push due_at beyond the window-per-type
         static::updating(function (Sdr $sdr) {
             if ($sdr->isDirty('due_at')) {
-                $maxDue = $sdr->submitted_at->copy()->addHours(self::DUE_WINDOW_HOURS);
+                $hours = self::windowHoursFor($sdr->sdr_type ?? self::TYPE_STANDARD);
+                $maxDue = $sdr->submitted_at->copy()->addHours($hours);
                 if ($sdr->due_at->gt($maxDue)) {
                     throw new \LogicException(
-                        'SDR due_at cannot be set beyond ' . self::DUE_WINDOW_HOURS . ' hours of submitted_at. '
+                        "SDR due_at cannot be set beyond {$hours} hours of submitted_at. "
                         . 'Max allowed: ' . $maxDue->toIso8601String()
                     );
                 }
+            }
+            // If sdr_type changed on an open SDR, re-derive due_at.
+            if ($sdr->isDirty('sdr_type') && ! in_array($sdr->status, self::TERMINAL_STATUSES, true)) {
+                $hours = self::windowHoursFor($sdr->sdr_type);
+                $sdr->due_at = $sdr->submitted_at->copy()->addHours($hours);
             }
         });
     }

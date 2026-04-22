@@ -228,6 +228,8 @@ class PermissionService
                     ['label' => 'Appeals',       'module' => 'appeals',       'href' => '/appeals'],
                     // W4-6: QAPI project board (42 CFR §460.136–§460.140)
                     ['label' => 'QAPI Projects', 'module' => 'qapi_projects', 'href' => '/qapi/projects'],
+                    // Phase 2 (MVP roadmap): §460.200 annual QAPI evaluation artifact
+                    ['label' => 'QAPI Annual Eval', 'module' => 'qapi_projects', 'href' => '/qapi/evaluations'],
                 ],
             ],
             [

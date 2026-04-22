@@ -38,7 +38,8 @@ interface SdrItem {
   request_type:         string
   description:          string
   priority:             'routine' | 'urgent' | 'emergent'
-  status:               'submitted' | 'acknowledged' | 'in_progress' | 'completed' | 'cancelled'
+  sdr_type:             'standard' | 'expedited'
+  status:               'submitted' | 'acknowledged' | 'in_progress' | 'completed' | 'cancelled' | 'denied'
   requesting_department: string
   assigned_department:  string
   submitted_at:         string
@@ -208,6 +209,7 @@ const newForm    = ref({
   participant_id:      '',
   request_type:        props.requestTypes[0] ?? 'lab_order',
   priority:            'routine',
+  sdr_type:            'standard',          // Phase 2 (MVP): 72h standard / 24h expedited
   assigned_department: props.departments[0] ?? 'primary_care',
   description:         '',
 })
@@ -219,6 +221,7 @@ function openNewModal() {
     participant_id:      '',
     request_type:        props.requestTypes[0] ?? 'lab_order',
     priority:            'routine',
+    sdr_type:            'standard',
     assigned_department: props.departments[0] ?? 'primary_care',
     description:         '',
   }
@@ -373,6 +376,14 @@ async function submitNewSdr() {
 
             <!-- Priority + countdown -->
             <div class="flex flex-col items-end gap-1 shrink-0">
+              <!-- Phase 2 (MVP roadmap): expedited SDR badge -->
+              <span
+                v-if="sdr.sdr_type === 'expedited'"
+                class="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-xs font-bold bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300 ring-1 ring-inset ring-red-600/20"
+                title="Expedited 24-hour decision clock per 42 CFR §460.121"
+              >
+                EXPEDITED 24h
+              </span>
               <span
                 :class="[
                   'inline-flex items-center rounded px-1.5 py-0.5 text-xs font-medium ring-1 ring-inset',
@@ -569,6 +580,26 @@ async function submitNewSdr() {
                 <option value="emergent">Emergent</option>
               </select>
             </div>
+          </div>
+
+          <!-- Phase 2 (MVP roadmap): §460.121 SDR dual-clock selector -->
+          <div>
+            <label class="block text-xs font-medium text-gray-700 dark:text-slate-300 mb-1">
+              Decision Clock
+            </label>
+            <div class="flex items-center gap-3">
+              <label class="inline-flex items-center gap-1.5 text-sm text-gray-700 dark:text-slate-300 cursor-pointer">
+                <input type="radio" v-model="newForm.sdr_type" value="standard" class="text-blue-600" />
+                Standard (72 h)
+              </label>
+              <label class="inline-flex items-center gap-1.5 text-sm text-gray-700 dark:text-slate-300 cursor-pointer">
+                <input type="radio" v-model="newForm.sdr_type" value="expedited" class="text-red-600" />
+                Expedited (24 h)
+              </label>
+            </div>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+              Expedited when the standard 72-hour wait could seriously harm health or ability to regain function (42 CFR §460.121).
+            </p>
           </div>
 
           <!-- Assign to department -->

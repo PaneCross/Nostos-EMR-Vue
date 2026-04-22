@@ -211,6 +211,8 @@ Route::middleware('auth')->group(function () {
         Route::prefix('idt')->group(function () {
             Route::get('/meetings',     [IdtDashboardController::class, 'meetings'])->name('dashboards.idt.meetings');
             Route::get('/overdue-sdrs', [IdtDashboardController::class, 'overdueSdrs'])->name('dashboards.idt.overdue-sdrs');
+            // Phase 2 (MVP roadmap): SDR SLA dual-clock widget (§460.121)
+            Route::get('/sdr-sla',      [IdtDashboardController::class, 'sdrSla'])->name('dashboards.idt.sdr-sla');
             Route::get('/care-plans',   [IdtDashboardController::class, 'carePlans'])->name('dashboards.idt.care-plans');
             Route::get('/alerts',       [IdtDashboardController::class, 'alerts'])->name('dashboards.idt.alerts');
             // W4-5: 42 CFR §460.104(c) — IDT reassessment frequency tracking
@@ -224,6 +226,8 @@ Route::middleware('auth')->group(function () {
             Route::get('/eligibility-pending', [EnrollmentDashboardController::class, 'eligibilityPending'])->name('dashboards.enrollment.eligibility-pending');
             Route::get('/disenrollments',      [EnrollmentDashboardController::class, 'disenrollments'])->name('dashboards.enrollment.disenrollments');
             Route::get('/new-referrals',       [EnrollmentDashboardController::class, 'newReferrals'])->name('dashboards.enrollment.new-referrals');
+            // Phase 2 (MVP roadmap): NF-LOC recert widget (§460.160(b)(2))
+            Route::get('/nf-loc-recert',       [EnrollmentDashboardController::class, 'nfLocRecert'])->name('dashboards.enrollment.nf-loc-recert');
         });
 
         Route::prefix('finance')->group(function () {
@@ -698,6 +702,12 @@ Route::middleware('auth')->group(function () {
         Route::get('/projects/{id}',                     [QapiController::class, 'show'])->name('qapi.projects.show');
         Route::patch('/projects/{id}',                   [QapiController::class, 'update'])->name('qapi.projects.update');
         Route::post('/projects/{id}/remeasure',          [QapiController::class, 'remeasure'])->name('qapi.projects.remeasure');
+
+        // Phase 2 (MVP roadmap): §460.200 annual QAPI evaluation artifact
+        Route::get ('/evaluations',                      [\App\Http\Controllers\QapiAnnualEvaluationController::class, 'index'])->name('qapi.evaluations.index');
+        Route::post('/evaluations',                      [\App\Http\Controllers\QapiAnnualEvaluationController::class, 'store'])->name('qapi.evaluations.store');
+        Route::post('/evaluations/{evaluation}/review',  [\App\Http\Controllers\QapiAnnualEvaluationController::class, 'recordReview'])->name('qapi.evaluations.review');
+        Route::get ('/evaluations/{evaluation}/download',[\App\Http\Controllers\QapiAnnualEvaluationController::class, 'download'])->name('qapi.evaluations.download');
     });
 
     // ─── Finance / Billing (Phase 6C) ────────────────────────────────────────
@@ -902,6 +912,15 @@ Route::middleware('auth')->group(function () {
         // Supervisor review of HIPAA emergency access events (45 CFR §164.312(a)(2)(ii)).
         Route::get('/break-glass',                [BreakGlassController::class, 'adminIndex'])->name('it-admin.break-glass.index');
         Route::post('/break-glass/{event}/acknowledge', [BreakGlassController::class, 'acknowledge'])->name('it-admin.break-glass.acknowledge');
+    });
+
+    // ─── Phase 2 (MVP roadmap): Compliance audit-pull universes ──────────────
+    // CMS / state surveyor-ready JSON (or Inertia page for NF-LOC) exports.
+    Route::prefix('compliance')->group(function () {
+        Route::get('/nf-loc-status',   [\App\Http\Controllers\ComplianceController::class, 'nfLocStatus'])->name('compliance.nf-loc-status');
+        Route::get('/denial-notices',  [\App\Http\Controllers\ComplianceController::class, 'denialNotices'])->name('compliance.denial-notices');
+        Route::get('/appeals',         [\App\Http\Controllers\ComplianceController::class, 'appeals'])->name('compliance.appeals');
+        Route::get('/sdr-sla',         [\App\Http\Controllers\ComplianceController::class, 'sdrSla'])->name('compliance.sdr-sla');
     });
 });
 

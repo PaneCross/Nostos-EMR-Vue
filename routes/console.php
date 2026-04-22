@@ -4,6 +4,7 @@ use App\Jobs\DigestNotificationJob;
 use App\Jobs\DocumentationComplianceJob;
 use App\Jobs\GrievanceOverdueJob;
 use App\Jobs\IdtReviewFrequencyJob;
+use App\Jobs\NfLocRecertAlertJob;
 use App\Jobs\IncidentNotificationOverdueJob;
 use App\Jobs\SignificantChangeOverdueJob;
 use App\Jobs\SdrDeadlineEnforcementJob;
@@ -101,4 +102,12 @@ Schedule::job(SignificantChangeOverdueJob::class, 'compliance')->dailyAt('07:00'
 //   - Writes audit log entry
 Schedule::job(TransferCompletionJob::class, 'transfers')->dailyAt('07:00')
     ->name('transfer-completion')
+    ->withoutOverlapping();
+
+// ─── Phase 2 (MVP roadmap): NF-LOC recert alerts (42 CFR §460.160(b)(2)) ─────
+// Runs daily at 06:30 AM. Scans enrolled participants (non-waived) and creates
+// alerts at 60/30/15/0/overdue days from nf_certification_expires_at.
+// Dedup inside the job — one active alert of each type per participant.
+Schedule::job(NfLocRecertAlertJob::class, 'compliance')->dailyAt('06:30')
+    ->name('nf-loc-recert-alerts')
     ->withoutOverlapping();

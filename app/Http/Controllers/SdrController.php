@@ -101,6 +101,8 @@ class SdrController extends Controller
             'description'          => ['required', 'string'],
             'priority'             => ['required', Rule::in(Sdr::PRIORITIES)],
             'assigned_to_user_id'  => ['nullable', 'integer', 'exists:shared_users,id'],
+            // Phase 2 (MVP roadmap) §460.121: standard 72h vs expedited 24h clock.
+            'sdr_type'             => ['nullable', Rule::in(Sdr::TYPES)],
         ]);
 
         $sdr = Sdr::create(array_merge($validated, [

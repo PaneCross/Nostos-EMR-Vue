@@ -23,6 +23,7 @@ const carePlans = ref<any[]>([])
 const alerts = ref<any[]>([])
 const overdueParticipants = ref<any[]>([])
 const significantEvents = ref<any[]>([])
+const slaSdrs = ref<any[]>([])
 
 onMounted(() => {
     Promise.all([
@@ -32,13 +33,15 @@ onMounted(() => {
         axios.get('/dashboards/idt/alerts'),
         axios.get('/dashboards/idt/idt-review-overdue'),
         axios.get('/dashboards/idt/significant-changes'),
-    ]).then(([r1, r2, r3, r4, r5, r6]) => {
+        axios.get('/dashboards/idt/sdr-sla'),
+    ]).then(([r1, r2, r3, r4, r5, r6, r7]) => {
         meetings.value = r1.data.meetings ?? []
         sdrDepartments.value = r2.data.departments ?? []
         carePlans.value = r3.data.care_plans ?? []
         alerts.value = r4.data.alerts ?? r4.data ?? []
         overdueParticipants.value = r5.data.participants ?? []
         significantEvents.value = r6.data.events ?? []
+        slaSdrs.value = r7.data.sdrs ?? []
     }).finally(() => loading.value = false)
 })
 
@@ -144,6 +147,31 @@ const significantChangeItems = computed<ActionItem[]>(() =>
         }
     })
 )
+
+// Phase 2 (MVP roadmap): SDR SLA (dual clock) §460.121
+const sdrSlaItems = computed<ActionItem[]>(() =>
+    slaSdrs.value.map((s: any) => {
+        const isExp  = s.sdr_type === 'expedited'
+        const remain = s.hours_remaining ?? 0
+        const badge  = s.overdue
+            ? 'overdue'
+            : remain < 1
+                ? '<1h'
+                : `${remain}h left`
+        const badgeColor =
+            s.overdue        ? 'bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300' :
+            (s.window_pct ?? 0) >= 75 ? 'bg-orange-100 dark:bg-orange-900/60 text-orange-700 dark:text-orange-300' :
+            (s.window_pct ?? 0) >= 50 ? 'bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300' :
+                                         'bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300'
+        return {
+            label: s.participant?.name ?? '—',
+            sublabel: `${(s.request_type ?? '').replace(/_/g, ' ')} · ${(s.assigned_department ?? '').replace(/_/g, ' ')}${isExp ? ' · EXPEDITED' : ''}`,
+            badge,
+            badgeColor,
+            href: s.href ?? '/sdrs',
+        }
+    })
+)
 </script>
 
 <template>
@@ -199,6 +227,16 @@ const significantChangeItems = computed<ActionItem[]>(() =>
             :items="significantChangeItems"
             emptyMessage="No significant change reviews pending."
             viewAllHref="/idt"
+            :loading="loading"
+        />
+
+        <!-- Phase 2 (MVP roadmap): dual-clock SDR SLA §460.121 -->
+        <ActionWidget
+            title="SDR SLA (72h standard / 24h expedited)"
+            description="Open SDRs ranked by clock consumption. Expedited requests surface first."
+            :items="sdrSlaItems"
+            emptyMessage="No open SDRs."
+            viewAllHref="/sdrs"
             :loading="loading"
         />
     </div>

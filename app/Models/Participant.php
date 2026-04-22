@@ -50,6 +50,7 @@ class Participant extends Model
         'primary_language', 'interpreter_needed', 'interpreter_language',
         'enrollment_status', 'enrollment_date', 'disenrollment_date', 'disenrollment_reason', 'disenrollment_type',
         'nursing_facility_eligible', 'nf_certification_date',
+        'nf_certification_expires_at', 'nf_recert_waived', 'nf_recert_waived_reason',
         'photo_path', 'is_active', 'created_by_user_id',
         // Phase 11B: advance directive structured fields
         'advance_directive_status', 'advance_directive_type',
@@ -65,6 +66,8 @@ class Participant extends Model
         'enrollment_date'               => 'date',
         'disenrollment_date'            => 'date',
         'nf_certification_date'         => 'date',
+        'nf_certification_expires_at'   => 'date',
+        'nf_recert_waived'              => 'boolean',
         // W4-9: HPMS enrollment file fields (GAP-14)
         'medicare_a_start_date'         => 'date',
         'medicare_b_start_date'         => 'date',
@@ -317,6 +320,26 @@ class Participant extends Model
         }
 
         return $lastReview->diffInDays(now()) > 180;
+    }
+
+    /**
+     * Days until NF-LOC recert is due. Negative = overdue.
+     * Returns null if no cert date is recorded or recert is waived.
+     * 42 CFR §460.160(b)(2).
+     */
+    public function nfLocRecertDaysRemaining(): ?int
+    {
+        if ($this->nf_recert_waived) return null;
+        if (! $this->nf_certification_expires_at) return null;
+        return (int) floor(now()->startOfDay()->diffInDays($this->nf_certification_expires_at, false));
+    }
+
+    /** True when NF-LOC recert is overdue (expires_at in the past, not waived, enrolled). */
+    public function nfLocRecertOverdue(): bool
+    {
+        if (! $this->isEnrolled() || $this->nf_recert_waived) return false;
+        return $this->nf_certification_expires_at
+            && $this->nf_certification_expires_at->isPast();
     }
 
     // ─── Computed helpers ──────────────────────────────────────────────────────

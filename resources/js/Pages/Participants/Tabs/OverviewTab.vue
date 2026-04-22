@@ -21,6 +21,10 @@ interface Participant {
   interpreter_language: string | null; enrollment_status: string
   enrollment_date: string | null; disenrollment_date: string | null
   disenrollment_reason: string | null; nursing_facility_eligible: boolean
+  nf_certification_date: string | null
+  nf_certification_expires_at: string | null
+  nf_recert_waived: boolean
+  nf_recert_waived_reason: string | null
   advance_directive_status: string | null; advance_directive_type: string | null
   advance_directive_reviewed_at: string | null
   race: string | null; ethnicity: string | null; marital_status: string | null
@@ -265,6 +269,29 @@ const lifeThreateningAllergies = computed(() =>
   ) as Array<{ id: number; allergen_name: string; reaction_description: string | null }>
 )
 
+// Phase 2 (MVP roadmap): NF-LOC recert banner — §460.160(b)(2)
+const nfLocDays = computed<number | null>(() => {
+  const p = props.participant
+  if (p.nf_recert_waived) return null
+  if (!p.nf_certification_expires_at) return null
+  const exp = new Date(p.nf_certification_expires_at.slice(0, 10) + 'T12:00:00').getTime()
+  const now = new Date().getTime()
+  return Math.floor((exp - now) / (1000 * 60 * 60 * 24))
+})
+const nfLocBannerShow = computed(() => {
+  const p = props.participant
+  if (p.enrollment_status !== 'enrolled') return false
+  if (p.nf_recert_waived) return false
+  const d = nfLocDays.value
+  return d !== null && d <= 60
+})
+const nfLocBannerLevel = computed<'overdue' | 'soon' | 'info'>(() => {
+  const d = nfLocDays.value ?? 99999
+  if (d < 0) return 'overdue'
+  if (d <= 30) return 'soon'
+  return 'info'
+})
+
 const allAllergiesCount = computed(() =>
   Object.values(props.allergies ?? {}).flat().length
 )
@@ -347,6 +374,36 @@ const DIRECTIVE_TYPE_LABELS: Record<string, string> = {
 
 <template>
   <div id="facesheet-print-root" class="w-full min-h-full">
+
+    <!-- Phase 2 (MVP roadmap): NF-LOC recert alert banner — §460.160(b)(2) -->
+    <div
+      v-if="nfLocBannerShow"
+      :class="[
+        'mx-6 mt-4 rounded-lg border px-4 py-2.5 flex items-start gap-3 print:hidden',
+        nfLocBannerLevel === 'overdue'
+          ? 'bg-red-50 dark:bg-red-950/40 border-red-300 dark:border-red-700 text-red-800 dark:text-red-200'
+          : nfLocBannerLevel === 'soon'
+            ? 'bg-amber-50 dark:bg-amber-950/40 border-amber-300 dark:border-amber-700 text-amber-800 dark:text-amber-200'
+            : 'bg-blue-50 dark:bg-blue-950/40 border-blue-300 dark:border-blue-700 text-blue-800 dark:text-blue-200',
+      ]"
+    >
+      <ExclamationTriangleIcon class="w-4 h-4 mt-0.5 shrink-0" />
+      <div class="text-xs leading-relaxed">
+        <p class="font-semibold">
+          NF-LOC Recertification {{ nfLocBannerLevel === 'overdue' ? 'OVERDUE' : 'Due Soon' }}
+        </p>
+        <p>
+          <template v-if="participant.nf_certification_expires_at">
+            Expires {{ fmtDate(participant.nf_certification_expires_at) }}
+            <span v-if="nfLocDays !== null">
+              ({{ nfLocDays < 0 ? `${Math.abs(nfLocDays)} days overdue` : nfLocDays === 0 ? 'due today' : `${nfLocDays} days remaining` }})
+            </span>
+          </template>
+          <template v-else>Expiration date not set.</template>
+          <span class="italic"> &nbsp;42 CFR §460.160(b)(2).</span>
+        </p>
+      </div>
+    </div>
 
     <!-- ── Header ───────────────────────────────────────────────────────────── -->
     <div class="facesheet-header bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white px-6 py-4 print:py-3 print:px-4">

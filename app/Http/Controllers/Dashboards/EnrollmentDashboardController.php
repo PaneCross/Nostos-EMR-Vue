@@ -199,4 +199,43 @@ class EnrollmentDashboardController extends Controller
             'week_start'  => $weekStart->toDateString(),
         ]);
     }
+
+    /**
+     * Phase 2 (MVP roadmap). NF-LOC recertifications due in the next 60 days
+     * (or overdue), excluding waived participants. §460.160(b)(2).
+     */
+    public function nfLocRecert(): \Illuminate\Http\JsonResponse
+    {
+        $this->requireDept();
+        $tenantId = Auth::user()->tenant_id;
+
+        $cutoff = now()->addDays(60)->toDateString();
+
+        $participants = Participant::forTenant($tenantId)
+            ->where('enrollment_status', 'enrolled')
+            ->where('nf_recert_waived', false)
+            ->whereNotNull('nf_certification_expires_at')
+            ->where('nf_certification_expires_at', '<=', $cutoff)
+            ->orderBy('nf_certification_expires_at')
+            ->limit(25)
+            ->get()
+            ->map(function (Participant $p) {
+                $days = $p->nfLocRecertDaysRemaining();
+                return [
+                    'id'            => $p->id,
+                    'name'          => $p->fullName(),
+                    'mrn'           => $p->mrn,
+                    'expires_at'    => $p->nf_certification_expires_at?->toDateString(),
+                    'days_remaining'=> $days,
+                    'overdue'       => $days !== null && $days < 0,
+                    'href'          => "/participants/{$p->id}",
+                ];
+            });
+
+        return response()->json([
+            'participants' => $participants->values(),
+            'count_total'  => $participants->count(),
+            'count_overdue'=> $participants->where('overdue', true)->count(),
+        ]);
+    }
 }

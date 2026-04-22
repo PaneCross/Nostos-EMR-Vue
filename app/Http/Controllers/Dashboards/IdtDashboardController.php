@@ -129,6 +129,58 @@ class IdtDashboardController extends Controller
     }
 
     /**
+     * Phase 2 (MVP roadmap) §460.121 SDR SLA widget.
+     * Open SDRs ranked by clock-consumption (nearest-due first), with sdr_type
+     * (standard/expedited) surfaced so staff see the dual clocks at a glance.
+     */
+    public function sdrSla(): JsonResponse
+    {
+        $this->requireDept();
+        $tenantId = Auth::user()->tenant_id;
+
+        $sdrs = Sdr::where('tenant_id', $tenantId)
+            ->open()
+            ->with(['participant:id,first_name,last_name,mrn'])
+            ->orderBy('due_at')
+            ->limit(25)
+            ->get()
+            ->map(function (Sdr $s) {
+                $remain  = $s->hoursRemaining();
+                $windowH = Sdr::windowHoursFor($s->sdr_type ?? Sdr::TYPE_STANDARD);
+                $elapsed = max(0, $windowH - max(0, $remain));
+                $pct     = $windowH > 0 ? min(100, max(0, (int) round(($elapsed * 100) / $windowH))) : 0;
+
+                return [
+                    'id'            => $s->id,
+                    'participant'   => $s->participant ? [
+                        'id'   => $s->participant->id,
+                        'name' => $s->participant->first_name . ' ' . $s->participant->last_name,
+                        'mrn'  => $s->participant->mrn,
+                    ] : null,
+                    'request_type'  => $s->request_type,
+                    'sdr_type'      => $s->sdr_type ?? Sdr::TYPE_STANDARD,
+                    'assigned_department' => $s->assigned_department,
+                    'submitted_at'  => $s->submitted_at?->toIso8601String(),
+                    'due_at'        => $s->due_at?->toIso8601String(),
+                    'window_hours'  => $windowH,
+                    'hours_remaining' => $remain,
+                    'window_pct'    => $pct,
+                    'overdue'       => $remain <= 0,
+                    'href'          => '/sdrs',
+                ];
+            });
+
+        $open = Sdr::where('tenant_id', $tenantId)->open();
+
+        return response()->json([
+            'sdrs'            => $sdrs->values(),
+            'count_open'      => (clone $open)->count(),
+            'count_expedited' => (clone $open)->where('sdr_type', Sdr::TYPE_EXPEDITED)->count(),
+            'count_overdue'   => (clone $open)->overdue()->count(),
+        ]);
+    }
+
+    /**
      * Care plans whose review_due_date is within the next 30 days (due soon or overdue).
      * Active states: draft, under_review, approved (not archived).
      * IDT schedules care plan review meetings based on this list.
