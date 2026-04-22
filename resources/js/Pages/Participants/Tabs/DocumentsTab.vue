@@ -104,6 +104,35 @@ function downloadDocument(doc: ParticipantDocument) {
   // Controller streams the file — navigate directly to the download route
   window.open(`/participants/${props.participant.id}/documents/${doc.id}/download`, '_blank')
 }
+
+// Phase 8 (MVP roadmap): C-CDA import — parse-only preview
+async function importCcda(e: Event) {
+  const input = e.target as HTMLInputElement
+  const file = input.files?.[0]
+  if (!file) return
+  const form = new FormData()
+  form.append('ccda_file', file)
+  try {
+    const r = await axios.post(`/participants/${props.participant.id}/ccda/import`, form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+    const s = r.data.summary
+    const lines = [
+      `C-CDA parsed (preview only):`,
+      `Patient: ${s.patient?.first_name ?? '?'} ${s.patient?.last_name ?? '?'} (DOB ${s.patient?.dob ?? '?'})`,
+      `Allergies: ${s.allergies?.length ?? 0}`,
+      `Medications: ${s.medications?.length ?? 0}`,
+      `Problems: ${s.problems?.length ?? 0}`,
+      '',
+      r.data.honest_label ?? '',
+    ]
+    window.alert(lines.join('\n'))
+  } catch (err: any) {
+    window.alert(err?.response?.data?.message || 'C-CDA parse failed.')
+  } finally {
+    input.value = ''
+  }
+}
 </script>
 
 <template>
@@ -122,6 +151,18 @@ function downloadDocument(doc: ParticipantDocument) {
           <DocumentArrowUpIcon class="w-3.5 h-3.5" />
           Upload
         </button>
+        <!-- Phase 8 (MVP roadmap): C-CDA import/export -->
+        <a
+          :href="`/participants/${props.participant.id}/ccda/export`"
+          class="inline-flex items-center gap-1 text-xs px-3 py-1.5 border border-slate-300 dark:border-slate-600 text-gray-700 dark:text-slate-300 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
+          title="Download participant continuity-of-care document (C-CDA R2.1)"
+        >
+          Export C-CDA
+        </a>
+        <label class="inline-flex items-center gap-1 text-xs px-3 py-1.5 border border-slate-300 dark:border-slate-600 text-gray-700 dark:text-slate-300 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors cursor-pointer">
+          Import C-CDA
+          <input type="file" accept=".xml,application/xml,text/xml" class="hidden" @change="importCcda($event)" />
+        </label>
       </div>
     </div>
 

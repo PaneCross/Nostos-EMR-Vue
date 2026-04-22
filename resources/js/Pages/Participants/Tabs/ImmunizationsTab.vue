@@ -38,6 +38,22 @@ onMounted(async () => {
   }
 })
 const showAddForm = ref(false)
+
+// Phase 8 (MVP roadmap): simulated state IIS HL7 VXU submission
+async function submitToIis(immunizationId: number) {
+  const state = window.prompt('State code for IIS submission (e.g. CA, NY, FL):', 'CA')
+  if (!state) return
+  try {
+    const r = await axios.post(
+      `/participants/${props.participant.id}/immunizations/${immunizationId}/iis-submit`,
+      { state_code: state.trim().toUpperCase() }
+    )
+    const mcid = r.data?.submission?.message_control_id
+    window.alert(`VXU generated and marked submitted (simulated).\nMessage ID: ${mcid}\n\n${r.data?.submission?.honest_label ?? ''}`)
+  } catch (e: any) {
+    window.alert(e?.response?.data?.message || 'Failed to submit VXU.')
+  }
+}
 const saving = ref(false)
 const error = ref('')
 
@@ -191,6 +207,14 @@ async function submit() {
           </div>
           <p v-if="imm.notes" class="text-xs text-gray-500 dark:text-slate-500 mt-0.5">{{ imm.notes }}</p>
         </div>
+        <button
+          type="button"
+          @click="submitToIis(imm.id)"
+          class="text-xs px-2 py-1 rounded border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/40 whitespace-nowrap"
+          title="Generate HL7 VXU for state IIS submission (simulated)"
+        >
+          Submit to IIS
+        </button>
       </div>
     </div>
     </template>

@@ -481,6 +481,23 @@ Route::middleware('auth')->group(function () {
     Route::post('/participants/{participant}/spend-down/payments',   [\App\Http\Controllers\SpendDownController::class, 'storePayment'])->name('participants.spend_down.payments.store');
     Route::delete('/spend-down/payments/{payment}',                  [\App\Http\Controllers\SpendDownController::class, 'destroyPayment'])->name('spend_down.payments.destroy');
 
+    // Phase 8 (MVP roadmap): IIS HL7 VXU + C-CDA + Advance directive PDF
+    Route::post('/participants/{participant}/immunizations/{immunization}/iis-submit',
+        [\App\Http\Controllers\ImmunizationSubmissionController::class, 'store'])
+        ->name('participants.immunizations.iis_submit');
+    Route::get ('/participants/{participant}/iis-submissions',
+        [\App\Http\Controllers\ImmunizationSubmissionController::class, 'index'])
+        ->name('participants.iis_submissions.index');
+    Route::get ('/participants/{participant}/ccda/export',
+        [\App\Http\Controllers\CcdaController::class, 'export'])
+        ->name('participants.ccda.export');
+    Route::post('/participants/{participant}/ccda/import',
+        [\App\Http\Controllers\CcdaController::class, 'import'])
+        ->name('participants.ccda.import');
+    Route::get ('/participants/{participant}/advance-directive/pdf',
+        [\App\Http\Controllers\AdvanceDirectivePdfController::class, 'generate'])
+        ->name('participants.advance_directive.pdf');
+
     // ─── Phase 10A: Site Transfers (nested under participant) ─────────────────
     // View history: any authenticated user (dept check in controller for write ops).
     // Request/Approve/Cancel: enrollment + it_admin + super_admin only.

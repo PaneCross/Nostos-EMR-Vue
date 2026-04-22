@@ -740,6 +740,17 @@ const DIRECTIVE_TYPE_LABELS: Record<string, string> = {
               <dt class="text-xs text-gray-500 dark:text-slate-400 w-16 shrink-0">Reviewed</dt>
               <dd class="text-sm text-gray-800 dark:text-slate-200">{{ fmtDate(participant.advance_directive_reviewed_at) }}</dd>
             </div>
+            <!-- Phase 8 (MVP roadmap): generate fillable advance-directive PDF -->
+            <div class="flex gap-2 mt-2 print:hidden">
+              <a
+                :href="`/participants/${participant.id}/advance-directive/pdf?type=${participant.advance_directive_type || 'dnr'}`"
+                target="_blank"
+                class="text-xs px-2 py-1 rounded border border-slate-300 dark:border-slate-600 text-gray-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700"
+                title="Download a pre-filled advance directive (PACE-generated facsimile)"
+              >
+                Download PDF
+              </a>
+            </div>
           </dl>
         </section>
       </div>
