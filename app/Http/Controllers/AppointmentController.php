@@ -146,6 +146,39 @@ class AppointmentController extends Controller
     }
 
     /**
+     * Phase 14.2 — standalone appointment detail Inertia page.
+     * GET /appointments/{appointment}
+     *
+     * Renders the full detail view independent of a participant route context,
+     * so dashboard widgets, global search, and scheduler can link straight
+     * into the record.
+     */
+    public function showStandalone(Request $request, Appointment $appointment)
+    {
+        $user = $request->user();
+        abort_if(!$user, 401);
+        abort_unless($appointment->tenant_id === $user->tenant_id, 404);
+
+        $appointment->load([
+            'participant:id,first_name,last_name,mrn,dob,tenant_id,site_id',
+            'provider:id,first_name,last_name,department',
+            'location',
+            'createdBy:id,first_name,last_name',
+            'site:id,name',
+        ]);
+
+        $canEdit = $user->isSuperAdmin() || in_array($user->department, [
+            'primary_care', 'therapies', 'social_work', 'behavioral_health',
+            'dietary', 'activities', 'home_care', 'it_admin', 'enrollment',
+        ], true);
+
+        return \Inertia\Inertia::render('Appointments/Show', [
+            'appointment' => $appointment,
+            'canEdit'     => $canEdit,
+        ]);
+    }
+
+    /**
      * POST /participants/{participant}/appointments
      * Creates a new appointment after checking for participant time conflicts.
      * Returns 409 if a conflict exists.

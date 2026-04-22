@@ -498,6 +498,17 @@ Route::middleware('auth')->group(function () {
         [\App\Http\Controllers\AdvanceDirectivePdfController::class, 'generate'])
         ->name('participants.advance_directive.pdf');
 
+    // Phase 14 (MVP roadmap): printable PDFs + appointment detail + global search
+    Route::get ('/participants/{participant}/pdf/{kind}',
+        [\App\Http\Controllers\ParticipantPdfController::class, 'generate'])
+        ->name('participants.pdf');
+    Route::get ('/appointments/{appointment}',
+        [\App\Http\Controllers\AppointmentController::class, 'showStandalone'])
+        ->name('appointments.show');
+    Route::get ('/search',
+        [\App\Http\Controllers\GlobalSearchController::class, 'index'])
+        ->name('search.global');
+
     // Phase 13 (MVP roadmap): coding lookups + scored instruments + pre-save drug interaction check
     Route::get ('/coding/snomed',  [\App\Http\Controllers\CodingLookupController::class, 'snomed'])->name('coding.snomed');
     Route::get ('/coding/rxnorm',  [\App\Http\Controllers\CodingLookupController::class, 'rxnorm'])->name('coding.rxnorm');

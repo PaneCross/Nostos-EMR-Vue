@@ -219,6 +219,12 @@ class Participant extends Model
         return $this->hasMany(DrugInteractionAlert::class, 'participant_id');
     }
 
+    /** Phase 14.1: care plans relationship for PDF generation + participant tabs. */
+    public function carePlans(): HasMany
+    {
+        return $this->hasMany(CarePlan::class, 'participant_id');
+    }
+
     public function immunizations(): HasMany
     {
         return $this->hasMany(Immunization::class, 'participant_id');
