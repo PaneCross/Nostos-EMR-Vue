@@ -477,6 +477,15 @@ const DIRECTIVE_TYPE_LABELS: Record<string, string> = {
             <PrinterIcon class="w-3.5 h-3.5" />
             Print Facesheet
           </button>
+          <!-- Phase 5 (MVP roadmap): EHI export per 21st Century Cures Act § 4004 -->
+          <a
+            data-no-print
+            :href="`/participants/${participant.id}/ehi-export`"
+            class="mt-1 inline-flex items-center gap-1.5 text-xs px-3 py-1.5 bg-indigo-100 dark:bg-indigo-900/40 hover:bg-indigo-200 dark:hover:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 rounded-lg transition-colors"
+            title="Generate an Electronic Health Information export (FHIR Bundle + clinical data ZIP)"
+          >
+            Request EHI Export
+          </a>
         </div>
       </div>
 

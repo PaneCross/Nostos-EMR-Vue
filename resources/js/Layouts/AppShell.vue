@@ -962,6 +962,16 @@ function handleGlobalKey(e: KeyboardEvent) {
             <!-- Page content -->
             <main class="flex-1 flex flex-col overflow-y-auto">
                 <slot />
+
+                <!-- Phase 5 (MVP roadmap): policy surface links. Low-chrome footer. -->
+                <footer class="mt-auto border-t border-slate-200 dark:border-slate-700/50 bg-slate-50 dark:bg-slate-900/40 px-6 py-3 text-xs text-slate-500 dark:text-slate-400 flex flex-wrap items-center justify-between gap-2 print:hidden">
+                    <span>Confidential — 42 CFR §460.210</span>
+                    <nav class="flex flex-wrap items-center gap-x-4 gap-y-1">
+                        <a href="/policies/npp" class="hover:text-indigo-600 dark:hover:text-indigo-400 hover:underline">Notice of Privacy Practices</a>
+                        <a href="/policies/info-blocking" class="hover:text-indigo-600 dark:hover:text-indigo-400 hover:underline">Information Blocking</a>
+                        <a href="/policies/acceptable-use" class="hover:text-indigo-600 dark:hover:text-indigo-400 hover:underline">Acceptable Use</a>
+                    </nav>
+                </footer>
             </main>
         </div>
     </div>

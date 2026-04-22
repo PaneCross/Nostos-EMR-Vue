@@ -265,6 +265,27 @@ class EhiExportService
             ])->all(), JSON_PRETTY_PRINT)
         );
 
+        // ── FHIR R4 Bundle ────────────────────────────────────────────────────
+        // Phase 5 (MVP roadmap): add a proper FHIR R4 Bundle (type=collection)
+        // with every mapped resource as an entry. This is the format expected
+        // by ONC HTI-1 EHI export consumers and SMART on FHIR apps.
+
+        $zip->addFromString(
+            'fhir/Bundle.json',
+            json_encode($this->buildFhirBundle(
+                patient:       PatientMapper::toFhir($participant),
+                vitalsObs:     $vitalsObs,
+                sdohObs:       $sdohObs,
+                problems:      $problems,
+                meds:          $meds,
+                allergies:     $allergies,
+                carePlans:     $carePlans,
+                immunizations: $immunizations,
+                procedures:    $procedures,
+                appointments:  $appointments,
+            ), JSON_PRETTY_PRINT)
+        );
+
         // ── Export manifest ───────────────────────────────────────────────────
 
         $zip->addFromString('manifest.json', json_encode([
@@ -306,5 +327,54 @@ class EhiExportService
             'status'              => 'ready',
             'expires_at'          => now()->addHours(24),
         ]);
+    }
+
+    /**
+     * Assemble a FHIR R4 Bundle (type=collection) from the already-mapped resources.
+     * One entry per resource, in USCDI-priority order.
+     * Phase 5 (MVP roadmap).
+     */
+    public function buildFhirBundle(
+        array $patient,
+        array $vitalsObs,
+        array $sdohObs,
+        $problems,
+        $meds,
+        $allergies,
+        $carePlans,
+        $immunizations,
+        $procedures,
+        $appointments,
+    ): array {
+        $entries = [];
+        $addEntry = function (array $resource) use (&$entries) {
+            $ref = ($resource['resourceType'] ?? 'Resource') . '/' . ($resource['id'] ?? '');
+            $entries[] = [
+                'fullUrl' => 'urn:local:' . $ref,
+                'resource' => $resource,
+            ];
+        };
+
+        // Patient is always first per USCDI guidance.
+        $addEntry($patient);
+
+        foreach ($vitalsObs as $obs)      $addEntry($obs);
+        foreach ($sdohObs as $obs)        $addEntry($obs);
+        foreach ($problems as $p)         $addEntry(ConditionMapper::toFhir($p));
+        foreach ($allergies as $a)        $addEntry(AllergyIntoleranceMapper::toFhir($a));
+        foreach ($meds as $m)             $addEntry(MedicationRequestMapper::toFhir($m));
+        foreach ($immunizations as $i)    $addEntry(ImmunizationMapper::toFhir($i));
+        foreach ($procedures as $p)       $addEntry(ProcedureMapper::toFhir($p));
+        foreach ($carePlans as $cp)       $addEntry(CarePlanMapper::toFhir($cp));
+        foreach ($appointments as $appt)  $addEntry(AppointmentMapper::toFhir($appt));
+
+        return [
+            'resourceType' => 'Bundle',
+            'id'           => 'ehi-export-' . (string) $patient['id'] . '-' . now()->format('YmdHis'),
+            'type'         => 'collection',
+            'timestamp'    => now()->toIso8601String(),
+            'total'        => count($entries),
+            'entry'        => $entries,
+        ];
     }
 }

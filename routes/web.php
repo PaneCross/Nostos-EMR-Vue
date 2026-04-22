@@ -457,11 +457,19 @@ Route::middleware('auth')->group(function () {
     // Rate-limited: 3 requests per user per 24 hours (BreakGlassService).
     Route::post('/participants/{participant}/break-glass', [BreakGlassController::class, 'requestAccess'])->name('participants.break_glass.request');
 
+    // Phase 5 (MVP roadmap): Policy surface pages — info-blocking, NPP, acceptable-use
+    Route::get('/policies/info-blocking',  [\App\Http\Controllers\PolicyController::class, 'infoBlocking'])->name('policies.info-blocking');
+    Route::get('/policies/npp',            [\App\Http\Controllers\PolicyController::class, 'noticeOfPrivacyPractices'])->name('policies.npp');
+    Route::get('/policies/acceptable-use', [\App\Http\Controllers\PolicyController::class, 'acceptableUse'])->name('policies.acceptable-use');
+
     // ─── Phase 11B: EHI Export (nested under participant) ────────────────────
     // POST generates a new export (returns 202 with download URL).
     // GET download validates the token and streams the ZIP (410 Gone if expired).
-    Route::post('/participants/{participant}/ehi-export', [EhiExportController::class, 'request'])->name('participants.ehi_export.request');
-    Route::get('/participants/{participant}/ehi-export/{token}/download', [EhiExportController::class, 'download'])->name('participants.ehi_export.download');
+    // Phase 5 (MVP roadmap): Inertia page + history JSON for self-service flow
+    Route::get ('/participants/{participant}/ehi-export',         [EhiExportController::class, 'index'])->name('participants.ehi_export.index');
+    Route::get ('/participants/{participant}/ehi-export/history', [EhiExportController::class, 'history'])->name('participants.ehi_export.history');
+    Route::post('/participants/{participant}/ehi-export',         [EhiExportController::class, 'request'])->name('participants.ehi_export.request');
+    Route::get ('/participants/{participant}/ehi-export/{token}/download', [EhiExportController::class, 'download'])->name('participants.ehi_export.download');
 
     // ─── Phase 10A: Site Transfers (nested under participant) ─────────────────
     // View history: any authenticated user (dept check in controller for write ops).

@@ -8,6 +8,12 @@
 //   Dispatches EhiExportService synchronously (demo env — no queue needed).
 //   Returns 202 with download URL. Logs ehi_export_generated.
 //
+// GET  /participants/{id}/ehi-export                            → index()   (Phase 5 MVP roadmap)
+//   Inertia page listing past exports + request button.
+//
+// GET  /participants/{id}/ehi-export/history                    → history() (Phase 5)
+//   JSON list of past exports — consumed by the Vue page.
+//
 // GET  /participants/{id}/ehi-export/{token}/download           → download()
 //   Validates token (not expired, not already downloaded), streams ZIP.
 //   Marks downloaded_at. Returns 410 Gone if expired.
@@ -24,6 +30,8 @@ use App\Services\EhiExportService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Inertia\Inertia;
+use Inertia\Response as InertiaResponse;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class EhiExportController extends Controller
@@ -39,6 +47,62 @@ class EhiExportController extends Controller
             || ($user->department === 'primary_care' && $user->isAdmin());
 
         abort_if(! $canExport, 403, 'EHI export requires it_admin, enrollment admin, or primary care admin.');
+    }
+
+    /**
+     * Phase 5 (MVP roadmap): GET /participants/{participant}/ehi-export
+     * Inertia page listing past exports with request-new button.
+     */
+    public function index(Request $request, Participant $participant): InertiaResponse
+    {
+        $this->authorizeExport($participant, $request->user());
+        return Inertia::render('Participants/EhiExport', [
+            'participant' => [
+                'id' => $participant->id,
+                'mrn' => $participant->mrn,
+                'first_name' => $participant->first_name,
+                'last_name'  => $participant->last_name,
+            ],
+            'exports' => $this->historyPayload($participant),
+        ]);
+    }
+
+    /**
+     * Phase 5 (MVP roadmap): GET /participants/{participant}/ehi-export/history
+     * JSON list of past exports — consumed by the Vue page on refresh.
+     */
+    public function history(Request $request, Participant $participant): JsonResponse
+    {
+        $this->authorizeExport($participant, $request->user());
+        return response()->json([
+            'exports' => $this->historyPayload($participant),
+        ]);
+    }
+
+    private function historyPayload(Participant $participant): array
+    {
+        return EhiExport::where('participant_id', $participant->id)
+            ->where('tenant_id', $participant->tenant_id)
+            ->with('requestedBy:id,first_name,last_name')
+            ->orderByDesc('created_at')
+            ->limit(25)
+            ->get()
+            ->map(function (EhiExport $e) use ($participant) {
+                return [
+                    'id'             => $e->id,
+                    'status'         => $e->isExpired() ? 'expired' : $e->status,
+                    'requested_by'   => $e->requestedBy
+                        ? $e->requestedBy->first_name . ' ' . $e->requestedBy->last_name
+                        : null,
+                    'created_at'     => $e->created_at?->toIso8601String(),
+                    'expires_at'     => $e->expires_at?->toIso8601String(),
+                    'downloaded_at'  => $e->downloaded_at?->toIso8601String(),
+                    'downloadable'   => $e->isDownloadable(),
+                    'download_url'   => $e->isDownloadable()
+                        ? url("/participants/{$participant->id}/ehi-export/{$e->token}/download")
+                        : null,
+                ];
+            })->toArray();
     }
 
     /**
