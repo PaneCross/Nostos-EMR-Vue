@@ -90,6 +90,11 @@ class FhirMetadataController extends Controller
                     ]],
                 ],
                 'resource' => $resourcesBlock,
+                // Phase 15.1: advertise Bulk Data Access $export at system level
+                'operation' => [[
+                    'name'       => 'export',
+                    'definition' => 'http://hl7.org/fhir/uv/bulkdata/OperationDefinition/export',
+                ]],
             ]],
         ];
 

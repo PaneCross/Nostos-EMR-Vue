@@ -1036,6 +1036,13 @@ Route::post('/fhir/R4/auth/token',                 [\App\Http\Controllers\SmartO
 Route::post('/fhir/R4/auth/introspect',            [\App\Http\Controllers\SmartOAuthController::class, 'introspect'])->name('fhir.oauth.introspect');
 Route::post('/fhir/R4/auth/revoke',                [\App\Http\Controllers\SmartOAuthController::class, 'revoke'])->name('fhir.oauth.revoke');
 
+// Phase 15.1 (MVP roadmap): FHIR Bulk Data Access ($export)
+// Using URL-encoded $ so route matches exactly what FHIR Bulk Data clients send.
+Route::post  ('/fhir/R4/$export',                             [\App\Http\Controllers\FhirBulkExportController::class, 'export'])->middleware('fhir.auth')->name('fhir.bulk.export');
+Route::get   ('/fhir/R4/export-status/{jobId}',               [\App\Http\Controllers\FhirBulkExportController::class, 'status'])->middleware('fhir.auth')->name('fhir.bulk.status');
+Route::delete('/fhir/R4/export-status/{jobId}',               [\App\Http\Controllers\FhirBulkExportController::class, 'cancel'])->middleware('fhir.auth')->name('fhir.bulk.cancel');
+Route::get   ('/fhir/R4/export-file/{jobId}/{resourceFile}',  [\App\Http\Controllers\FhirBulkExportController::class, 'file'])->middleware('fhir.auth')->where('resourceFile', '.*\.ndjson')->name('fhir.bulk.file');
+
 Route::prefix('fhir/R4')
     ->middleware(['fhir.auth'])
     ->group(function () {
