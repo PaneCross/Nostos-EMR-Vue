@@ -417,6 +417,51 @@ class GrievanceService
             $standardCount++;
         }
 
-        return ['urgent' => $urgentCount, 'standard' => $standardCount];
+        // Phase 13.5 — day-25 warning (approaching 30-day deadline)
+        // Fires once per grievance (dedup via metadata.grievance_id within 48h).
+        $approachingCount = 0;
+        $approaching = Grievance::forTenant($tenantId)
+            ->where('priority', 'standard')
+            ->whereIn('status', ['open', 'under_review'])
+            ->whereBetween('filed_at', [
+                now()->subDays(30),
+                now()->subDays(25),
+            ])
+            ->get();
+
+        foreach ($approaching as $grievance) {
+            $dupe = Alert::where('tenant_id', $tenantId)
+                ->where('alert_type', 'grievance_approaching_deadline')
+                ->where('created_at', '>=', now()->subHours(48))
+                ->whereRaw("(metadata->>'grievance_id')::int = ?", [$grievance->id])
+                ->exists();
+            if ($dupe) continue;
+
+            $daysElapsed = (int) $grievance->filed_at->diffInDays(now());
+            $daysRemaining = max(0, Grievance::STANDARD_RESOLUTION_DAYS - $daysElapsed);
+
+            Alert::create([
+                'tenant_id'          => $tenantId,
+                'alert_type'         => 'grievance_approaching_deadline',
+                'title'              => 'Grievance approaching 30-day deadline',
+                'message'            => "Grievance {$grievance->referenceNumber()} has {$daysRemaining} day(s) remaining "
+                    . "before the 30-day CMS resolution deadline.{$officerNote}",
+                'severity'           => 'warning',
+                'source_module'      => 'grievances',
+                'target_departments' => ['qa_compliance', 'it_admin'],
+                'metadata'           => [
+                    'grievance_id'          => $grievance->id,
+                    'days_remaining'        => $daysRemaining,
+                    'compliance_officer_id' => $complianceOfficer?->id,
+                ],
+            ]);
+            $approachingCount++;
+        }
+
+        return [
+            'urgent'      => $urgentCount,
+            'standard'    => $standardCount,
+            'approaching' => $approachingCount,
+        ];
     }
 }

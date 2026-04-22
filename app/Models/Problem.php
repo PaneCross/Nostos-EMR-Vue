@@ -23,6 +23,8 @@ class Problem extends Model
     protected $fillable = [
         'participant_id', 'tenant_id',
         'icd10_code', 'icd10_description',
+        // Phase 13.1: SNOMED CT coding alongside ICD-10 for FHIR interoperability.
+        'snomed_code', 'snomed_display',
         'onset_date', 'resolved_date',
         'status',
         'added_by_user_id', 'last_reviewed_by_user_id', 'last_reviewed_at',

@@ -222,6 +222,33 @@ class Grievance extends Model
             && $this->filed_at->lt(now()->subDays(self::STANDARD_RESOLUTION_DAYS));
     }
 
+    /**
+     * Phase 13.5 — days elapsed since filing (for aging-band calculations in UI).
+     * Returns null for closed grievances.
+     */
+    public function ageInDays(): ?int
+    {
+        if ($this->isClosed() || $this->filed_at === null) return null;
+        return (int) $this->filed_at->diffInDays(now());
+    }
+
+    /**
+     * Phase 13.5 — aging color band for the standard 30-day window. Returns one
+     * of: 'green' (0-15d), 'yellow' (16-25d), 'red' (26-30d), 'overdue' (>30d).
+     * Urgent grievances are not aging-banded through this helper — they have
+     * their own 72-hour logic via isUrgentOverdue().
+     */
+    public function agingBand(): ?string
+    {
+        if ($this->priority !== 'standard' || $this->isClosed()) return null;
+        $days = $this->ageInDays();
+        if ($days === null) return null;
+        if ($days > self::STANDARD_RESOLUTION_DAYS) return 'overdue';
+        if ($days >= 26) return 'red';
+        if ($days >= 16) return 'yellow';
+        return 'green';
+    }
+
     /** Human-readable status label */
     public function statusLabel(): string
     {
@@ -277,6 +304,9 @@ class Grievance extends Model
             'resolution_date'          => $this->resolution_date?->toDateString(),
             'is_urgent_overdue'        => $this->isUrgentOverdue(),
             'is_standard_overdue'      => $this->isStandardOverdue(),
+            // Phase 13.5: aging band for 30-day standard grievances
+            'age_in_days'              => $this->ageInDays(),
+            'aging_band'               => $this->agingBand(),
             // Named escalation assignee (null if escalated to a department only)
             'escalated_to_user_id'     => $this->escalated_to_user_id,
             'escalated_to_name'        => $this->escalatedTo

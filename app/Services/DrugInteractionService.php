@@ -127,6 +127,35 @@ class DrugInteractionService
     }
 
     /**
+     * Phase 13.3: pre-save interaction preview. Takes a proposed drug name +
+     * optional rxnorm_code and returns any interactions against the
+     * participant's currently-active medications, WITHOUT persisting alerts.
+     * The UI uses this to warn the prescriber before they hit Save.
+     *
+     * @return array<int, array{drug_name:string, other_drug:string, severity:string, description:string, rxnorm_code:?string}>
+     */
+    public function previewInteractions(Participant $participant, string $proposedDrugName, ?string $proposedRxnorm = null): array
+    {
+        $others = Medication::where('participant_id', $participant->id)
+            ->whereIn('status', ['active', 'prn'])
+            ->get(['id', 'drug_name', 'rxnorm_code']);
+
+        $hits = [];
+        foreach ($others as $existing) {
+            $row = $this->findInteraction($proposedDrugName, $existing->drug_name);
+            if (! $row) continue;
+            $hits[] = [
+                'drug_name'   => $proposedDrugName,
+                'other_drug'  => $existing->drug_name,
+                'severity'    => $row->severity,
+                'description' => $row->description,
+                'rxnorm_code' => $proposedRxnorm,
+            ];
+        }
+        return $hits;
+    }
+
+    /**
      * Retrieve all unacknowledged drug interaction alerts for a participant,
      * ordered by severity (contraindicated first).
      *

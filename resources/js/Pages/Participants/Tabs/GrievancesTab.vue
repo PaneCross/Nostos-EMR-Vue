@@ -26,7 +26,17 @@ interface Grievance {
   resolution_date: string | null
   is_urgent_overdue: boolean
   is_standard_overdue: boolean
+  age_in_days: number | null
+  aging_band: 'green' | 'yellow' | 'red' | 'overdue' | null
   cms_reportable: boolean
+}
+
+// Phase 13.5 — aging band color classes for the standard-30-day clock.
+const AGING_BAND_CLASS: Record<string, string> = {
+  green:   'border-l-4 border-l-emerald-400',
+  yellow:  'border-l-4 border-l-amber-400',
+  red:     'border-l-4 border-l-red-500',
+  overdue: 'border-l-4 border-l-red-700 animate-pulse',
 }
 
 const grievances = ref<Grievance[]>([])
@@ -92,7 +102,8 @@ function fmtDate(val: string | null | undefined): string {
         :class="['bg-white dark:bg-slate-800 rounded-xl border p-4',
           (g.is_urgent_overdue || g.is_standard_overdue)
             ? 'border-red-300 dark:border-red-700'
-            : 'border-gray-200 dark:border-slate-700']"
+            : 'border-gray-200 dark:border-slate-700',
+          (g.aging_band && AGING_BAND_CLASS[g.aging_band]) || '']"
       >
         <div class="flex items-start justify-between gap-3 mb-2">
           <div class="flex items-center gap-2 flex-wrap">
@@ -107,6 +118,14 @@ function fmtDate(val: string | null | undefined): string {
             </span>
             <span v-if="g.is_urgent_overdue || g.is_standard_overdue"
               class="text-xs text-red-600 dark:text-red-400 font-medium">Overdue</span>
+            <span v-else-if="g.age_in_days !== null"
+              :class="['text-xs',
+                g.aging_band === 'green'  ? 'text-emerald-600 dark:text-emerald-400' :
+                g.aging_band === 'yellow' ? 'text-amber-600 dark:text-amber-400' :
+                g.aging_band === 'red'    ? 'text-red-600 dark:text-red-400 font-medium' :
+                'text-slate-500']">
+              Day {{ g.age_in_days }}/30
+            </span>
             <span v-if="g.cms_reportable"
               class="text-xs bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 px-1.5 py-0.5 rounded">CMS</span>
           </div>

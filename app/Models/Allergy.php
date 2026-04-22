@@ -31,7 +31,10 @@ class Allergy extends Model
 
     protected $fillable = [
         'participant_id', 'tenant_id',
-        'allergy_type', 'allergen_name', 'reaction_description',
+        'allergy_type', 'allergen_name',
+        // Phase 13.1: RxNorm coding for drug allergies (AllergyIntolerance.code over FHIR).
+        'rxnorm_code',
+        'reaction_description',
         'severity',
         'onset_date', 'is_active',
         'verified_by_user_id', 'verified_at',

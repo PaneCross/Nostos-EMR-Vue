@@ -498,6 +498,15 @@ Route::middleware('auth')->group(function () {
         [\App\Http\Controllers\AdvanceDirectivePdfController::class, 'generate'])
         ->name('participants.advance_directive.pdf');
 
+    // Phase 13 (MVP roadmap): coding lookups + scored instruments + pre-save drug interaction check
+    Route::get ('/coding/snomed',  [\App\Http\Controllers\CodingLookupController::class, 'snomed'])->name('coding.snomed');
+    Route::get ('/coding/rxnorm',  [\App\Http\Controllers\CodingLookupController::class, 'rxnorm'])->name('coding.rxnorm');
+    Route::get ('/assessment-instruments',              [\App\Http\Controllers\AssessmentInstrumentController::class, 'index'])->name('assessment_instruments.index');
+    Route::get ('/assessment-instruments/{instrument}', [\App\Http\Controllers\AssessmentInstrumentController::class, 'show'])->name('assessment_instruments.show');
+    Route::post('/assessment-instruments/{instrument}/score', [\App\Http\Controllers\AssessmentInstrumentController::class, 'score'])->name('assessment_instruments.score');
+    Route::post('/participants/{participant}/medications/interaction-preview',
+        [\App\Http\Controllers\DrugInteractionPreviewController::class, 'preview'])->name('participants.medications.interaction_preview');
+
     // Phase 12 (MVP roadmap): Clearinghouse transmission
     Route::post('/clearinghouse/batches/{batch}/transmit',
         [\App\Http\Controllers\ClearinghouseTransmissionController::class, 'transmit'])
