@@ -992,6 +992,16 @@ Route::middleware('auth')->group(function () {
 // Security is enforced by FhirAuthMiddleware (SHA-256 Bearer token + scope check).
 // All reads are logged to audit_log with source_type='fhir_api'.
 // Cross-tenant access returns 404 per FHIR conventions (not 403).
+
+// Phase 11 (MVP roadmap): unauthenticated discovery + SMART OAuth endpoints
+Route::get ('/fhir/R4/metadata',                   [\App\Http\Controllers\FhirMetadataController::class, 'capabilityStatement'])->name('fhir.metadata');
+Route::get ('/fhir/R4/.well-known/smart-configuration', [\App\Http\Controllers\FhirMetadataController::class, 'smartConfiguration'])->name('fhir.smart_config');
+Route::get ('/fhir/R4/docs',                       fn () => view('fhir.docs'))->name('fhir.docs');
+Route::get ('/fhir/R4/auth/authorize',             [\App\Http\Controllers\SmartOAuthController::class, 'authorize'])->name('fhir.oauth.authorize');
+Route::post('/fhir/R4/auth/token',                 [\App\Http\Controllers\SmartOAuthController::class, 'token'])->name('fhir.oauth.token');
+Route::post('/fhir/R4/auth/introspect',            [\App\Http\Controllers\SmartOAuthController::class, 'introspect'])->name('fhir.oauth.introspect');
+Route::post('/fhir/R4/auth/revoke',                [\App\Http\Controllers\SmartOAuthController::class, 'revoke'])->name('fhir.oauth.revoke');
+
 Route::prefix('fhir/R4')
     ->middleware(['fhir.auth'])
     ->group(function () {
