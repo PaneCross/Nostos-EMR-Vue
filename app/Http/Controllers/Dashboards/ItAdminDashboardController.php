@@ -254,4 +254,51 @@ class ItAdminDashboardController extends Controller
                 ->count(),
         ]);
     }
+
+    /**
+     * Phase 4 (MVP roadmap) §460.71 — staff credentials expiring within 60 days or overdue.
+     */
+    public function expiringCredentials(): JsonResponse
+    {
+        $this->requireDept();
+        $tenantId = Auth::user()->tenant_id;
+
+        $cutoff = now()->addDays(60)->toDateString();
+
+        $credentials = \App\Models\StaffCredential::forTenant($tenantId)
+            ->whereNotNull('expires_at')
+            ->where('expires_at', '<=', $cutoff)
+            ->with('user:id,first_name,last_name,department,tenant_id')
+            ->orderBy('expires_at')
+            ->limit(25)
+            ->get()
+            ->map(function (\App\Models\StaffCredential $c) {
+                $days = $c->daysUntilExpiration();
+                return [
+                    'id'            => $c->id,
+                    'user'          => $c->user ? [
+                        'id'         => $c->user->id,
+                        'name'       => $c->user->first_name . ' ' . $c->user->last_name,
+                        'department' => $c->user->department,
+                    ] : null,
+                    'type_label'    => \App\Models\StaffCredential::TYPE_LABELS[$c->credential_type] ?? $c->credential_type,
+                    'title'         => $c->title,
+                    'expires_at'    => $c->expires_at?->toDateString(),
+                    'days_remaining'=> $days,
+                    'status'        => $c->status(),
+                    'href'          => $c->user ? "/it-admin/users/{$c->user->id}/credentials" : '/it-admin/users',
+                ];
+            });
+
+        return response()->json([
+            'credentials'   => $credentials,
+            'count_total'   => \App\Models\StaffCredential::forTenant($tenantId)
+                ->whereNotNull('expires_at')
+                ->where('expires_at', '<=', $cutoff)
+                ->count(),
+            'count_expired' => \App\Models\StaffCredential::forTenant($tenantId)
+                ->expired()
+                ->count(),
+        ]);
+    }
 }

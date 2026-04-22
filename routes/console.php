@@ -111,3 +111,10 @@ Schedule::job(TransferCompletionJob::class, 'transfers')->dailyAt('07:00')
 Schedule::job(NfLocRecertAlertJob::class, 'compliance')->dailyAt('06:30')
     ->name('nf-loc-recert-alerts')
     ->withoutOverlapping();
+
+// ─── Phase 4 (MVP roadmap): Staff credential expiration alerts (§460.71) ─────
+// Daily 06:45 — scans all staff credentials with expires_at and alerts at
+// 60/30/14/0/overdue thresholds. Dedup via metadata.staff_credential_id.
+Schedule::job(\App\Jobs\CredentialExpirationAlertJob::class, 'compliance')->dailyAt('06:45')
+    ->name('staff-credential-expiration')
+    ->withoutOverlapping();

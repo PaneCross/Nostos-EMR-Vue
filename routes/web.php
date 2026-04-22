@@ -257,6 +257,8 @@ Route::middleware('auth')->group(function () {
             Route::get('/config',       [ItAdminDashboardController::class, 'config'])->name('dashboards.it-admin.config');
             // W5-1: Break-the-glass emergency access events for HIPAA audit oversight
             Route::get('/break-glass',  [ItAdminDashboardController::class, 'breakGlass'])->name('dashboards.it-admin.break-glass');
+            // Phase 4 (MVP roadmap): staff credential expiration widget (§460.71)
+            Route::get('/expiring-credentials', [ItAdminDashboardController::class, 'expiringCredentials'])->name('dashboards.it-admin.expiring-credentials');
         });
 
         // ─── Phase 10B: Executive Dashboard Widget Endpoints ──────────────────
@@ -893,6 +895,11 @@ Route::middleware('auth')->group(function () {
         Route::post('/users/{user}/reset-access',   [UserProvisioningController::class, 'resetAccess'])->name('it-admin.users.reset-access');
         // Designation management — assigns accountability roles for targeted alerting
         Route::patch('/users/{user}/designations',  [UserProvisioningController::class, 'updateDesignations'])->name('it-admin.users.designations');
+
+        // Phase 4 (MVP roadmap): Staff credentials + training per §460.64-71
+        Route::get ('/users/{user}/credentials',    [\App\Http\Controllers\StaffCredentialController::class, 'index'])->name('it-admin.users.credentials.index');
+        Route::post('/users/{user}/credentials',    [\App\Http\Controllers\StaffCredentialController::class, 'storeCredential'])->name('it-admin.users.credentials.store');
+        Route::post('/users/{user}/training',       [\App\Http\Controllers\StaffCredentialController::class, 'storeTraining'])->name('it-admin.users.training.store');
         // Audit log viewer
         Route::get('/audit',                      [AuditLogController::class, 'audit'])->name('it-admin.audit');
         Route::get('/audit/log',                  [AuditLogController::class, 'auditLog'])->name('it-admin.audit.log');
@@ -912,6 +919,11 @@ Route::middleware('auth')->group(function () {
         // Supervisor review of HIPAA emergency access events (45 CFR §164.312(a)(2)(ii)).
         Route::get('/break-glass',                [BreakGlassController::class, 'adminIndex'])->name('it-admin.break-glass.index');
         Route::post('/break-glass/{event}/acknowledge', [BreakGlassController::class, 'acknowledge'])->name('it-admin.break-glass.acknowledge');
+
+        // Phase 4 (MVP roadmap): non-user-scoped staff credential/training actions.
+        Route::patch ('/staff-credentials/{credential}', [\App\Http\Controllers\StaffCredentialController::class, 'updateCredential'])->name('it-admin.staff-credentials.update');
+        Route::delete('/staff-credentials/{credential}', [\App\Http\Controllers\StaffCredentialController::class, 'destroyCredential'])->name('it-admin.staff-credentials.destroy');
+        Route::delete('/staff-training/{record}',        [\App\Http\Controllers\StaffCredentialController::class, 'destroyTraining'])->name('it-admin.staff-training.destroy');
     });
 
     // ─── Phase 2 (MVP roadmap): Compliance audit-pull universes ──────────────
@@ -927,6 +939,9 @@ Route::middleware('auth')->group(function () {
         Route::post('/level-ii-reporting',                          [\App\Http\Controllers\LevelIiReportingController::class, 'store'])->name('compliance.level-ii-reporting.store');
         Route::post('/level-ii-reporting/{submission}/mark-submitted',[\App\Http\Controllers\LevelIiReportingController::class, 'markSubmitted'])->name('compliance.level-ii-reporting.mark-submitted');
         Route::get ('/level-ii-reporting/{submission}/download',    [\App\Http\Controllers\LevelIiReportingController::class, 'download'])->name('compliance.level-ii-reporting.download');
+
+        // Phase 4 (MVP roadmap): Personnel credentials audit universe (§460.64-71)
+        Route::get('/personnel-credentials', [\App\Http\Controllers\ComplianceController::class, 'personnelCredentials'])->name('compliance.personnel-credentials');
     });
 });
 

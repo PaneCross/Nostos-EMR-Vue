@@ -21,6 +21,7 @@ const integrationsData = ref<any>(null)
 const auditData = ref<any>(null)
 const configData = ref<any>(null)
 const breakGlassData = ref<any>(null)
+const credentialsData = ref<any>(null)
 
 const CONNECTOR_LABELS: Record<string, string> = {
     hl7_adt:        'HL7 ADT',
@@ -36,12 +37,14 @@ onMounted(() => {
         axios.get('/dashboards/it-admin/audit'),
         axios.get('/dashboards/it-admin/config'),
         axios.get('/dashboards/it-admin/break-glass'),
-    ]).then(([r1, r2, r3, r4, r5]) => {
+        axios.get('/dashboards/it-admin/expiring-credentials'),
+    ]).then(([r1, r2, r3, r4, r5, r6]) => {
         usersData.value = r1.data
         integrationsData.value = r2.data
         auditData.value = r3.data
         configData.value = r4.data
         breakGlassData.value = r5.data
+        credentialsData.value = r6.data
     }).catch(() => {
         // Non-blocking — widgets will show empty state
     }).finally(() => loading.value = false)
@@ -132,6 +135,30 @@ const breakGlassTitle = computed(() => {
     const count = breakGlassData.value?.unreviewed_count
     return count ? `Break-the-Glass Access (${count} Unreviewed)` : 'Break-the-Glass Access'
 })
+
+// Phase 4 (MVP roadmap): staff credential expiration widget (§460.71)
+const credentialItems = computed<ActionItem[]>(() =>
+    (credentialsData.value?.credentials ?? []).map((c: any) => {
+        const days = c.days_remaining
+        const badge = c.status === 'expired' || (days !== null && days < 0)
+            ? `${days !== null ? Math.abs(days) + 'd ' : ''}overdue`
+            : days === 0 ? 'today'
+            : `${days}d`
+        const badgeColor =
+            c.status === 'expired'   ? 'bg-red-600 text-white' :
+            c.status === 'due_today' ? 'bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300' :
+            c.status === 'due_14'    ? 'bg-orange-100 dark:bg-orange-900/60 text-orange-700 dark:text-orange-300' :
+            c.status === 'due_30'    ? 'bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300' :
+                                       'bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300'
+        return {
+            label: c.user?.name ?? '—',
+            sublabel: `${c.type_label} · ${c.title}`,
+            badge,
+            badgeColor,
+            href: c.href ?? '/it-admin/users',
+        }
+    })
+)
 </script>
 
 <template>
@@ -178,6 +205,16 @@ const breakGlassTitle = computed(() => {
             :items="breakGlassItems"
             emptyMessage="No break-the-glass events."
             viewAllHref="/it-admin/break-glass"
+            :loading="loading"
+        />
+
+        <!-- Phase 4 (MVP roadmap): §460.71 staff credential expiration tracker -->
+        <ActionWidget
+            title="Expiring Staff Credentials"
+            description="Staff licenses, TB clearances, certifications expiring in the next 60 days (or already expired). 42 CFR §460.71."
+            :items="credentialItems"
+            emptyMessage="No credentials expiring soon."
+            viewAllHref="/compliance/personnel-credentials"
             :loading="loading"
         />
     </div>

@@ -249,6 +249,14 @@ const formatDate = (iso: string) =>
                                 <td class="px-4 py-3 text-gray-600 dark:text-slate-400">{{ formatDate(user.created_at) }}</td>
                                 <td class="px-4 py-3">
                                     <div class="flex items-center gap-2">
+                                        <!-- Phase 4 (MVP roadmap): Staff credentials link (§460.64-71) -->
+                                        <a
+                                            :href="`/it-admin/users/${user.id}/credentials`"
+                                            class="text-xs px-2 py-1 rounded border border-indigo-300 dark:border-indigo-700 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition-colors"
+                                            title="Manage licenses, TB clearance, training hours"
+                                        >
+                                            Credentials
+                                        </a>
                                         <button
                                             @click="toggleActive(user)"
                                             :disabled="togglingId === user.id"

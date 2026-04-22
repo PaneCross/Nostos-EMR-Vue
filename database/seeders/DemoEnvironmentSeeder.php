@@ -283,6 +283,14 @@ class DemoEnvironmentSeeder extends Seeder
         $this->command->info('  Seeding Level I/II quality indicators (4 quarters)...');
         $this->call(QualityIndicatorsSeeder::class);
 
+        // ─── Phase 4 (MVP roadmap): §460.64-71 staff credentials ──────────────
+        // Seeds TB + license + certification + immunization + training records
+        // for every active staff user so the credentials UI + IT admin widget
+        // show realistic data.
+        $this->command->info('');
+        $this->command->info('  Seeding staff credentials + training...');
+        $this->call(StaffCredentialSeeder::class);
+
         // ─── Participant Photos ────────────────────────────────────────────────
         // Downloads pravatar.cc placeholder images for the first 15 enrolled
         // participants so the photo upload feature is visually testable.
