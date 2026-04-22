@@ -230,6 +230,8 @@ class PermissionService
                     ['label' => 'QAPI Projects', 'module' => 'qapi_projects', 'href' => '/qapi/projects'],
                     // Phase 2 (MVP roadmap): §460.200 annual QAPI evaluation artifact
                     ['label' => 'QAPI Annual Eval', 'module' => 'qapi_projects', 'href' => '/qapi/evaluations'],
+                    // Phase 3 (MVP roadmap): CMS Level I / Level II quarterly reporting
+                    ['label' => 'Level I/II Reporting', 'module' => 'level_ii_reporting', 'href' => '/compliance/level-ii-reporting'],
                 ],
             ],
             [

@@ -921,6 +921,12 @@ Route::middleware('auth')->group(function () {
         Route::get('/denial-notices',  [\App\Http\Controllers\ComplianceController::class, 'denialNotices'])->name('compliance.denial-notices');
         Route::get('/appeals',         [\App\Http\Controllers\ComplianceController::class, 'appeals'])->name('compliance.appeals');
         Route::get('/sdr-sla',         [\App\Http\Controllers\ComplianceController::class, 'sdrSla'])->name('compliance.sdr-sla');
+
+        // Phase 3 (MVP roadmap): CMS PACE Level I / Level II quarterly reporting
+        Route::get ('/level-ii-reporting',                          [\App\Http\Controllers\LevelIiReportingController::class, 'index'])->name('compliance.level-ii-reporting.index');
+        Route::post('/level-ii-reporting',                          [\App\Http\Controllers\LevelIiReportingController::class, 'store'])->name('compliance.level-ii-reporting.store');
+        Route::post('/level-ii-reporting/{submission}/mark-submitted',[\App\Http\Controllers\LevelIiReportingController::class, 'markSubmitted'])->name('compliance.level-ii-reporting.mark-submitted');
+        Route::get ('/level-ii-reporting/{submission}/download',    [\App\Http\Controllers\LevelIiReportingController::class, 'download'])->name('compliance.level-ii-reporting.download');
     });
 });
 

@@ -276,6 +276,13 @@ class DemoEnvironmentSeeder extends Seeder
         $this->command->info('  Seeding day-center attendance for the past 14 days...');
         $this->call(DayCenterAttendanceSeeder::class);
 
+        // ─── Phase 3 (MVP roadmap): CMS Level I/II quality indicators ─────────
+        // Seeds incidents + immunizations for the past 4 quarters so the
+        // Level I/II reporting dashboard has meaningful data to display.
+        $this->command->info('');
+        $this->command->info('  Seeding Level I/II quality indicators (4 quarters)...');
+        $this->call(QualityIndicatorsSeeder::class);
+
         // ─── Participant Photos ────────────────────────────────────────────────
         // Downloads pravatar.cc placeholder images for the first 15 enrolled
         // participants so the photo upload feature is visually testable.

@@ -73,6 +73,8 @@ class PermissionSeeder extends Seeder
         'quality_metrics'          => 'Quality Metrics',
         // W4-6: QAPI quality improvement project tracking (42 CFR §460.136–§460.140)
         'qapi_projects'            => 'QAPI Projects',
+        // Phase 3 (MVP roadmap): CMS Level I / Level II quarterly reporting
+        'level_ii_reporting'       => 'Level I/II Reporting',
 
         // Reports + Audit
         'reports'                  => 'Reports',
@@ -169,6 +171,7 @@ class PermissionSeeder extends Seeder
         $qaBase['appeals']          = $full();
         // W4-6: QA owns QAPI project management (42 CFR §460.136–§460.140)
         $qaBase['qapi_projects']    = $full();
+        $qaBase['level_ii_reporting'] = $full();
 
         // ─── Finance — billing CRUD, enrollment/participants read ─────────────
         $financeBase = [];
@@ -190,6 +193,8 @@ class PermissionSeeder extends Seeder
         // W5-3: 835 Remittance + Denial Management
         $financeBase['remittance_batches'] = $full();
         $financeBase['denials']            = $full();
+        // Phase 3 (MVP roadmap): finance co-owns Level I/II reporting with QA
+        $financeBase['level_ii_reporting'] = $full();
         $financeBase['reports']            = $cr();
         $financeBase['audit_log']          = $read();
         $financeBase['chat']               = $full();
