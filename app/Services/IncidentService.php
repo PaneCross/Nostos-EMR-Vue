@@ -137,6 +137,7 @@ class IncidentService
         $incident->update([
             'rca_text'                 => $rcaText,
             'rca_completed'            => true,
+            'rca_completed_at'         => now(),
             'rca_completed_by_user_id' => $user->id,
             'status'                   => 'under_review', // RCA done, awaiting final QA review
         ]);
@@ -148,6 +149,44 @@ class IncidentService
             resourceType: 'incident',
             resourceId: $incident->id,
             description: "RCA submitted for incident #{$incident->id}",
+        );
+    }
+
+    /**
+     * Phase B3 — classify an existing incident as a sentinel event.
+     * Sets is_sentinel=true + dual deadlines (5-day CMS + 30-day RCA) from
+     * the classification moment. Always forces rca_required=true regardless
+     * of incident_type, because sentinels always need a documented RCA.
+     *
+     * @throws LogicException if already classified (idempotent guard).
+     */
+    public function classifyAsSentinel(Incident $incident, User $user, string $reason): void
+    {
+        if ($incident->is_sentinel) {
+            throw new LogicException('Incident is already classified as a sentinel event.');
+        }
+
+        $now = now();
+        $incident->update([
+            'is_sentinel'                      => true,
+            'sentinel_classified_at'           => $now,
+            'sentinel_classified_by_user_id'   => $user->id,
+            'sentinel_classification_reason'   => $reason,
+            'sentinel_cms_5day_deadline'       => $now->copy()->addDays(Incident::SENTINEL_CMS_DEADLINE_DAYS),
+            'sentinel_rca_30day_deadline'      => $now->copy()->addDays(Incident::SENTINEL_RCA_DEADLINE_DAYS),
+            'rca_required'                     => true,
+            'cms_reportable'                   => true,
+        ]);
+
+        AuditLog::record(
+            action: 'qa.incident.sentinel_classified',
+            tenantId: $incident->tenant_id,
+            userId: $user->id,
+            resourceType: 'incident',
+            resourceId: $incident->id,
+            description: "Incident #{$incident->id} classified as sentinel event. CMS deadline "
+                . $incident->sentinel_cms_5day_deadline->toDateTimeString()
+                . '; RCA deadline ' . $incident->sentinel_rca_30day_deadline->toDateTimeString() . '.',
         );
     }
 

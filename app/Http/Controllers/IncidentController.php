@@ -185,6 +185,36 @@ class IncidentController extends Controller
         return response()->json($incident->fresh(), 200);
     }
 
+    /**
+     * Phase B3 — Classify an incident as a sentinel event.
+     * Gate: qa_compliance / executive / super_admin. Forces rca_required=true
+     * and auto-sets 5-day CMS deadline + 30-day RCA deadline from classification.
+     *
+     * POST /qa/incidents/{incident}/classify-sentinel
+     */
+    public function classifySentinel(Request $request, Incident $incident): JsonResponse
+    {
+        $this->authorizeTenant($incident, $request->user());
+        $user = $request->user();
+        abort_unless(
+            $user->isSuperAdmin() || in_array($user->department, ['qa_compliance', 'executive'], true),
+            403,
+            'Only QA compliance, executive, or super admin may classify sentinel events.'
+        );
+
+        $validated = $request->validate([
+            'reason' => 'required|string|min:10|max:4000',
+        ]);
+
+        try {
+            $this->incidentService->classifyAsSentinel($incident, $user, $validated['reason']);
+        } catch (LogicException $e) {
+            return response()->json(['message' => $e->getMessage()], 409);
+        }
+
+        return response()->json($incident->fresh(), 200);
+    }
+
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     /** Abort 403 if the incident belongs to a different tenant. */

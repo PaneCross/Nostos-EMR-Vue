@@ -145,6 +145,15 @@ Schedule::job(DenialAppealDeadlineAlertJob::class, 'compliance')->dailyAt('07:15
     ->name('denial-appeal-deadline')
     ->withoutOverlapping();
 
+// ─── Phase B3 (MVP roadmap): Sentinel event deadline enforcement ─────────────
+// Daily at 07:30. For each sentinel-classified incident checks two deadlines:
+//   - 5-day CMS notification (warning at T-2 days, critical when missed)
+//   - 30-day RCA completion (warning at T-5 days, critical when missed)
+// Alert dedup via metadata.incident_id within per-rule windows.
+Schedule::job(\App\Jobs\SentinelEventDeadlineJob::class, 'compliance')->dailyAt('07:30')
+    ->name('sentinel-event-deadline')
+    ->withoutOverlapping();
+
 // ─── Phase B2 (MVP roadmap): Infection-outbreak detection sweep ──────────────
 // Daily at 05:30 — evaluates every tenant for (site, organism) clusters
 // that meet the ≥3-cases-in-7-days threshold and auto-declares outbreaks

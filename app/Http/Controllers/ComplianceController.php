@@ -15,6 +15,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Appeal;
+use App\Models\Incident;
 use App\Models\Participant;
 use App\Models\Sdr;
 use App\Models\ServiceDenialNotice;
@@ -420,6 +421,77 @@ class ComplianceController extends Controller
             'cases'     => $cases->values(),
             'outbreaks' => $outbreaks->values(),
             'summary'   => $summary,
+        ]);
+    }
+
+    /**
+     * Phase B3 (MVP completion roadmap) — Sentinel events universe.
+     * 42 CFR §460.136. Last 12 months of sentinel-classified incidents with
+     * dual-deadline status (CMS 5-day + RCA 30-day) and RCA completion tracking.
+     */
+    public function sentinelEvents(Request $request): JsonResponse|InertiaResponse
+    {
+        $this->gate($request);
+        $tenantId = $request->user()->tenant_id;
+        $since = now()->subYear();
+
+        $rows = Incident::forTenant($tenantId)
+            ->sentinels()
+            ->with([
+                'participant:id,mrn,first_name,last_name',
+                'reportedBy:id,first_name,last_name',
+                'sentinelClassifiedBy:id,first_name,last_name',
+                'rcaCompletedBy:id,first_name,last_name',
+            ])
+            ->where('sentinel_classified_at', '>=', $since)
+            ->orderByDesc('sentinel_classified_at')
+            ->get()
+            ->map(function (Incident $i) {
+                return [
+                    'id'                    => $i->id,
+                    'participant' => [
+                        'id'   => $i->participant?->id,
+                        'mrn'  => $i->participant?->mrn,
+                        'name' => $i->participant ? ($i->participant->first_name . ' ' . $i->participant->last_name) : null,
+                    ],
+                    'incident_type'         => $i->incident_type,
+                    'incident_type_label'   => $i->typeLabel(),
+                    'occurred_at'           => $i->occurred_at?->toIso8601String(),
+                    'description'           => $i->description,
+                    'status'                => $i->status,
+                    'classified_at'         => $i->sentinel_classified_at?->toIso8601String(),
+                    'classified_by'         => $i->sentinelClassifiedBy
+                        ? ($i->sentinelClassifiedBy->first_name . ' ' . $i->sentinelClassifiedBy->last_name) : null,
+                    'classification_reason' => $i->sentinel_classification_reason,
+                    'cms_deadline'          => $i->sentinel_cms_5day_deadline?->toIso8601String(),
+                    'cms_notification_sent_at' => $i->cms_notification_sent_at?->toIso8601String(),
+                    'cms_deadline_missed'   => $i->isSentinelCmsDeadlineMissed(),
+                    'rca_deadline'          => $i->sentinel_rca_30day_deadline?->toIso8601String(),
+                    'rca_completed_at'      => $i->rca_completed_at?->toIso8601String(),
+                    'rca_completed_by'      => $i->rcaCompletedBy
+                        ? ($i->rcaCompletedBy->first_name . ' ' . $i->rcaCompletedBy->last_name) : null,
+                    'rca_deadline_missed'   => $i->isSentinelRcaDeadlineMissed(),
+                    'href'                  => "/qa/incidents/{$i->id}",
+                ];
+            });
+
+        $summary = [
+            'count_total'               => $rows->count(),
+            'count_cms_missed'          => $rows->where('cms_deadline_missed', true)->count(),
+            'count_rca_missed'          => $rows->where('rca_deadline_missed', true)->count(),
+            'count_rca_pending'         => $rows->whereNull('rca_completed_at')->count(),
+            'count_cms_satisfied'       => $rows->whereNotNull('cms_notification_sent_at')->count(),
+            'window_start'              => $since->toIso8601String(),
+            'window_end'                => now()->toIso8601String(),
+        ];
+
+        if ($request->wantsJson()) {
+            return response()->json(['rows' => $rows->values(), 'summary' => $summary]);
+        }
+
+        return Inertia::render('Compliance/SentinelEvents', [
+            'rows'    => $rows->values(),
+            'summary' => $summary,
         ]);
     }
 

@@ -92,6 +92,11 @@ class Incident extends Model
     /** Hours after occurred_at within which CMS/SMA must be notified. */
     public const CMS_NOTIFICATION_DEADLINE_HOURS = 72;
 
+    /** Phase B3: days after sentinel classification for CMS notification. */
+    public const SENTINEL_CMS_DEADLINE_DAYS = 5;
+    /** Phase B3: days after sentinel classification for RCA completion. */
+    public const SENTINEL_RCA_DEADLINE_DAYS = 30;
+
     /** All valid workflow status values. */
     public const STATUSES = ['open', 'under_review', 'rca_in_progress', 'closed'];
 
@@ -131,6 +136,14 @@ class Incident extends Model
         'notification_notes',
         'regulatory_deadline',
         'status',
+        // Phase B3 sentinel event classification + dual deadlines
+        'is_sentinel',
+        'sentinel_classified_at',
+        'sentinel_classified_by_user_id',
+        'sentinel_classification_reason',
+        'sentinel_cms_5day_deadline',
+        'sentinel_rca_30day_deadline',
+        'rca_completed_at',
     ];
 
     protected $casts = [
@@ -146,6 +159,12 @@ class Incident extends Model
         'cms_reportable'             => 'boolean',
         'cms_notification_required'  => 'boolean',
         'witnesses'                  => 'array',
+        // Phase B3
+        'is_sentinel'                => 'boolean',
+        'sentinel_classified_at'     => 'datetime',
+        'sentinel_cms_5day_deadline' => 'datetime',
+        'sentinel_rca_30day_deadline'=> 'datetime',
+        'rca_completed_at'           => 'datetime',
     ];
 
     // ── Relationships ─────────────────────────────────────────────────────────
@@ -168,6 +187,32 @@ class Incident extends Model
     public function rcaCompletedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'rca_completed_by_user_id');
+    }
+
+    public function sentinelClassifiedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'sentinel_classified_by_user_id');
+    }
+
+    // ── Phase B3: sentinel event helpers ──────────────────────────────────────
+
+    /** True if the CMS 5-day sentinel notification has been missed. */
+    public function isSentinelCmsDeadlineMissed(): bool
+    {
+        if (! $this->is_sentinel) return false;
+        if (! $this->sentinel_cms_5day_deadline) return false;
+        // If the cms_notification_sent_at is already set, not overdue
+        if ($this->cms_notification_sent_at !== null) return false;
+        return $this->sentinel_cms_5day_deadline->isPast();
+    }
+
+    /** True if the 30-day RCA deadline has been missed. */
+    public function isSentinelRcaDeadlineMissed(): bool
+    {
+        if (! $this->is_sentinel) return false;
+        if (! $this->sentinel_rca_30day_deadline) return false;
+        if ($this->rca_completed_at !== null) return false;
+        return $this->sentinel_rca_30day_deadline->isPast();
     }
 
     // ── Business Logic ────────────────────────────────────────────────────────
@@ -266,5 +311,11 @@ class Incident extends Model
         return $query->where('cms_notification_required', true)
             ->whereNull('cms_notification_sent_at')
             ->where('regulatory_deadline', '<', now());
+    }
+
+    /** Only sentinel-classified incidents (Phase B3). */
+    public function scopeSentinels(\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder
+    {
+        return $query->where('is_sentinel', true);
     }
 }

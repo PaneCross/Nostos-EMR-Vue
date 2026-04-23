@@ -810,6 +810,8 @@ Route::middleware('auth')->group(function () {
         // Incident lifecycle transitions
         Route::post('/incidents/{incident}/rca',             [IncidentController::class, 'rca'])->name('qa.incidents.rca');
         Route::post('/incidents/{incident}/close',           [IncidentController::class, 'close'])->name('qa.incidents.close');
+        // Phase B3 (MVP completion roadmap): sentinel-event classification
+        Route::post('/incidents/{incident}/classify-sentinel', [IncidentController::class, 'classifySentinel'])->name('qa.incidents.classify_sentinel');
         // Compliance detail endpoints (lazy-loaded by compliance tabs)
         Route::get('/compliance/unsigned-notes',             [QaDashboardController::class, 'unsignedNotes'])->name('qa.compliance.unsigned-notes');
         Route::get('/compliance/overdue-assessments',        [QaDashboardController::class, 'overdueAssessments'])->name('qa.compliance.overdue-assessments');
@@ -1081,6 +1083,8 @@ Route::middleware('auth')->group(function () {
         Route::get('/restraints', [\App\Http\Controllers\ComplianceController::class, 'restraints'])->name('compliance.restraints');
         // Phase B2 (MVP completion roadmap): infection surveillance audit universe
         Route::get('/infections', [\App\Http\Controllers\ComplianceController::class, 'infections'])->name('compliance.infections');
+        // Phase B3 (MVP completion roadmap): sentinel events audit universe
+        Route::get('/sentinel-events', [\App\Http\Controllers\ComplianceController::class, 'sentinelEvents'])->name('compliance.sentinel_events');
     });
 });
 
