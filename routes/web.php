@@ -498,6 +498,41 @@ Route::middleware('auth')->group(function () {
         [\App\Http\Controllers\AdvanceDirectivePdfController::class, 'generate'])
         ->name('participants.advance_directive.pdf');
 
+    // Phase 15 (MVP roadmap): medium-term wins batch — formulary, reports, imports, CDS, committees, HRIS, Medicaid, mobile
+    // 15.10 Formulary
+    Route::get   ('/formulary',                          [\App\Http\Controllers\FormularyController::class, 'index'])->name('formulary.index');
+    Route::post  ('/formulary',                          [\App\Http\Controllers\FormularyController::class, 'store'])->name('formulary.store');
+    Route::put   ('/formulary/{entry}',                  [\App\Http\Controllers\FormularyController::class, 'update'])->name('formulary.update');
+    Route::get   ('/formulary/check',                    [\App\Http\Controllers\FormularyController::class, 'check'])->name('formulary.check');
+    Route::post  ('/participants/{participant}/coverage-determinations', [\App\Http\Controllers\FormularyController::class, 'storeDetermination'])->name('formulary.determinations.store');
+    // 15.3 Custom reports
+    Route::get   ('/reports',                            [\App\Http\Controllers\ReportDefinitionController::class, 'index'])->name('reports.index');
+    Route::post  ('/reports',                            [\App\Http\Controllers\ReportDefinitionController::class, 'store'])->name('reports.store');
+    Route::post  ('/reports/{definition}/run',           [\App\Http\Controllers\ReportDefinitionController::class, 'run'])->name('reports.run');
+    Route::get   ('/reports/{definition}/download',      [\App\Http\Controllers\ReportDefinitionController::class, 'download'])->name('reports.download');
+    Route::delete('/reports/{definition}',               [\App\Http\Controllers\ReportDefinitionController::class, 'destroy'])->name('reports.destroy');
+    // 15.4 Data migration toolkit
+    Route::get   ('/data-imports',                       [\App\Http\Controllers\DataImportController::class, 'index'])->name('data_imports.index');
+    Route::post  ('/data-imports',                       [\App\Http\Controllers\DataImportController::class, 'store'])->name('data_imports.store');
+    Route::post  ('/data-imports/{import}/commit',       [\App\Http\Controllers\DataImportController::class, 'commit'])->name('data_imports.commit');
+    Route::get   ('/data-imports/template/{entity}',     [\App\Http\Controllers\DataImportController::class, 'template'])->name('data_imports.template');
+    // 15.6 Clinical decision support
+    Route::post  ('/participants/{participant}/cds/evaluate', [\App\Http\Controllers\ClinicalDecisionSupportController::class, 'evaluate'])->name('cds.evaluate');
+    // 15.8 Committees
+    Route::get   ('/committees',                         [\App\Http\Controllers\CommitteeController::class, 'index'])->name('committees.index');
+    Route::post  ('/committees',                         [\App\Http\Controllers\CommitteeController::class, 'store'])->name('committees.store');
+    Route::post  ('/committees/{committee}/members',     [\App\Http\Controllers\CommitteeController::class, 'addMember'])->name('committees.members.add');
+    Route::post  ('/committees/{committee}/meetings',    [\App\Http\Controllers\CommitteeController::class, 'scheduleMeeting'])->name('committees.meetings.schedule');
+    Route::patch ('/committee-meetings/{meeting}',       [\App\Http\Controllers\CommitteeController::class, 'recordMeeting'])->name('committees.meetings.record');
+    Route::post  ('/committee-meetings/{meeting}/votes', [\App\Http\Controllers\CommitteeController::class, 'recordVote'])->name('committees.votes.record');
+    // 15.9 State Medicaid submissions
+    Route::post  ('/state-medicaid/batches/{batch}/stage/{stateCode}',
+        [\App\Http\Controllers\StateMedicaidSubmissionController::class, 'stageForState'])->name('state_medicaid.stage');
+    Route::get   ('/state-medicaid/submissions',
+        [\App\Http\Controllers\StateMedicaidSubmissionController::class, 'index'])->name('state_medicaid.submissions.index');
+    // 15.5 Mobile companion
+    Route::get   ('/home-care/mobile-adl',               [\App\Http\Controllers\MobileCompanionController::class, 'adl'])->name('home_care.mobile_adl');
+
     // Phase 14 (MVP roadmap): printable PDFs + appointment detail + global search
     Route::get ('/participants/{participant}/pdf/{kind}',
         [\App\Http\Controllers\ParticipantPdfController::class, 'generate'])
@@ -1035,6 +1070,18 @@ Route::get ('/fhir/R4/auth/authorize',             [\App\Http\Controllers\SmartO
 Route::post('/fhir/R4/auth/token',                 [\App\Http\Controllers\SmartOAuthController::class, 'token'])->name('fhir.oauth.token');
 Route::post('/fhir/R4/auth/introspect',            [\App\Http\Controllers\SmartOAuthController::class, 'introspect'])->name('fhir.oauth.introspect');
 Route::post('/fhir/R4/auth/revoke',                [\App\Http\Controllers\SmartOAuthController::class, 'revoke'])->name('fhir.oauth.revoke');
+
+// Phase 15.2 — SAML SP endpoints (public; scaffold).
+Route::get ('/saml/{tenantId}/metadata', [\App\Http\Controllers\SamlController::class, 'metadata'])->name('saml.metadata');
+Route::get ('/saml/{tenantId}/login',    [\App\Http\Controllers\SamlController::class, 'login'])->name('saml.login');
+Route::post('/saml/{tenantId}/acs',      [\App\Http\Controllers\SamlController::class, 'acs'])->withoutMiddleware(['web'])->name('saml.acs');
+Route::get ('/saml/{tenantId}/slo',      [\App\Http\Controllers\SamlController::class, 'slo'])->name('saml.slo');
+
+// Phase 15.7 — HRIS webhook receiver (public; vendor signatures verified inline).
+Route::post('/webhooks/hris/{tenantId}/{provider}',
+    [\App\Http\Controllers\HrisWebhookController::class, 'receive'])
+    ->withoutMiddleware(['web'])
+    ->name('hris.webhook');
 
 // Phase 15.1 (MVP roadmap): FHIR Bulk Data Access ($export)
 // Using URL-encoded $ so route matches exactly what FHIR Bulk Data clients send.
