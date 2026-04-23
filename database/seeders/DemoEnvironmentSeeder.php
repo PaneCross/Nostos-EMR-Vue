@@ -353,6 +353,11 @@ class DemoEnvironmentSeeder extends Seeder
         $this->command->info('  Seeding restraint episodes demo data (Phase B1)...');
         $this->call(RestraintDemoSeeder::class);
 
+        // Phase B2 (MVP completion roadmap): infection surveillance demo
+        $this->command->info('');
+        $this->command->info('  Seeding infection surveillance demo data (Phase B2)...');
+        $this->call(InfectionDemoSeeder::class);
+
         // ─── Participant Photos ────────────────────────────────────────────────
         // Downloads pravatar.cc placeholder images for the first 15 enrolled
         // participants so the photo upload feature is visually testable.

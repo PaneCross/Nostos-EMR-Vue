@@ -144,3 +144,11 @@ Schedule::command('clearinghouse:poll-status')->everyFifteenMinutes()
 Schedule::job(DenialAppealDeadlineAlertJob::class, 'compliance')->dailyAt('07:15')
     ->name('denial-appeal-deadline')
     ->withoutOverlapping();
+
+// ─── Phase B2 (MVP roadmap): Infection-outbreak detection sweep ──────────────
+// Daily at 05:30 — evaluates every tenant for (site, organism) clusters
+// that meet the ≥3-cases-in-7-days threshold and auto-declares outbreaks
+// with critical alerts to qa_compliance + primary_care + it_admin.
+Schedule::job(\App\Jobs\OutbreakDetectionJob::class, 'compliance')->dailyAt('05:30')
+    ->name('outbreak-detection-sweep')
+    ->withoutOverlapping();

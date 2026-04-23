@@ -531,6 +531,16 @@ Route::middleware('auth')->group(function () {
         [\App\Http\Controllers\RestraintController::class, 'discontinue'])->name('participants.restraints.discontinue');
     Route::post('/participants/{participant}/restraints/{episode}/idt-review',
         [\App\Http\Controllers\RestraintController::class, 'recordIdtReview'])->name('participants.restraints.idt-review');
+
+    // Phase B2 (MVP completion roadmap): Infection surveillance + outbreak detection
+    Route::get ('/participants/{participant}/infections',
+        [\App\Http\Controllers\InfectionCaseController::class, 'index'])->name('participants.infections.index');
+    Route::post('/participants/{participant}/infections',
+        [\App\Http\Controllers\InfectionCaseController::class, 'store'])->name('participants.infections.store');
+    Route::post('/infections/{case}/resolve',
+        [\App\Http\Controllers\InfectionCaseController::class, 'resolve'])->name('infections.resolve');
+    Route::post('/infection-outbreaks/{outbreak}/update',
+        [\App\Http\Controllers\InfectionCaseController::class, 'updateOutbreak'])->name('infection_outbreaks.update');
     // 15.8 Committees
     Route::get   ('/committees',                         [\App\Http\Controllers\CommitteeController::class, 'index'])->name('committees.index');
     Route::post  ('/committees',                         [\App\Http\Controllers\CommitteeController::class, 'store'])->name('committees.store');
@@ -1069,6 +1079,8 @@ Route::middleware('auth')->group(function () {
 
         // Phase B1 (MVP completion roadmap): restraints audit universe (42 CFR §460 / CMS PACE Audit)
         Route::get('/restraints', [\App\Http\Controllers\ComplianceController::class, 'restraints'])->name('compliance.restraints');
+        // Phase B2 (MVP completion roadmap): infection surveillance audit universe
+        Route::get('/infections', [\App\Http\Controllers\ComplianceController::class, 'infections'])->name('compliance.infections');
     });
 });
 

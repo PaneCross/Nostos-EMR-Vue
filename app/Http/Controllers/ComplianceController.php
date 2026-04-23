@@ -322,6 +322,107 @@ class ComplianceController extends Controller
         ]);
     }
 
+    /**
+     * Phase B2 (MVP completion roadmap) — Infection surveillance universe.
+     * 42 CFR §460 + CMS PACE Audit Protocol + CDC LTC surveillance.
+     * Last 12 months of infection cases + declared outbreaks with
+     * per-organism / per-site summary counters. Flat JSON + Inertia.
+     */
+    public function infections(Request $request): JsonResponse|InertiaResponse
+    {
+        $this->gate($request);
+        $tenantId = $request->user()->tenant_id;
+        $since = now()->subYear();
+
+        $cases = \App\Models\InfectionCase::forTenant($tenantId)
+            ->with([
+                'participant:id,mrn,first_name,last_name',
+                'site:id,name',
+                'outbreak:id,organism_type,status,started_at,site_id',
+                'reportedBy:id,first_name,last_name',
+            ])
+            ->where('onset_date', '>=', $since->toDateString())
+            ->orderByDesc('onset_date')
+            ->get()
+            ->map(function (\App\Models\InfectionCase $c) {
+                return [
+                    'id'                       => $c->id,
+                    'participant' => [
+                        'id'   => $c->participant?->id,
+                        'mrn'  => $c->participant?->mrn,
+                        'name' => $c->participant ? ($c->participant->first_name . ' ' . $c->participant->last_name) : null,
+                    ],
+                    'site_id'                  => $c->site_id,
+                    'site_name'                => $c->site?->name,
+                    'organism_type'            => $c->organism_type,
+                    'organism_detail'          => $c->organism_detail,
+                    'onset_date'               => $c->onset_date?->toDateString(),
+                    'resolution_date'          => $c->resolution_date?->toDateString(),
+                    'severity'                 => $c->severity,
+                    'source'                   => $c->source,
+                    'hospitalization_required' => (bool) $c->hospitalization_required,
+                    'isolation_started_at'     => $c->isolation_started_at?->toIso8601String(),
+                    'isolation_ended_at'       => $c->isolation_ended_at?->toIso8601String(),
+                    'outbreak_id'              => $c->outbreak_id,
+                    'outbreak_status'          => $c->outbreak?->status,
+                    'reported_by'              => $c->reportedBy
+                        ? ($c->reportedBy->first_name . ' ' . $c->reportedBy->last_name) : null,
+                    'href'                     => "/participants/{$c->participant_id}",
+                ];
+            });
+
+        $outbreaks = \App\Models\InfectionOutbreak::forTenant($tenantId)
+            ->with(['site:id,name', 'declaredBy:id,first_name,last_name'])
+            ->withCount('cases')
+            ->where('started_at', '>=', $since)
+            ->orderByDesc('started_at')
+            ->get()
+            ->map(function (\App\Models\InfectionOutbreak $o) {
+                return [
+                    'id'                        => $o->id,
+                    'site_id'                   => $o->site_id,
+                    'site_name'                 => $o->site?->name,
+                    'organism_type'             => $o->organism_type,
+                    'organism_detail'           => $o->organism_detail,
+                    'status'                    => $o->status,
+                    'started_at'                => $o->started_at?->toIso8601String(),
+                    'declared_ended_at'         => $o->declared_ended_at?->toIso8601String(),
+                    'attack_rate_pct'           => $o->attack_rate_pct,
+                    'containment_measures_text' => $o->containment_measures_text,
+                    'reported_to_state_at'      => $o->reported_to_state_at?->toIso8601String(),
+                    'declared_by'               => $o->declaredBy
+                        ? ($o->declaredBy->first_name . ' ' . $o->declaredBy->last_name) : null,
+                    'cases_count'               => $o->cases_count ?? 0,
+                ];
+            });
+
+        $summary = [
+            'count_cases'              => $cases->count(),
+            'count_cases_hospitalized' => $cases->where('hospitalization_required', true)->count(),
+            'count_cases_severe'       => $cases->whereIn('severity', ['severe', 'fatal'])->count(),
+            'count_cases_unresolved'   => $cases->whereNull('resolution_date')->count(),
+            'count_outbreaks'          => $outbreaks->count(),
+            'count_outbreaks_active'   => $outbreaks->where('status', 'active')->count(),
+            'count_outbreaks_unreported' => $outbreaks->whereNull('reported_to_state_at')->count(),
+            'window_start'             => $since->toIso8601String(),
+            'window_end'               => now()->toIso8601String(),
+        ];
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'cases'     => $cases->values(),
+                'outbreaks' => $outbreaks->values(),
+                'summary'   => $summary,
+            ]);
+        }
+
+        return Inertia::render('Compliance/Infections', [
+            'cases'     => $cases->values(),
+            'outbreaks' => $outbreaks->values(),
+            'summary'   => $summary,
+        ]);
+    }
+
     private function statusFor(Participant $p, ?int $days): string
     {
         if (! $p->nf_certification_date && ! $p->nf_recert_waived) return 'missing';
