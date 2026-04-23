@@ -35,6 +35,7 @@ use App\Models\Medication;
 use App\Models\MedReconciliation;
 use App\Models\Participant;
 use App\Services\AlertService;
+use App\Services\BcmaService;
 use App\Services\DrugInteractionService;
 use App\Services\MedicationScheduleService;
 use Carbon\Carbon;
@@ -293,6 +294,39 @@ class MedicationController extends Controller
      * Record a PRN (as-needed) dose — creates a new eMAR record with status='given'.
      * Only available for medications with is_prn=true.
      */
+    /**
+     * Phase B4 — BCMA scan verification. Nurses call this BEFORE administering
+     * to verify the participant wristband + med package scans match the eMAR
+     * record. Returns one of:
+     *   - 200 {status: "ok"}                    — both scans match
+     *   - 200 {status: "override", expected, scanned} — mismatch, overridden with reason
+     *   - 422 {status: "mismatch"|"missing_scan"|"not_scannable"} — caller must fix
+     *
+     * POST /emar/{record}/scan-verify
+     */
+    public function scanVerify(Request $request, EmarRecord $record, BcmaService $bcma): JsonResponse
+    {
+        $user = $request->user();
+        abort_if($record->tenant_id !== $user->tenant_id, 403);
+
+        $validated = $request->validate([
+            'participant_barcode' => 'nullable|string|max:64',
+            'medication_barcode'  => 'nullable|string|max:64',
+            'override_reason'     => 'nullable|string|max:2000',
+        ]);
+
+        $result = $bcma->verify(
+            $record,
+            $validated['participant_barcode'] ?? null,
+            $validated['medication_barcode']  ?? null,
+            $user,
+            $validated['override_reason']     ?? null,
+        );
+
+        $http = in_array($result['status'], [BcmaService::OK, BcmaService::OVERRIDE], true) ? 200 : 422;
+        return response()->json($result, $http);
+    }
+
     public function recordPrnDose(Request $request, Participant $participant, Medication $medication): JsonResponse
     {
         $user = $request->user();

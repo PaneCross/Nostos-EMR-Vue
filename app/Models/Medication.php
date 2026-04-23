@@ -57,6 +57,7 @@ class Medication extends Model
         'participant_id',
         'tenant_id',
         'drug_name',
+        'barcode_value',
         'rxnorm_code',
         'dose',
         'dose_unit',
@@ -86,6 +87,17 @@ class Medication extends Model
         'end_date'       => 'date',
         'last_filled_date'=> 'date',
     ];
+
+    // ── Auto-generate BCMA barcode on creation (Phase B4) ────────────────────
+    protected static function booted(): void
+    {
+        static::created(function (Medication $m) {
+            if (empty($m->barcode_value)) {
+                $m->barcode_value = "MD-{$m->tenant_id}-{$m->id}";
+                $m->saveQuietly();
+            }
+        });
+    }
 
     // ── Relationships ─────────────────────────────────────────────────────────
 

@@ -66,12 +66,19 @@ class EmarRecord extends Model
         'reason_not_given',
         'witness_user_id',
         'notes',
+        // Phase B4 BCMA
+        'barcode_scanned_participant_at',
+        'barcode_scanned_med_at',
+        'barcode_mismatch_overridden_by_user_id',
+        'barcode_override_reason_text',
     ];
 
     protected $casts = [
-        'scheduled_time'  => 'datetime',
-        'administered_at' => 'datetime',
-        'created_at'      => 'datetime',
+        'scheduled_time'                 => 'datetime',
+        'administered_at'                => 'datetime',
+        'created_at'                     => 'datetime',
+        'barcode_scanned_participant_at' => 'datetime',
+        'barcode_scanned_med_at'         => 'datetime',
     ];
 
     // ── Relationships ─────────────────────────────────────────────────────────

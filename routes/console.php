@@ -145,6 +145,15 @@ Schedule::job(DenialAppealDeadlineAlertJob::class, 'compliance')->dailyAt('07:15
     ->name('denial-appeal-deadline')
     ->withoutOverlapping();
 
+// ─── Phase B4 (MVP roadmap): BCMA repeated-override aggregate alert ──────────
+// Daily at 07:45. If any user overrode >=3 BCMA mismatches in the last 7
+// days, emit a warning to qa_compliance + pharmacy + executive. Dedup
+// 7d/user. Individual overrides are still alerted in real time by
+// BcmaService when they happen.
+Schedule::job(\App\Jobs\BcmaRepeatedOverrideAlertJob::class, 'compliance')->dailyAt('07:45')
+    ->name('bcma-repeated-override')
+    ->withoutOverlapping();
+
 // ─── Phase B3 (MVP roadmap): Sentinel event deadline enforcement ─────────────
 // Daily at 07:30. For each sentinel-classified incident checks two deadlines:
 //   - 5-day CMS notification (warning at T-2 days, critical when missed)

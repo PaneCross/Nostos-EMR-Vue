@@ -532,6 +532,12 @@ Route::middleware('auth')->group(function () {
     Route::post('/participants/{participant}/restraints/{episode}/idt-review',
         [\App\Http\Controllers\RestraintController::class, 'recordIdtReview'])->name('participants.restraints.idt-review');
 
+    // Phase B4 (MVP completion roadmap): BCMA scan-verify + wristband PDF
+    Route::post('/emar/{record}/scan-verify',
+        [\App\Http\Controllers\MedicationController::class, 'scanVerify'])->name('emar.scan_verify');
+    Route::get('/participants/{participant}/wristband.pdf',
+        [\App\Http\Controllers\WristbandController::class, 'show'])->name('participants.wristband');
+
     // Phase B2 (MVP completion roadmap): Infection surveillance + outbreak detection
     Route::get ('/participants/{participant}/infections',
         [\App\Http\Controllers\InfectionCaseController::class, 'index'])->name('participants.infections.index');

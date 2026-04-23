@@ -43,7 +43,7 @@ class Participant extends Model
     protected $table = 'emr_participants';
 
     protected $fillable = [
-        'tenant_id', 'site_id', 'mrn',
+        'tenant_id', 'site_id', 'mrn', 'barcode_value',
         'first_name', 'last_name', 'preferred_name', 'dob', 'gender', 'pronouns',
         'ssn_last_four', 'medicare_id', 'medicare_a_start_date', 'medicare_b_start_date',
         'medicaid_id', 'county_fips_code', 'pace_contract_id', 'h_number',
@@ -97,6 +97,10 @@ class Participant extends Model
             if (empty($participant->mrn)) {
                 $site = Site::findOrFail($participant->site_id);
                 $participant->mrn = app(MrnService::class)->generate($site);
+            }
+            // Phase B4 — auto-generate BCMA barcode. Format: PT-<tenant>-<mrn>.
+            if (empty($participant->barcode_value) && ! empty($participant->mrn)) {
+                $participant->barcode_value = "PT-{$participant->tenant_id}-{$participant->mrn}";
             }
         });
     }
