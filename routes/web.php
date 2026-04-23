@@ -536,6 +536,20 @@ Route::middleware('auth')->group(function () {
     Route::post('/critical-values/{ack}/acknowledge',
         [\App\Http\Controllers\VitalController::class, 'acknowledge'])->name('critical_values.acknowledge');
 
+    // Phase B7 (MVP completion roadmap): Note templates + problem-based charting
+    Route::get   ('/note-templates',
+        [\App\Http\Controllers\NoteTemplateController::class, 'index'])->name('note_templates.index');
+    Route::post  ('/note-templates',
+        [\App\Http\Controllers\NoteTemplateController::class, 'store'])->name('note_templates.store');
+    Route::put   ('/note-templates/{template}',
+        [\App\Http\Controllers\NoteTemplateController::class, 'update'])->name('note_templates.update');
+    Route::delete('/note-templates/{template}',
+        [\App\Http\Controllers\NoteTemplateController::class, 'destroy'])->name('note_templates.destroy');
+    Route::get   ('/note-templates/{template}/render/{participant}',
+        [\App\Http\Controllers\NoteTemplateController::class, 'render'])->name('note_templates.render');
+    Route::get   ('/problems/{problem}/notes',
+        [\App\Http\Controllers\ClinicalNoteController::class, 'notesForProblem'])->name('problems.notes');
+
     // Phase B5 (MVP completion roadmap): Anticoagulation plans + INR
     Route::get ('/participants/{participant}/anticoagulation',
         [\App\Http\Controllers\AnticoagulationController::class, 'index'])->name('anticoag.index');

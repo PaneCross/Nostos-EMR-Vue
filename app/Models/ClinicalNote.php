@@ -11,6 +11,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -40,7 +41,7 @@ class ClinicalNote extends Model
 
     protected $fillable = [
         'participant_id', 'tenant_id', 'site_id',
-        'note_type', 'authored_by_user_id', 'department',
+        'note_type', 'note_template_id', 'authored_by_user_id', 'department',
         'status', 'visit_type', 'visit_date', 'visit_time',
         'subjective', 'objective', 'assessment', 'plan',
         'content',
@@ -93,6 +94,18 @@ class ClinicalNote extends Model
     public function addenda(): HasMany
     {
         return $this->hasMany(ClinicalNote::class, 'parent_note_id')->latest();
+    }
+
+    /** Phase B7 — Linked problems (primary + secondaries). */
+    public function linkedProblems(): BelongsToMany
+    {
+        return $this->belongsToMany(Problem::class, 'emr_clinical_note_problems', 'clinical_note_id', 'problem_id')
+            ->withPivot('is_primary')->withTimestamps();
+    }
+
+    public function template(): BelongsTo
+    {
+        return $this->belongsTo(NoteTemplate::class, 'note_template_id');
     }
 
     // ── Query Scopes ─────────────────────────────────────────────────────────

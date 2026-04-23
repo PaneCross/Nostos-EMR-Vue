@@ -363,6 +363,11 @@ class DemoEnvironmentSeeder extends Seeder
         $this->command->info('  Seeding drug-lab interaction reference (Phase B5)...');
         $this->call(DrugLabInteractionSeeder::class);
 
+        // Phase B7 (MVP completion roadmap): system note templates (11 defaults)
+        $this->command->info('');
+        $this->command->info('  Seeding system note templates (Phase B7)...');
+        $this->call(SystemNoteTemplateSeeder::class);
+
         // ─── Participant Photos ────────────────────────────────────────────────
         // Downloads pravatar.cc placeholder images for the first 15 enrolled
         // participants so the photo upload feature is visually testable.

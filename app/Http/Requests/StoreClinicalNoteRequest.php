@@ -38,6 +38,12 @@ class StoreClinicalNoteRequest extends FormRequest
             // Late entry compliance
             'is_late_entry'      => ['boolean'],
             'late_entry_reason'  => ['required_if:is_late_entry,true', 'nullable', 'string', 'max:500'],
+
+            // Phase B7 — optional template link + problem linkage
+            'note_template_id'      => ['nullable', 'integer', 'exists:emr_note_templates,id'],
+            'primary_problem_id'    => ['nullable', 'integer', 'exists:emr_problems,id'],
+            'secondary_problem_ids' => ['nullable', 'array'],
+            'secondary_problem_ids.*' => ['integer', 'exists:emr_problems,id'],
         ];
     }
 }

@@ -40,6 +40,32 @@ class NoteSigningService
             newValues:    ['note_id' => $note->id, 'signed_at' => $note->signed_at],
         );
 
+        // Phase B7 — if the signed note is linked to any problems, trigger HCC
+        // re-scoring and write an audit entry referencing the refreshed RAF.
+        // HccRiskScoringService::calculateRafScore returns a raw score map;
+        // persistence is caller-side (we just log for audit trail).
+        if ($note->linkedProblems()->exists()) {
+            try {
+                $raf = app(\App\Services\HccRiskScoringService::class)
+                    ->calculateRafScore($participant->id, (int) now()->year);
+                AuditLog::record(
+                    action:       'hcc.recalculated_on_note_sign',
+                    tenantId:     $user->tenant_id,
+                    userId:       $user->id,
+                    resourceType: 'participant',
+                    resourceId:   $participant->id,
+                    description:  "HCC RAF recalculated after signing problem-linked note #{$note->id}.",
+                    newValues:    ['raf' => $raf['raf_score'] ?? null, 'note_id' => $note->id],
+                );
+            } catch (\Throwable $e) {
+                // HCC scoring failures shouldn't block note signing.
+                logger()->warning('HCC recalc after note sign failed', [
+                    'note_id' => $note->id,
+                    'error'   => $e->getMessage(),
+                ]);
+            }
+        }
+
         broadcast(
             new ClinicalNoteSignedEvent($note->load('author:id,first_name,last_name,department'))
         )->toOthers();

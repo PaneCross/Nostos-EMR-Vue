@@ -104,6 +104,11 @@ class ClinicalNoteController extends Controller
             'status'              => ClinicalNote::STATUS_DRAFT,
         ]));
 
+        // Phase B7 — link to problem(s) if caller provided ids.
+        $primaryId = $request->input('primary_problem_id');
+        $secondary = (array) $request->input('secondary_problem_ids', []);
+        $this->linkProblems($note, $participant, $primaryId, $secondary);
+
         AuditLog::record(
             action:       'participant.note.created',
             tenantId:     $user->tenant_id,
@@ -114,7 +119,43 @@ class ClinicalNoteController extends Controller
             newValues:    ['note_id' => $note->id, 'note_type' => $note->note_type],
         );
 
-        return response()->json($note->load('author:id,first_name,last_name'), 201);
+        return response()->json($note->load('author:id,first_name,last_name', 'linkedProblems'), 201);
+    }
+
+    /**
+     * Phase B7. Attach problems to the note with the (validated, same-tenant,
+     * same-participant) ids provided. Primary is marked with pivot is_primary=true.
+     * Silently no-ops when no ids are provided.
+     */
+    private function linkProblems(ClinicalNote $note, Participant $participant, $primaryId, array $secondary): void
+    {
+        $ids = array_filter(array_unique(array_merge($secondary, $primaryId ? [(int) $primaryId] : [])));
+        if (empty($ids)) return;
+
+        $valid = \App\Models\Problem::whereIn('id', $ids)
+            ->where('tenant_id', $note->tenant_id)
+            ->where('participant_id', $participant->id)
+            ->pluck('id')->all();
+
+        foreach ($valid as $pid) {
+            $note->linkedProblems()->attach($pid, ['is_primary' => $pid === (int) $primaryId]);
+        }
+    }
+
+    /**
+     * Phase B7. GET /problems/{problem}/notes
+     * Chronological list of notes linked to a problem.
+     */
+    public function notesForProblem(Request $request, \App\Models\Problem $problem): JsonResponse
+    {
+        $user = $request->user();
+        abort_if($problem->tenant_id !== $user->tenant_id, 403);
+
+        $notes = $problem->linkedNotes()
+            ->with('author:id,first_name,last_name,department', 'signedBy:id,first_name,last_name')
+            ->orderByDesc('created_at')->get();
+
+        return response()->json(['notes' => $notes]);
     }
 
     /**

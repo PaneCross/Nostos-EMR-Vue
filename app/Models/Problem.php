@@ -10,6 +10,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Problem extends Model
@@ -59,6 +60,13 @@ class Problem extends Model
     public function lastReviewedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'last_reviewed_by_user_id');
+    }
+
+    /** Phase B7 — clinical notes that reference this problem. */
+    public function linkedNotes(): BelongsToMany
+    {
+        return $this->belongsToMany(ClinicalNote::class, 'emr_clinical_note_problems', 'problem_id', 'clinical_note_id')
+            ->withPivot('is_primary')->withTimestamps();
     }
 
     // ── Query Scopes ──────────────────────────────────────────────────────────
