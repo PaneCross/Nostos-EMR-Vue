@@ -532,6 +532,16 @@ Route::middleware('auth')->group(function () {
     Route::post('/participants/{participant}/restraints/{episode}/idt-review',
         [\App\Http\Controllers\RestraintController::class, 'recordIdtReview'])->name('participants.restraints.idt-review');
 
+    // Phase B5 (MVP completion roadmap): Anticoagulation plans + INR
+    Route::get ('/participants/{participant}/anticoagulation',
+        [\App\Http\Controllers\AnticoagulationController::class, 'index'])->name('anticoag.index');
+    Route::post('/participants/{participant}/anticoagulation/plans',
+        [\App\Http\Controllers\AnticoagulationController::class, 'storePlan'])->name('anticoag.plans.store');
+    Route::post('/anticoagulation-plans/{plan}/stop',
+        [\App\Http\Controllers\AnticoagulationController::class, 'stopPlan'])->name('anticoag.plans.stop');
+    Route::post('/participants/{participant}/anticoagulation/inr',
+        [\App\Http\Controllers\AnticoagulationController::class, 'recordInr'])->name('anticoag.inr.store');
+
     // Phase B4 (MVP completion roadmap): BCMA scan-verify + wristband PDF
     Route::post('/emar/{record}/scan-verify',
         [\App\Http\Controllers\MedicationController::class, 'scanVerify'])->name('emar.scan_verify');

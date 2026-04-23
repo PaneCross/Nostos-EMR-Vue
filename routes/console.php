@@ -145,6 +145,13 @@ Schedule::job(DenialAppealDeadlineAlertJob::class, 'compliance')->dailyAt('07:15
     ->name('denial-appeal-deadline')
     ->withoutOverlapping();
 
+// ─── Phase B5 (MVP roadmap): INR overdue sweep for warfarin plans ────────────
+// Daily at 06:15. For each active warfarin plan, warns if the last INR is
+// older than the plan's monitoring_interval_days (default 30). Dedup 7d/plan.
+Schedule::job(\App\Jobs\InrOverdueJob::class, 'compliance')->dailyAt('06:15')
+    ->name('inr-overdue-sweep')
+    ->withoutOverlapping();
+
 // ─── Phase B4 (MVP roadmap): BCMA repeated-override aggregate alert ──────────
 // Daily at 07:45. If any user overrode >=3 BCMA mismatches in the last 7
 // days, emit a warning to qa_compliance + pharmacy + executive. Dedup

@@ -358,6 +358,11 @@ class DemoEnvironmentSeeder extends Seeder
         $this->command->info('  Seeding infection surveillance demo data (Phase B2)...');
         $this->call(InfectionDemoSeeder::class);
 
+        // Phase B5 (MVP completion roadmap): drug-lab interaction reference
+        $this->command->info('');
+        $this->command->info('  Seeding drug-lab interaction reference (Phase B5)...');
+        $this->call(DrugLabInteractionSeeder::class);
+
         // ─── Participant Photos ────────────────────────────────────────────────
         // Downloads pravatar.cc placeholder images for the first 15 enrolled
         // participants so the photo upload feature is visually testable.
