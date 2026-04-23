@@ -30,6 +30,7 @@ import ImmunizationsTab  from './Tabs/ImmunizationsTab.vue'
 import ProceduresTab     from './Tabs/ProceduresTab.vue'
 import LabResultsTab     from './Tabs/LabResultsTab.vue'
 import WoundsTab         from './Tabs/WoundsTab.vue'
+import RestraintsTab     from './Tabs/RestraintsTab.vue'
 import AdlTab            from './Tabs/AdlTab.vue'
 import MedReconTab       from './Tabs/MedReconTab.vue'
 import OrdersTab         from './Tabs/OrdersTab.vue'
@@ -112,6 +113,7 @@ const CLINICAL_TABS = [
   { key: 'immunizations', label: 'Immunizations' },
   { key: 'procedures',    label: 'Procedures' },
   { key: 'wounds',        label: 'Wounds' },
+  { key: 'restraints',    label: 'Restraints' },
 ]
 
 const ADMIN_TABS = [
@@ -146,6 +148,7 @@ const TAB_COMPONENTS: Record<string, unknown> = {
   immunizations: ImmunizationsTab,
   procedures:    ProceduresTab,
   wounds:        WoundsTab,
+  restraints:    RestraintsTab,
   // Admin
   contacts:      ContactsTab,
   addresses:     AddressesTab,

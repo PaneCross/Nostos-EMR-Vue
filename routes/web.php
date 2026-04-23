@@ -519,6 +519,18 @@ Route::middleware('auth')->group(function () {
     Route::get   ('/data-imports/template/{entity}',     [\App\Http\Controllers\DataImportController::class, 'template'])->name('data_imports.template');
     // 15.6 Clinical decision support
     Route::post  ('/participants/{participant}/cds/evaluate', [\App\Http\Controllers\ClinicalDecisionSupportController::class, 'evaluate'])->name('cds.evaluate');
+
+    // Phase B1 (MVP completion roadmap): Restraints documentation
+    Route::get ('/participants/{participant}/restraints',
+        [\App\Http\Controllers\RestraintController::class, 'index'])->name('participants.restraints.index');
+    Route::post('/participants/{participant}/restraints',
+        [\App\Http\Controllers\RestraintController::class, 'store'])->name('participants.restraints.store');
+    Route::post('/participants/{participant}/restraints/{episode}/observations',
+        [\App\Http\Controllers\RestraintController::class, 'storeObservation'])->name('participants.restraints.observations.store');
+    Route::post('/participants/{participant}/restraints/{episode}/discontinue',
+        [\App\Http\Controllers\RestraintController::class, 'discontinue'])->name('participants.restraints.discontinue');
+    Route::post('/participants/{participant}/restraints/{episode}/idt-review',
+        [\App\Http\Controllers\RestraintController::class, 'recordIdtReview'])->name('participants.restraints.idt-review');
     // 15.8 Committees
     Route::get   ('/committees',                         [\App\Http\Controllers\CommitteeController::class, 'index'])->name('committees.index');
     Route::post  ('/committees',                         [\App\Http\Controllers\CommitteeController::class, 'store'])->name('committees.store');
@@ -1054,6 +1066,9 @@ Route::middleware('auth')->group(function () {
 
         // Phase 4 (MVP roadmap): Personnel credentials audit universe (§460.64-71)
         Route::get('/personnel-credentials', [\App\Http\Controllers\ComplianceController::class, 'personnelCredentials'])->name('compliance.personnel-credentials');
+
+        // Phase B1 (MVP completion roadmap): restraints audit universe (42 CFR §460 / CMS PACE Audit)
+        Route::get('/restraints', [\App\Http\Controllers\ComplianceController::class, 'restraints'])->name('compliance.restraints');
     });
 });
 

@@ -225,6 +225,12 @@ class Participant extends Model
         return $this->hasMany(CarePlan::class, 'participant_id');
     }
 
+    /** Phase B1: physical + chemical restraint episodes (42 CFR §460 audit). */
+    public function restraintEpisodes(): HasMany
+    {
+        return $this->hasMany(RestraintEpisode::class, 'participant_id');
+    }
+
     public function immunizations(): HasMany
     {
         return $this->hasMany(Immunization::class, 'participant_id');

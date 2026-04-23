@@ -244,6 +244,84 @@ class ComplianceController extends Controller
         ]);
     }
 
+    /**
+     * Phase B1 (MVP completion roadmap) — Restraints universe.
+     * 42 CFR §460 + CMS PACE Audit Protocol.
+     * Last 12 months of physical + chemical restraint episodes with
+     * monitoring observation count, IDT review status, and aggregate
+     * summary counters. Flat JSON for surveyor workpaper import.
+     */
+    public function restraints(Request $request): JsonResponse|InertiaResponse
+    {
+        $this->gate($request);
+        $tenantId = $request->user()->tenant_id;
+
+        $since = now()->subYear();
+        $episodes = \App\Models\RestraintEpisode::forTenant($tenantId)
+            ->with([
+                'participant:id,mrn,first_name,last_name',
+                'initiatedBy:id,first_name,last_name,department',
+                'orderedBy:id,first_name,last_name',
+                'idtReviewer:id,first_name,last_name',
+            ])
+            ->withCount('observations')
+            ->where('initiated_at', '>=', $since)
+            ->orderByDesc('initiated_at')
+            ->get()
+            ->map(function (\App\Models\RestraintEpisode $e) {
+                return [
+                    'id'                  => $e->id,
+                    'participant' => [
+                        'id'   => $e->participant?->id,
+                        'mrn'  => $e->participant?->mrn,
+                        'name' => $e->participant ? ($e->participant->first_name . ' ' . $e->participant->last_name) : null,
+                    ],
+                    'restraint_type'      => $e->restraint_type,
+                    'initiated_at'        => $e->initiated_at?->toIso8601String(),
+                    'initiated_by'        => $e->initiatedBy
+                        ? ($e->initiatedBy->first_name . ' ' . $e->initiatedBy->last_name) : null,
+                    'ordering_provider'   => $e->orderedBy
+                        ? ($e->orderedBy->first_name . ' ' . $e->orderedBy->last_name) : null,
+                    'medication_text'     => $e->medication_text,
+                    'reason_text'         => $e->reason_text,
+                    'alternatives_tried_text' => $e->alternatives_tried_text,
+                    'status'              => $e->status,
+                    'discontinued_at'     => $e->discontinued_at?->toIso8601String(),
+                    'discontinuation_reason' => $e->discontinuation_reason,
+                    'idt_review_date'     => $e->idt_review_date?->toDateString(),
+                    'idt_reviewer'        => $e->idtReviewer
+                        ? ($e->idtReviewer->first_name . ' ' . $e->idtReviewer->last_name) : null,
+                    'outcome_text'        => $e->outcome_text,
+                    'observations_count'  => $e->observations_count ?? 0,
+                    'idt_review_overdue'  => $e->idtReviewOverdue(),
+                    'monitoring_overdue'  => $e->monitoringOverdue(),
+                    'duration_minutes'    => $e->discontinued_at
+                        ? (int) $e->initiated_at->diffInMinutes($e->discontinued_at)
+                        : (int) $e->initiated_at->diffInMinutes(now()),
+                ];
+            });
+
+        $summary = [
+            'count_total'         => $episodes->count(),
+            'count_active'        => $episodes->where('status', 'active')->count(),
+            'count_physical'      => $episodes->where('restraint_type', 'physical')->count(),
+            'count_chemical'      => $episodes->whereIn('restraint_type', ['chemical', 'both'])->count(),
+            'count_idt_overdue'   => $episodes->where('idt_review_overdue', true)->count(),
+            'count_monitoring_overdue' => $episodes->where('monitoring_overdue', true)->count(),
+            'window_start'        => $since->toIso8601String(),
+            'window_end'          => now()->toIso8601String(),
+        ];
+
+        if ($request->wantsJson()) {
+            return response()->json(['rows' => $episodes->values(), 'summary' => $summary]);
+        }
+
+        return \Inertia\Inertia::render('Compliance/Restraints', [
+            'rows'    => $episodes->values(),
+            'summary' => $summary,
+        ]);
+    }
+
     private function statusFor(Participant $p, ?int $days): string
     {
         if (! $p->nf_certification_date && ! $p->nf_recert_waived) return 'missing';

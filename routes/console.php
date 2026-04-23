@@ -120,6 +120,16 @@ Schedule::job(\App\Jobs\CredentialExpirationAlertJob::class, 'compliance')->dail
     ->name('staff-credential-expiration')
     ->withoutOverlapping();
 
+// ─── Phase B1: Restraint monitoring + IDT review deadline enforcement ────────
+// Checks all active restraint episodes every 15 minutes:
+//   - Monitoring observation > 4h absent → warning alert to nursing
+//   - IDT review > 24h overdue → critical alert to qa_compliance
+// Alert dedup via metadata.restraint_episode_id within the applicable window.
+Schedule::job(\App\Jobs\RestraintMonitoringOverdueJob::class, 'restraint-enforcement')
+    ->everyFifteenMinutes()
+    ->name('restraint-monitoring-overdue')
+    ->withoutOverlapping();
+
 // ─── Phase 12 (MVP roadmap): Clearinghouse workers ───────────────────────────
 // Pull new 835 ERA files from each tenant's active clearinghouse gateway
 // hourly; poll status + fetch 277CA acknowledgments every 15 minutes. Under
