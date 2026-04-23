@@ -532,6 +532,10 @@ Route::middleware('auth')->group(function () {
     Route::post('/participants/{participant}/restraints/{episode}/idt-review',
         [\App\Http\Controllers\RestraintController::class, 'recordIdtReview'])->name('participants.restraints.idt-review');
 
+    // Phase B6 (MVP completion roadmap): Critical-value acknowledgment
+    Route::post('/critical-values/{ack}/acknowledge',
+        [\App\Http\Controllers\VitalController::class, 'acknowledge'])->name('critical_values.acknowledge');
+
     // Phase B5 (MVP completion roadmap): Anticoagulation plans + INR
     Route::get ('/participants/{participant}/anticoagulation',
         [\App\Http\Controllers\AnticoagulationController::class, 'index'])->name('anticoag.index');

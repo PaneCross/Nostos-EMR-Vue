@@ -11,8 +11,10 @@ namespace App\Http\Controllers;
 use App\Events\VitalsRecordedEvent;
 use App\Http\Requests\StoreVitalRequest;
 use App\Models\AuditLog;
+use App\Models\CriticalValueAcknowledgment;
 use App\Models\Participant;
 use App\Models\Vital;
+use App\Services\CriticalValueService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -82,13 +84,59 @@ class VitalController extends Controller
             newValues: array_merge($request->validated(), ['out_of_range' => $outOfRange]),
         );
 
+        // Phase B6: evaluate against per-tenant thresholds, create ack rows + alerts.
+        $acks = app(CriticalValueService::class)->evaluateVital($vital);
+
         // Phase 4: broadcast for real-time chart tab refresh
         broadcast(new VitalsRecordedEvent($vital->load('recordedBy:id,first_name,last_name')))->toOthers();
 
-        return response()->json(
-            $vital->load('recordedBy:id,first_name,last_name'),
-            201
+        return response()->json(array_merge(
+            $vital->load('recordedBy:id,first_name,last_name')->toArray(),
+            ['critical_value_acks' => $acks->values()],
+        ), 201);
+    }
+
+    /**
+     * Phase B6 — Acknowledge a flagged critical/warning value.
+     * Gate: primary_care (assigned-provider workflow); QA + exec can also ack
+     * to close out after escalation.
+     *
+     * POST /critical-values/{ack}/acknowledge
+     */
+    public function acknowledge(Request $request, CriticalValueAcknowledgment $ack): JsonResponse
+    {
+        $user = $request->user();
+        abort_if($ack->tenant_id !== $user->tenant_id, 403);
+        abort_unless(
+            $user->isSuperAdmin() || in_array($user->department, [
+                'primary_care', 'home_care', 'qa_compliance', 'executive', 'it_admin',
+            ], true),
+            403,
         );
+        if ($ack->isAcknowledged()) {
+            return response()->json(['message' => 'Already acknowledged.'], 409);
+        }
+
+        $validated = $request->validate([
+            'action_taken_text' => 'required|string|min:5|max:4000',
+        ]);
+
+        $ack->update([
+            'acknowledged_at'         => now(),
+            'acknowledged_by_user_id' => $user->id,
+            'action_taken_text'       => $validated['action_taken_text'],
+        ]);
+
+        AuditLog::record(
+            action: 'vital.critical_value_acknowledged',
+            tenantId: $user->tenant_id,
+            userId: $user->id,
+            resourceType: 'critical_value_acknowledgment',
+            resourceId: $ack->id,
+            description: "Acknowledged {$ack->severity} {$ack->field_name}={$ack->value}.",
+        );
+
+        return response()->json(['ack' => $ack->fresh()]);
     }
 
     /**

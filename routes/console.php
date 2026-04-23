@@ -145,6 +145,14 @@ Schedule::job(DenialAppealDeadlineAlertJob::class, 'compliance')->dailyAt('07:15
     ->name('denial-appeal-deadline')
     ->withoutOverlapping();
 
+// ─── Phase B6 (MVP roadmap): Critical-value escalation sweep ─────────────────
+// Hourly. Unacknowledged critical CriticalValueAcknowledgment rows past their
+// deadline_at get escalated_at stamped (once) and a critical alert to
+// executive + qa_compliance is emitted.
+Schedule::job(\App\Jobs\CriticalValueEscalationJob::class, 'compliance')->hourly()
+    ->name('critical-value-escalation')
+    ->withoutOverlapping();
+
 // ─── Phase B5 (MVP roadmap): INR overdue sweep for warfarin plans ────────────
 // Daily at 06:15. For each active warfarin plan, warns if the last INR is
 // older than the plan's monitoring_interval_days (default 30). Dedup 7d/plan.
