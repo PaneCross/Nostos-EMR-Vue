@@ -28,13 +28,22 @@ class CommitteeController extends Controller
         );
     }
 
-    public function index(): JsonResponse
+    public function index(Request $request)
     {
         $this->gate();
         $u = Auth::user();
-        return response()->json([
-            'committees' => Committee::forTenant($u->tenant_id)->withCount(['members', 'meetings'])
-                ->orderBy('name')->get(),
+        $committees = Committee::forTenant($u->tenant_id)
+            ->withCount(['members', 'meetings'])
+            ->with(['meetings' => fn ($q) => $q->orderByDesc('scheduled_date')->limit(3)])
+            ->orderBy('name')->get();
+
+        if ($request->wantsJson()) {
+            return response()->json(['committees' => $committees]);
+        }
+        return \Inertia\Inertia::render('Committees/Index', [
+            'committees' => $committees,
+            'types'      => Committee::TYPES,
+            'roles'      => CommitteeMember::ROLES,
         ]);
     }
 

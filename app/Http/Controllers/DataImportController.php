@@ -79,13 +79,20 @@ class DataImportController extends Controller
         return response()->json(['import' => $import->fresh(), 'result' => $result]);
     }
 
-    public function index(): JsonResponse
+    public function index(Request $request)
     {
         $this->gate();
         $u = Auth::user();
-        return response()->json([
-            'imports' => DataImport::forTenant($u->tenant_id)
-                ->orderByDesc('created_at')->limit(100)->get(),
+        $rows = DataImport::forTenant($u->tenant_id)
+            ->orderByDesc('created_at')->limit(100)->get();
+
+        if ($request->wantsJson()) {
+            return response()->json(['imports' => $rows]);
+        }
+        return \Inertia\Inertia::render('DataImports/Index', [
+            'imports'  => $rows,
+            'entities' => DataImport::ENTITIES,
+            'templates'=> \App\Services\DataImportService::TEMPLATE_HEADERS,
         ]);
     }
 }

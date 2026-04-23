@@ -23,9 +23,9 @@ class FormularyController extends Controller
         abort_unless($u->isSuperAdmin() || in_array($u->department, $allow, true), 403);
     }
 
-    public function index(Request $request): JsonResponse
+    public function index(Request $request)
     {
-        $this->gate(['pharmacy', 'primary_care', 'therapies', 'nursing', 'qa_compliance', 'it_admin', 'finance']);
+        $this->gate(['pharmacy', 'primary_care', 'therapies', 'qa_compliance', 'it_admin', 'finance']);
         $u = Auth::user();
         $q = FormularyEntry::forTenant($u->tenant_id);
         if ($term = trim((string) $request->query('q', ''))) {
@@ -37,8 +37,20 @@ class FormularyController extends Controller
             });
         }
         if ($request->boolean('active_only', true)) $q->active();
-        return response()->json([
-            'entries' => $q->orderBy('drug_name')->limit(200)->get(),
+        $entries = $q->orderBy('tier')->orderBy('drug_name')->limit(500)->get();
+
+        if ($request->wantsJson()) {
+            return response()->json(['entries' => $entries]);
+        }
+
+        $pending = \App\Models\CoverageDetermination::forTenant($u->tenant_id)
+            ->pending()->with('participant:id,first_name,last_name,mrn')
+            ->orderByDesc('requested_at')->limit(50)->get();
+
+        return \Inertia\Inertia::render('Formulary/Index', [
+            'entries'        => $entries,
+            'pendingDeterminations' => $pending,
+            'canEdit'        => $u->isSuperAdmin() || in_array($u->department, ['pharmacy', 'qa_compliance', 'it_admin']),
         ]);
     }
 

@@ -28,13 +28,27 @@ class ReportDefinitionController extends Controller
         );
     }
 
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
         $this->gate();
         $u = Auth::user();
         $rows = ReportDefinition::forTenant($u->tenant_id)->visibleTo($u->id)
             ->orderByDesc('updated_at')->limit(200)->get();
         return response()->json(['reports' => $rows]);
+    }
+
+    /** Phase 15-UI — custom report builder Inertia page. */
+    public function builder()
+    {
+        $this->gate();
+        $u = Auth::user();
+        $rows = ReportDefinition::forTenant($u->tenant_id)->visibleTo($u->id)
+            ->orderByDesc('updated_at')->limit(200)->get();
+
+        return \Inertia\Inertia::render('Reports/CustomBuilder', [
+            'reports'  => $rows,
+            'entities' => ReportDefinition::ENTITIES,
+        ]);
     }
 
     public function store(Request $request): JsonResponse

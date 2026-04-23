@@ -1,7 +1,9 @@
 <script setup lang="ts">
 // ─── GlobalSearch.vue ─────────────────────────────────────────────────────────
-// Cmd+K / Ctrl+K participant search modal.
-// Debounced search against /participants/search, keyboard-navigable results.
+// Cmd+K / Ctrl+K global search modal. Phase 14.7 extended from
+// participant-only to 6 entity types (participants, referrals, appointments,
+// grievances, orders, sdrs). Hits /search endpoint; flattens grouped
+// response; kind badges per result.
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { ref, watch, nextTick } from 'vue'
@@ -10,39 +12,23 @@ import axios from 'axios'
 
 interface SearchResult {
     id: number
-    mrn: string
-    name: string
-    dob: string
-    age: number
-    enrollment_status: string
-    flags: string[]
+    kind: string       // participant | referral | appointment | grievance | order | sdr
+    label: string
+    sublabel: string
+    href: string
 }
 
-const STATUS_COLORS: Record<string, string> = {
-    enrolled:    'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300',
-    disenrolled: 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400',
-    deceased:    'bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400',
-    pending:     'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300',
-    intake:      'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300',
-    referred:    'bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300',
+const KIND_COLORS: Record<string, string> = {
+    participant: 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300',
+    referral:    'bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300',
+    appointment: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300',
+    grievance:   'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300',
+    order:       'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-300',
+    sdr:         'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300',
 }
 
-const FLAG_COLORS: Record<string, string> = {
-    wheelchair: 'bg-blue-100 text-blue-700',
-    stretcher:  'bg-indigo-100 text-indigo-700',
-    oxygen:     'bg-cyan-100 text-cyan-700',
-    behavioral: 'bg-orange-100 text-orange-700',
-    fall_risk:  'bg-red-100 text-red-700',
-    dnr:        'bg-red-200 text-red-800',
-    hospice:    'bg-purple-100 text-purple-700',
-}
-
-function flagColor(flag: string): string {
-    return FLAG_COLORS[flag] ?? 'bg-gray-100 text-gray-600'
-}
-
-function flagLabel(flag: string): string {
-    return flag.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+function kindColor(kind: string): string {
+    return KIND_COLORS[kind] ?? 'bg-gray-100 text-gray-600'
 }
 
 const props = defineProps<{ open: boolean }>()
@@ -85,11 +71,15 @@ watch(query, (q) => {
         const controller = new AbortController()
         abortController = controller
         try {
-            const res = await axios.get<SearchResult[]>('/participants/search', {
+            const res = await axios.get<{ groups: Record<string, SearchResult[]> }>('/search', {
                 params: { q },
                 signal: controller.signal,
             })
-            results.value = res.data
+            // Flatten groups into a single ordered list: participants first,
+            // then the rest in insertion order.
+            const groups = res.data.groups ?? {}
+            const order = ['participants', 'referrals', 'appointments', 'grievances', 'orders', 'sdrs']
+            results.value = order.flatMap(g => groups[g] ?? [])
             activeIndex.value = 0
         } catch (err: unknown) {
             if (axios.isCancel(err)) return
@@ -113,13 +103,13 @@ function handleKeyDown(e: KeyboardEvent) {
     } else if (e.key === 'Enter') {
         e.preventDefault()
         const sel = results.value[activeIndex.value]
-        if (sel) goTo(sel.id)
+        if (sel) goTo(sel)
     }
 }
 
-function goTo(id: number) {
+function goTo(r: SearchResult) {
     emit('close')
-    router.visit(`/participants/${id}`)
+    router.visit(r.href)
 }
 </script>
 
@@ -167,15 +157,15 @@ function goTo(id: number) {
                     v-else-if="query.trim().length >= 2 && !loading && results.length === 0"
                     class="px-4 py-8 text-center text-sm text-slate-500 dark:text-slate-400"
                 >
-                    No participants found matching
+                    No results found matching
                     <span class="font-medium text-slate-700 dark:text-slate-200">"{{ query }}"</span>
                 </div>
 
                 <!-- Results -->
-                <ul v-if="results.length > 0" class="py-1 max-h-80 overflow-y-auto" role="listbox">
+                <ul v-if="results.length > 0" class="py-1 max-h-96 overflow-y-auto" role="listbox">
                     <li
                         v-for="(r, idx) in results"
-                        :key="r.id"
+                        :key="`${r.kind}-${r.id}`"
                         role="option"
                         :aria-selected="idx === activeIndex"
                         :class="[
@@ -185,34 +175,16 @@ function goTo(id: number) {
                                 : 'hover:bg-slate-50 dark:hover:bg-slate-700/50',
                         ]"
                         @mouseenter="activeIndex = idx"
-                        @click="goTo(r.id)"
+                        @click="goTo(r)"
                     >
-                        <!-- Avatar -->
-                        <div class="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-xs font-semibold shrink-0">
-                            {{ r.name.split(' ').map((p: string) => p[0]).slice(0, 2).join('') }}
-                        </div>
+                        <!-- Kind badge -->
+                        <span :class="['inline-flex items-center px-2 py-0.5 rounded text-xs font-medium shrink-0', kindColor(r.kind)]">
+                            {{ r.kind }}
+                        </span>
                         <!-- Details -->
                         <div class="flex-1 min-w-0">
-                            <div class="flex items-center gap-2 flex-wrap">
-                                <span class="text-sm font-medium text-slate-800 dark:text-slate-100 truncate">{{ r.name }}</span>
-                                <span class="font-mono text-xs text-slate-500 dark:text-slate-400">{{ r.mrn }}</span>
-                                <span :class="['inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium', STATUS_COLORS[r.enrollment_status] ?? 'bg-gray-100 text-gray-600']">
-                                    {{ r.enrollment_status }}
-                                </span>
-                            </div>
-                            <div class="flex items-center gap-3 mt-0.5">
-                                <span class="text-xs text-slate-500 dark:text-slate-400">DOB {{ r.dob }} - Age {{ r.age }}</span>
-                                <div v-if="r.flags.length > 0" class="flex gap-1 flex-wrap">
-                                    <span
-                                        v-for="flag in r.flags.slice(0, 3)"
-                                        :key="flag"
-                                        :class="['inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium', flagColor(flag)]"
-                                    >
-                                        {{ flagLabel(flag) }}
-                                    </span>
-                                    <span v-if="r.flags.length > 3" class="text-xs text-slate-500">+{{ r.flags.length - 3 }}</span>
-                                </div>
-                            </div>
+                            <div class="text-sm font-medium text-slate-800 dark:text-slate-100 truncate">{{ r.label }}</div>
+                            <div class="text-xs text-slate-500 dark:text-slate-400 truncate">{{ r.sublabel }}</div>
                         </div>
                         <!-- Arrow -->
                         <svg v-if="idx === activeIndex" class="w-4 h-4 text-blue-500 shrink-0 mt-2" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">

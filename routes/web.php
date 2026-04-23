@@ -505,8 +505,9 @@ Route::middleware('auth')->group(function () {
     Route::put   ('/formulary/{entry}',                  [\App\Http\Controllers\FormularyController::class, 'update'])->name('formulary.update');
     Route::get   ('/formulary/check',                    [\App\Http\Controllers\FormularyController::class, 'check'])->name('formulary.check');
     Route::post  ('/participants/{participant}/coverage-determinations', [\App\Http\Controllers\FormularyController::class, 'storeDetermination'])->name('formulary.determinations.store');
-    // 15.3 Custom reports
-    Route::get   ('/reports',                            [\App\Http\Controllers\ReportDefinitionController::class, 'index'])->name('reports.index');
+    // 15.3 Custom reports — /reports is the canned catalog; custom builder lives at /reports/custom
+    Route::get   ('/reports/custom',                     [\App\Http\Controllers\ReportDefinitionController::class, 'builder'])->name('reports.custom.builder');
+    Route::get   ('/reports/custom/definitions',         [\App\Http\Controllers\ReportDefinitionController::class, 'index'])->name('reports.custom.index');
     Route::post  ('/reports',                            [\App\Http\Controllers\ReportDefinitionController::class, 'store'])->name('reports.store');
     Route::post  ('/reports/{definition}/run',           [\App\Http\Controllers\ReportDefinitionController::class, 'run'])->name('reports.run');
     Route::get   ('/reports/{definition}/download',      [\App\Http\Controllers\ReportDefinitionController::class, 'download'])->name('reports.download');
