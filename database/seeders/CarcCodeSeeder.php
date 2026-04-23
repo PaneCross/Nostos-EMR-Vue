@@ -44,11 +44,29 @@ class CarcCodeSeeder extends Seeder
         DB::statement('TRUNCATE TABLE emr_carc_codes RESTART IDENTITY CASCADE');
 
         $codes = $this->getCarcCodes();
+        $now = now();
 
-        // Insert in chunks to avoid hitting parameter limits on large inserts.
-        $chunks = array_chunk($codes, 50);
+        // Phase A1 tech-debt fix: seeder data carries friendly field names
+        // (`category`, `group_code`) but the migration uses `denial_category`
+        // and a derived `is_denial_indicator` boolean. Map at insert time
+        // rather than edit 200+ hand-written entries. Also deduplicate by
+        // code — some entries (e.g. '253' Sequestration) appear in multiple
+        // category buckets.
+        $byCode = [];
+        foreach ($codes as $row) {
+            $byCode[$row['code']] = [
+                'code'                => $row['code'],
+                'description'         => $row['description'],
+                'notes'               => $row['notes'] ?? null,
+                'denial_category'     => $row['category'] ?? null,
+                'is_denial_indicator' => ($row['group_code'] ?? '') === 'CO',
+                'is_active'           => $row['is_active'] ?? true,
+                'created_at'          => $now,
+            ];
+        }
+        $mapped = array_values($byCode);
 
-        foreach ($chunks as $chunk) {
+        foreach (array_chunk($mapped, 50) as $chunk) {
             DB::table('emr_carc_codes')->insert($chunk);
         }
 

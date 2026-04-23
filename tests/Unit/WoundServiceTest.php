@@ -51,7 +51,6 @@ class WoundServiceTest extends TestCase
 
     // ── open() ────────────────────────────────────────────────────────────────
 
-    /** @test */
     public function test_open_creates_wound_record(): void
     {
         $participant = $this->makeParticipant();
@@ -74,7 +73,6 @@ class WoundServiceTest extends TestCase
         $this->assertEquals('stage_2', $wound->pressure_injury_stage);
     }
 
-    /** @test */
     public function test_open_with_critical_stage_creates_critical_alert(): void
     {
         $participant = $this->makeParticipant();
@@ -99,7 +97,6 @@ class WoundServiceTest extends TestCase
         ]);
     }
 
-    /** @test */
     public function test_open_with_stage_4_creates_critical_alert(): void
     {
         $participant = $this->makeParticipant();
@@ -121,7 +118,6 @@ class WoundServiceTest extends TestCase
         ]);
     }
 
-    /** @test */
     public function test_open_with_stage_2_does_not_create_alert(): void
     {
         $participant = $this->makeParticipant();
@@ -142,7 +138,6 @@ class WoundServiceTest extends TestCase
         ]);
     }
 
-    /** @test */
     public function test_open_non_pressure_injury_does_not_create_alert(): void
     {
         $participant = $this->makeParticipant();
@@ -164,7 +159,6 @@ class WoundServiceTest extends TestCase
 
     // ── addAssessment() ───────────────────────────────────────────────────────
 
-    /** @test */
     public function test_add_assessment_creates_assessment_record(): void
     {
         $participant = $this->makeParticipant();
@@ -191,7 +185,6 @@ class WoundServiceTest extends TestCase
         ]);
     }
 
-    /** @test */
     public function test_healed_assessment_closes_wound_record(): void
     {
         $participant = $this->makeParticipant();
@@ -214,7 +207,6 @@ class WoundServiceTest extends TestCase
         $this->assertNotNull($wound->fresh()->healed_date);
     }
 
-    /** @test */
     public function test_deteriorated_assessment_creates_warning_alert(): void
     {
         $participant = $this->makeParticipant();
@@ -242,7 +234,6 @@ class WoundServiceTest extends TestCase
 
     // ── getOpenWounds() ───────────────────────────────────────────────────────
 
-    /** @test */
     public function test_get_open_wounds_returns_only_non_healed_wounds(): void
     {
         $participant = $this->makeParticipant();
@@ -267,7 +258,6 @@ class WoundServiceTest extends TestCase
 
     // ── getActiveWoundsByTenant() ─────────────────────────────────────────────
 
-    /** @test */
     public function test_get_active_wounds_by_tenant_returns_only_own_tenant(): void
     {
         $participant1 = $this->makeParticipant();

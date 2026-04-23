@@ -66,7 +66,9 @@ class ReferralNoteDemoSeeder extends Seeder
         $count = 0;
         foreach ($targetReferrals as $i => $referral) {
             // Skip if already has notes (idempotent)
-            if ($referral->notes()->count() > 0) continue;
+            // Note: Referral has a `notes` TEXT column (initial free-form) AND
+            // a `referralNotes()` HasMany — the thread relation is the latter.
+            if ($referral->referralNotes()->count() > 0) continue;
 
             $thread = $threads[$i % count($threads)];
             foreach ($thread as $j => $content) {

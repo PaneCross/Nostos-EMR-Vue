@@ -60,7 +60,6 @@ class IdtReviewFrequencyJobTest extends TestCase
     // ── Tests ─────────────────────────────────────────────────────────────────
 
     /**
-     * @test
      * Job creates an idt_review_overdue alert for a participant enrolled > 180 days
      * with no review on record.
      */
@@ -78,7 +77,6 @@ class IdtReviewFrequencyJobTest extends TestCase
     }
 
     /**
-     * @test
      * Job creates alert for participant whose last review was > 180 days ago.
      */
     public function test_job_creates_alert_for_participant_with_stale_review(): void
@@ -96,7 +94,6 @@ class IdtReviewFrequencyJobTest extends TestCase
     }
 
     /**
-     * @test
      * Job does NOT create a duplicate alert if an active idt_review_overdue alert
      * already exists for the participant.
      */
@@ -116,7 +113,6 @@ class IdtReviewFrequencyJobTest extends TestCase
     }
 
     /**
-     * @test
      * Job does NOT create an alert for a participant enrolled < 180 days (not yet overdue).
      */
     public function test_job_skips_recently_enrolled_participant(): void
@@ -132,7 +128,6 @@ class IdtReviewFrequencyJobTest extends TestCase
     }
 
     /**
-     * @test
      * Job does NOT create an alert for a participant recently reviewed (within 180 days).
      */
     public function test_job_skips_recently_reviewed_participant(): void
@@ -149,7 +144,6 @@ class IdtReviewFrequencyJobTest extends TestCase
     }
 
     /**
-     * @test
      * Job skips disenrolled participants entirely.
      */
     public function test_job_skips_disenrolled_participants(): void
@@ -172,7 +166,6 @@ class IdtReviewFrequencyJobTest extends TestCase
     }
 
     /**
-     * @test
      * After a participant is reviewed, subsequent job run does NOT re-alert
      * (previous alert was auto-resolved or dedup prevents it).
      */

@@ -58,7 +58,6 @@ class QapiTest extends TestCase
 
     // ── Index ─────────────────────────────────────────────────────────────────
 
-    /** @test */
     public function test_index_returns_inertia_page_with_projects(): void
     {
         $user = $this->makeQaUser();
@@ -77,7 +76,6 @@ class QapiTest extends TestCase
             );
     }
 
-    /** @test */
     public function test_index_reports_meets_minimum_when_2_active(): void
     {
         $user = $this->makeQaUser();
@@ -94,7 +92,6 @@ class QapiTest extends TestCase
             );
     }
 
-    /** @test */
     public function test_index_reports_does_not_meet_minimum_when_1_active(): void
     {
         $user = $this->makeQaUser();
@@ -112,7 +109,6 @@ class QapiTest extends TestCase
 
     // ── Store ─────────────────────────────────────────────────────────────────
 
-    /** @test */
     public function test_qa_admin_can_create_project(): void
     {
         $user = $this->makeQaUser();
@@ -129,7 +125,6 @@ class QapiTest extends TestCase
         ]);
     }
 
-    /** @test */
     public function test_non_qa_cannot_create_project(): void
     {
         $user = $this->makeUser('primary_care');
@@ -138,7 +133,6 @@ class QapiTest extends TestCase
         $response->assertForbidden();
     }
 
-    /** @test */
     public function test_it_admin_can_create_project(): void
     {
         $user = $this->makeUser('it_admin');
@@ -147,7 +141,6 @@ class QapiTest extends TestCase
         $response->assertStatus(201);
     }
 
-    /** @test */
     public function test_store_requires_title_and_domain(): void
     {
         $user = $this->makeQaUser();
@@ -161,7 +154,6 @@ class QapiTest extends TestCase
 
     // ── Show ──────────────────────────────────────────────────────────────────
 
-    /** @test */
     public function test_show_returns_project_json(): void
     {
         $user    = $this->makeQaUser();
@@ -173,7 +165,6 @@ class QapiTest extends TestCase
             ->assertJsonPath('title', $project->title);
     }
 
-    /** @test */
     public function test_show_is_tenant_scoped(): void
     {
         $user          = $this->makeQaUser();
@@ -186,7 +177,6 @@ class QapiTest extends TestCase
 
     // ── Update ────────────────────────────────────────────────────────────────
 
-    /** @test */
     public function test_qa_admin_can_update_project(): void
     {
         $user    = $this->makeQaUser();
@@ -206,7 +196,6 @@ class QapiTest extends TestCase
         ]);
     }
 
-    /** @test */
     public function test_update_auto_sets_actual_completion_date(): void
     {
         $user    = $this->makeQaUser();
@@ -224,7 +213,6 @@ class QapiTest extends TestCase
 
     // ── Remeasure ─────────────────────────────────────────────────────────────
 
-    /** @test */
     public function test_remeasure_advances_active_project(): void
     {
         $user    = $this->makeQaUser();
@@ -239,7 +227,6 @@ class QapiTest extends TestCase
           ->assertJsonPath('status', 'remeasuring');
     }
 
-    /** @test */
     public function test_remeasure_rejects_non_active_project(): void
     {
         $user    = $this->makeQaUser();
@@ -254,7 +241,6 @@ class QapiTest extends TestCase
 
     // ── QA Dashboard QAPI KPI ─────────────────────────────────────────────────
 
-    /** @test */
     public function test_qa_dashboard_includes_active_qapi_count(): void
     {
         $user = $this->makeQaUser();
@@ -277,7 +263,6 @@ class QapiTest extends TestCase
 
     // ── Model helpers ─────────────────────────────────────────────────────────
 
-    /** @test */
     public function test_qapi_project_is_active_for_planning_active_remeasuring(): void
     {
         $user = $this->makeQaUser();
@@ -291,7 +276,6 @@ class QapiTest extends TestCase
         }
     }
 
-    /** @test */
     public function test_qapi_project_scope_active_returns_correct_statuses(): void
     {
         $user = $this->makeQaUser();

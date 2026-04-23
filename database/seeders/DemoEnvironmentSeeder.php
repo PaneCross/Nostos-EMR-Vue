@@ -307,6 +307,47 @@ class DemoEnvironmentSeeder extends Seeder
         $this->command->info('  Seeding Medicaid spend-down / share-of-cost demo data...');
         $this->call(SpendDownDemoSeeder::class);
 
+        // ─── Phase A1: previously-orphaned seeders now wired in ───────────────
+        // These seeders existed but weren't being called from this master seeder;
+        // tech-debt sweep added them for a proper demo.
+
+        // Reference data seeders (safe + fast; idempotent).
+        $this->command->info('');
+        $this->command->info('  Seeding SNOMED + RxNorm lookup tables (Phase 13)...');
+        $this->call(Phase13CodingSeeder::class);
+
+        $this->command->info('');
+        $this->command->info('  Seeding CARC claim-adjustment reason codes (for 835 remittance)...');
+        $this->call(CarcCodeSeeder::class);
+
+        // Back-fills.
+        $this->command->info('');
+        $this->command->info('  Linking PACE locations to their sites...');
+        $this->call(LocationSiteLinkSeeder::class);
+
+        // Participant-bound depth seeders (need participants + tenant already seeded above).
+        $this->command->info('');
+        $this->command->info('  Seeding additional scored assessments (Phase 13 instruments + baseline mix)...');
+        $this->call(AssessmentDemoSeeder::class);
+
+        $this->command->info('');
+        $this->command->info('  Seeding HOS-M 2025 surveys...');
+        $this->call(HosMSurvey2025DemoSeeder::class);
+
+        $this->command->info('');
+        $this->command->info('  Seeding demo referral notes (Phase 4+ enrollment feature)...');
+        $this->call(ReferralNoteDemoSeeder::class);
+
+        // Phase9BDataSeeder INTENTIONALLY not wired here — it overlaps with
+        // BillingDemoSeeder (called earlier) and produces duplicate encounter
+        // + capitation rows. Run standalone only, against a tenant that does
+        // NOT already have BillingDemoSeeder data:
+        //   ./vendor/bin/sail artisan db:seed --class=Phase9BDataSeeder
+
+        $this->command->info('');
+        $this->command->info('  Seeding Phase 14 demo depth (aging grievances, expiring credentials, pending appeals)...');
+        $this->call(Phase14DemoDepthSeeder::class);
+
         // ─── Participant Photos ────────────────────────────────────────────────
         // Downloads pravatar.cc placeholder images for the first 15 enrolled
         // participants so the photo upload feature is visually testable.

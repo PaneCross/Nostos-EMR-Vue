@@ -47,7 +47,6 @@ class ClinicalOrderTest extends TestCase
 
     // ── Store ─────────────────────────────────────────────────────────────────
 
-    /** @test */
     public function test_prescriber_can_create_order_and_auto_routing_is_set(): void
     {
         $user        = $this->makePrescriber();
@@ -67,7 +66,6 @@ class ClinicalOrderTest extends TestCase
         ]);
     }
 
-    /** @test */
     public function test_stat_order_creates_critical_alert(): void
     {
         $user        = $this->makePrescriber();
@@ -85,7 +83,6 @@ class ClinicalOrderTest extends TestCase
         ]);
     }
 
-    /** @test */
     public function test_urgent_order_creates_warning_alert(): void
     {
         $user        = $this->makePrescriber();
@@ -103,7 +100,6 @@ class ClinicalOrderTest extends TestCase
         ]);
     }
 
-    /** @test */
     public function test_routine_order_does_not_create_alert(): void
     {
         $user        = $this->makePrescriber();
@@ -123,7 +119,6 @@ class ClinicalOrderTest extends TestCase
         ]);
     }
 
-    /** @test */
     public function test_non_prescriber_department_cannot_create_order(): void
     {
         $user = User::factory()->create(['department' => 'dietary']);
@@ -140,7 +135,6 @@ class ClinicalOrderTest extends TestCase
         ])->assertForbidden();
     }
 
-    /** @test */
     public function test_cross_tenant_participant_is_blocked(): void
     {
         $tenant1 = Tenant::factory()->create();
@@ -162,7 +156,6 @@ class ClinicalOrderTest extends TestCase
 
     // ── Acknowledge ───────────────────────────────────────────────────────────
 
-    /** @test */
     public function test_acknowledge_transitions_pending_to_acknowledged(): void
     {
         $user        = $this->makePrescriber();
@@ -186,7 +179,6 @@ class ClinicalOrderTest extends TestCase
 
     // ── Result ────────────────────────────────────────────────────────────────
 
-    /** @test */
     public function test_result_endpoint_stores_result_summary(): void
     {
         $user        = $this->makePrescriber();
@@ -211,7 +203,6 @@ class ClinicalOrderTest extends TestCase
 
     // ── Cancel ────────────────────────────────────────────────────────────────
 
-    /** @test */
     public function test_cancel_sets_cancelled_status(): void
     {
         $user        = $this->makePrescriber();
@@ -233,7 +224,6 @@ class ClinicalOrderTest extends TestCase
         ]);
     }
 
-    /** @test */
     public function test_cannot_cancel_completed_order(): void
     {
         $user        = $this->makePrescriber();
@@ -251,7 +241,6 @@ class ClinicalOrderTest extends TestCase
 
     // ── Index ─────────────────────────────────────────────────────────────────
 
-    /** @test */
     public function test_index_returns_orders_for_participant(): void
     {
         $user        = $this->makePrescriber();
@@ -269,7 +258,6 @@ class ClinicalOrderTest extends TestCase
             ->assertJsonStructure(['orders', 'total_count', 'active_count']);
     }
 
-    /** @test */
     public function test_unauthenticated_user_cannot_access_orders(): void
     {
         $user        = $this->makePrescriber();

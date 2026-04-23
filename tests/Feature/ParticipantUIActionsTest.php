@@ -75,7 +75,6 @@ class ParticipantUIActionsTest extends TestCase
     // FLAGS TAB
     // ═══════════════════════════════════════════════════════════════════════════
 
-    /** @test */
     public function add_flag_button_creates_flag_and_persists(): void
     {
         $response = $this->actingAs($this->user)
@@ -97,7 +96,6 @@ class ParticipantUIActionsTest extends TestCase
         ]);
     }
 
-    /** @test */
     public function flag_appears_in_profile_props_after_creation(): void
     {
         ParticipantFlag::factory()->create([
@@ -117,7 +115,6 @@ class ParticipantUIActionsTest extends TestCase
         $this->assertContains('oxygen', $flagTypes);
     }
 
-    /** @test */
     public function resolve_flag_button_marks_flag_inactive(): void
     {
         $flag = ParticipantFlag::factory()->create([
@@ -141,7 +138,6 @@ class ParticipantUIActionsTest extends TestCase
         ]);
     }
 
-    /** @test */
     public function resolved_flag_no_longer_appears_as_active(): void
     {
         $flag = ParticipantFlag::factory()->create([
@@ -165,7 +161,6 @@ class ParticipantUIActionsTest extends TestCase
         $this->assertNotContains($flag->id, $activeIds);
     }
 
-    /** @test */
     public function cannot_add_flag_with_invalid_flag_type(): void
     {
         $response = $this->actingAs($this->user)
@@ -178,7 +173,6 @@ class ParticipantUIActionsTest extends TestCase
         $response->assertJsonValidationErrors(['flag_type']);
     }
 
-    /** @test */
     public function cannot_add_flag_with_invalid_severity(): void
     {
         $response = $this->actingAs($this->user)
@@ -191,7 +185,6 @@ class ParticipantUIActionsTest extends TestCase
         $response->assertJsonValidationErrors(['severity']);
     }
 
-    /** @test */
     public function cannot_resolve_flag_belonging_to_different_participant(): void
     {
         $otherPpt = Participant::factory()->create([
@@ -217,7 +210,6 @@ class ParticipantUIActionsTest extends TestCase
     // CONTACTS TAB
     // ═══════════════════════════════════════════════════════════════════════════
 
-    /** @test */
     public function add_contact_button_creates_contact_and_persists(): void
     {
         $response = $this->actingAs($this->user)
@@ -243,7 +235,6 @@ class ParticipantUIActionsTest extends TestCase
         ]);
     }
 
-    /** @test */
     public function contact_appears_in_profile_props_after_creation(): void
     {
         ParticipantContact::factory()->create([
@@ -262,7 +253,6 @@ class ParticipantUIActionsTest extends TestCase
         $this->assertContains('Robert', $names);
     }
 
-    /** @test */
     public function phone_number_in_formatted_style_is_accepted(): void
     {
         // Frontend sends formatted (xxx) xxx-xxxx strings — backend must accept them
@@ -285,7 +275,6 @@ class ParticipantUIActionsTest extends TestCase
         ]);
     }
 
-    /** @test */
     public function contact_requires_first_and_last_name(): void
     {
         $response = $this->actingAs($this->user)
@@ -299,7 +288,6 @@ class ParticipantUIActionsTest extends TestCase
         $response->assertJsonValidationErrors(['first_name', 'last_name']);
     }
 
-    /** @test */
     public function contact_requires_valid_contact_type(): void
     {
         $response = $this->actingAs($this->user)
@@ -318,7 +306,6 @@ class ParticipantUIActionsTest extends TestCase
     // DEACTIVATE BUTTON
     // ═══════════════════════════════════════════════════════════════════════════
 
-    /** @test */
     public function deactivate_button_soft_deletes_participant(): void
     {
         $response = $this->actingAs($this->user)
@@ -331,7 +318,6 @@ class ParticipantUIActionsTest extends TestCase
         $this->assertSoftDeleted('emr_participants', ['id' => $this->participant->id]);
     }
 
-    /** @test */
     public function deactivated_participant_does_not_appear_in_directory(): void
     {
         // Deactivate the participant
@@ -348,7 +334,6 @@ class ParticipantUIActionsTest extends TestCase
     // TAB DATA ISOLATION
     // ═══════════════════════════════════════════════════════════════════════════
 
-    /** @test */
     public function flags_tab_data_is_scoped_to_the_current_participant(): void
     {
         // Create a flag for our participant
@@ -383,7 +368,6 @@ class ParticipantUIActionsTest extends TestCase
         $this->assertEquals($this->participant->id, $participantIds[0]);
     }
 
-    /** @test */
     public function contacts_tab_data_is_scoped_to_the_current_participant(): void
     {
         ParticipantContact::factory()->create([
@@ -418,7 +402,6 @@ class ParticipantUIActionsTest extends TestCase
     // PERMISSION-GATED UI PROPS
     // ═══════════════════════════════════════════════════════════════════════════
 
-    /** @test */
     public function enrollment_admin_can_edit_and_delete(): void
     {
         // Users in enrollment dept with admin role have full edit/delete rights
@@ -428,7 +411,6 @@ class ParticipantUIActionsTest extends TestCase
         $this->assertTrue($props['canDelete'], 'enrollment admin should have canDelete');
     }
 
-    /** @test */
     public function qa_compliance_staff_cannot_edit_or_delete(): void
     {
         $auditor = User::factory()->create([
@@ -453,7 +435,6 @@ class ParticipantUIActionsTest extends TestCase
         $this->assertFalse($props['canDelete'], 'read_only_auditor should NOT have canDelete');
     }
 
-    /** @test */
     public function read_only_auditor_can_view_audit_trail(): void
     {
         $auditor = User::factory()->create([
@@ -481,7 +462,6 @@ class ParticipantUIActionsTest extends TestCase
     // UNAUTHENTICATED GUARDS ON ACTION ENDPOINTS
     // ═══════════════════════════════════════════════════════════════════════════
 
-    /** @test */
     public function unauthenticated_cannot_add_flag(): void
     {
         $this->postJson("/participants/{$this->participant->id}/flags", [
@@ -490,7 +470,6 @@ class ParticipantUIActionsTest extends TestCase
         ])->assertStatus(401);
     }
 
-    /** @test */
     public function unauthenticated_cannot_add_contact(): void
     {
         $this->postJson("/participants/{$this->participant->id}/contacts", [
@@ -501,7 +480,6 @@ class ParticipantUIActionsTest extends TestCase
         ])->assertStatus(401);
     }
 
-    /** @test */
     public function unauthenticated_cannot_deactivate_participant(): void
     {
         // Unauthenticated DELETE → redirected to the named 'login' route: GET /login

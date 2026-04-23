@@ -50,6 +50,10 @@
         ],
         "post-root-package-install": [
             "@php -r \"file_exists('.env') || copy('.env.example', '.env');\""
+        ],
+        "test": [
+            "@php artisan storage:fix-permissions --user=sail",
+            "@php artisan test"
         ]
     },
     "extra": {

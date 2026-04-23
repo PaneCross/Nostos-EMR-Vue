@@ -90,19 +90,16 @@ class NavigationTest extends TestCase
     // ─── Unauthenticated redirects ─────────────────────────────────────────────
     // Laravel redirects unauthenticated users to the named 'login' route: GET /login
 
-    /** @test */
     public function unauthenticated_user_is_redirected_from_participant_directory(): void
     {
         $this->get('/participants')->assertRedirect('/login');
     }
 
-    /** @test */
     public function unauthenticated_user_is_redirected_from_participant_profile(): void
     {
         $this->get("/participants/{$this->participant->id}")->assertRedirect('/login');
     }
 
-    /** @test */
     public function unauthenticated_user_is_redirected_from_root(): void
     {
         $this->get('/')->assertRedirect('/login');
@@ -110,13 +107,11 @@ class NavigationTest extends TestCase
 
     // ─── Login page ────────────────────────────────────────────────────────────
 
-    /** @test */
     public function login_page_is_accessible_when_unauthenticated(): void
     {
         $this->get('/login')->assertOk();
     }
 
-    /** @test */
     public function authenticated_user_is_redirected_away_from_login(): void
     {
         // The guest middleware redirects authenticated users away from /login
@@ -125,7 +120,6 @@ class NavigationTest extends TestCase
 
     // ─── Authenticated navigation ──────────────────────────────────────────────
 
-    /** @test */
     public function root_url_redirects_authenticated_user_to_their_department_dashboard(): void
     {
         $this->actingAs($this->user)
@@ -133,7 +127,6 @@ class NavigationTest extends TestCase
             ->assertRedirect("/dashboard/{$this->user->department}");
     }
 
-    /** @test */
     public function department_dashboard_returns_200(): void
     {
         $this->inertiaResponse("/dashboard/{$this->user->department}")
@@ -141,7 +134,6 @@ class NavigationTest extends TestCase
             ->assertJsonPath('component', 'Dashboard/Index');
     }
 
-    /** @test */
     public function participant_directory_returns_200(): void
     {
         $this->inertiaResponse('/participants')
@@ -149,7 +141,6 @@ class NavigationTest extends TestCase
             ->assertJsonPath('component', 'Participants/Index');
     }
 
-    /** @test */
     public function participant_profile_returns_200(): void
     {
         $this->inertiaResponse("/participants/{$this->participant->id}")
@@ -159,7 +150,6 @@ class NavigationTest extends TestCase
 
     // ─── Page props ────────────────────────────────────────────────────────────
 
-    /** @test */
     public function inertia_pages_receive_nav_groups_prop(): void
     {
         // nav_groups is always present (may be empty if no role permissions are seeded)
@@ -167,7 +157,6 @@ class NavigationTest extends TestCase
         $this->assertArrayHasKey('nav_groups', $props);
     }
 
-    /** @test */
     public function inertia_pages_receive_auth_prop(): void
     {
         $props = $this->inertiaGet('/participants');
@@ -175,7 +164,6 @@ class NavigationTest extends TestCase
         $this->assertEquals($this->user->id, $props['auth']['user']['id']);
     }
 
-    /** @test */
     public function participant_profile_has_all_required_props(): void
     {
         $props = $this->inertiaGet("/participants/{$this->participant->id}");
@@ -185,7 +173,6 @@ class NavigationTest extends TestCase
         }
     }
 
-    /** @test */
     public function participant_profile_shows_correct_mrn(): void
     {
         $props = $this->inertiaGet("/participants/{$this->participant->id}");
@@ -195,7 +182,6 @@ class NavigationTest extends TestCase
 
     // ─── Cross-tenant isolation ────────────────────────────────────────────────
 
-    /** @test */
     public function cannot_view_participant_from_different_tenant(): void
     {
         $otherTenant = Tenant::factory()->create();
@@ -212,7 +198,6 @@ class NavigationTest extends TestCase
 
     // ─── Logout ───────────────────────────────────────────────────────────────
 
-    /** @test */
     public function logout_redirects_to_login(): void
     {
         $this->actingAs($this->user)
@@ -220,7 +205,6 @@ class NavigationTest extends TestCase
             ->assertRedirect('/login');
     }
 
-    /** @test */
     public function after_logout_participant_directory_redirects_to_login(): void
     {
         $this->actingAs($this->user)->post('/auth/logout');

@@ -86,15 +86,9 @@ class Phase14DemoDepthSeeder extends Seeder
 
     private function seedExpiringCredentials(Tenant $tenant): void
     {
-        if (! class_exists(StaffCredential::class)) return;
-
-        // Only proceed if the credentials table actually exists + the seeder
-        // can find clinical staff users.
-        try {
-            $staff = User::where('tenant_id', $tenant->id)
-                ->whereIn('department', ['primary_care', 'nursing', 'therapies', 'pharmacy'])
-                ->inRandomOrder()->take(3)->get();
-        } catch (\Throwable) { return; }
+        $staff = User::where('tenant_id', $tenant->id)
+            ->whereIn('department', ['primary_care', 'nursing', 'therapies', 'pharmacy'])
+            ->inRandomOrder()->take(3)->get();
 
         if ($staff->isEmpty()) return;
 
@@ -102,23 +96,26 @@ class Phase14DemoDepthSeeder extends Seeder
             ->where('notes', 'like', '%[demo-depth]%')->exists();
         if ($exists) return;
 
+        // Real schema: credential_type is an enum (license|certification|...);
+        // display name goes in `title`; dates are `issued_at` / `expires_at`;
+        // no `issuing_body` / `is_active` columns.
         $plans = [
-            ['RN License',     7],
-            ['BLS Certification', 20],
-            ['DEA Registration',  28],
+            // [credential_type, title, daysUntilExpiry]
+            ['license',       'RN License',         7],
+            ['certification', 'BLS Certification', 20],
+            ['license',       'DEA Registration',  28],
         ];
 
-        foreach ($plans as $i => [$type, $daysUntilExpiry]) {
+        foreach ($plans as $i => [$credType, $title, $daysUntilExpiry]) {
             $user = $staff[$i] ?? $staff->first();
             StaffCredential::create([
-                'tenant_id'   => $tenant->id,
-                'user_id'     => $user->id,
-                'credential_type' => $type,
-                'issuing_body'    => 'State board (demo)',
+                'tenant_id'       => $tenant->id,
+                'user_id'         => $user->id,
+                'credential_type' => $credType,
+                'title'           => $title,
                 'license_number'  => 'DEMO-' . strtoupper(bin2hex(random_bytes(3))),
-                'issue_date'      => Carbon::now()->subYears(2)->toDateString(),
+                'issued_at'       => Carbon::now()->subYears(2)->toDateString(),
                 'expires_at'      => Carbon::now()->addDays($daysUntilExpiry)->toDateString(),
-                'is_active'       => true,
                 'notes'           => '[demo-depth] Expiring soon — demo data.',
             ]);
         }
@@ -126,38 +123,48 @@ class Phase14DemoDepthSeeder extends Seeder
 
     private function seedPendingAppeals(Tenant $tenant): void
     {
-        if (! class_exists(Appeal::class)) return;
-        $exists = Appeal::where('tenant_id', $tenant->id)
-            ->where('appeal_reason', 'like', '%[demo-depth]%')->exists();
-        if ($exists) return;
+        // Appeals REQUIRE an emr_service_denial_notices row (non-nullable FK).
+        // If none exist for this tenant, nothing to appeal against — log + skip.
+        // The earlier silent try/catch was masking this prerequisite rather
+        // than handling it correctly. Phase A1 tech-debt: fail loudly, or
+        // skip loudly, but never silently.
+        $dedupExists = Appeal::where('tenant_id', $tenant->id)
+            ->where('filing_reason', 'like', '%[demo-depth]%')->exists();
+        if ($dedupExists) return;
 
-        $participants = Participant::where('tenant_id', $tenant->id)
-            ->where('enrollment_status', 'enrolled')
-            ->inRandomOrder()->take(2)->get();
-        if ($participants->isEmpty()) return;
+        $denialNotices = \App\Models\ServiceDenialNotice::where('tenant_id', $tenant->id)
+            ->orderByDesc('created_at')->take(2)->get();
+
+        if ($denialNotices->isEmpty()) {
+            $this->command?->line("    Tenant {$tenant->id}: no service denial notices exist yet — skipping appeals seed (ordering: denial notices must be seeded first).");
+            return;
+        }
 
         $filer = User::where('tenant_id', $tenant->id)
             ->where('department', 'qa_compliance')->first()
             ?? User::where('tenant_id', $tenant->id)->first();
         if (! $filer) return;
 
-        // Best effort — skip silently if Appeal model signature differs
-        // from what we expect. Demo data, not mission critical.
-        try {
-            foreach ($participants as $i => $p) {
-                Appeal::create([
-                    'tenant_id'         => $tenant->id,
-                    'participant_id'    => $p->id,
-                    'appeal_level'      => $i === 0 ? 'standard' : 'expedited',
-                    'status'            => $i === 0 ? 'filed' : 'under_review',
-                    'filed_date'        => Carbon::now()->subDays($i === 0 ? 7 : 1)->toDateString(),
-                    'decision_due_date' => Carbon::now()->addDays($i === 0 ? 23 : 2)->toDateString(),
-                    'appeal_reason'     => '[demo-depth] Participant challenges service denial for ' . ($i === 0 ? 'physical therapy expansion.' : 'expedited wheelchair replacement.'),
-                    'filed_by_user_id'  => $filer->id,
-                ]);
-            }
-        } catch (\Throwable $e) {
-            $this->command?->warn('    Skipped appeals seed (model shape mismatch): ' . substr($e->getMessage(), 0, 80));
+        foreach ($denialNotices as $i => $notice) {
+            $type = $i === 0 ? Appeal::TYPE_STANDARD : Appeal::TYPE_EXPEDITED;
+            $filedAt = $i === 0 ? Carbon::now()->subDays(7) : Carbon::now()->subDays(1);
+            $dueAt   = $i === 0
+                ? $filedAt->copy()->addDays(Appeal::STANDARD_DECISION_WINDOW_DAYS)
+                : $filedAt->copy()->addHours(Appeal::EXPEDITED_DECISION_WINDOW_HOURS);
+
+            Appeal::create([
+                'tenant_id'                 => $tenant->id,
+                'participant_id'            => $notice->participant_id,
+                'service_denial_notice_id'  => $notice->id,
+                'type'                      => $type,
+                'status'                    => $i === 0 ? Appeal::STATUS_RECEIVED : Appeal::STATUS_UNDER_REVIEW,
+                'filed_by'                  => 'participant',
+                'filed_by_name'             => 'Self (demo)',
+                'filing_reason'             => '[demo-depth] Participant challenges service denial for '
+                    . ($i === 0 ? 'physical therapy expansion.' : 'expedited wheelchair replacement.'),
+                'filed_at'                  => $filedAt,
+                'internal_decision_due_at'  => $dueAt,
+            ]);
         }
     }
 }

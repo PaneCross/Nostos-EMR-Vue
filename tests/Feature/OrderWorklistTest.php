@@ -39,7 +39,6 @@ class OrderWorklistTest extends TestCase
         ]);
     }
 
-    /** @test */
     public function test_worklist_renders_inertia_page_for_prescriber(): void
     {
         $user = $this->makeUser('primary_care');
@@ -49,7 +48,6 @@ class OrderWorklistTest extends TestCase
             ->assertInertia(fn ($page) => $page->component('Clinical/Orders'));
     }
 
-    /** @test */
     public function test_worklist_inertia_props_structure(): void
     {
         $user        = $this->makeUser('primary_care');
@@ -73,7 +71,6 @@ class OrderWorklistTest extends TestCase
             );
     }
 
-    /** @test */
     public function test_pharmacy_user_sees_only_pharmacy_orders(): void
     {
         $user        = $this->makeUser('pharmacy');
@@ -101,7 +98,6 @@ class OrderWorklistTest extends TestCase
             );
     }
 
-    /** @test */
     public function test_primary_care_user_sees_all_active_orders(): void
     {
         $user        = $this->makeUser('primary_care');
@@ -124,13 +120,11 @@ class OrderWorklistTest extends TestCase
             );
     }
 
-    /** @test */
     public function test_worklist_requires_authentication(): void
     {
         $this->get('/orders')->assertRedirect('/login');
     }
 
-    /** @test */
     public function test_cancelled_orders_excluded_from_worklist(): void
     {
         $user        = $this->makeUser('primary_care');
@@ -150,7 +144,6 @@ class OrderWorklistTest extends TestCase
             );
     }
 
-    /** @test */
     public function test_allCount_includes_all_tenant_active_orders(): void
     {
         $user        = $this->makeUser('pharmacy');
@@ -175,7 +168,6 @@ class OrderWorklistTest extends TestCase
             );
     }
 
-    /** @test */
     public function test_tenant_isolation_worklist_does_not_show_other_tenant_orders(): void
     {
         $user1 = $this->makeUser('primary_care');

@@ -9,7 +9,7 @@
 //   - IT Admin can retry failed entries (increments retry_count)
 //   - raw_payload stored as JSONB for query-ability
 //
-// Used by: Hl7AdtConnector, LabResultConnector, ItAdminController
+// Used by: Hl7AdtConnector, LabResultConnector, IntegrationStatusController
 // ─────────────────────────────────────────────────────────────────────────────
 
 namespace App\Models;

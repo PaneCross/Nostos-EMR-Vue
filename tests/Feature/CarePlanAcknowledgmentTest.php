@@ -55,7 +55,6 @@ class CarePlanAcknowledgmentTest extends TestCase
     // ── updateParticipation tests ─────────────────────────────────────────────
 
     /**
-     * @test
      * Basic participation record: offered=true, response=accepted.
      */
     public function test_update_participation_records_offered_and_response(): void
@@ -80,7 +79,6 @@ class CarePlanAcknowledgmentTest extends TestCase
     }
 
     /**
-     * @test
      * Participation can be recorded as declined (participant refused to participate).
      */
     public function test_update_participation_declined_response(): void
@@ -99,7 +97,6 @@ class CarePlanAcknowledgmentTest extends TestCase
     }
 
     /**
-     * @test
      * participant_response must be one of: accepted | declined | no_response.
      * Invalid values return 422.
      */
@@ -118,7 +115,6 @@ class CarePlanAcknowledgmentTest extends TestCase
     }
 
     /**
-     * @test
      * Cross-tenant participant → 403.
      */
     public function test_update_participation_cross_tenant_is_forbidden(): void
@@ -147,7 +143,6 @@ class CarePlanAcknowledgmentTest extends TestCase
     }
 
     /**
-     * @test
      * Care plan belonging to a different participant within the same tenant → 404.
      */
     public function test_update_participation_wrong_participant_returns_404(): void
@@ -182,7 +177,6 @@ class CarePlanAcknowledgmentTest extends TestCase
     // ── approve() participation_warning tests ─────────────────────────────────
 
     /**
-     * @test
      * Approving a plan where participation has NOT been offered returns
      * participation_warning=true in the response.
      * 42 CFR §460.104(d): soft-enforcement — plan still approved, but warning surfaced.
@@ -204,7 +198,6 @@ class CarePlanAcknowledgmentTest extends TestCase
     }
 
     /**
-     * @test
      * Approving a plan where participation WAS documented returns
      * participation_warning=false.
      */
@@ -230,7 +223,6 @@ class CarePlanAcknowledgmentTest extends TestCase
     }
 
     /**
-     * @test
      * Plan is approved (status becomes 'active') even without participation documented.
      * The soft-enforcement only produces a warning, not a block.
      */
@@ -250,7 +242,6 @@ class CarePlanAcknowledgmentTest extends TestCase
     }
 
     /**
-     * @test
      * The care plan show endpoint includes participation fields in the JSON response.
      */
     public function test_care_plan_show_includes_participation_fields(): void

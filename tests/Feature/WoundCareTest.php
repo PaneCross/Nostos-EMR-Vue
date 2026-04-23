@@ -56,7 +56,6 @@ class WoundCareTest extends TestCase
 
     // ── Store ─────────────────────────────────────────────────────────────────
 
-    /** @test */
     public function test_nursing_dept_can_create_wound_record(): void
     {
         $nurse       = $this->makeNurse();
@@ -76,7 +75,6 @@ class WoundCareTest extends TestCase
         ]);
     }
 
-    /** @test */
     public function test_home_care_dept_can_create_wound_record(): void
     {
         $nurse       = $this->makeNurse(dept: 'home_care');
@@ -87,7 +85,6 @@ class WoundCareTest extends TestCase
             ->assertCreated();
     }
 
-    /** @test */
     public function test_non_nursing_dept_cannot_create_wound(): void
     {
         $financeUser = $this->makeNurse(dept: 'finance');
@@ -98,7 +95,6 @@ class WoundCareTest extends TestCase
             ->assertForbidden();
     }
 
-    /** @test */
     public function test_cross_tenant_wound_creation_is_blocked(): void
     {
         $nurse         = $this->makeNurse();
@@ -114,7 +110,6 @@ class WoundCareTest extends TestCase
             ->assertForbidden();
     }
 
-    /** @test */
     public function test_wound_creation_requires_wound_type_and_location(): void
     {
         $nurse       = $this->makeNurse();
@@ -127,7 +122,6 @@ class WoundCareTest extends TestCase
 
     // ── Index ─────────────────────────────────────────────────────────────────
 
-    /** @test */
     public function test_index_returns_wound_list_for_participant(): void
     {
         $nurse       = $this->makeNurse();
@@ -149,7 +143,6 @@ class WoundCareTest extends TestCase
 
     // ── Show ─────────────────────────────────────────────────────────────────
 
-    /** @test */
     public function test_show_returns_wound_with_assessments(): void
     {
         $nurse       = $this->makeNurse();
@@ -171,7 +164,6 @@ class WoundCareTest extends TestCase
 
     // ── AddAssessment ─────────────────────────────────────────────────────────
 
-    /** @test */
     public function test_nursing_dept_can_add_assessment_to_open_wound(): void
     {
         $nurse       = $this->makeNurse();
@@ -195,7 +187,6 @@ class WoundCareTest extends TestCase
             ->assertJsonStructure(['assessment', 'wound']);
     }
 
-    /** @test */
     public function test_healed_status_change_closes_wound_record(): void
     {
         $nurse       = $this->makeNurse();
@@ -221,7 +212,6 @@ class WoundCareTest extends TestCase
         ]);
     }
 
-    /** @test */
     public function test_adding_assessment_to_healed_wound_returns_409(): void
     {
         $nurse       = $this->makeNurse();
@@ -243,7 +233,6 @@ class WoundCareTest extends TestCase
 
     // ── Close ─────────────────────────────────────────────────────────────────
 
-    /** @test */
     public function test_nursing_dept_can_close_open_wound(): void
     {
         $nurse       = $this->makeNurse();
@@ -268,7 +257,6 @@ class WoundCareTest extends TestCase
         ]);
     }
 
-    /** @test */
     public function test_closing_already_healed_wound_returns_409(): void
     {
         $nurse       = $this->makeNurse();
@@ -288,7 +276,6 @@ class WoundCareTest extends TestCase
 
     // ── Dashboard widgets ─────────────────────────────────────────────────────
 
-    /** @test */
     public function test_primary_care_wounds_widget_returns_correct_structure(): void
     {
         $nurse       = $this->makeNurse(dept: 'primary_care');
@@ -307,7 +294,6 @@ class WoundCareTest extends TestCase
             ->assertJsonStructure(['wounds', 'open_count', 'critical_count']);
     }
 
-    /** @test */
     public function test_home_care_wounds_widget_requires_home_care_department(): void
     {
         $financeUser = $this->makeNurse(dept: 'finance');
@@ -317,7 +303,6 @@ class WoundCareTest extends TestCase
             ->assertForbidden();
     }
 
-    /** @test */
     public function test_primary_care_wounds_widget_flags_critical_stage_wounds(): void
     {
         $nurse       = $this->makeNurse(dept: 'primary_care');

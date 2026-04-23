@@ -52,7 +52,6 @@ class IncidentNotificationTest extends TestCase
 
     // ── CMS notification auto-set (IncidentService) ───────────────────────────
 
-    /** @test */
     public function test_cms_notification_required_set_for_abuse_neglect(): void
     {
         $user        = $this->makeQaUser();
@@ -71,7 +70,6 @@ class IncidentNotificationTest extends TestCase
         $this->assertNotNull($incident->regulatory_deadline);
     }
 
-    /** @test */
     public function test_regulatory_deadline_is_72h_after_occurred_at(): void
     {
         $user        = $this->makeQaUser();
@@ -94,7 +92,6 @@ class IncidentNotificationTest extends TestCase
         );
     }
 
-    /** @test */
     public function test_cms_notification_not_required_for_non_qualifying_types(): void
     {
         $user        = $this->makeQaUser();
@@ -114,7 +111,6 @@ class IncidentNotificationTest extends TestCase
         $this->assertNull($incident->regulatory_deadline);
     }
 
-    /** @test */
     public function test_unexpected_death_is_valid_incident_type(): void
     {
         $user        = $this->makeQaUser();
@@ -136,7 +132,6 @@ class IncidentNotificationTest extends TestCase
 
     // ── Model helper + scope ──────────────────────────────────────────────────
 
-    /** @test */
     public function test_cms_notification_overdue_scope_returns_correct_incidents(): void
     {
         $user        = $this->makeQaUser();
@@ -181,7 +176,6 @@ class IncidentNotificationTest extends TestCase
         $this->assertNotContains($notified->id, $overdueResults);
     }
 
-    /** @test */
     public function test_incident_is_cms_notification_overdue_model_helper(): void
     {
         $user        = $this->makeQaUser();
@@ -205,7 +199,6 @@ class IncidentNotificationTest extends TestCase
 
     // ── IncidentNotificationOverdueJob ────────────────────────────────────────
 
-    /** @test */
     public function test_overdue_job_creates_critical_alert_for_overdue_incident(): void
     {
         $user        = $this->makeQaUser();
@@ -230,7 +223,6 @@ class IncidentNotificationTest extends TestCase
         ]);
     }
 
-    /** @test */
     public function test_overdue_job_deduplicates_alerts(): void
     {
         $user        = $this->makeQaUser();
@@ -260,7 +252,6 @@ class IncidentNotificationTest extends TestCase
 
     // ── QA Dashboard KPI ──────────────────────────────────────────────────────
 
-    /** @test */
     public function test_qa_dashboard_includes_cms_notification_kpi(): void
     {
         $user        = $this->makeQaUser();

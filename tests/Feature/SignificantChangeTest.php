@@ -59,7 +59,6 @@ class SignificantChangeTest extends TestCase
 
     // ── Auto-creation from IncidentService ───────────────────────────────────
 
-    /** @test */
     public function test_fall_with_injury_creates_significant_change_event(): void
     {
         $user        = $this->makeQaUser();
@@ -82,7 +81,6 @@ class SignificantChangeTest extends TestCase
         ]);
     }
 
-    /** @test */
     public function test_fall_without_injury_does_not_create_significant_change_event(): void
     {
         $user        = $this->makeQaUser();
@@ -104,7 +102,6 @@ class SignificantChangeTest extends TestCase
 
     // ── Auto-creation from ProcessHl7AdtJob ──────────────────────────────────
 
-    /** @test */
     public function test_hl7_a01_admission_creates_significant_change_event(): void
     {
         $tenant      = Tenant::factory()->create();
@@ -147,7 +144,6 @@ class SignificantChangeTest extends TestCase
 
     // ── Model logic ──────────────────────────────────────────────────────────
 
-    /** @test */
     public function test_significant_change_event_is_overdue_when_due_date_passed(): void
     {
         $user        = $this->makeIdtUser();
@@ -162,7 +158,6 @@ class SignificantChangeTest extends TestCase
         $this->assertLessThan(0, $event->daysUntilDue());
     }
 
-    /** @test */
     public function test_significant_change_event_not_overdue_when_future_due_date(): void
     {
         $user        = $this->makeIdtUser();
@@ -180,7 +175,6 @@ class SignificantChangeTest extends TestCase
         $this->assertGreaterThan(0, $event->daysUntilDue());
     }
 
-    /** @test */
     public function test_completed_event_is_not_overdue(): void
     {
         $user        = $this->makeIdtUser();
@@ -197,7 +191,6 @@ class SignificantChangeTest extends TestCase
 
     // ── IDT Dashboard Widget ──────────────────────────────────────────────────
 
-    /** @test */
     public function test_idt_dashboard_significant_changes_endpoint_returns_events(): void
     {
         $user        = $this->makeIdtUser();
@@ -220,7 +213,6 @@ class SignificantChangeTest extends TestCase
             ]);
     }
 
-    /** @test */
     public function test_idt_dashboard_significant_changes_requires_idt_department(): void
     {
         $user = User::factory()->create(['department' => 'dietary']);
@@ -230,7 +222,6 @@ class SignificantChangeTest extends TestCase
 
     // ── SignificantChangeOverdueJob ───────────────────────────────────────────
 
-    /** @test */
     public function test_overdue_job_creates_warning_alert_for_overdue_event(): void
     {
         $user        = $this->makeIdtUser();
@@ -249,7 +240,6 @@ class SignificantChangeTest extends TestCase
         ]);
     }
 
-    /** @test */
     public function test_overdue_job_deduplicates_alerts(): void
     {
         $user        = $this->makeIdtUser();

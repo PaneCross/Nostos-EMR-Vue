@@ -61,7 +61,6 @@ class DisenrollmentTransitionTest extends TestCase
     // ── DisenrollmentRecord creation tests ───────────────────────────────────
 
     /**
-     * @test
      * Disenrolling a participant creates a DisenrollmentRecord.
      * 42 CFR §460.116: transition plan must be documented for all disenrollments.
      */
@@ -82,7 +81,6 @@ class DisenrollmentTransitionTest extends TestCase
     }
 
     /**
-     * @test
      * Disenrollment record has transition_plan_status = 'pending' for non-deceased reasons.
      */
     public function test_disenrollment_record_has_pending_plan_status_for_voluntary(): void
@@ -101,7 +99,6 @@ class DisenrollmentTransitionTest extends TestCase
     }
 
     /**
-     * @test
      * Deceased participants get PLAN_NOT_REQUIRED status (no transition plan needed).
      */
     public function test_deceased_disenrollment_has_not_required_plan_status(): void
@@ -122,7 +119,6 @@ class DisenrollmentTransitionTest extends TestCase
     // ── SDR creation tests ────────────────────────────────────────────────────
 
     /**
-     * @test
      * Disenrollment creates a social_work SDR for transition plan coordination.
      */
     public function test_disenrollment_creates_social_work_sdr(): void
@@ -142,7 +138,6 @@ class DisenrollmentTransitionTest extends TestCase
     }
 
     /**
-     * @test
      * When cms_notification_required=true, an enrollment dept SDR is also created.
      */
     public function test_cms_required_disenrollment_creates_enrollment_sdr(): void
@@ -170,7 +165,6 @@ class DisenrollmentTransitionTest extends TestCase
     }
 
     /**
-     * @test
      * When cms_notification_required=false, no enrollment SDR is created.
      */
     public function test_no_cms_sdr_when_notification_not_required(): void
@@ -194,7 +188,6 @@ class DisenrollmentTransitionTest extends TestCase
     // ── DisenrollmentController tests ─────────────────────────────────────────
 
     /**
-     * @test
      * GET /participants/{id}/disenrollment returns the disenrollment record for enrollment staff.
      * The controller returns flat JSON (not wrapped in a 'record' key).
      */
@@ -217,7 +210,6 @@ class DisenrollmentTransitionTest extends TestCase
     }
 
     /**
-     * @test
      * PATCH /participants/{id}/disenrollment updates transition plan fields.
      */
     public function test_disenrollment_update_saves_transition_plan(): void
@@ -247,7 +239,6 @@ class DisenrollmentTransitionTest extends TestCase
     // ── QA dashboard integration tests ───────────────────────────────────────
 
     /**
-     * @test
      * QA dashboard pending_cms_disenrollment_count reflects records with cms_notification_required
      * but no cms_notified_at set yet.
      *

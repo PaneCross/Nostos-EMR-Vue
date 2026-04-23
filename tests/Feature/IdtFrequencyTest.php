@@ -65,7 +65,6 @@ class IdtFrequencyTest extends TestCase
     // ── Model method tests ────────────────────────────────────────────────────
 
     /**
-     * @test
      * A participant enrolled > 180 days ago with NO reviews is overdue.
      * 42 CFR §460.104(c): IDT must reassess at least every 6 months.
      */
@@ -79,7 +78,6 @@ class IdtFrequencyTest extends TestCase
     }
 
     /**
-     * @test
      * A participant enrolled < 180 days with no reviews is NOT overdue yet.
      * Give new participants their first 6 months before flagging.
      */
@@ -92,7 +90,6 @@ class IdtFrequencyTest extends TestCase
     }
 
     /**
-     * @test
      * A participant reviewed recently (within 180 days) is NOT overdue.
      */
     public function test_not_overdue_when_reviewed_within_180_days(): void
@@ -105,7 +102,6 @@ class IdtFrequencyTest extends TestCase
     }
 
     /**
-     * @test
      * A participant whose last review was > 180 days ago IS overdue.
      */
     public function test_overdue_when_last_review_over_180_days_ago(): void
@@ -118,7 +114,6 @@ class IdtFrequencyTest extends TestCase
     }
 
     /**
-     * @test
      * lastIdtReviewedAt() returns the date of the most recent review.
      */
     public function test_last_reviewed_at_returns_most_recent_review_date(): void
@@ -139,7 +134,6 @@ class IdtFrequencyTest extends TestCase
     // ── Dashboard widget tests ─────────────────────────────────────────────────
 
     /**
-     * @test
      * IDT dashboard overdue widget returns the correct count of overdue participants.
      */
     public function test_idt_overdue_widget_returns_correct_count(): void
@@ -165,7 +159,6 @@ class IdtFrequencyTest extends TestCase
     }
 
     /**
-     * @test
      * IDT overdue widget is blocked for non-IDT departments.
      */
     public function test_idt_overdue_widget_blocked_for_non_idt_dept(): void
@@ -178,7 +171,6 @@ class IdtFrequencyTest extends TestCase
     }
 
     /**
-     * @test
      * Super admin can access the IDT overdue widget.
      */
     public function test_idt_overdue_widget_accessible_to_super_admin(): void

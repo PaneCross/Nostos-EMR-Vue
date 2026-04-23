@@ -54,7 +54,6 @@ class BreakGlassServiceTest extends TestCase
 
     // ── requestAccess() ───────────────────────────────────────────────────────
 
-    /** @test */
     public function test_request_access_creates_event_with_4_hour_ttl(): void
     {
         $user        = $this->makeUser();
@@ -72,7 +71,6 @@ class BreakGlassServiceTest extends TestCase
         $this->assertEquals(BreakGlassEvent::ACCESS_DURATION_HOURS, $hoursUntilExpiry);
     }
 
-    /** @test */
     public function test_request_access_stores_justification_text(): void
     {
         $user        = $this->makeUser();
@@ -85,7 +83,6 @@ class BreakGlassServiceTest extends TestCase
         $this->assertEquals($justification, $event->justification);
     }
 
-    /** @test */
     public function test_short_justification_throws_validation_exception(): void
     {
         $user        = $this->makeUser();
@@ -97,7 +94,6 @@ class BreakGlassServiceTest extends TestCase
         $service->requestAccess($user, $participant, 'Too short'); // <20 chars
     }
 
-    /** @test */
     public function test_rate_limit_throws_validation_exception_on_fourth_request(): void
     {
         $user        = $this->makeUser();
@@ -118,7 +114,6 @@ class BreakGlassServiceTest extends TestCase
         $service->requestAccess($user, $participant, $this->validJustification());
     }
 
-    /** @test */
     public function test_request_access_creates_critical_alert_for_it_admin_and_qa(): void
     {
         $user        = $this->makeUser();
@@ -134,7 +129,6 @@ class BreakGlassServiceTest extends TestCase
         ]);
     }
 
-    /** @test */
     public function test_request_access_writes_to_audit_log(): void
     {
         $user        = $this->makeUser();
@@ -154,7 +148,6 @@ class BreakGlassServiceTest extends TestCase
 
     // ── hasActiveAccess() ─────────────────────────────────────────────────────
 
-    /** @test */
     public function test_has_active_access_returns_true_for_active_event(): void
     {
         $user        = $this->makeUser();
@@ -170,7 +163,6 @@ class BreakGlassServiceTest extends TestCase
         $this->assertTrue($service->hasActiveAccess($user, $participant));
     }
 
-    /** @test */
     public function test_has_active_access_returns_false_for_expired_event(): void
     {
         $user        = $this->makeUser();
@@ -186,7 +178,6 @@ class BreakGlassServiceTest extends TestCase
         $this->assertFalse($service->hasActiveAccess($user, $participant));
     }
 
-    /** @test */
     public function test_has_active_access_returns_false_when_no_event_exists(): void
     {
         $user        = $this->makeUser();
@@ -198,7 +189,6 @@ class BreakGlassServiceTest extends TestCase
 
     // ── acknowledge() ─────────────────────────────────────────────────────────
 
-    /** @test */
     public function test_acknowledge_sets_acknowledged_at_and_supervisor(): void
     {
         $clinician  = $this->makeUser();
@@ -219,7 +209,6 @@ class BreakGlassServiceTest extends TestCase
         $this->assertEquals($supervisor->id, $fresh->acknowledged_by_supervisor_user_id);
     }
 
-    /** @test */
     public function test_event_is_acknowledged_after_acknowledge_call(): void
     {
         $clinician  = $this->makeUser();

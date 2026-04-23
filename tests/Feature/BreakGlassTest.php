@@ -62,7 +62,6 @@ class BreakGlassTest extends TestCase
 
     // ── requestAccess ─────────────────────────────────────────────────────────
 
-    /** @test */
     public function test_user_can_request_emergency_access(): void
     {
         $user        = $this->makeClinicalUser();
@@ -83,7 +82,6 @@ class BreakGlassTest extends TestCase
         ]);
     }
 
-    /** @test */
     public function test_btg_access_expires_at_is_4_hours_from_now(): void
     {
         $user        = $this->makeClinicalUser();
@@ -107,7 +105,6 @@ class BreakGlassTest extends TestCase
         $this->assertEquals(BreakGlassEvent::ACCESS_DURATION_HOURS, $hoursUntilExpiry);
     }
 
-    /** @test */
     public function test_short_justification_is_rejected(): void
     {
         $user        = $this->makeClinicalUser();
@@ -121,7 +118,6 @@ class BreakGlassTest extends TestCase
             ->assertJsonValidationErrors(['justification']);
     }
 
-    /** @test */
     public function test_rate_limit_blocks_fourth_request_within_24_hours(): void
     {
         $user        = $this->makeClinicalUser();
@@ -144,7 +140,6 @@ class BreakGlassTest extends TestCase
             ->assertJsonValidationErrors(['justification']);
     }
 
-    /** @test */
     public function test_cross_tenant_btg_request_is_blocked(): void
     {
         $user         = $this->makeClinicalUser();
@@ -162,7 +157,6 @@ class BreakGlassTest extends TestCase
             ->assertForbidden();
     }
 
-    /** @test */
     public function test_btg_request_requires_authentication(): void
     {
         $user        = $this->makeClinicalUser();
@@ -175,7 +169,6 @@ class BreakGlassTest extends TestCase
 
     // ── adminIndex ────────────────────────────────────────────────────────────
 
-    /** @test */
     public function test_it_admin_can_view_btg_event_log(): void
     {
         $itAdmin = $this->makeItAdmin();
@@ -189,7 +182,6 @@ class BreakGlassTest extends TestCase
             );
     }
 
-    /** @test */
     public function test_non_it_admin_cannot_view_btg_event_log(): void
     {
         $financeUser = $this->makeClinicalUser(dept: 'finance');
@@ -199,7 +191,6 @@ class BreakGlassTest extends TestCase
             ->assertForbidden();
     }
 
-    /** @test */
     public function test_btg_admin_index_shows_only_tenant_events(): void
     {
         $itAdmin     = $this->makeItAdmin();
@@ -237,7 +228,6 @@ class BreakGlassTest extends TestCase
 
     // ── acknowledge ───────────────────────────────────────────────────────────
 
-    /** @test */
     public function test_it_admin_can_acknowledge_btg_event(): void
     {
         $itAdmin  = $this->makeItAdmin();
@@ -263,7 +253,6 @@ class BreakGlassTest extends TestCase
         $this->assertEquals($itAdmin->id, $event->fresh()->acknowledged_by_supervisor_user_id);
     }
 
-    /** @test */
     public function test_double_acknowledging_event_returns_409(): void
     {
         $itAdmin  = $this->makeItAdmin();
@@ -286,7 +275,6 @@ class BreakGlassTest extends TestCase
             ->assertStatus(409);
     }
 
-    /** @test */
     public function test_non_it_admin_cannot_acknowledge_btg_event(): void
     {
         $clinician  = $this->makeClinicalUser(dept: 'social_work');
@@ -310,7 +298,6 @@ class BreakGlassTest extends TestCase
 
     // ── Dashboard BTG widget ──────────────────────────────────────────────────
 
-    /** @test */
     public function test_it_admin_dashboard_btg_widget_returns_correct_structure(): void
     {
         $itAdmin = $this->makeItAdmin();
@@ -321,7 +308,6 @@ class BreakGlassTest extends TestCase
             ->assertJsonStructure(['events', 'unreviewed_count', 'total_today']);
     }
 
-    /** @test */
     public function test_it_admin_dashboard_btg_widget_counts_unreviewed(): void
     {
         $itAdmin  = $this->makeItAdmin();

@@ -3,8 +3,10 @@
 // ─── ItAdminDashboardController ───────────────────────────────────────────────
 // JSON widget endpoints for the IT Administration department live dashboard.
 // All endpoints require the it_admin department (or super_admin).
-// This is distinct from ItAdminController (which serves the full IT Admin pages
-// at /it-admin/* for user provisioning, integration management, and audit log).
+// This is distinct from the /it-admin/* pages themselves which are served by
+// IntegrationStatusController, UserProvisioningController, and AuditLogController
+// (plus a handful of others: StaffCredentialController, StateMedicaidConfigController,
+// ClearinghouseConfigController, SecurityComplianceController).
 //
 // Routes (GET, all under /dashboards/it-admin/):
 //   users        — recently provisioned + deactivated users
@@ -185,7 +187,7 @@ class ItAdminDashboardController extends Controller
      * Tenant configuration panel data.
      * Returns editable settings: transport_mode, auto_logout_minutes.
      * Also returns the site list for the site management section.
-     * POST updates to these settings go through ItAdminController, not here.
+     * POST updates to these settings go through the dedicated /it-admin/* controllers, not here.
      */
     public function config(): JsonResponse
     {

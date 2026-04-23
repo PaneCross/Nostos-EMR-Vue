@@ -149,7 +149,15 @@ class FormularyController extends Controller
             'rxnorm_code'            => 'nullable|string|max:20',
             'determination_type'     => 'required|in:' . implode(',', CoverageDetermination::TYPES),
             'clinical_justification' => 'nullable|string|max:4000',
-            'formulary_entry_id'     => 'nullable|integer',
+            // Phase A1: tenant-scoped FK validation. Prevents a user in tenant A
+            // from creating a coverage determination that references a
+            // formulary entry from tenant B (would have been silently accepted).
+            'formulary_entry_id'     => [
+                'nullable',
+                'integer',
+                \Illuminate\Validation\Rule::exists('emr_formulary_entries', 'id')
+                    ->where('tenant_id', $u->tenant_id),
+            ],
         ]);
 
         $row = CoverageDetermination::create(array_merge($validated, [
