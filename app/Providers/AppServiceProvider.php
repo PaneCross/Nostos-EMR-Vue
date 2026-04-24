@@ -30,6 +30,14 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(SdrDeadlineService::class);
         $this->app->singleton(\App\Services\AdlThresholdService::class);
 
+        // Phase G7 — SMS gateway defaults to null (safe; no paywall risk).
+        // Swap to TwilioSmsGateway after contracting Twilio + installing SDK.
+        $this->app->bind(\App\Services\Sms\SmsGateway::class, function ($app) {
+            return config('services.sms.driver') === 'twilio'
+                ? new \App\Services\Sms\TwilioSmsGateway()
+                : new \App\Services\Sms\NullSmsGateway();
+        });
+
         // Phase G6 — OCR gateway defaults to null (safe + free). Swap to
         // TesseractOcrGateway when tesseract is installed, or to a paid
         // cloud gateway in production.

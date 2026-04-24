@@ -532,6 +532,11 @@ Route::middleware('auth')->group(function () {
     Route::post('/participants/{participant}/restraints/{episode}/idt-review',
         [\App\Http\Controllers\RestraintController::class, 'recordIdtReview'])->name('participants.restraints.idt-review');
 
+    // Phase G7 (MVP completion roadmap): PRO surveys
+    Route::get ('/pro/surveys',                         [\App\Http\Controllers\ProController::class, 'surveys'])->name('pro.surveys');
+    Route::post('/pro/responses',                       [\App\Http\Controllers\ProController::class, 'storeResponse'])->name('pro.responses.store');
+    Route::get ('/participants/{participant}/pro-trend',[\App\Http\Controllers\ProController::class, 'trend'])->name('pro.trend');
+
     // Phase G6 (MVP completion roadmap): Document OCR + search
     Route::post('/documents/{document}/ocr', [\App\Http\Controllers\OcrController::class, 'process'])->name('documents.ocr');
     Route::get ('/documents/search',         [\App\Http\Controllers\OcrController::class, 'search'])->name('documents.search');
