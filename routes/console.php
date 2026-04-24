@@ -145,6 +145,13 @@ Schedule::job(DenialAppealDeadlineAlertJob::class, 'compliance')->dailyAt('07:15
     ->name('denial-appeal-deadline')
     ->withoutOverlapping();
 
+// ─── Phase C6 (MVP roadmap): Polypharmacy review queueing ───────────────────
+// Daily at 05:45. Enrolled participants with >=10 active meds and no review
+// queued in the last 180 days get enqueued for pharmacist review.
+Schedule::job(\App\Jobs\PolypharmacyReviewQueueJob::class, 'compliance')->dailyAt('05:45')
+    ->name('polypharmacy-review-queue')
+    ->withoutOverlapping();
+
 // ─── Phase C5 (MVP roadmap): ADE MedWatch reminder sweep ────────────────────
 // Daily at 06:20. Severe+ ADEs without MedWatch report get warnings before
 // day 15 and critical alerts after. Dedup 3d per (ade, type).
