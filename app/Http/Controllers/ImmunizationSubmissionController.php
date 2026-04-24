@@ -27,7 +27,7 @@ class ImmunizationSubmissionController extends Controller
         $u = Auth::user();
         abort_if(!$u, 401);
         $ok = $u->isSuperAdmin()
-            || in_array($u->department, ['primary_care', 'nursing', 'qa_compliance', 'it_admin']);
+            || in_array($u->department, ['primary_care', 'qa_compliance', 'it_admin']);
         abort_unless($ok, 403);
     }
 

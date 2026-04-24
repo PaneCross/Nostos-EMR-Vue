@@ -27,7 +27,7 @@ class AdvanceDirectivePdfController extends Controller
 
         $ok = $u->isSuperAdmin()
             || in_array($u->department, [
-                'primary_care', 'nursing', 'social_work',
+                'primary_care', 'social_work',
                 'qa_compliance', 'it_admin', 'enrollment',
             ]);
         abort_unless($ok, 403);

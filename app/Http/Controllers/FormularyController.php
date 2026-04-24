@@ -111,7 +111,7 @@ class FormularyController extends Controller
      */
     public function check(Request $request): JsonResponse
     {
-        $this->gate(['pharmacy', 'primary_care', 'therapies', 'nursing', 'qa_compliance', 'it_admin', 'finance']);
+        $this->gate(['pharmacy', 'primary_care', 'therapies', 'qa_compliance', 'it_admin', 'finance']);
         $u = Auth::user();
         $drug  = trim((string) $request->query('drug_name', ''));
         $code  = trim((string) $request->query('rxnorm_code', ''));

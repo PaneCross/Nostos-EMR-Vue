@@ -158,7 +158,7 @@ class ClinicalDecisionSupportService
             'severity'           => $finding['severity'] ?? 'warning',
             'title'              => 'Clinical decision support: ' . str_replace('_', ' ', $rule),
             'message'            => $finding['message'],
-            'target_departments' => ['primary_care', 'nursing'],
+            'target_departments' => ['primary_care', 'home_care'],
             'metadata'           => [
                 'participant_id' => $p->id,
                 'rule'           => $rule,

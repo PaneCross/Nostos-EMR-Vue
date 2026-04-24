@@ -15,9 +15,7 @@ use Illuminate\Support\Facades\Auth;
 
 class AdvanceDirectiveWizardController extends Controller
 {
-    // MOLST would require extending the emr_participants check constraint —
-    // keep the wizard aligned with the existing enum for now.
-    public const AD_TYPES = ['dnr', 'polst', 'healthcare_proxy', 'living_will', 'combined'];
+    public const AD_TYPES = ['dnr', 'polst', 'molst', 'healthcare_proxy', 'living_will', 'combined'];
 
     private function gate(): void
     {

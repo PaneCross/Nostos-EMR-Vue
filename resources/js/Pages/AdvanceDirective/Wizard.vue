@@ -13,7 +13,8 @@ const error = ref<string | null>(null)
 
 const AD_TYPES = [
   { value: 'dnr', label: 'DNR — Do Not Resuscitate' },
-  { value: 'polst', label: 'POLST / MOLST' },
+  { value: 'polst', label: 'POLST' },
+  { value: 'molst', label: 'MOLST' },
   { value: 'healthcare_proxy', label: 'Healthcare Proxy' },
   { value: 'living_will', label: 'Living Will' },
   { value: 'combined', label: 'Combined / Full AD' },

@@ -20,7 +20,7 @@ class MobileCompanionController extends Controller
         $u = Auth::user();
         abort_if(!$u, 401);
         abort_unless(
-            $u->isSuperAdmin() || in_array($u->department, ['home_care', 'nursing', 'therapies']),
+            $u->isSuperAdmin() || in_array($u->department, ['home_care', 'therapies']),
             403
         );
 

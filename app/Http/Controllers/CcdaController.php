@@ -27,7 +27,7 @@ class CcdaController extends Controller
         $u = Auth::user();
         abort_if(!$u, 401);
         $ok = $u->isSuperAdmin()
-            || in_array($u->department, ['primary_care', 'nursing', 'social_work', 'qa_compliance', 'it_admin', 'pharmacy']);
+            || in_array($u->department, ['primary_care', 'social_work', 'qa_compliance', 'it_admin', 'pharmacy']);
         abort_unless($ok, 403);
     }
 

@@ -18,7 +18,7 @@ class ClinicalDecisionSupportController extends Controller
         abort_unless($participant->tenant_id === $u->tenant_id, 404);
         abort_unless(
             $u->isSuperAdmin()
-            || in_array($u->department, ['primary_care', 'nursing', 'pharmacy', 'therapies', 'it_admin']),
+            || in_array($u->department, ['primary_care', 'pharmacy', 'therapies', 'it_admin']),
             403
         );
         return response()->json($this->svc->evaluate($participant));
