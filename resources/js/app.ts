@@ -39,3 +39,15 @@ createInertiaApp({
         color: '#4F46E5',
     },
 })
+
+// Phase O2 — register the portal service worker after initial render so we
+// don't delay first paint. Scoped to /portal/ so internal staff routes aren't
+// affected by the cache-first shell. Bump `CACHE` in public/sw.js per release
+// until an asset-hash invalidation strategy lands.
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js', { scope: '/portal/' }).catch(() => {
+            // Silent — PWA is a progressive enhancement; nothing fails if it's absent.
+        })
+    })
+}
