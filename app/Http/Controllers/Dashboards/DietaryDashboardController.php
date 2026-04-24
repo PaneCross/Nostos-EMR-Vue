@@ -208,4 +208,62 @@ class DietaryDashboardController extends Controller
             'open_count'    => Sdr::where('tenant_id', $tenantId)->forDepartment('dietary')->open()->count(),
         ]);
     }
+
+    /**
+     * Phase I7 — Active dietary orders grouped by diet type.
+     */
+    public function ordersByDietType(): JsonResponse
+    {
+        $this->requireDept();
+        $tenantId = Auth::user()->tenant_id;
+
+        $rows = \App\Models\DietaryOrder::forTenant($tenantId)->active()
+            ->selectRaw('diet_type, COUNT(*) AS count')
+            ->groupBy('diet_type')
+            ->orderByDesc('count')
+            ->get();
+        return response()->json([
+            'rows'  => $rows,
+            'total' => (int) $rows->sum('count'),
+            'href'  => '/dietary/roster',
+        ]);
+    }
+
+    /**
+     * Phase I7 — IADL food-prep impaired → dietary consult candidates.
+     */
+    public function iadlFoodPrepCandidates(): JsonResponse
+    {
+        $this->requireDept();
+        $tenantId = Auth::user()->tenant_id;
+
+        $latest = \Illuminate\Support\Facades\DB::table('emr_iadl_records as i1')
+            ->select('i1.*')
+            ->whereRaw('i1.recorded_at = (
+                SELECT MAX(i2.recorded_at)
+                FROM emr_iadl_records i2
+                WHERE i2.participant_id = i1.participant_id
+            )')
+            ->where('i1.tenant_id', $tenantId)
+            ->where('i1.food_preparation', 0)
+            ->orderByDesc('i1.recorded_at')
+            ->limit(20)
+            ->get();
+
+        $rows = collect($latest)->map(function ($r) {
+            $p = \App\Models\Participant::find($r->participant_id);
+            return [
+                'id' => $r->id,
+                'participant' => $p ? [
+                    'id' => $p->id,
+                    'name' => $p->first_name . ' ' . $p->last_name,
+                    'mrn' => $p->mrn,
+                ] : null,
+                'recorded_at' => $r->recorded_at,
+                'interpretation' => $r->interpretation ?? null,
+                'href' => $p ? "/participants/{$p->id}?tab=assessments" : null,
+            ];
+        });
+        return response()->json(['rows' => $rows->values(), 'total' => $rows->count()]);
+    }
 }

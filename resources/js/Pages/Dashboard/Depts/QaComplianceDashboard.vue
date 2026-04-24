@@ -20,6 +20,10 @@ const incidentsData = ref<any>(null)
 const docsData = ref<any>(null)
 const carePlansData = ref<any>(null)
 const appealsData = ref<any>(null)
+const sentinelRows = ref<any[]>([])
+const cvRows = ref<any[]>([])
+const roiRows = ref<any[]>([])
+const tbData = ref<any>({ overdue_count: 0, due_soon_count: 0 })
 
 onMounted(() => {
     Promise.all([
@@ -28,14 +32,58 @@ onMounted(() => {
         axios.get('/dashboards/qa-compliance/docs'),
         axios.get('/dashboards/qa-compliance/care-plans'),
         axios.get('/dashboards/qa-compliance/appeals'),
-    ]).then(([r1, r2, r3, r4, r5]) => {
+        axios.get('/dashboards/qa-compliance/sentinel-rollup'),
+        axios.get('/dashboards/qa-compliance/critical-values-pending'),
+        axios.get('/dashboards/qa-compliance/roi-due-soon'),
+        axios.get('/dashboards/qa-compliance/tb-overdue'),
+    ]).then(([r1, r2, r3, r4, r5, r6, r7, r8, r9]) => {
         kpis.value = r1.data
         incidentsData.value = r2.data
         docsData.value = r3.data
         carePlansData.value = r4.data
         appealsData.value = r5.data
+        sentinelRows.value = r6.data.rows ?? []
+        cvRows.value = r7.data.rows ?? []
+        roiRows.value = r8.data.rows ?? []
+        tbData.value = r9.data ?? { overdue_count: 0, due_soon_count: 0 }
     }).finally(() => loading.value = false)
 })
+
+const sentinelItems = computed<ActionItem[]>(() =>
+    sentinelRows.value.map(i => ({
+        label: `${i.participant?.name ?? '-'}`,
+        sublabel: i.classified_at ? `Classified ${i.classified_at}` : undefined,
+        badge: i.cms_overdue ? 'CMS OVERDUE' : i.rca_overdue ? 'RCA OVERDUE' : 'Active',
+        badgeColor: (i.cms_overdue || i.rca_overdue)
+            ? 'bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300'
+            : 'bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300',
+        href: i.href ?? '/compliance/sentinel-events',
+    }))
+)
+
+const cvItems = computed<ActionItem[]>(() =>
+    cvRows.value.map(c => ({
+        label: `${c.participant?.name ?? '-'} — ${c.field_name}`,
+        sublabel: `Value: ${c.value} · Deadline ${c.deadline_at ?? '-'}`,
+        badge: c.overdue ? 'OVERDUE' : (c.severity ?? '-'),
+        badgeColor: c.overdue
+            ? 'bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300'
+            : 'bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300',
+        href: c.href ?? '/participants',
+    }))
+)
+
+const roiItems = computed<ActionItem[]>(() =>
+    roiRows.value.map(r => ({
+        label: `${r.participant?.name ?? '-'}`,
+        sublabel: r.due_by ? `Due ${r.due_by}` : undefined,
+        badge: r.overdue ? 'OVERDUE' : `${r.days_remaining ?? '?'}d left`,
+        badgeColor: r.overdue
+            ? 'bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300'
+            : 'bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300',
+        href: r.href ?? '/compliance/roi',
+    }))
+)
 
 function kpiColor(value: number, threshold: number): string {
     if (value === 0) return 'bg-green-50 dark:bg-green-950/60 border-green-200 dark:border-green-800 text-green-800 dark:text-green-300'
@@ -192,6 +240,55 @@ const appealItems = computed<ActionItem[]>(() =>
                 viewAllHref="/appeals"
                 :loading="loading"
             />
+
+            <!-- Phase I7 -->
+            <ActionWidget
+                :title="`Sentinel Events (${sentinelRows.length})`"
+                description="Classified sentinel events in the last 30 days. Tracks CMS-5d + RCA-30d deadlines."
+                :items="sentinelItems"
+                emptyMessage="No classified sentinel events in last 30 days."
+                viewAllHref="/compliance/sentinel-events"
+                :loading="loading"
+            />
+
+            <ActionWidget
+                :title="`Critical Values Pending (${cvRows.length})`"
+                description="Unacknowledged critical value alerts, earliest deadline first."
+                :items="cvItems"
+                emptyMessage="No pending critical value acknowledgments."
+                viewAllHref="/participants"
+                :loading="loading"
+            />
+
+            <ActionWidget
+                :title="`ROI Requests Due Soon (${roiRows.length})`"
+                description="Open ROI requests with due date within 5 days or overdue."
+                :items="roiItems"
+                emptyMessage="No ROI requests due in the next 5 days."
+                viewAllHref="/compliance/roi"
+                :loading="loading"
+            />
+
+            <div class="rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4 shadow-sm">
+                <div class="flex items-baseline justify-between mb-3">
+                    <h3 class="text-sm font-semibold text-gray-900 dark:text-slate-100">TB Screening Cadence</h3>
+                </div>
+                <p class="text-xs text-gray-500 dark:text-slate-400 mb-3">§460.71 annual TB screening cadence status.</p>
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="text-center p-3 rounded bg-red-50 dark:bg-red-900/30">
+                        <div class="text-2xl font-bold text-red-700 dark:text-red-300">{{ tbData.overdue_count }}</div>
+                        <div class="text-xs text-red-800 dark:text-red-300">Overdue</div>
+                    </div>
+                    <div class="text-center p-3 rounded bg-amber-50 dark:bg-amber-900/30">
+                        <div class="text-2xl font-bold text-amber-700 dark:text-amber-300">{{ tbData.due_soon_count }}</div>
+                        <div class="text-xs text-amber-800 dark:text-amber-300">Due &le; 30d</div>
+                    </div>
+                </div>
+                <a
+                    href="/compliance/tb-screening"
+                    class="mt-3 inline-block text-xs text-blue-600 dark:text-blue-400 hover:underline"
+                >View details →</a>
+            </div>
         </div>
 
     </div>

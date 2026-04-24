@@ -20,6 +20,8 @@ const dueSoonAssessments = ref<any[]>([])
 const goals = ref<any[]>([])
 const criticalFoodAllergies = ref<any[]>([])
 const sdrs = ref<any[]>([])
+const ordersByType = ref<{ rows: any[]; total: number }>({ rows: [], total: 0 })
+const foodPrepCandidates = ref<any[]>([])
 
 onMounted(() => {
     Promise.all([
@@ -27,14 +29,28 @@ onMounted(() => {
         axios.get('/dashboards/dietary/goals'),
         axios.get('/dashboards/dietary/restrictions'),
         axios.get('/dashboards/dietary/sdrs'),
-    ]).then(([r1, r2, r3, r4]) => {
+        axios.get('/dashboards/dietary/orders-by-type'),
+        axios.get('/dashboards/dietary/iadl-food-prep-candidates'),
+    ]).then(([r1, r2, r3, r4, r5, r6]) => {
         overdueAssessments.value = r1.data.overdue ?? []
         dueSoonAssessments.value = r1.data.due_soon ?? []
         goals.value = r2.data.goals ?? []
         criticalFoodAllergies.value = r3.data.critical_food_allergies ?? []
         sdrs.value = r4.data.sdrs ?? []
+        ordersByType.value = r5.data ?? { rows: [], total: 0 }
+        foodPrepCandidates.value = r6.data.rows ?? []
     }).finally(() => loading.value = false)
 })
+
+const foodPrepItems = computed<ActionItem[]>(() =>
+    foodPrepCandidates.value.map(c => ({
+        label: `${c.participant?.name ?? '-'}`,
+        sublabel: c.interpretation ?? undefined,
+        badge: 'Consult',
+        badgeColor: 'bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300',
+        href: c.href ?? '/participants',
+    }))
+)
 
 const assessmentItems = computed<ActionItem[]>(() => [
     ...overdueAssessments.value.map((a: any) => ({
@@ -123,5 +139,36 @@ const sdrItems = computed<ActionItem[]>(() =>
             viewAllHref="/sdrs"
             :loading="loading"
         />
+
+        <ActionWidget
+            :title="`IADL Food-Prep Candidates (${foodPrepCandidates.length})`"
+            description="Participants with recent IADL food-prep impairment — dietary consult candidates."
+            :items="foodPrepItems"
+            emptyMessage="No food-prep impairments on latest IADL records."
+            viewAllHref="/participants"
+            :loading="loading"
+        />
+
+        <div class="rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4 shadow-sm">
+            <div class="flex items-baseline justify-between mb-3">
+                <h3 class="text-sm font-semibold text-gray-900 dark:text-slate-100">Active Orders by Diet Type</h3>
+                <span class="text-xs text-gray-500 dark:text-slate-400">Total: {{ ordersByType.total }}</span>
+            </div>
+            <ul v-if="ordersByType.rows?.length" class="text-sm space-y-1">
+                <li
+                    v-for="d in ordersByType.rows"
+                    :key="d.diet_type"
+                    class="flex justify-between border-b border-gray-100 dark:border-slate-700 pb-1"
+                >
+                    <span class="text-gray-700 dark:text-slate-200">{{ d.diet_type }}</span>
+                    <span class="font-semibold text-gray-900 dark:text-slate-100">{{ d.count }}</span>
+                </li>
+            </ul>
+            <p v-else class="text-sm text-gray-500 dark:text-slate-400">No active dietary orders.</p>
+            <a
+                href="/dietary/roster"
+                class="mt-3 inline-block text-xs text-blue-600 dark:text-blue-400 hover:underline"
+            >View roster →</a>
+        </div>
     </div>
 </template>

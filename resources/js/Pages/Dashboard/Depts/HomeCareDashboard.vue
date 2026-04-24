@@ -22,6 +22,9 @@ const goals = ref<any[]>([])
 const sdrs = ref<any[]>([])
 const wounds = ref<any[]>([])
 const criticalCount = ref(0)
+const restraintOverdue = ref<any[]>([])
+const activeInfections = ref<any[]>([])
+const highRisk = ref<any[]>([])
 
 onMounted(() => {
     Promise.all([
@@ -30,15 +33,51 @@ onMounted(() => {
         axios.get('/dashboards/home-care/goals'),
         axios.get('/dashboards/home-care/sdrs'),
         axios.get('/dashboards/home-care/wounds'),
-    ]).then(([r1, r2, r3, r4, r5]) => {
+        axios.get('/dashboards/home-care/restraint-overdue'),
+        axios.get('/dashboards/home-care/active-infections'),
+        axios.get('/dashboards/home-care/high-risk-caseload'),
+    ]).then(([r1, r2, r3, r4, r5, r6, r7, r8]) => {
         appointments.value = r1.data.appointments ?? []
         adlAlerts.value = r2.data.alerts ?? []
         goals.value = r3.data.goals ?? []
         sdrs.value = r4.data.sdrs ?? []
         wounds.value = r5.data.wounds ?? []
         criticalCount.value = r5.data.critical_count ?? 0
+        restraintOverdue.value = r6.data.rows ?? []
+        activeInfections.value = r7.data.rows ?? []
+        highRisk.value = r8.data.rows ?? []
     }).finally(() => loading.value = false)
 })
+
+const restraintItems = computed<ActionItem[]>(() =>
+    restraintOverdue.value.map(e => ({
+        label: `${e.participant?.name ?? '-'}`,
+        sublabel: `${e.minutes_since_last_obs}min since last obs (limit ${e.interval_min ?? '?'})`,
+        badge: 'OVERDUE',
+        badgeColor: 'bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300',
+        href: e.href ?? '/participants',
+    }))
+)
+
+const infectionItems = computed<ActionItem[]>(() =>
+    activeInfections.value.map(c => ({
+        label: `${c.participant?.name ?? '-'}`,
+        sublabel: [c.organism, c.onset_date ? `onset ${c.onset_date}` : null].filter(Boolean).join(' · ') || undefined,
+        badge: c.severity ?? 'active',
+        badgeColor: 'bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300',
+        href: c.href ?? '/participants',
+    }))
+)
+
+const highRiskItems = computed<ActionItem[]>(() =>
+    highRisk.value.map(s => ({
+        label: `${s.participant?.name ?? '-'} — ${s.risk_type}`,
+        sublabel: `Score ${s.score} · Band ${s.band}`,
+        badge: s.band?.toUpperCase(),
+        badgeColor: 'bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300',
+        href: s.href ?? '/participants',
+    }))
+)
 
 const scheduleItems = computed<ActionItem[]>(() =>
     appointments.value.map(a => ({
@@ -146,6 +185,33 @@ const woundItems = computed<ActionItem[]>(() =>
             description="Open wound records to monitor between day-center visits. Stage 3+, unstageable, and DTI wounds require immediate escalation."
             :items="woundItems"
             emptyMessage="No open wound records."
+            viewAllHref="/participants"
+            :loading="loading"
+        />
+
+        <ActionWidget
+            :title="`Restraint Monitoring Overdue (${restraintOverdue.length})`"
+            description="Active restraint episodes past their monitoring interval."
+            :items="restraintItems"
+            emptyMessage="No overdue restraint monitoring."
+            viewAllHref="/participants"
+            :loading="loading"
+        />
+
+        <ActionWidget
+            :title="`Active Infections (${activeInfections.length})`"
+            description="Active infection cases without resolution date."
+            :items="infectionItems"
+            emptyMessage="No active infection cases."
+            viewAllHref="/compliance/infections"
+            :loading="loading"
+        />
+
+        <ActionWidget
+            :title="`High-Risk Caseload (${highRisk.length})`"
+            description="Participants with recent high-band predictive risk scores."
+            :items="highRiskItems"
+            emptyMessage="No high-risk participants."
             viewAllHref="/participants"
             :loading="loading"
         />

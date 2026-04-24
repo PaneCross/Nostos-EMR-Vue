@@ -176,6 +176,9 @@ Route::middleware('auth')->group(function () {
             Route::get('/goals',        [DietaryDashboardController::class, 'goals'])->name('dashboards.dietary.goals');
             Route::get('/restrictions', [DietaryDashboardController::class, 'restrictions'])->name('dashboards.dietary.restrictions');
             Route::get('/sdrs',         [DietaryDashboardController::class, 'sdrs'])->name('dashboards.dietary.sdrs');
+            // Phase I7
+            Route::get('/orders-by-type',            [DietaryDashboardController::class, 'ordersByDietType'])->name('dashboards.dietary.orders_by_type');
+            Route::get('/iadl-food-prep-candidates', [DietaryDashboardController::class, 'iadlFoodPrepCandidates'])->name('dashboards.dietary.iadl_food_prep_candidates');
         });
 
         Route::prefix('activities')->group(function () {
@@ -192,6 +195,10 @@ Route::middleware('auth')->group(function () {
             Route::get('/sdrs',        [HomeCareDashboardController::class, 'sdrs'])->name('dashboards.home-care.sdrs');
             // W5-1: Open wound records for home care nursing staff
             Route::get('/wounds',      [HomeCareDashboardController::class, 'wounds'])->name('dashboards.home-care.wounds');
+            // Phase I7
+            Route::get('/restraint-overdue',    [HomeCareDashboardController::class, 'restraintOverdue'])->name('dashboards.home-care.restraint_overdue');
+            Route::get('/active-infections',    [HomeCareDashboardController::class, 'activeInfections'])->name('dashboards.home-care.active_infections');
+            Route::get('/high-risk-caseload',   [HomeCareDashboardController::class, 'highRiskCaseload'])->name('dashboards.home-care.high_risk_caseload');
         });
 
         // ─── Phase 7B: Operations Department Dashboard Widget Endpoints ───────────
@@ -261,6 +268,11 @@ Route::middleware('auth')->group(function () {
             Route::get('/care-plans',  [QaComplianceDashboardController::class, 'carePlans'])->name('dashboards.qa-compliance.care-plans');
             // Phase 1 (MVP roadmap): §460.122 appeals widget
             Route::get('/appeals',     [QaComplianceDashboardController::class, 'appeals'])->name('dashboards.qa-compliance.appeals');
+            // Phase I7
+            Route::get('/sentinel-rollup',          [QaComplianceDashboardController::class, 'sentinelRollup'])->name('dashboards.qa-compliance.sentinel_rollup');
+            Route::get('/critical-values-pending',  [QaComplianceDashboardController::class, 'criticalValuesPending'])->name('dashboards.qa-compliance.critical_values_pending');
+            Route::get('/roi-due-soon',             [QaComplianceDashboardController::class, 'roiDueSoon'])->name('dashboards.qa-compliance.roi_due_soon');
+            Route::get('/tb-overdue',               [QaComplianceDashboardController::class, 'tbOverdue'])->name('dashboards.qa-compliance.tb_overdue');
         });
 
         Route::prefix('it-admin')->group(function () {

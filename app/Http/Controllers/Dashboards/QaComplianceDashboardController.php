@@ -240,4 +240,121 @@ class QaComplianceDashboardController extends Controller
             'overdue_count' => \App\Models\Appeal::forTenant($tenantId)->overdue()->count(),
         ]);
     }
+
+    /**
+     * Phase I7 — Sentinel events rollup (last 30 days). Lists classified
+     * sentinel incidents with CMS-5d / RCA-30d deadline status.
+     */
+    public function sentinelRollup(): JsonResponse
+    {
+        $this->requireDept();
+        $tenantId = Auth::user()->tenant_id;
+
+        $rows = \App\Models\Incident::forTenant($tenantId)
+            ->where('is_sentinel', true)
+            ->where('sentinel_classified_at', '>=', now()->subDays(30))
+            ->with('participant:id,mrn,first_name,last_name')
+            ->orderByDesc('sentinel_classified_at')
+            ->limit(20)
+            ->get()
+            ->map(fn ($i) => [
+                'id' => $i->id,
+                'participant' => $i->participant ? [
+                    'id' => $i->participant->id,
+                    'name' => $i->participant->first_name . ' ' . $i->participant->last_name,
+                    'mrn' => $i->participant->mrn,
+                ] : null,
+                'classified_at' => $i->sentinel_classified_at?->toIso8601String(),
+                'cms_deadline' => $i->sentinel_cms_5day_deadline?->toIso8601String(),
+                'cms_overdue' => $i->sentinel_cms_5day_deadline && $i->sentinel_cms_5day_deadline->isPast(),
+                'rca_deadline' => $i->sentinel_rca_30day_deadline?->toIso8601String(),
+                'rca_overdue' => $i->sentinel_rca_30day_deadline && $i->sentinel_rca_30day_deadline->isPast(),
+                'href' => "/compliance/sentinel-events",
+            ]);
+        return response()->json(['rows' => $rows, 'total' => $rows->count()]);
+    }
+
+    /**
+     * Phase I7 — Critical-value escalations still pending (overdue).
+     */
+    public function criticalValuesPending(): JsonResponse
+    {
+        $this->requireDept();
+        $tenantId = Auth::user()->tenant_id;
+
+        $pending = \App\Models\CriticalValueAcknowledgment::forTenant($tenantId)->pending()
+            ->with('participant:id,mrn,first_name,last_name')
+            ->orderBy('deadline_at')
+            ->limit(20)
+            ->get()
+            ->map(fn ($c) => [
+                'id' => $c->id,
+                'participant' => $c->participant ? [
+                    'id' => $c->participant->id,
+                    'name' => $c->participant->first_name . ' ' . $c->participant->last_name,
+                    'mrn' => $c->participant->mrn,
+                ] : null,
+                'field_name' => $c->field_name,
+                'value' => $c->value,
+                'severity' => $c->severity,
+                'deadline_at' => $c->deadline_at?->toIso8601String(),
+                'overdue' => $c->deadline_at && $c->deadline_at->isPast(),
+                'href' => $c->participant_id ? "/participants/{$c->participant_id}" : null,
+            ]);
+        return response()->json(['rows' => $pending, 'total' => $pending->count()]);
+    }
+
+    /**
+     * Phase I7 — ROI requests due within 5 days (or overdue).
+     */
+    public function roiDueSoon(): JsonResponse
+    {
+        $this->requireDept();
+        $tenantId = Auth::user()->tenant_id;
+
+        $rows = \App\Models\RoiRequest::forTenant($tenantId)->open()
+            ->where('due_by', '<=', now()->addDays(5))
+            ->with('participant:id,mrn,first_name,last_name')
+            ->orderBy('due_by')
+            ->limit(20)
+            ->get()
+            ->map(fn ($r) => [
+                'id' => $r->id,
+                'participant' => $r->participant ? [
+                    'id' => $r->participant->id,
+                    'name' => $r->participant->first_name . ' ' . $r->participant->last_name,
+                    'mrn' => $r->participant->mrn,
+                ] : null,
+                'due_by' => $r->due_by?->toIso8601String(),
+                'days_remaining' => $r->daysRemaining(),
+                'overdue' => $r->isOverdue(),
+                'status' => $r->status,
+                'href' => '/compliance/roi',
+            ]);
+        return response()->json(['rows' => $rows, 'total' => $rows->count()]);
+    }
+
+    /**
+     * Phase I7 — TB screening overdue count (annual §460.71).
+     */
+    public function tbOverdue(): JsonResponse
+    {
+        $this->requireDept();
+        $tenantId = Auth::user()->tenant_id;
+
+        $overdueCount = \App\Models\TbScreening::forTenant($tenantId)
+            ->whereNotNull('next_due_date')
+            ->where('next_due_date', '<', now()->toDateString())
+            ->count();
+        $dueSoonCount = \App\Models\TbScreening::forTenant($tenantId)
+            ->whereNotNull('next_due_date')
+            ->whereBetween('next_due_date', [now()->toDateString(), now()->addDays(30)->toDateString()])
+            ->count();
+
+        return response()->json([
+            'overdue_count'   => $overdueCount,
+            'due_soon_count'  => $dueSoonCount,
+            'href'            => '/compliance/tb-screening',
+        ]);
+    }
 }

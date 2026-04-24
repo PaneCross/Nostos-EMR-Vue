@@ -238,4 +238,90 @@ class HomeCareDashboardController extends Controller
             'critical_count' => WoundRecord::forTenant($tenantId)->open()->criticalStage()->count(),
         ]);
     }
+
+    /**
+     * Phase I7 — Active restraint episodes with monitoring overdue.
+     */
+    public function restraintOverdue(): JsonResponse
+    {
+        $this->requireDept();
+        $tenantId = Auth::user()->tenant_id;
+
+        $rows = \App\Models\RestraintEpisode::forTenant($tenantId)->active()
+            ->with('participant:id,mrn,first_name,last_name')
+            ->get()
+            ->filter(fn ($e) => $e->monitoringOverdue())
+            ->take(20)
+            ->map(fn ($e) => [
+                'id' => $e->id,
+                'participant' => $e->participant ? [
+                    'id' => $e->participant->id,
+                    'name' => $e->participant->first_name . ' ' . $e->participant->last_name,
+                    'mrn' => $e->participant->mrn,
+                ] : null,
+                'initiated_at' => $e->initiated_at?->toIso8601String(),
+                'minutes_since_last_obs' => $e->minutesSinceLastObservation(),
+                'interval_min' => $e->monitoring_interval_min,
+                'href' => $e->participant_id ? "/participants/{$e->participant_id}?tab=restraints" : null,
+            ])->values();
+        return response()->json(['rows' => $rows, 'total' => $rows->count()]);
+    }
+
+    /**
+     * Phase I7 — Active infection cases across participants.
+     */
+    public function activeInfections(): JsonResponse
+    {
+        $this->requireDept();
+        $tenantId = Auth::user()->tenant_id;
+
+        $rows = \App\Models\InfectionCase::forTenant($tenantId)
+            ->whereNull('resolution_date')
+            ->with('participant:id,mrn,first_name,last_name')
+            ->orderByDesc('onset_date')
+            ->limit(20)
+            ->get()
+            ->map(fn ($c) => [
+                'id' => $c->id,
+                'participant' => $c->participant ? [
+                    'id' => $c->participant->id,
+                    'name' => $c->participant->first_name . ' ' . $c->participant->last_name,
+                    'mrn' => $c->participant->mrn,
+                ] : null,
+                'organism' => $c->organism ?? null,
+                'severity' => $c->severity,
+                'onset_date' => $c->onset_date?->toDateString(),
+                'href' => $c->participant_id ? "/participants/{$c->participant_id}" : null,
+            ]);
+        return response()->json(['rows' => $rows, 'total' => $rows->count()]);
+    }
+
+    /**
+     * Phase I7 — High-risk participants on tenant caseload (recent scores).
+     */
+    public function highRiskCaseload(): JsonResponse
+    {
+        $this->requireDept();
+        $tenantId = Auth::user()->tenant_id;
+
+        $rows = \App\Models\PredictiveRiskScore::forTenant($tenantId)->high()
+            ->where('computed_at', '>=', now()->subDays(7))
+            ->with('participant:id,mrn,first_name,last_name')
+            ->orderByDesc('score')
+            ->limit(15)
+            ->get()
+            ->map(fn ($s) => [
+                'id' => $s->id,
+                'participant' => $s->participant ? [
+                    'id' => $s->participant->id,
+                    'name' => $s->participant->first_name . ' ' . $s->participant->last_name,
+                    'mrn' => $s->participant->mrn,
+                ] : null,
+                'risk_type' => $s->risk_type,
+                'score' => $s->score,
+                'band' => $s->band,
+                'href' => $s->participant_id ? "/participants/{$s->participant_id}" : null,
+            ]);
+        return response()->json(['rows' => $rows, 'total' => $rows->count()]);
+    }
 }
