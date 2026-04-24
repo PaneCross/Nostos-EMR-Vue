@@ -532,6 +532,11 @@ Route::middleware('auth')->group(function () {
     Route::post('/participants/{participant}/restraints/{episode}/idt-review',
         [\App\Http\Controllers\RestraintController::class, 'recordIdtReview'])->name('participants.restraints.idt-review');
 
+    // Phase G8 (MVP completion roadmap): Predictive modeling
+    Route::get ('/participants/{participant}/predictive-risk',          [\App\Http\Controllers\PredictiveRiskController::class, 'forParticipant'])->name('predictive.for_participant');
+    Route::post('/participants/{participant}/predictive-risk/compute',  [\App\Http\Controllers\PredictiveRiskController::class, 'compute'])->name('predictive.compute');
+    Route::get ('/dashboards/high-risk',                                [\App\Http\Controllers\PredictiveRiskController::class, 'highRisk'])->name('dashboards.high_risk');
+
     // Phase G7 (MVP completion roadmap): PRO surveys
     Route::get ('/pro/surveys',                         [\App\Http\Controllers\ProController::class, 'surveys'])->name('pro.surveys');
     Route::post('/pro/responses',                       [\App\Http\Controllers\ProController::class, 'storeResponse'])->name('pro.responses.store');

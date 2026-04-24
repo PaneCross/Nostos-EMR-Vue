@@ -70,7 +70,7 @@ class CareGapController extends Controller
             ->where('assessment_type', 'lace_plus_index')
             ->where('created_at', '>=', now()->subDays(90))
             ->with('participant:id,mrn,first_name,last_name')
-            ->orderByDesc('total_score')
+            ->orderByDesc('score')
             ->limit(50)->get();
         return response()->json(['rows' => $rows]);
     }

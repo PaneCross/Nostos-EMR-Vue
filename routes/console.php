@@ -152,6 +152,13 @@ Schedule::job(\App\Jobs\PolypharmacyReviewQueueJob::class, 'compliance')->dailyA
     ->name('polypharmacy-review-queue')
     ->withoutOverlapping();
 
+// ─── Phase G8 (MVP roadmap): Predictive risk scoring ────────────────────────
+// Daily at 03:00. Runs both risk types (disenrollment + acute_event) per
+// enrolled participant; emits warning alert for any 'high' band score.
+Schedule::job(\App\Jobs\PredictiveRiskScoringJob::class, 'compliance')->dailyAt('03:00')
+    ->name('predictive-risk-scoring')
+    ->withoutOverlapping();
+
 // ─── Phase G3 (MVP roadmap): Nightly quality-measure snapshot ───────────────
 // Daily at 02:30. Iterates tenants + each seeded QualityMeasure; writes a
 // QualityMeasureSnapshot row per (tenant, measure, day).
