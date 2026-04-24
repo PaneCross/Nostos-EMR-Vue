@@ -532,6 +532,13 @@ Route::middleware('auth')->group(function () {
     Route::post('/participants/{participant}/restraints/{episode}/idt-review',
         [\App\Http\Controllers\RestraintController::class, 'recordIdtReview'])->name('participants.restraints.idt-review');
 
+    // Phase D4 (MVP completion roadmap): Activities programming
+    Route::get ('/activities',                  [\App\Http\Controllers\ActivityController::class, 'index'])->name('activities.index');
+    Route::post('/activities',                  [\App\Http\Controllers\ActivityController::class, 'store'])->name('activities.store');
+    Route::post('/activities/{event}/attendance', [\App\Http\Controllers\ActivityController::class, 'recordAttendance'])->name('activities.attendance');
+    Route::get ('/participants/{participant}/activity-trend',
+        [\App\Http\Controllers\ActivityController::class, 'participantTrend'])->name('activities.trend');
+
     // Phase D3 (MVP completion roadmap): Dietary orders
     Route::get ('/participants/{participant}/dietary-orders',
         [\App\Http\Controllers\DietaryOrderController::class, 'index'])->name('dietary.index');
