@@ -117,27 +117,124 @@ async function signNote(noteId: number) {
   }
 }
 
-// ── Addendum ──────────────────────────────────────────────────────────────────
+// ── Phase I3 addendum compose modal ───────────────────────────────────────────
 const addendumParentId = ref<number | null>(null)
-async function createAddendum(parentNoteId: number) {
-  addendumParentId.value = parentNoteId
+const addendumComposeOpen = ref(false)
+const addendumComposeParent = ref<number | null>(null)
+const addendumComposeText = ref('')
+const addendumSubmitting = ref(false)
+
+function openAddendumCompose(parentNoteId: number) {
+  addendumComposeParent.value = parentNoteId
+  addendumComposeText.value = ''
+  addendumComposeOpen.value = true
+}
+function closeAddendumCompose() {
+  addendumComposeOpen.value = false
+  addendumComposeParent.value = null
+}
+async function createAddendum() {
+  if (!addendumComposeParent.value) return
+  if (addendumComposeText.value.trim().length < 3) return
+  addendumSubmitting.value = true
+  addendumParentId.value = addendumComposeParent.value
   try {
     const { data } = await axios.post(
-      `/participants/${props.participant.id}/notes/${parentNoteId}/addendum`,
+      `/participants/${props.participant.id}/notes/${addendumComposeParent.value}/addendum`,
       {
         note_type:  'addendum',
         visit_type: 'in_center',
         visit_date: new Date().toISOString().slice(0, 10),
         department: auth.value?.user.department ?? '',
-        content:    { notes: '' },
+        content:    { notes: addendumComposeText.value.trim() },
       }
     )
     notes.value.unshift(data)
+    closeAddendumCompose()
   } catch {
     // addendum failed; no-op
   } finally {
     addendumParentId.value = null
+    addendumSubmitting.value = false
   }
+}
+
+// ── Phase I3 note-template picker + problem linkage ──────────────────────────
+interface NoteTemplateMeta {
+  id: number
+  name: string
+  note_type: string
+  department: string | null
+  is_system: boolean
+}
+interface ProblemMeta {
+  id: number
+  icd10_code: string | null
+  icd10_description: string | null
+  status: string
+}
+
+const templates = ref<NoteTemplateMeta[]>([])
+const problems = ref<ProblemMeta[]>([])
+const templatesLoaded = ref(false)
+const selectedTemplateId = ref<number | ''>('')
+const primaryProblemId = ref<number | ''>('')
+const secondaryProblemIds = ref<number[]>([])
+
+async function loadTemplatesAndProblems() {
+  if (templatesLoaded.value) return
+  try {
+    const [t, p] = await Promise.all([
+      axios.get('/note-templates'),
+      axios.get(`/participants/${props.participant.id}/problems`),
+    ])
+    templates.value = t.data?.templates ?? []
+    // ProblemController::index groups by status: {active: [...], resolved: [...]}.
+    // Be defensive in case it ever changes to a flat array.
+    const rawP: any = p.data?.problems ?? p.data ?? {}
+    if (Array.isArray(rawP)) {
+      problems.value = rawP.filter((x: ProblemMeta) => x.status === 'active')
+    } else {
+      problems.value = (rawP.active ?? []) as ProblemMeta[]
+    }
+    templatesLoaded.value = true
+  } catch {
+    // fail silently — form still usable without template/problem helpers
+  }
+}
+
+async function applyTemplate() {
+  if (!selectedTemplateId.value) return
+  try {
+    const { data } = await axios.get(
+      `/note-templates/${selectedTemplateId.value}/render/${props.participant.id}`
+    )
+    const rendered: string = data?.rendered ?? ''
+    const tpl = templates.value.find(t => t.id === Number(selectedTemplateId.value))
+    // Match note_type so downstream form behaves correctly
+    if (tpl) {
+      noteForm.value.note_type = tpl.note_type
+    }
+    // SOAP types split into 4 sections; non-SOAP gets single content_notes
+    if (tpl?.note_type === 'soap') {
+      // Simple heuristic: dump the whole template into subjective; user can cut+paste.
+      noteForm.value.subjective = rendered
+      noteForm.value.objective = ''
+      noteForm.value.assessment = ''
+      noteForm.value.plan = ''
+    } else {
+      noteForm.value.content_notes = rendered
+    }
+  } catch {
+    // render failed
+  }
+}
+
+function availableTemplates(): NoteTemplateMeta[] {
+  // Filter by current note type if set (soft filter — shows all for 'addendum'/other)
+  if (!noteForm.value.note_type) return templates.value
+  return templates.value.filter(t => t.note_type === noteForm.value.note_type)
+    .concat(templates.value.filter(t => t.note_type !== noteForm.value.note_type))
 }
 
 // ── New note form ─────────────────────────────────────────────────────────────
@@ -176,10 +273,19 @@ async function submitNote() {
     } else {
       payload.content = { notes: noteForm.value.content_notes }
     }
+    // Phase I3 — template + problem linkage
+    if (selectedTemplateId.value) payload.note_template_id = Number(selectedTemplateId.value)
+    if (primaryProblemId.value)   payload.primary_problem_id = Number(primaryProblemId.value)
+    if (secondaryProblemIds.value.length > 0) {
+      payload.secondary_problem_ids = secondaryProblemIds.value
+    }
     const { data } = await axios.post(`/participants/${props.participant.id}/notes`, payload)
     notes.value.unshift(data)
     showAddForm.value = false
     noteForm.value = blankNote()
+    selectedTemplateId.value = ''
+    primaryProblemId.value = ''
+    secondaryProblemIds.value = []
   } catch (err: unknown) {
     const e = err as { response?: { data?: { message?: string } } }
     noteError.value = e.response?.data?.message ?? 'Failed to save note.'
@@ -228,7 +334,7 @@ async function submitNote() {
         </select>
         <button
           class="inline-flex items-center gap-1 text-xs px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-          @click="showAddForm = !showAddForm"
+          @click="showAddForm = !showAddForm; if (showAddForm) loadTemplatesAndProblems()"
         >
           <PlusIcon class="w-3 h-3" />
           {{ showAddForm ? 'Cancel' : 'New Note' }}
@@ -242,6 +348,20 @@ async function submitNote() {
       class="bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-4 space-y-3"
     >
       <h3 class="text-sm font-semibold text-gray-900 dark:text-slate-100">New Clinical Note</h3>
+
+      <!-- Phase I3 — Template picker -->
+      <div v-if="templates.length > 0" class="flex items-end gap-2">
+        <div class="flex-1">
+          <label class="text-xs font-medium text-gray-600 dark:text-slate-400">Start from template (optional)</label>
+          <select v-model="selectedTemplateId" class="w-full mt-1 text-sm border border-gray-300 dark:border-slate-600 rounded px-2 py-1.5 bg-white dark:bg-slate-800 dark:text-slate-200" data-testid="note-template-picker">
+            <option value="">— No template —</option>
+            <option v-for="t in availableTemplates()" :key="t.id" :value="t.id">
+              {{ t.name }} · {{ t.note_type }}{{ t.is_system ? ' · system' : '' }}
+            </option>
+          </select>
+        </div>
+        <button type="button" class="text-xs px-3 py-1.5 border border-blue-300 dark:border-blue-700 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20" :disabled="!selectedTemplateId" @click="applyTemplate">Apply</button>
+      </div>
 
       <div class="grid grid-cols-3 gap-3">
         <div>
@@ -262,6 +382,28 @@ async function submitNote() {
         <div>
           <label class="text-xs font-medium text-gray-600 dark:text-slate-400">Visit Date</label>
           <input type="date" v-model="noteForm.visit_date" class="w-full mt-1 text-sm border border-gray-300 dark:border-slate-600 rounded px-2 py-1.5 bg-white dark:bg-slate-800 dark:text-slate-200" />
+        </div>
+      </div>
+
+      <!-- Phase I3 — Problem linkage -->
+      <div v-if="problems.length > 0" class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="text-xs font-medium text-gray-600 dark:text-slate-400">Primary problem (optional)</label>
+          <select v-model="primaryProblemId" class="w-full mt-1 text-sm border border-gray-300 dark:border-slate-600 rounded px-2 py-1.5 bg-white dark:bg-slate-800 dark:text-slate-200" data-testid="note-primary-problem">
+            <option value="">— None —</option>
+            <option v-for="p in problems" :key="p.id" :value="p.id">
+              {{ p.icd10_description }} ({{ p.icd10_code }})
+            </option>
+          </select>
+        </div>
+        <div>
+          <label class="text-xs font-medium text-gray-600 dark:text-slate-400">Secondary problems (optional)</label>
+          <select v-model="secondaryProblemIds" multiple class="w-full mt-1 text-sm border border-gray-300 dark:border-slate-600 rounded px-2 py-1.5 bg-white dark:bg-slate-800 dark:text-slate-200 h-20">
+            <option v-for="p in problems.filter(x => x.id !== Number(primaryProblemId))" :key="p.id" :value="p.id">
+              {{ p.icd10_description }} ({{ p.icd10_code }})
+            </option>
+          </select>
+          <p class="text-xs text-gray-400 dark:text-slate-500 mt-0.5">Cmd/Ctrl-click to select multiple.</p>
         </div>
       </div>
 
@@ -407,13 +549,39 @@ async function submitNote() {
               <button
                 :disabled="addendumParentId === note.id"
                 class="text-xs px-2.5 py-1 border border-blue-300 dark:border-blue-700 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-950/40 disabled:opacity-50 transition-colors"
-                @click.stop="createAddendum(note.id)"
-              ><span class="inline-flex items-center gap-1"><PlusIcon v-if="addendumParentId !== note.id" class="w-3 h-3" />{{ addendumParentId === note.id ? 'Adding...' : 'Addendum' }}</span></button>
+                @click.stop="openAddendumCompose(note.id)"
+                data-testid="addendum-btn"
+              ><span class="inline-flex items-center gap-1"><PlusIcon v-if="addendumParentId !== note.id" class="w-3 h-3" />{{ addendumParentId === note.id ? 'Adding...' : 'Add addendum' }}</span></button>
             </template>
           </div>
         </div>
       </div>
     </div>
 
+    <!-- Phase I3 — Addendum compose modal -->
+    <Teleport to="body">
+      <div v-if="addendumComposeOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" @click.self="closeAddendumCompose">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-lg p-6">
+          <h2 class="text-base font-semibold text-gray-900 dark:text-slate-100 mb-1">Add addendum</h2>
+          <p class="text-xs text-gray-500 dark:text-slate-400 mb-4">
+            Addendum note will link to the original signed note. Addendum starts as a draft; you will sign it separately.
+          </p>
+          <form @submit.prevent="createAddendum" class="space-y-3">
+            <textarea v-model="addendumComposeText" rows="6"
+              class="w-full text-sm border border-gray-300 dark:border-slate-600 rounded px-2 py-1.5 bg-white dark:bg-slate-900 dark:text-slate-100 resize-none"
+              placeholder="Additional information to append to the signed note…"
+              data-testid="addendum-compose-input"
+              required
+            />
+            <div class="flex items-center justify-end gap-2">
+              <button type="button" class="text-xs px-3 py-1.5 border border-gray-300 dark:border-slate-600 text-gray-700 dark:text-slate-300 rounded hover:bg-gray-50 dark:hover:bg-slate-700" @click="closeAddendumCompose">Cancel</button>
+              <button type="submit" :disabled="addendumSubmitting || addendumComposeText.trim().length < 3" class="text-xs px-3 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50">
+                {{ addendumSubmitting ? 'Saving…' : 'Create addendum (draft)' }}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
