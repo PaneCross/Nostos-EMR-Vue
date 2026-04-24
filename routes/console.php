@@ -145,6 +145,13 @@ Schedule::job(DenialAppealDeadlineAlertJob::class, 'compliance')->dailyAt('07:15
     ->name('denial-appeal-deadline')
     ->withoutOverlapping();
 
+// ─── Phase C5 (MVP roadmap): ADE MedWatch reminder sweep ────────────────────
+// Daily at 06:20. Severe+ ADEs without MedWatch report get warnings before
+// day 15 and critical alerts after. Dedup 3d per (ade, type).
+Schedule::job(\App\Jobs\AdeMedwatchReminderJob::class, 'compliance')->dailyAt('06:20')
+    ->name('ade-medwatch-reminder')
+    ->withoutOverlapping();
+
 // ─── Phase C4 (MVP roadmap): Discharge checklist overdue sweep ──────────────
 // Daily at 06:10. For each discharge event <=30d old with uncompleted overdue
 // items, warn the owning department. Dedup 3d per (event, item).

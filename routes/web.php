@@ -532,6 +532,14 @@ Route::middleware('auth')->group(function () {
     Route::post('/participants/{participant}/restraints/{episode}/idt-review',
         [\App\Http\Controllers\RestraintController::class, 'recordIdtReview'])->name('participants.restraints.idt-review');
 
+    // Phase C5 (MVP completion roadmap): Adverse Drug Events
+    Route::get ('/participants/{participant}/ade',
+        [\App\Http\Controllers\AdverseDrugEventController::class, 'index'])->name('ade.index');
+    Route::post('/participants/{participant}/ade',
+        [\App\Http\Controllers\AdverseDrugEventController::class, 'store'])->name('ade.store');
+    Route::post('/ade/{ade}/mark-reported',
+        [\App\Http\Controllers\AdverseDrugEventController::class, 'markReported'])->name('ade.mark_reported');
+
     // Phase C4 (MVP completion roadmap): Structured discharge workflow
     Route::get ('/participants/{participant}/discharge-events',
         [\App\Http\Controllers\DischargeEventController::class, 'index'])->name('discharge.index');
