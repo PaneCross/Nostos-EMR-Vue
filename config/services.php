@@ -37,4 +37,9 @@ return [
         'redirect'      => env('YAHOO_REDIRECT_URI', '/auth/yahoo/callback'),
     ],
 
+    // Phase M3 — HIE gateway (null | sequoia)
+    'hie' => [
+        'driver' => env('HIE_DRIVER', 'null'),
+    ],
+
 ];

@@ -515,6 +515,13 @@ Route::middleware('auth')->group(function () {
     Route::post('/participants/{participant}/ccda/import',
         [\App\Http\Controllers\CcdaController::class, 'import'])
         ->name('participants.ccda.import');
+    // Phase M3 — HIE gateway
+    Route::post('/participants/{participant}/hie/publish',
+        [\App\Http\Controllers\HieController::class, 'publish'])->name('hie.publish');
+    Route::get('/participants/{participant}/hie/documents',
+        [\App\Http\Controllers\HieController::class, 'documents'])->name('hie.documents');
+    Route::get('/hie/ccd/{participant}',
+        [\App\Http\Controllers\HieController::class, 'ccd'])->name('hie.ccd');
     Route::get ('/participants/{participant}/advance-directive/pdf',
         [\App\Http\Controllers\AdvanceDirectivePdfController::class, 'generate'])
         ->name('participants.advance_directive.pdf');
