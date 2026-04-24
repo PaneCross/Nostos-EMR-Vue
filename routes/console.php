@@ -152,6 +152,14 @@ Schedule::job(\App\Jobs\PolypharmacyReviewQueueJob::class, 'compliance')->dailyA
     ->name('polypharmacy-review-queue')
     ->withoutOverlapping();
 
+// ─── Phase G1 (MVP roadmap): Care-gap calculation + task creation ───────────
+// Nightly at 02:00. Evaluates each enrolled participant against 7 preventive
+// measures, upserts CareGap rows, and auto-creates a primary_care task when
+// >=3 open gaps.
+Schedule::job(\App\Jobs\CareGapCalculationJob::class, 'compliance')->dailyAt('02:00')
+    ->name('care-gap-calculation')
+    ->withoutOverlapping();
+
 // ─── Phase C5 (MVP roadmap): ADE MedWatch reminder sweep ────────────────────
 // Daily at 06:20. Severe+ ADEs without MedWatch report get warnings before
 // day 15 and critical alerts after. Dedup 3d per (ade, type).

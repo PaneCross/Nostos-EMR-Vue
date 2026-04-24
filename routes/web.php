@@ -532,6 +532,12 @@ Route::middleware('auth')->group(function () {
     Route::post('/participants/{participant}/restraints/{episode}/idt-review',
         [\App\Http\Controllers\RestraintController::class, 'recordIdtReview'])->name('participants.restraints.idt-review');
 
+    // Phase G1 (MVP completion roadmap): Care gaps + readmission risk
+    Route::get ('/care-gaps/summary',                    [\App\Http\Controllers\CareGapController::class, 'summary'])->name('care_gaps.summary');
+    Route::get ('/care-gaps/my-panel',                   [\App\Http\Controllers\CareGapController::class, 'myPanel'])->name('care_gaps.my_panel');
+    Route::get ('/participants/{participant}/care-gaps', [\App\Http\Controllers\CareGapController::class, 'forParticipant'])->name('care_gaps.for_participant');
+    Route::get ('/dashboards/readmission-risk',          [\App\Http\Controllers\CareGapController::class, 'readmissionRisk'])->name('dashboards.readmission_risk');
+
     // Phase F2 (MVP completion roadmap): Short wins batch 2
     Route::get ('/participants/{participant}/beers-flags', [\App\Http\Controllers\ShortWinsF2Controller::class, 'beersFlags'])->name('f2.beers_flags');
     Route::post('/participants/{participant}/smartsets/{key}', [\App\Http\Controllers\ShortWinsF2Controller::class, 'applySmartSet'])->name('f2.smartset');
