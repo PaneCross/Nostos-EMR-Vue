@@ -74,6 +74,15 @@ const factors = computed(() => {
         <div class="mt-2 text-sm">
           <div>Score: <span class="font-semibold">{{ score.score }}</span></div>
           <div class="text-xs text-gray-500 dark:text-slate-400">Computed {{ score.computed_at?.slice(0, 16).replace('T', ' ') }}</div>
+          <!-- Phase O6 — provenance chip -->
+          <span
+            class="mt-1 inline-block rounded px-1.5 py-0.5 text-[10px]"
+            :class="String(score.model_version ?? '').startsWith('trained-')
+              ? 'bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300'
+              : 'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300'"
+          >
+            {{ String(score.model_version ?? '').startsWith('trained-') ? score.model_version : 'heuristic' }}
+          </span>
         </div>
         <div v-if="factors[kind]?.length" class="mt-3 space-y-1">
           <div v-for="f in factors[kind]" :key="f.name" class="text-xs flex justify-between">

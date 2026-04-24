@@ -12,7 +12,7 @@ class PredictiveRiskScore extends Model
     public const BANDS = ['low', 'medium', 'high'];
 
     protected $fillable = [
-        'tenant_id', 'participant_id', 'model_version',
+        'tenant_id', 'participant_id', 'model_version', 'model_version_id',
         'risk_type', 'score', 'band', 'factors', 'computed_at',
     ];
 
@@ -22,6 +22,10 @@ class PredictiveRiskScore extends Model
     ];
 
     public function participant(): \Illuminate\Database\Eloquent\Relations\BelongsTo { return $this->belongsTo(Participant::class); }
+    public function modelVersion(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(PredictiveModelVersion::class, 'model_version_id');
+    }
 
     public function scopeForTenant($q, int $t) { return $q->where('tenant_id', $t); }
     public function scopeHigh($q) { return $q->where('band', 'high'); }

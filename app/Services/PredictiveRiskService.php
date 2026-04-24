@@ -39,8 +39,48 @@ class PredictiveRiskService
     public function scoreType(Participant $p, string $riskType): PredictiveRiskScore
     {
         $features = $this->extract($p);
-        $weights  = $this->weights($riskType);
 
+        // Phase O6 — prefer a trained model version if one exists for this
+        // (tenant, risk_type). Falls back to the heuristic weights otherwise.
+        $trainedVersion = \App\Models\PredictiveModelVersion::forTenant($p->tenant_id)
+            ->forRiskType($riskType)
+            ->orderByDesc('version_number')->first();
+
+        if ($trainedVersion && ! empty($trainedVersion->coefficients)) {
+            [$score, $contribution] = $this->scoreFromTrainedModel($features, $trainedVersion->coefficients);
+            $modelVersionLabel = "trained-v{$trainedVersion->version_number}";
+            $modelVersionId    = $trainedVersion->id;
+        } else {
+            [$score, $contribution] = $this->scoreFromHeuristic($features, $this->weights($riskType));
+            $modelVersionLabel = self::MODEL_VERSION;
+            $modelVersionId    = null;
+        }
+
+        $band = match (true) {
+            $score >= 70 => 'high',
+            $score >= 40 => 'medium',
+            default      => 'low',
+        };
+
+        return PredictiveRiskScore::create([
+            'tenant_id'        => $p->tenant_id,
+            'participant_id'   => $p->id,
+            'model_version'    => $modelVersionLabel,
+            'model_version_id' => $modelVersionId,
+            'risk_type'        => $riskType,
+            'score'            => $score,
+            'band'             => $band,
+            'factors'          => $contribution,
+            'computed_at'      => now(),
+        ]);
+    }
+
+    /**
+     * Legacy weighted-sum heuristic path. Used when no trained model exists.
+     * @return array{0:int,1:array<string,array{value:float,weight:int,delta:int}>}
+     */
+    private function scoreFromHeuristic(array $features, array $weights): array
+    {
         $contribution = [];
         $sum = 0;
         foreach ($features as $f => $v) {
@@ -49,23 +89,30 @@ class PredictiveRiskService
             $contribution[$f] = ['value' => $v, 'weight' => $w, 'delta' => $delta];
             $sum += $delta;
         }
-        $score = max(0, min(100, $sum));
-        $band = match (true) {
-            $score >= 70 => 'high',
-            $score >= 40 => 'medium',
-            default      => 'low',
-        };
+        return [max(0, min(100, $sum)), $contribution];
+    }
 
-        return PredictiveRiskScore::create([
-            'tenant_id'      => $p->tenant_id,
-            'participant_id' => $p->id,
-            'model_version'  => self::MODEL_VERSION,
-            'risk_type'      => $riskType,
-            'score'          => $score,
-            'band'           => $band,
-            'factors'        => $contribution,
-            'computed_at'    => now(),
-        ]);
+    /**
+     * Logistic-regression path. Coefficients come from
+     * PredictiveModelTrainingService. z = Σ (coef_i × feature_i), score = σ(z)×100.
+     * @return array{0:int,1:array<string,array{value:float,coefficient:float,contribution:float}>}
+     */
+    private function scoreFromTrainedModel(array $features, array $coefficients): array
+    {
+        $z = 0.0;
+        $contribution = [];
+        foreach ($features as $f => $v) {
+            $coef = (float) ($coefficients[$f] ?? 0);
+            $c = $coef * $v;
+            $z += $c;
+            $contribution[$f] = [
+                'value'        => $v,
+                'coefficient'  => round($coef, 4),
+                'contribution' => round($c, 4),
+            ];
+        }
+        $sigmoid = 1.0 / (1.0 + exp(-$z));
+        return [(int) round($sigmoid * 100), $contribution];
     }
 
     /**
