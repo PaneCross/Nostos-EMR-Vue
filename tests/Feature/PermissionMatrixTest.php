@@ -68,7 +68,7 @@ class PermissionMatrixTest extends TestCase
 
     // ── IT Admin full access ───────────────────────────────────────────────────
 
-    /** @dataProvider itAdminModuleProvider */
+    #[\PHPUnit\Framework\Attributes\DataProvider('itAdminModuleProvider')]
     public function test_it_admin_has_full_crud_on_module(string $module): void
     {
         $user = $this->user('it_admin', 'admin');

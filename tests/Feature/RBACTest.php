@@ -35,7 +35,7 @@ class RBACTest extends TestCase
 
     // ─── Each department user lands on their own dashboard ────────────────────
 
-    /** @dataProvider departmentProvider */
+    #[\PHPUnit\Framework\Attributes\DataProvider('departmentProvider')]
     public function test_user_can_access_own_department_dashboard(string $department): void
     {
         $user = $this->makeUser($department);

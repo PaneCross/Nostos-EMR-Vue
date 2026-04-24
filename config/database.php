@@ -57,8 +57,16 @@ return [
             'prefix_indexes' => true,
             'strict' => true,
             'engine' => null,
+            // Phase N2 — PHP 8.5 deprecated PDO::MYSQL_ATTR_SSL_CA in favour of
+            // Pdo\Mysql::ATTR_SSL_CA. Use the new class constant when available
+            // and fall back to the legacy constant via the defined() guard —
+            // avoids the deprecation warning on every test run.
             'options' => extension_loaded('pdo_mysql') ? array_filter([
-                PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
+                (defined('Pdo\\Mysql::ATTR_SSL_CA')
+                    ? constant('Pdo\\Mysql::ATTR_SSL_CA')
+                    : (defined('PDO::MYSQL_ATTR_SSL_CA')
+                        ? constant('PDO::MYSQL_ATTR_SSL_CA')
+                        : null)) => env('MYSQL_ATTR_SSL_CA'),
             ]) : [],
         ],
 
