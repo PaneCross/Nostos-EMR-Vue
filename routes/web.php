@@ -1211,6 +1211,20 @@ Route::middleware('auth')->group(function () {
     });
 });
 
+// ─── Phase E1 — Participant portal (public; X-Portal-User-Id header auth) ───
+// No `auth` middleware — portal users are separate from staff users.
+// In production this would use a session-backed OTP guard; MVP uses a simple
+// header-based bearer check resolved inside the controller.
+Route::post('/portal/login',         [\App\Http\Controllers\ParticipantPortalController::class, 'login'])->name('portal.login');
+Route::get ('/portal/overview',      [\App\Http\Controllers\ParticipantPortalController::class, 'overview'])->name('portal.overview');
+Route::get ('/portal/medications',   [\App\Http\Controllers\ParticipantPortalController::class, 'medications'])->name('portal.medications');
+Route::get ('/portal/allergies',     [\App\Http\Controllers\ParticipantPortalController::class, 'allergies'])->name('portal.allergies');
+Route::get ('/portal/problems',      [\App\Http\Controllers\ParticipantPortalController::class, 'problems'])->name('portal.problems');
+Route::get ('/portal/appointments',  [\App\Http\Controllers\ParticipantPortalController::class, 'appointments'])->name('portal.appointments');
+Route::get ('/portal/messages',      [\App\Http\Controllers\ParticipantPortalController::class, 'messagesIndex'])->name('portal.messages.index');
+Route::post('/portal/messages',      [\App\Http\Controllers\ParticipantPortalController::class, 'messagesStore'])->name('portal.messages.store');
+Route::post('/portal/requests',      [\App\Http\Controllers\ParticipantPortalController::class, 'requestsStore'])->name('portal.requests.store');
+
 // ─── FHIR R4 API (public — Bearer token authenticated) ───────────────────────
 // No 'auth' session middleware: external systems authenticate via emr_api_tokens.
 // Security is enforced by FhirAuthMiddleware (SHA-256 Bearer token + scope check).
