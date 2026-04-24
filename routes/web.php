@@ -532,6 +532,12 @@ Route::middleware('auth')->group(function () {
     Route::post('/participants/{participant}/restraints/{episode}/idt-review',
         [\App\Http\Controllers\RestraintController::class, 'recordIdtReview'])->name('participants.restraints.idt-review');
 
+    // Phase D2 (MVP completion roadmap): Staff task queue
+    Route::get ('/tasks',                  [\App\Http\Controllers\StaffTaskController::class, 'index'])->name('tasks.index');
+    Route::post('/tasks',                  [\App\Http\Controllers\StaffTaskController::class, 'store'])->name('tasks.store');
+    Route::post('/tasks/{task}/complete',  [\App\Http\Controllers\StaffTaskController::class, 'complete'])->name('tasks.complete');
+    Route::post('/tasks/{task}/cancel',    [\App\Http\Controllers\StaffTaskController::class, 'cancel'])->name('tasks.cancel');
+
     // Phase D1 (MVP completion roadmap): PCP panel management
     Route::get ('/panel/my',       [\App\Http\Controllers\PanelController::class, 'mine'])->name('panel.mine');
     Route::get ('/panel/sizes',    [\App\Http\Controllers\PanelController::class, 'sizes'])->name('panel.sizes');
