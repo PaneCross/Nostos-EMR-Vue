@@ -10,6 +10,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import axios from 'axios'
 import { PlusIcon } from '@heroicons/vue/24/outline'
+import CriticalValueBanner from '../Components/CriticalValueBanner.vue'
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -374,6 +375,9 @@ async function submit() {
 
 <template>
   <div class="p-6 space-y-6">
+
+    <!-- Phase J5: pending critical-value acknowledgments -->
+    <CriticalValueBanner :participant="participant" />
 
     <!-- Header -->
     <div class="flex items-center justify-between">

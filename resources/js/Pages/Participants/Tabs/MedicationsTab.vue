@@ -100,21 +100,36 @@ const activeMeds   = computed(() => medications.value.filter(m => m.status === '
 const inactiveMeds = computed(() => medications.value.filter(m => m.status === 'discontinued' || m.status === 'on_hold'))
 
 // ── Lifecycle ─────────────────────────────────────────────────────────────────
+// Phase J5 — Beers PIM flags, keyed by medication_id
+const beersByMedId = ref<Record<number, any[]>>({})
+
 onMounted(async () => {
   try {
-    const [medResp, alertResp] = await Promise.all([
+    const [medResp, alertResp, beersResp] = await Promise.all([
       axios.get(`/participants/${props.participant.id}/medications`),
       axios.get(`/participants/${props.participant.id}/medications/interactions`),
+      axios.get(`/participants/${props.participant.id}/beers-flags`).catch(() => ({ data: { flags: [] } })),
     ])
     medications.value    = medResp.data.medications ?? medResp.data
     alerts.value         = alertResp.data.active    ?? []
     reviewedAlerts.value = alertResp.data.reviewed  ?? []
+    const flags = beersResp.data.flags ?? []
+    for (const f of flags) {
+      if (f.medication_id) beersByMedId.value[f.medication_id] = f.flags ?? []
+    }
   } catch {
     // leave empty
   } finally {
     loading.value = false
   }
 })
+
+function beersFor(medId: number): any[] {
+  return beersByMedId.value[medId] ?? []
+}
+function beersTooltip(flags: any[]): string {
+  return flags.map(f => `${f.risk_category}: ${f.rationale ?? ''}${f.recommendation ? ' — ' + f.recommendation : ''}`).join('\n')
+}
 
 // ── Drug reference typeahead ──────────────────────────────────────────────────
 function onSearchInput() {
@@ -497,6 +512,13 @@ function fmtDate(val: string | null): string {
                   class="ml-2 text-xs px-1.5 py-0.5 bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300 rounded"
                 >
                   C-{{ med.controlled_schedule }}
+                </span>
+                <span
+                  v-if="beersFor(med.id).length"
+                  :title="beersTooltip(beersFor(med.id))"
+                  class="ml-2 text-xs px-1.5 py-0.5 bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300 rounded cursor-help"
+                >
+                  Beers PIM
                 </span>
               </td>
               <td class="px-4 py-2.5 text-gray-600 dark:text-slate-400">

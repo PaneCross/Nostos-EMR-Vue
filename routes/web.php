@@ -705,6 +705,8 @@ Route::middleware('auth')->group(function () {
     // Phase B6 (MVP completion roadmap): Critical-value acknowledgment
     Route::post('/critical-values/{ack}/acknowledge',
         [\App\Http\Controllers\VitalController::class, 'acknowledge'])->name('critical_values.acknowledge');
+    Route::get('/participants/{participant}/critical-values',
+        [\App\Http\Controllers\VitalController::class, 'pendingCriticalValues'])->name('critical_values.pending');
 
     // Phase B7 (MVP completion roadmap): Note templates + problem-based charting
     Route::get   ('/note-templates',

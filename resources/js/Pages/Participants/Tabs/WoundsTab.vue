@@ -6,6 +6,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { ref, computed, onMounted } from 'vue'
+import WoundPhotoGallery from '../Components/WoundPhotoGallery.vue'
 import axios from 'axios'
 import { PlusIcon } from '@heroicons/vue/24/outline'
 
@@ -232,6 +233,9 @@ async function closeWound(wound: WoundRecord) {
               >Close</button>
             </div>
           </div>
+
+          <!-- Phase J5 — Photo gallery -->
+          <WoundPhotoGallery :wound="wound" />
 
           <!-- Assessment form -->
           <div v-if="addAssessmentForId === wound.id" class="border-t border-gray-200 dark:border-slate-700 bg-white/70 dark:bg-slate-900/30 px-4 py-3">

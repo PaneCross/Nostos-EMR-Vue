@@ -97,6 +97,22 @@ class VitalController extends Controller
     }
 
     /**
+     * Phase J5 — List pending critical-value acknowledgments for a participant.
+     *
+     * GET /participants/{participant}/critical-values
+     */
+    public function pendingCriticalValues(Request $request, Participant $participant): JsonResponse
+    {
+        $user = $request->user();
+        abort_if($participant->tenant_id !== $user->tenant_id, 403);
+        $rows = CriticalValueAcknowledgment::forTenant($user->tenant_id)
+            ->where('participant_id', $participant->id)
+            ->pending()
+            ->orderBy('deadline_at')->get();
+        return response()->json(['pending' => $rows]);
+    }
+
+    /**
      * Phase B6 — Acknowledge a flagged critical/warning value.
      * Gate: primary_care (assigned-provider workflow); QA + exec can also ack
      * to close out after escalation.
