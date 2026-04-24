@@ -113,6 +113,48 @@ class ParticipantPortalController extends Controller
         return response()->json(['user' => $user, 'portal_user_id' => $user->id]);
     }
 
+    /**
+     * Phase L1 — POST /portal/otp/send: request an OTP for email login.
+     * Rate-limited identical to password login (5 per 15 min per email).
+     */
+    public function otpSend(Request $request, \App\Services\PortalOtpService $otp): JsonResponse
+    {
+        $validated = $request->validate(['email' => 'required|email']);
+        $rlKey = 'portal_otp_send:' . strtolower($validated['email']);
+        if (\Illuminate\Support\Facades\RateLimiter::tooManyAttempts($rlKey, 5)) {
+            $seconds = \Illuminate\Support\Facades\RateLimiter::availableIn($rlKey);
+            return response()->json([
+                'error' => 'rate_limited',
+                'message' => "Too many requests. Try again in {$seconds} seconds.",
+            ], 429);
+        }
+        \Illuminate\Support\Facades\RateLimiter::hit($rlKey, 900);
+        $otp->sendOtp($validated['email'], (string) $request->ip());
+        return response()->json(['ok' => true]);
+    }
+
+    /** Phase L1 — POST /portal/otp/verify: establish session with OTP. */
+    public function otpVerify(Request $request, \App\Services\PortalOtpService $otp): JsonResponse
+    {
+        $validated = $request->validate([
+            'email' => 'required|email',
+            'code'  => 'required|string|size:6',
+        ]);
+        $rlKey = 'portal_otp_verify:' . strtolower($validated['email']);
+        if (\Illuminate\Support\Facades\RateLimiter::tooManyAttempts($rlKey, 10)) {
+            return response()->json(['error' => 'rate_limited'], 429);
+        }
+        $result = $otp->verifyOtp($validated['email'], $validated['code'], (string) $request->ip());
+        if (! $result['success']) {
+            \Illuminate\Support\Facades\RateLimiter::hit($rlKey, 900);
+            return response()->json(['error' => 'invalid_otp', 'message' => $result['error']], 401);
+        }
+        $user = $result['user'];
+        $request->session()->regenerate();
+        $request->session()->put('portal_user_id', $user->id);
+        return response()->json(['user' => $user, 'portal_user_id' => $user->id]);
+    }
+
     /** POST /portal/logout — clears session. */
     public function logout(Request $request): JsonResponse
     {

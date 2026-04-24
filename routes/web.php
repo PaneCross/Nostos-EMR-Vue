@@ -1329,6 +1329,9 @@ Route::middleware('auth')->group(function () {
 Route::get ('/portal/login',         [\App\Http\Controllers\ParticipantPortalController::class, 'loginPage'])->name('portal.login_page');
 Route::post('/portal/login',         [\App\Http\Controllers\ParticipantPortalController::class, 'login'])->name('portal.login');
 Route::post('/portal/logout',        [\App\Http\Controllers\ParticipantPortalController::class, 'logout'])->name('portal.logout');
+// Phase L1 — OTP
+Route::post('/portal/otp/send',      [\App\Http\Controllers\ParticipantPortalController::class, 'otpSend'])->name('portal.otp.send');
+Route::post('/portal/otp/verify',    [\App\Http\Controllers\ParticipantPortalController::class, 'otpVerify'])->name('portal.otp.verify');
 Route::get ('/portal/overview',      [\App\Http\Controllers\ParticipantPortalController::class, 'overview'])->name('portal.overview');
 Route::get ('/portal/medications',   [\App\Http\Controllers\ParticipantPortalController::class, 'medications'])->name('portal.medications');
 Route::get ('/portal/allergies',     [\App\Http\Controllers\ParticipantPortalController::class, 'allergies'])->name('portal.allergies');

@@ -14,6 +14,7 @@ class OtpCode extends Model
 
     protected $fillable = [
         'user_id',
+        'participant_portal_user_id',
         'code_hash',
         'expires_at',
         'used_at',
