@@ -532,6 +532,10 @@ Route::middleware('auth')->group(function () {
     Route::post('/participants/{participant}/restraints/{episode}/idt-review',
         [\App\Http\Controllers\RestraintController::class, 'recordIdtReview'])->name('participants.restraints.idt-review');
 
+    // Phase G2 (MVP completion roadmap): Disease registries
+    Route::get ('/registries/{registry}',       [\App\Http\Controllers\DiseaseRegistryController::class, 'show'])->name('registries.show');
+    Route::get ('/registries/{registry}/export',[\App\Http\Controllers\DiseaseRegistryController::class, 'export'])->name('registries.export');
+
     // Phase G1 (MVP completion roadmap): Care gaps + readmission risk
     Route::get ('/care-gaps/summary',                    [\App\Http\Controllers\CareGapController::class, 'summary'])->name('care_gaps.summary');
     Route::get ('/care-gaps/my-panel',                   [\App\Http\Controllers\CareGapController::class, 'myPanel'])->name('care_gaps.my_panel');
