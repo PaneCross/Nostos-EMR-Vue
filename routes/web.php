@@ -532,6 +532,16 @@ Route::middleware('auth')->group(function () {
     Route::post('/participants/{participant}/restraints/{episode}/idt-review',
         [\App\Http\Controllers\RestraintController::class, 'recordIdtReview'])->name('participants.restraints.idt-review');
 
+    // Phase F2 (MVP completion roadmap): Short wins batch 2
+    Route::get ('/participants/{participant}/beers-flags', [\App\Http\Controllers\ShortWinsF2Controller::class, 'beersFlags'])->name('f2.beers_flags');
+    Route::post('/participants/{participant}/smartsets/{key}', [\App\Http\Controllers\ShortWinsF2Controller::class, 'applySmartSet'])->name('f2.smartset');
+    Route::get ('/notes/{note}/pdf',                 [\App\Http\Controllers\ShortWinsF2Controller::class, 'notePdf'])->name('f2.note_pdf');
+    Route::get ('/search/filters',                   [\App\Http\Controllers\ShortWinsF2Controller::class, 'searchFilters'])->name('f2.search_filters');
+    Route::post('/care-plans/bulk-sign',              [\App\Http\Controllers\ShortWinsF2Controller::class, 'bulkSignCarePlans'])->name('f2.bulk_sign_care_plans');
+    Route::get ('/wristbands/center-print.pdf',      [\App\Http\Controllers\ShortWinsF2Controller::class, 'centerWristbandPdf'])->name('f2.center_wristbands');
+    Route::get ('/participants/{participant}/timeline', [\App\Http\Controllers\ShortWinsF2Controller::class, 'timeline'])->name('f2.timeline');
+    Route::get ('/note-reminders/upcoming',          [\App\Http\Controllers\ShortWinsF2Controller::class, 'noteRemindersUpcoming'])->name('f2.note_reminders');
+
     // Phase F1 (MVP completion roadmap): Short wins batch 1
     Route::get ('/widgets/immunization-forecast', [\App\Http\Controllers\ShortWinsF1Controller::class, 'immunizationForecast'])->name('widgets.immunization_forecast');
     Route::get ('/widgets/late-doses',            [\App\Http\Controllers\ShortWinsF1Controller::class, 'lateDoseTrend'])->name('widgets.late_doses');
