@@ -55,7 +55,9 @@ class AdvancedBiController extends Controller
         $validated = $request->validate([
             'title'       => 'required|string|max:200',
             'description' => 'nullable|string|max:4000',
-            'widgets'     => 'required|array',
+            // Phase O7 — `present` allows [] (user creates an empty dashboard
+            // and adds widgets via the builder UI afterwards).
+            'widgets'     => 'present|array',
             'is_shared'   => 'nullable|boolean',
         ]);
         $d = SavedDashboard::create(array_merge($validated, [

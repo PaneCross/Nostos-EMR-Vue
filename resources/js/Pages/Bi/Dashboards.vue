@@ -25,7 +25,7 @@ async function submit() {
   saving.value = true
   error.value = null
   try {
-    await axios.post('/bi/dashboards', { ...form.value, widgets: [{ kind: 'placeholder' }] })
+    await axios.post('/bi/dashboards', { ...form.value, widgets: [] })
     showForm.value = false
     form.value = { title: '', description: '', is_shared: false }
     refresh()

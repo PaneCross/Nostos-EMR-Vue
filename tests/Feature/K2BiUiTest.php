@@ -48,7 +48,7 @@ class K2BiUiTest extends TestCase
         $this->actingAs($u);
         $r = $this->postJson('/bi/dashboards', [
             'title' => 'Test dashboard',
-            'widgets' => [['kind' => 'placeholder']],
+            'widgets' => [], // Phase O7: empty widgets allowed
             'is_shared' => false,
         ]);
         $r->assertStatus(201)->assertJsonStructure(['dashboard' => ['id', 'title']]);
