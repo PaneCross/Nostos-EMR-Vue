@@ -1332,6 +1332,32 @@ Route::post('/portal/logout',        [\App\Http\Controllers\ParticipantPortalCon
 // Phase L1 — OTP
 Route::post('/portal/otp/send',      [\App\Http\Controllers\ParticipantPortalController::class, 'otpSend'])->name('portal.otp.send');
 Route::post('/portal/otp/verify',    [\App\Http\Controllers\ParticipantPortalController::class, 'otpVerify'])->name('portal.otp.verify');
+
+// Phase L2 — Portal Inertia UI pages (distinct paths from JSON endpoints)
+Route::get('/portal/home',          fn () => \Inertia\Inertia::render('Portal/Overview'))->name('portal.home.ui');
+Route::get('/portal/meds',          fn () => \Inertia\Inertia::render('Portal/Medications'))->name('portal.meds.ui');
+Route::get('/portal/allergies-ui',  fn () => \Inertia\Inertia::render('Portal/Allergies'))->name('portal.allergies.ui');
+Route::get('/portal/problems-ui',   fn () => \Inertia\Inertia::render('Portal/Problems'))->name('portal.problems.ui');
+Route::get('/portal/appts',         fn () => \Inertia\Inertia::render('Portal/Appointments'))->name('portal.appts.ui');
+Route::get('/portal/mail',          fn () => \Inertia\Inertia::render('Portal/Messages'))->name('portal.mail.ui');
+Route::get('/portal/reqs',          fn () => \Inertia\Inertia::render('Portal/Requests'))->name('portal.reqs.ui');
+
+// Phase L2 — PWA manifest (served via Laravel so test suite covers it)
+Route::get('/manifest.webmanifest', function () {
+    $path = public_path('manifest.webmanifest');
+    if (! is_file($path)) abort(404);
+    return response(file_get_contents($path), 200, [
+        'Content-Type' => 'application/manifest+json',
+    ]);
+});
+Route::get('/sw.js', function () {
+    $path = public_path('sw.js');
+    if (! is_file($path)) abort(404);
+    return response(file_get_contents($path), 200, [
+        'Content-Type'  => 'application/javascript',
+        'Cache-Control' => 'no-cache',
+    ]);
+});
 Route::get ('/portal/overview',      [\App\Http\Controllers\ParticipantPortalController::class, 'overview'])->name('portal.overview');
 Route::get ('/portal/medications',   [\App\Http\Controllers\ParticipantPortalController::class, 'medications'])->name('portal.medications');
 Route::get ('/portal/allergies',     [\App\Http\Controllers\ParticipantPortalController::class, 'allergies'])->name('portal.allergies');
