@@ -29,6 +29,10 @@ class Assessment extends Model
         // W4-8 additions
         'fall_history',      // Fall history screen; alert when responses.falls_12_months >= 2
         'lace_plus_index',   // Readmission risk (L+A+C+E, 0–19); dual threshold 5=warning, 10=critical
+        // Phase C2b — substance-use screeners
+        'audit_c_alcohol',    // AUDIT-C (0–12); ≥4 positive
+        'cage_alcohol',       // CAGE (0–4); ≥2 positive
+        'dast10_substance',   // DAST-10 (0–10)
     ];
 
     // ── Score ranges by type (max score) ─────────────────────────────────────

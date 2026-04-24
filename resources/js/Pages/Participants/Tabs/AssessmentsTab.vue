@@ -39,6 +39,9 @@ const ASSESSMENT_LABELS: Record<string, string> = {
   braden_scale:          'Braden Scale (Pressure Injury Risk)',
   moca_cognitive:        'MoCA (Cognitive Assessment)',
   oral_health:           'Oral Health Screening (OHAT)',
+  audit_c_alcohol:       'AUDIT-C (Alcohol Use)',
+  cage_alcohol:          'CAGE (Alcohol Misuse)',
+  dast10_substance:      'DAST-10 (Substance Use)',
 }
 
 const BRADEN_SUBSCALES = [
