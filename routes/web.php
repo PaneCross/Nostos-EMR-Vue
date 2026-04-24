@@ -1267,6 +1267,7 @@ Route::middleware('auth')->group(function () {
         // Audit log viewer
         Route::get('/audit',                      [AuditLogController::class, 'audit'])->name('it-admin.audit');
         Route::get('/audit/log',                  [AuditLogController::class, 'auditLog'])->name('it-admin.audit.log');
+        Route::get('/audit/log/{log}',            [AuditLogController::class, 'auditLogShow'])->name('it-admin.audit.log.show');
         Route::get('/audit/export',               [AuditLogController::class, 'exportAuditCsv'])->name('it-admin.audit.export');
         // State Medicaid Configuration — Phase 9C (DEBT-038)
         Route::get('/state-config',               [StateMedicaidConfigController::class, 'index'])->name('it-admin.state-config.index');

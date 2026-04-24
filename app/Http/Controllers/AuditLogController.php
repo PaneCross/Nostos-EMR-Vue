@@ -69,6 +69,18 @@ class AuditLogController extends Controller
     }
 
     /**
+     * Phase M2 — Single audit-log row detail for the UI modal.
+     * GET /it-admin/audit/log/{log}
+     */
+    public function auditLogShow(Request $request, \App\Models\AuditLog $log): JsonResponse
+    {
+        $this->requireItAdmin($request);
+        abort_if($log->tenant_id !== $request->user()->tenant_id, 403);
+        $log->load('user:id,first_name,last_name,department');
+        return response()->json(['log' => $log]);
+    }
+
+    /**
      * Export the full audit log as a CSV file for compliance audits.
      * Capped at 10,000 rows. Filename includes today's date.
      */

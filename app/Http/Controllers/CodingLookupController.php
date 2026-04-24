@@ -19,6 +19,20 @@ class CodingLookupController extends Controller
         $term = trim((string) $request->query('q', ''));
         if (strlen($term) < 2) return response()->json(['results' => []]);
 
+        // Phase M2 — minimal SNOMED ECL support: `<<CODE` returns concept
+        // descendants. Our local seed table has no hierarchy column, so we
+        // approximate via the category of the parent code.
+        if (str_starts_with($term, '<<')) {
+            $parentCode = trim(substr($term, 2));
+            $parent = SnomedLookup::where('code', $parentCode)->first();
+            if (! $parent) return response()->json(['results' => [], 'ecl' => 'parent_not_found']);
+            $rows = SnomedLookup::where('category', $parent->category)
+                ->where('code', '!=', $parent->code)
+                ->orderBy('display')->limit(50)
+                ->get(['code', 'display', 'category', 'icd10_code']);
+            return response()->json(['results' => $rows, 'ecl' => 'descendants_by_category']);
+        }
+
         $rows = SnomedLookup::search($term)
             ->orderBy('display')
             ->limit(25)
