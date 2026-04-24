@@ -38,7 +38,7 @@ class AuditLogImmutabilityTest extends TestCase
 
     // ── Model-level immutability ───────────────────────────────────────────────
 
-    public function update_existing_audit_log_throws_immutable_record_exception(): void
+    public function test_update_existing_audit_log_throws_immutable_record_exception(): void
     {
         $log = AuditLog::record(action: 'original', tenantId: $this->tenant->id);
 
@@ -49,7 +49,7 @@ class AuditLogImmutabilityTest extends TestCase
         $log->save();
     }
 
-    public function delete_audit_log_throws_immutable_record_exception(): void
+    public function test_delete_audit_log_throws_immutable_record_exception(): void
     {
         $log = AuditLog::record(action: 'will_not_delete', tenantId: $this->tenant->id);
         $id  = $log->id;
@@ -62,7 +62,7 @@ class AuditLogImmutabilityTest extends TestCase
         $this->assertDatabaseHas('shared_audit_logs', ['id' => $id]);
     }
 
-    public function new_audit_log_creation_does_not_throw(): void
+    public function test_new_audit_log_creation_does_not_throw(): void
     {
         // Inserting a new record must NOT throw
         $log = AuditLog::record(
@@ -84,7 +84,7 @@ class AuditLogImmutabilityTest extends TestCase
 
     // ── DB-level immutability (PostgreSQL rules) ───────────────────────────────
 
-    public function raw_db_update_is_blocked_by_postgresql_rule(): void
+    public function test_raw_db_update_is_blocked_by_postgresql_rule(): void
     {
         $log = AuditLog::record(action: 'protected', tenantId: $this->tenant->id);
 
@@ -97,7 +97,7 @@ class AuditLogImmutabilityTest extends TestCase
         $this->assertDatabaseMissing('shared_audit_logs', ['action' => 'tampered_via_raw_sql']);
     }
 
-    public function raw_db_delete_is_blocked_by_postgresql_rule(): void
+    public function test_raw_db_delete_is_blocked_by_postgresql_rule(): void
     {
         $log = AuditLog::record(action: 'protected_delete', tenantId: $this->tenant->id);
         $id  = $log->id;
@@ -110,7 +110,7 @@ class AuditLogImmutabilityTest extends TestCase
 
     // ── Exception class properties ─────────────────────────────────────────────
 
-    public function immutable_record_exception_message_includes_model_name(): void
+    public function test_immutable_record_exception_message_includes_model_name(): void
     {
         $e = new ImmutableRecordException('AuditLog');
         $this->assertStringContainsString('AuditLog', $e->getMessage());

@@ -30,6 +30,14 @@ services:
             - mailpit
     pgsql:
         image: 'postgres:17'
+        # Bumped shared_buffers + max_locks_per_transaction so paratest can
+        # run 4+ concurrent schema rebuilds without "out of shared memory"
+        # errors (150+ emr_* tables with FK cascades chew through locks fast).
+        command: >
+            postgres
+            -c shared_buffers=256MB
+            -c max_locks_per_transaction=256
+            -c max_connections=200
         ports:
             - '${FORWARD_DB_PORT:-5433}:5432'
         environment:

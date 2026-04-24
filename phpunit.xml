@@ -3,6 +3,7 @@
          xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
          bootstrap="vendor/autoload.php"
          colors="true"
+         displayDetailsOnTestsThatTriggerDeprecations="false"
 >
     <testsuites>
         <testsuite name="Unit">
@@ -12,7 +13,13 @@
             <directory>tests/Feature</directory>
         </testsuite>
     </testsuites>
-    <source>
+    <!--
+      Phase post-B7 speedup. restrictDeprecations="true" tells PHPUnit to only
+      surface deprecation notices triggered from our app/ source; deprecations
+      from vendor/ (e.g. PHP 8.4's PDO::MYSQL_ATTR_SSL_CA from Laravel's DB
+      provider) no longer flip every test row to DEPR.
+    -->
+    <source restrictDeprecations="true" restrictNotices="false" restrictWarnings="false">
         <include>
             <directory>app</directory>
         </include>

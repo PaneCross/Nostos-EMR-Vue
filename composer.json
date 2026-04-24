@@ -53,6 +53,10 @@
         ],
         "test": [
             "@php artisan storage:fix-permissions --user=sail",
+            "@php artisan test --parallel --processes=2"
+        ],
+        "test-serial": [
+            "@php artisan storage:fix-permissions --user=sail",
             "@php artisan test"
         ]
     },
