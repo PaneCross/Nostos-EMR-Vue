@@ -295,4 +295,119 @@ class PharmacyDashboardController extends Controller
             'pending_count' => ClinicalOrder::forTenant($tenantId)->where('order_type', 'medication_change')->pending()->count(),
         ]);
     }
+
+    /**
+     * Phase I6 — BCMA override trend (last 7 days, grouped by day).
+     * Counts EmarRecord rows with barcode_mismatch_overridden_by_user_id set.
+     */
+    public function bcmaOverrides(): JsonResponse
+    {
+        $this->requireDept();
+        $tenantId = Auth::user()->tenant_id;
+        $rows = \Illuminate\Support\Facades\DB::table('emr_emar_records')
+            ->where('tenant_id', $tenantId)
+            ->whereNotNull('barcode_mismatch_overridden_by_user_id')
+            ->where('barcode_scanned_participant_at', '>=', now()->subDays(7))
+            ->selectRaw('DATE(barcode_scanned_participant_at) AS day, COUNT(*) AS count')
+            ->groupBy('day')->orderBy('day')->get();
+        return response()->json([
+            'rows'  => $rows,
+            'total' => (int) $rows->sum('count'),
+        ]);
+    }
+
+    /**
+     * Phase I6 — Beers PIM rollup.
+     * Count of participants with at least one active medication flagged by
+     * Beers Criteria. Top 10 PIMs with participant counts.
+     */
+    public function beersRollup(\App\Services\BeersCriteriaService $beers): JsonResponse
+    {
+        $this->requireDept();
+        $tenantId = Auth::user()->tenant_id;
+        $enrolled = \App\Models\Participant::forTenant($tenantId)
+            ->where('enrollment_status', 'enrolled')->get(['id']);
+
+        $participantsWithPims = 0;
+        $pimCounts = [];
+        foreach ($enrolled as $p) {
+            $flags = $beers->evaluate($p);
+            if (! empty($flags)) {
+                $participantsWithPims++;
+                foreach ($flags as $f) {
+                    foreach ($f['flags'] as $pim) {
+                        $key = $pim['risk_category'];
+                        $pimCounts[$key] = ($pimCounts[$key] ?? 0) + 1;
+                    }
+                }
+            }
+        }
+        arsort($pimCounts);
+        $top = array_slice($pimCounts, 0, 10, true);
+
+        return response()->json([
+            'participants_with_pims' => $participantsWithPims,
+            'enrolled_total'         => $enrolled->count(),
+            'top_pim_categories'     => collect($top)->map(fn ($cnt, $cat) => [
+                'category' => $cat, 'count' => $cnt,
+            ])->values(),
+        ]);
+    }
+
+    /**
+     * Phase I6 — MedWatch deadlines approaching or overdue.
+     * Lists ADE rows that still require MedWatch reporting.
+     */
+    public function medwatchDeadlines(): JsonResponse
+    {
+        $this->requireDept();
+        $tenantId = Auth::user()->tenant_id;
+
+        $rows = \App\Models\AdverseDrugEvent::forTenant($tenantId)
+            ->whereIn('severity', \App\Models\AdverseDrugEvent::MEDWATCH_REQUIRED_SEVERITIES)
+            ->whereNull('reported_to_medwatch_at')
+            ->with(['participant:id,mrn,first_name,last_name', 'medication:id,drug_name'])
+            ->orderBy('onset_date')
+            ->limit(20)
+            ->get()
+            ->map(fn ($a) => [
+                'id' => $a->id,
+                'participant' => $a->participant
+                    ? [ 'id' => $a->participant->id, 'name' => $a->participant->first_name . ' ' . $a->participant->last_name, 'mrn' => $a->participant->mrn ]
+                    : null,
+                'medication' => $a->medication?->drug_name,
+                'severity' => $a->severity,
+                'onset_date' => $a->onset_date?->toDateString(),
+                'days_since_onset' => (int) abs($a->onset_date->diffInDays(now())),
+                'overdue' => $a->medwatchOverdue(),
+                'href' => '/compliance/ade-reporting',
+            ]);
+        return response()->json(['rows' => $rows, 'total' => $rows->count()]);
+    }
+
+    /**
+     * Phase I6 — Pending polypharmacy reviews.
+     */
+    public function polypharmacyQueue(): JsonResponse
+    {
+        $this->requireDept();
+        $tenantId = Auth::user()->tenant_id;
+        $rows = \App\Models\PolypharmacyReview::forTenant($tenantId)->pending()
+            ->with('participant:id,mrn,first_name,last_name')
+            ->orderByDesc('queued_at')
+            ->limit(20)
+            ->get()
+            ->map(fn ($r) => [
+                'id' => $r->id,
+                'participant' => $r->participant ? [
+                    'id' => $r->participant->id,
+                    'name' => $r->participant->first_name . ' ' . $r->participant->last_name,
+                    'mrn' => $r->participant->mrn,
+                ] : null,
+                'active_med_count_at_queue' => $r->active_med_count_at_queue,
+                'queued_at' => $r->queued_at?->toIso8601String(),
+                'href' => $r->participant_id ? "/participants/{$r->participant_id}?tab=medications" : null,
+            ]);
+        return response()->json(['rows' => $rows, 'total' => $rows->count()]);
+    }
 }

@@ -370,4 +370,112 @@ class PrimaryCareDashboardController extends Controller
                 ->count(),
         ]);
     }
+
+    /**
+     * Phase I6 — Care-gap rollup for the authenticated PCP's panel.
+     */
+    public function careGapsRollup(): JsonResponse
+    {
+        $this->requireDept();
+        $user = Auth::user();
+        $tenantId = $user->tenant_id;
+
+        $query = \Illuminate\Support\Facades\DB::table('emr_care_gaps')
+            ->where('emr_care_gaps.tenant_id', $tenantId)
+            ->where('emr_care_gaps.satisfied', false);
+
+        if (! $user->isSuperAdmin()) {
+            $query->whereIn('participant_id', function ($q) use ($user, $tenantId) {
+                $q->select('id')->from('emr_participants')
+                    ->where('tenant_id', $tenantId)
+                    ->where('primary_care_user_id', $user->id);
+            });
+        }
+
+        $byMeasure = $query->selectRaw('measure, COUNT(*) as open')
+            ->groupBy('measure')
+            ->orderByDesc('open')
+            ->get();
+
+        return response()->json(['rows' => $byMeasure, 'total_open' => (int) $byMeasure->sum('open')]);
+    }
+
+    /**
+     * Phase I6 — Top-10 predictive-risk-high participants (PCP panel scoped).
+     */
+    public function highRiskPanel(): JsonResponse
+    {
+        $this->requireDept();
+        $user = Auth::user();
+        $tenantId = $user->tenant_id;
+
+        $scores = \App\Models\PredictiveRiskScore::forTenant($tenantId)->high()
+            ->where('computed_at', '>=', now()->subDays(7))
+            ->when(! $user->isSuperAdmin(), fn ($q) => $q->whereIn('participant_id', function ($sub) use ($user, $tenantId) {
+                $sub->select('id')->from('emr_participants')
+                    ->where('tenant_id', $tenantId)
+                    ->where('primary_care_user_id', $user->id);
+            }))
+            ->with('participant:id,mrn,first_name,last_name')
+            ->orderByDesc('score')
+            ->limit(10)
+            ->get()
+            ->map(fn ($s) => [
+                'id' => $s->id,
+                'participant' => $s->participant ? [
+                    'id' => $s->participant->id,
+                    'name' => $s->participant->first_name . ' ' . $s->participant->last_name,
+                    'mrn' => $s->participant->mrn,
+                ] : null,
+                'risk_type' => $s->risk_type,
+                'score' => $s->score,
+                'band' => $s->band,
+                'href' => $s->participant_id ? "/participants/{$s->participant_id}" : null,
+            ]);
+
+        return response()->json(['rows' => $scores, 'total' => $scores->count()]);
+    }
+
+    /**
+     * Phase I6 — INR overdue warfarin plans, panel-scoped for PCP.
+     */
+    public function inrOverdue(): JsonResponse
+    {
+        $this->requireDept();
+        $user = Auth::user();
+        $tenantId = $user->tenant_id;
+
+        $plans = \App\Models\AnticoagulationPlan::forTenant($tenantId)->active()
+            ->where('agent', 'warfarin')
+            ->when(! $user->isSuperAdmin(), fn ($q) => $q->whereIn('participant_id', function ($sub) use ($user, $tenantId) {
+                $sub->select('id')->from('emr_participants')
+                    ->where('tenant_id', $tenantId)
+                    ->where('primary_care_user_id', $user->id);
+            }))
+            ->with('participant:id,mrn,first_name,last_name')
+            ->get();
+
+        $overdue = [];
+        foreach ($plans as $plan) {
+            $interval = $plan->monitoring_interval_days ?? \App\Models\AnticoagulationPlan::DEFAULT_WARFARIN_MONITOR_DAYS;
+            $latest = \App\Models\InrResult::where('participant_id', $plan->participant_id)
+                ->orderByDesc('drawn_at')->value('drawn_at');
+            $threshold = now()->subDays($interval);
+            if (! $latest || $latest->lt($threshold)) {
+                $overdue[] = [
+                    'plan_id' => $plan->id,
+                    'participant' => $plan->participant ? [
+                        'id' => $plan->participant->id,
+                        'name' => $plan->participant->first_name . ' ' . $plan->participant->last_name,
+                        'mrn' => $plan->participant->mrn,
+                    ] : null,
+                    'last_inr_at' => $latest?->toIso8601String(),
+                    'days_since' => $latest ? (int) abs($latest->diffInDays(now())) : null,
+                    'interval_days' => $interval,
+                    'href' => $plan->participant_id ? "/participants/{$plan->participant_id}?tab=medications" : null,
+                ];
+            }
+        }
+        return response()->json(['rows' => $overdue, 'total' => count($overdue)]);
+    }
 }

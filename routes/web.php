@@ -142,6 +142,10 @@ Route::middleware('auth')->group(function () {
             Route::get('/wounds',     [PrimaryCareDashboardController::class, 'wounds'])->name('dashboards.primary-care.wounds');
             // W5-2: Unreviewed abnormal lab results for clinical attention
             Route::get('/lab-results', [PrimaryCareDashboardController::class, 'labResults'])->name('dashboards.primary-care.lab_results');
+            // Phase I6 — new widgets
+            Route::get('/care-gaps-rollup', [PrimaryCareDashboardController::class, 'careGapsRollup'])->name('dashboards.primary-care.care_gaps_rollup');
+            Route::get('/high-risk-panel',  [PrimaryCareDashboardController::class, 'highRiskPanel'])->name('dashboards.primary-care.high_risk_panel');
+            Route::get('/inr-overdue',      [PrimaryCareDashboardController::class, 'inrOverdue'])->name('dashboards.primary-care.inr_overdue');
         });
 
         Route::prefix('therapies')->group(function () {
@@ -206,6 +210,11 @@ Route::middleware('auth')->group(function () {
             Route::get('/refills',      [PharmacyDashboardController::class, 'refills'])->name('dashboards.pharmacy.refills');
             // W4-7: CPOE orders widget — medication_change orders for pharmacy dept
             Route::get('/orders',       [PharmacyDashboardController::class, 'orders'])->name('dashboards.pharmacy.orders');
+            // Phase I6 — widget rollups
+            Route::get('/bcma-overrides',      [PharmacyDashboardController::class, 'bcmaOverrides'])->name('dashboards.pharmacy.bcma_overrides');
+            Route::get('/beers-rollup',        [PharmacyDashboardController::class, 'beersRollup'])->name('dashboards.pharmacy.beers_rollup');
+            Route::get('/medwatch-deadlines',  [PharmacyDashboardController::class, 'medwatchDeadlines'])->name('dashboards.pharmacy.medwatch_deadlines');
+            Route::get('/polypharmacy-queue',  [PharmacyDashboardController::class, 'polypharmacyQueue'])->name('dashboards.pharmacy.polypharmacy_queue');
         });
 
         Route::prefix('idt')->group(function () {

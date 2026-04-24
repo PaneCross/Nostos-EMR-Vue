@@ -26,6 +26,9 @@ const orders = ref<any[]>([])
 const statCount = ref(0)
 const wounds = ref<any[]>([])
 const criticalCount = ref(0)
+const careGaps = ref<{ rows: any[]; total_open: number }>({ rows: [], total_open: 0 })
+const highRisk = ref<any[]>([])
+const inrOverdue = ref<any[]>([])
 
 onMounted(() => {
     Promise.all([
@@ -35,7 +38,10 @@ onMounted(() => {
         axios.get('/dashboards/primary-care/vitals'),
         axios.get('/dashboards/primary-care/orders'),
         axios.get('/dashboards/primary-care/wounds'),
-    ]).then(([r1, r2, r3, r4, r5, r6]) => {
+        axios.get('/dashboards/primary-care/care-gaps-rollup'),
+        axios.get('/dashboards/primary-care/high-risk-panel'),
+        axios.get('/dashboards/primary-care/inr-overdue'),
+    ]).then(([r1, r2, r3, r4, r5, r6, r7, r8, r9]) => {
         appointments.value = r1.data.appointments ?? r1.data ?? []
         alerts.value = r2.data.alerts ?? r2.data ?? []
         unsignedNotes.value = r3.data.unsigned_notes ?? []
@@ -45,8 +51,31 @@ onMounted(() => {
         statCount.value = r5.data.stat_count ?? 0
         wounds.value = r6.data.wounds ?? []
         criticalCount.value = r6.data.critical_count ?? 0
+        careGaps.value = r7.data ?? { rows: [], total_open: 0 }
+        highRisk.value = r8.data.rows ?? []
+        inrOverdue.value = r9.data.rows ?? []
     }).finally(() => loading.value = false)
 })
+
+const highRiskItems = computed<ActionItem[]>(() =>
+    highRisk.value.map(s => ({
+        label: `${s.participant?.name ?? '-'} — ${s.risk_type}`,
+        sublabel: `Score ${s.score} · Band ${s.band}`,
+        badge: s.band?.toUpperCase(),
+        badgeColor: 'bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300',
+        href: s.href ?? '/participants',
+    }))
+)
+
+const inrOverdueItems = computed<ActionItem[]>(() =>
+    inrOverdue.value.map(r => ({
+        label: `${r.participant?.name ?? '-'}`,
+        sublabel: r.last_inr_at ? `Last INR ${r.days_since}d ago (target ${r.interval_days}d)` : 'No INR on record',
+        badge: 'OVERDUE',
+        badgeColor: 'bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300',
+        href: r.href ?? '/participants',
+    }))
+)
 
 const scheduleItems = computed<ActionItem[]>(() =>
     appointments.value.map(a => ({
@@ -203,5 +232,42 @@ const woundItems = computed<ActionItem[]>(() =>
             viewAllHref="/participants"
             :loading="loading"
         />
+
+        <ActionWidget
+            :title="`High-Risk Panel (${highRisk.length})`"
+            description="Participants with recent high-band predictive risk scores."
+            :items="highRiskItems"
+            emptyMessage="No high-risk participants in panel."
+            viewAllHref="/participants"
+            :loading="loading"
+        />
+
+        <ActionWidget
+            :title="`INR Overdue (${inrOverdue.length})`"
+            description="Warfarin plans past their monitoring interval."
+            :items="inrOverdueItems"
+            emptyMessage="No overdue INR monitoring."
+            viewAllHref="/participants"
+            :loading="loading"
+        />
+
+        <div class="rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4 shadow-sm">
+            <div class="flex items-baseline justify-between mb-3">
+                <h3 class="text-sm font-semibold text-gray-900 dark:text-slate-100">Care-Gap Rollup</h3>
+                <span class="text-xs text-gray-500 dark:text-slate-400">Open: {{ careGaps.total_open }}</span>
+            </div>
+            <p class="text-xs text-gray-500 dark:text-slate-400 mb-2">Open care gaps on your panel, grouped by measure.</p>
+            <ul v-if="careGaps.rows?.length" class="text-sm space-y-1">
+                <li
+                    v-for="m in careGaps.rows"
+                    :key="m.measure"
+                    class="flex justify-between border-b border-gray-100 dark:border-slate-700 pb-1"
+                >
+                    <span class="text-gray-700 dark:text-slate-200">{{ m.measure }}</span>
+                    <span class="font-semibold text-gray-900 dark:text-slate-100">{{ m.open }}</span>
+                </li>
+            </ul>
+            <p v-else class="text-sm text-gray-500 dark:text-slate-400">No open care gaps.</p>
+        </div>
     </div>
 </template>

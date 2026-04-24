@@ -23,6 +23,10 @@ const controlledRecords = ref<any[]>([])
 const refillMedications = ref<any[]>([])
 const orders = ref<any[]>([])
 const statCount = ref(0)
+const bcmaOverrides = ref<{ rows: any[]; total: number }>({ rows: [], total: 0 })
+const beersRollup = ref<any>({ participants_with_pims: 0, enrolled_total: 0, top_pim_categories: [] })
+const medwatchRows = ref<any[]>([])
+const polyRows = ref<any[]>([])
 
 onMounted(() => {
     Promise.all([
@@ -31,7 +35,11 @@ onMounted(() => {
         axios.get('/dashboards/pharmacy/controlled'),
         axios.get('/dashboards/pharmacy/refills'),
         axios.get('/dashboards/pharmacy/orders'),
-    ]).then(([r1, r2, r3, r4, r5]) => {
+        axios.get('/dashboards/pharmacy/bcma-overrides'),
+        axios.get('/dashboards/pharmacy/beers-rollup'),
+        axios.get('/dashboards/pharmacy/medwatch-deadlines'),
+        axios.get('/dashboards/pharmacy/polypharmacy-queue'),
+    ]).then(([r1, r2, r3, r4, r5, r6, r7, r8, r9]) => {
         newOrders.value = r1.data.new_orders ?? []
         discontinued.value = r1.data.discontinued ?? []
         interactionAlerts.value = r2.data.alerts ?? []
@@ -39,8 +47,34 @@ onMounted(() => {
         refillMedications.value = r4.data.medications ?? []
         orders.value = r5.data.orders ?? []
         statCount.value = r5.data.stat_count ?? 0
+        bcmaOverrides.value = r6.data ?? { rows: [], total: 0 }
+        beersRollup.value = r7.data ?? { participants_with_pims: 0, enrolled_total: 0, top_pim_categories: [] }
+        medwatchRows.value = r8.data.rows ?? []
+        polyRows.value = r9.data.rows ?? []
     }).finally(() => loading.value = false)
 })
+
+const medwatchItems = computed<ActionItem[]>(() =>
+    medwatchRows.value.map(a => ({
+        label: `${a.participant?.name ?? '-'} — ${a.medication ?? '-'}`,
+        sublabel: `Onset ${a.onset_date ?? '-'} · ${a.days_since_onset ?? '?'}d since`,
+        badge: a.overdue ? 'OVERDUE' : a.severity,
+        badgeColor: a.overdue
+            ? 'bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300'
+            : 'bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300',
+        href: a.href ?? '/compliance/ade-reporting',
+    }))
+)
+
+const polyItems = computed<ActionItem[]>(() =>
+    polyRows.value.map(r => ({
+        label: `${r.participant?.name ?? '-'}`,
+        sublabel: `${r.active_med_count_at_queue} active meds`,
+        badge: 'Pending',
+        badgeColor: 'bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300',
+        href: r.href ?? '/pharmacy',
+    }))
+)
 
 const medChangeItems = computed<ActionItem[]>(() => {
     const newItems: ActionItem[] = newOrders.value.map(m => ({
@@ -166,5 +200,62 @@ const orderItems = computed<ActionItem[]>(() =>
             viewAllHref="/orders"
             :loading="loading"
         />
+
+        <ActionWidget
+            :title="`MedWatch Deadlines (${medwatchRows.length})`"
+            description="Severe+ ADEs awaiting MedWatch reporting (15-day rule)."
+            :items="medwatchItems"
+            emptyMessage="No MedWatch reports pending."
+            viewAllHref="/compliance/ade-reporting"
+            :loading="loading"
+        />
+
+        <ActionWidget
+            :title="`Polypharmacy Review Queue (${polyRows.length})`"
+            description="Participants queued for polypharmacy review."
+            :items="polyItems"
+            emptyMessage="No polypharmacy reviews pending."
+            viewAllHref="/pharmacy"
+            :loading="loading"
+        />
+
+        <div class="rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4 shadow-sm">
+            <div class="flex items-baseline justify-between mb-3">
+                <h3 class="text-sm font-semibold text-gray-900 dark:text-slate-100">Beers PIM Rollup</h3>
+                <span class="text-xs text-gray-500 dark:text-slate-400">
+                    {{ beersRollup.participants_with_pims }}/{{ beersRollup.enrolled_total }} enrolled
+                </span>
+            </div>
+            <p class="text-xs text-gray-500 dark:text-slate-400 mb-2">Top PIM categories across panel.</p>
+            <ul v-if="beersRollup.top_pim_categories?.length" class="text-sm space-y-1">
+                <li
+                    v-for="c in beersRollup.top_pim_categories"
+                    :key="c.category"
+                    class="flex justify-between border-b border-gray-100 dark:border-slate-700 pb-1"
+                >
+                    <span class="text-gray-700 dark:text-slate-200">{{ c.category }}</span>
+                    <span class="font-semibold text-gray-900 dark:text-slate-100">{{ c.count }}</span>
+                </li>
+            </ul>
+            <p v-else class="text-sm text-gray-500 dark:text-slate-400">No PIMs detected on enrolled panel.</p>
+        </div>
+
+        <div class="rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4 shadow-sm">
+            <div class="flex items-baseline justify-between mb-3">
+                <h3 class="text-sm font-semibold text-gray-900 dark:text-slate-100">BCMA Overrides — Last 7 Days</h3>
+                <span class="text-xs text-gray-500 dark:text-slate-400">Total: {{ bcmaOverrides.total }}</span>
+            </div>
+            <ul v-if="bcmaOverrides.rows?.length" class="text-sm space-y-1">
+                <li
+                    v-for="d in bcmaOverrides.rows"
+                    :key="d.day"
+                    class="flex justify-between border-b border-gray-100 dark:border-slate-700 pb-1"
+                >
+                    <span class="text-gray-700 dark:text-slate-200">{{ d.day }}</span>
+                    <span class="font-semibold text-gray-900 dark:text-slate-100">{{ d.count }}</span>
+                </li>
+            </ul>
+            <p v-else class="text-sm text-gray-500 dark:text-slate-400">No BCMA overrides in the last 7 days.</p>
+        </div>
     </div>
 </template>
