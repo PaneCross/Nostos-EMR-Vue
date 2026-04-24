@@ -6,7 +6,7 @@
 // confirmation modal. Photo upload/delete via axios.
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { router } from '@inertiajs/vue3'
 import axios from 'axios'
 import {
@@ -80,6 +80,39 @@ const FLAG_LABELS: Record<string, string> = {
   isolation: 'Isolation', dnr: 'DNR', weight_bearing_restriction: 'Weight Bearing',
   dietary_restriction: 'Dietary', elopement_risk: 'Elopement Risk',
   hospice: 'Hospice', other: 'Other',
+}
+
+// ── Phase I2: clinical-risk chips (Beers / predictive risk / care gaps) ──────
+const beersCount = ref<number | null>(null)
+const riskBand = ref<string | null>(null)       // 'low' | 'medium' | 'high'
+const riskScore = ref<number | null>(null)
+const careGapCount = ref<number | null>(null)
+
+onMounted(async () => {
+  const id = props.participant.id
+  // Fire all three in parallel; swallow individual failures so a 403 on one
+  // doesn't blank the rest.
+  axios.get(`/participants/${id}/beers-flags`).then(r => {
+    const rows = r.data?.flags ?? r.data?.rows ?? []
+    beersCount.value = Array.isArray(rows) ? rows.length : 0
+  }).catch(() => { beersCount.value = 0 })
+  axios.get(`/participants/${id}/predictive-risk`).then(r => {
+    const latest = r.data?.latest ?? {}
+    // Prefer acute_event for demo-visible chip; fall back to disenrollment.
+    const s = latest['acute_event'] ?? latest['disenrollment'] ?? null
+    riskBand.value = s?.band ?? null
+    riskScore.value = s?.score ?? null
+  }).catch(() => {})
+  axios.get(`/participants/${id}/care-gaps`).then(r => {
+    const gaps = r.data?.gaps ?? []
+    careGapCount.value = Array.isArray(gaps) ? gaps.filter((g: any) => !g.satisfied).length : 0
+  }).catch(() => { careGapCount.value = 0 })
+})
+
+const RISK_CHIP_CLASS: Record<string, string> = {
+  high:   'bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300 border-red-300 dark:border-red-700',
+  medium: 'bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-700',
+  low:    'bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700',
 }
 
 // ── Photo state ────────────────────────────────────────────────────────────────
@@ -343,6 +376,32 @@ const sectionHdr = 'text-xs font-bold text-slate-500 dark:text-slate-400 upperca
           <span v-else-if="participant.advance_directive_type === 'polst'" class="inline-flex items-center px-2 py-0.5 rounded border text-xs font-bold bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-300 border-amber-300 dark:border-amber-700">POLST</span>
           <span v-else-if="participant.advance_directive_status === 'has_directive'" class="inline-flex items-center px-2 py-0.5 rounded border text-xs font-medium bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300 border-gray-300 dark:border-slate-600">Advance Directive on File</span>
           <span v-else-if="['declined_directive','unknown','incapacitated_no_directive'].includes(participant.advance_directive_status ?? '')" class="inline-flex items-center px-2 py-0.5 rounded border text-xs font-medium bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-400 border-gray-300 dark:border-slate-600">No Directive</span>
+        </div>
+
+        <!-- Phase I2 — clinical-risk chips -->
+        <div class="flex flex-wrap gap-1 mt-1" data-testid="clinical-risk-chips">
+          <span
+            v-if="beersCount !== null && beersCount > 0"
+            title="Active medications flagged by AGS Beers Criteria"
+            class="inline-flex items-center px-2 py-0.5 rounded border text-xs font-medium bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800 cursor-pointer"
+            @click="emit('tab-change', 'medications')"
+          >
+            Beers · {{ beersCount }}
+          </span>
+          <span
+            v-if="riskBand"
+            :title="`Predictive acute-event risk: ${riskScore}/100 (${riskBand})`"
+            :class="['inline-flex items-center px-2 py-0.5 rounded border text-xs font-medium', RISK_CHIP_CLASS[riskBand] ?? 'bg-gray-100 text-gray-600']"
+          >
+            Risk · {{ riskBand }}<span v-if="riskScore !== null" class="ml-1 opacity-70">({{ riskScore }})</span>
+          </span>
+          <span
+            v-if="careGapCount !== null && careGapCount > 0"
+            title="Open preventive-care gaps"
+            :class="['inline-flex items-center px-2 py-0.5 rounded border text-xs font-medium', careGapCount >= 3 ? 'bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800' : 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800']"
+          >
+            Care gaps · {{ careGapCount }}
+          </span>
         </div>
       </div>
 

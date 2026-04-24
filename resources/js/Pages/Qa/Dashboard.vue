@@ -46,6 +46,9 @@ interface IncidentRow {
   status: string
   rca_required: boolean
   rca_completed_at: string | null
+  // Phase I2 — sentinel classification state
+  is_sentinel?: boolean | null
+  sentinel_classified_at?: string | null
 }
 
 interface CompliancePosture {
@@ -98,6 +101,54 @@ const props = defineProps<{
 
 const page = usePage()
 const user = computed(() => (page.props.auth as any)?.user)
+
+// ── Phase I2 — Sentinel classify ───────────────────────────────────────────
+const canClassifySentinel = computed(() => {
+  const u = user.value
+  if (!u) return false
+  if (u.role === 'super_admin') return true
+  return ['qa_compliance', 'executive'].includes(u.department)
+})
+
+const sentinelOpen = ref(false)
+const sentinelTarget = ref<IncidentRow | null>(null)
+const sentinelReason = ref('')
+const sentinelSubmitting = ref(false)
+const sentinelError = ref<string | null>(null)
+
+function openSentinelModal(incident: IncidentRow) {
+  sentinelTarget.value = incident
+  sentinelReason.value = ''
+  sentinelError.value = null
+  sentinelOpen.value = true
+}
+function closeSentinelModal() {
+  sentinelOpen.value = false
+  sentinelTarget.value = null
+  sentinelError.value = null
+}
+async function submitSentinel() {
+  if (!sentinelTarget.value) return
+  if (sentinelReason.value.trim().length < 10) {
+    sentinelError.value = 'Reason must be at least 10 characters.'
+    return
+  }
+  sentinelSubmitting.value = true
+  sentinelError.value = null
+  try {
+    await axios.post(`/qa/incidents/${sentinelTarget.value.id}/classify-sentinel`, {
+      reason: sentinelReason.value.trim(),
+    })
+    // Mark the in-memory row as classified so UI updates immediately
+    sentinelTarget.value.is_sentinel = true
+    sentinelTarget.value.sentinel_classified_at = new Date().toISOString()
+    closeSentinelModal()
+  } catch (e: any) {
+    sentinelError.value = e?.response?.data?.message ?? 'Classification failed.'
+  } finally {
+    sentinelSubmitting.value = false
+  }
+}
 
 // ── Compliance tabs ────────────────────────────────────────────────────────
 
@@ -396,12 +447,26 @@ function fmt(dateStr: string | null): string {
                   <span v-else class="text-gray-400 dark:text-slate-500 text-xs">N/A</span>
                 </td>
                 <td class="px-4 py-3">
-                  <a
-                    :href="`/incidents/${incident.id}`"
-                    class="text-blue-600 dark:text-blue-400 hover:underline text-xs flex items-center gap-0.5"
-                  >
-                    View <ChevronRightIcon class="w-3 h-3" />
-                  </a>
+                  <div class="flex items-center gap-2">
+                    <span
+                      v-if="incident.is_sentinel"
+                      class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300 border border-red-300 dark:border-red-700"
+                      title="Classified as sentinel event"
+                    >SENTINEL</span>
+                    <button
+                      v-else-if="canClassifySentinel"
+                      type="button"
+                      class="text-xs px-2 py-0.5 border border-red-300 dark:border-red-700 text-red-600 dark:text-red-400 rounded hover:bg-red-50 dark:hover:bg-red-900/20"
+                      @click="openSentinelModal(incident)"
+                      data-testid="sentinel-classify-btn"
+                    >Classify sentinel</button>
+                    <a
+                      :href="`/qa/incidents/${incident.id}`"
+                      class="text-blue-600 dark:text-blue-400 hover:underline text-xs flex items-center gap-0.5"
+                    >
+                      View <ChevronRightIcon class="w-3 h-3" />
+                    </a>
+                  </div>
                 </td>
               </tr>
             </tbody>
@@ -594,5 +659,43 @@ function fmt(dateStr: string | null): string {
       </div>
 
     </div>
+
+    <!-- Phase I2 — Sentinel classify modal -->
+    <Teleport to="body">
+      <div v-if="sentinelOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" @click.self="closeSentinelModal">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-lg p-6">
+          <h2 class="text-base font-semibold text-gray-900 dark:text-slate-100 mb-1">Classify incident as sentinel event</h2>
+          <p class="text-xs text-gray-500 dark:text-slate-400 mb-4">
+            Incident {{ sentinelTarget?.reference_number }} ·
+            {{ props.incidentTypes[sentinelTarget?.incident_type ?? ''] ?? sentinelTarget?.incident_type }} ·
+            {{ sentinelTarget?.participant_name }}
+          </p>
+          <p class="text-xs text-gray-600 dark:text-slate-300 mb-4 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 rounded p-2">
+            42 CFR §460.136. Classification auto-sets a 5-day CMS notification deadline and a 30-day RCA completion deadline. Missed deadlines escalate to executive.
+          </p>
+
+          <form @submit.prevent="submitSentinel" class="space-y-3">
+            <div>
+              <label class="text-xs font-medium text-gray-600 dark:text-slate-400 block">Classification reason (≥10 chars)</label>
+              <textarea v-model="sentinelReason" rows="3"
+                class="mt-1 w-full text-sm border border-gray-300 dark:border-slate-600 rounded px-2 py-1.5 bg-white dark:bg-slate-900 dark:text-slate-100"
+                placeholder="Why does this incident meet the sentinel-event criteria?"
+                data-testid="sentinel-reason-input"
+                required
+              />
+            </div>
+
+            <p v-if="sentinelError" class="text-xs text-red-600 dark:text-red-400">{{ sentinelError }}</p>
+
+            <div class="flex items-center justify-end gap-2 pt-2">
+              <button type="button" class="text-xs px-3 py-1.5 border border-gray-300 dark:border-slate-600 text-gray-700 dark:text-slate-300 rounded hover:bg-gray-50 dark:hover:bg-slate-700" @click="closeSentinelModal">Cancel</button>
+              <button type="submit" :disabled="sentinelSubmitting" class="text-xs px-3 py-1.5 bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50">
+                {{ sentinelSubmitting ? 'Classifying…' : 'Classify as sentinel' }}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </Teleport>
   </AppShell>
 </template>
