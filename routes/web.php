@@ -565,6 +565,11 @@ Route::middleware('auth')->group(function () {
     Route::post('/participants/{participant}/predictive-risk/compute',  [\App\Http\Controllers\PredictiveRiskController::class, 'compute'])->name('predictive.compute');
     Route::get ('/dashboards/high-risk',                                [\App\Http\Controllers\PredictiveRiskController::class, 'highRisk'])->name('dashboards.high_risk');
 
+    // Phase K1 — Inertia dashboard pages (Chart.js rendered)
+    Route::get('/dashboards/quality',  fn () => \Inertia\Inertia::render('Dashboards/QualityMeasures'))->name('dashboards.quality.ui');
+    Route::get('/dashboards/gaps',     fn () => \Inertia\Inertia::render('Dashboards/CareGaps'))->name('dashboards.gaps.ui');
+    Route::get('/dashboards/risk',     fn () => \Inertia\Inertia::render('Dashboards/HighRisk'))->name('dashboards.risk.ui');
+
     // Phase G7 (MVP completion roadmap): PRO surveys
     Route::get ('/pro/surveys',                         [\App\Http\Controllers\ProController::class, 'surveys'])->name('pro.surveys');
     Route::post('/pro/responses',                       [\App\Http\Controllers\ProController::class, 'storeResponse'])->name('pro.responses.store');
