@@ -37,19 +37,24 @@ class L2PortalUiTest extends TestCase
 
     public function test_overview_page_renders(): void
     {
-        $this->get('/portal/home')->assertOk()
+        // Phase O3: /portal/overview dual-serves — authed session gets Inertia,
+        // anon gets a redirect to /portal/login. Use the header-auth back-compat.
+        $this->withHeader('X-Portal-User-Id', (string) $this->portalUser->id)
+            ->get('/portal/overview')->assertOk()
             ->assertInertia(fn ($p) => $p->component('Portal/Overview'));
     }
 
     public function test_medications_page_renders(): void
     {
-        $this->get('/portal/meds')->assertOk()
+        $this->withHeader('X-Portal-User-Id', (string) $this->portalUser->id)
+            ->get('/portal/medications')->assertOk()
             ->assertInertia(fn ($p) => $p->component('Portal/Medications'));
     }
 
     public function test_messages_page_renders(): void
     {
-        $this->get('/portal/mail')->assertOk()
+        $this->withHeader('X-Portal-User-Id', (string) $this->portalUser->id)
+            ->get('/portal/messages')->assertOk()
             ->assertInertia(fn ($p) => $p->component('Portal/Messages'));
     }
 

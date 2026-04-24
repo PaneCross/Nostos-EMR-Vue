@@ -587,7 +587,8 @@ Route::middleware('auth')->group(function () {
     // Phase K1 — Inertia dashboard pages (Chart.js rendered)
     Route::get('/dashboards/quality',  fn () => \Inertia\Inertia::render('Dashboards/QualityMeasures'))->name('dashboards.quality.ui');
     Route::get('/dashboards/gaps',     fn () => \Inertia\Inertia::render('Dashboards/CareGaps'))->name('dashboards.gaps.ui');
-    Route::get('/dashboards/risk',     fn () => \Inertia\Inertia::render('Dashboards/HighRisk'))->name('dashboards.risk.ui');
+    // Phase O3 deleted: /dashboards/risk — canonical is /dashboards/high-risk
+    // which now dual-serves JSON + Inertia via wantsJson() branch.
 
     // Phase K3 — Operational pages
     Route::get('/ops/panel',       fn () => \Inertia\Inertia::render('Operations/Panel'))->name('ops.panel.ui');
@@ -595,10 +596,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/ops/activities',  fn () => \Inertia\Inertia::render('Operations/ActivitiesCalendar'))->name('ops.activities.ui');
     Route::get('/ops/huddle',      fn () => \Inertia\Inertia::render('Operations/Huddle'))->name('ops.huddle.ui');
 
-    // Phase K4 — Disease registry Vue pages
-    Route::get('/registries-ui/diabetes', fn () => \Inertia\Inertia::render('Registries/Diabetes'))->name('registries.diabetes.ui');
-    Route::get('/registries-ui/chf',      fn () => \Inertia\Inertia::render('Registries/Chf'))->name('registries.chf.ui');
-    Route::get('/registries-ui/copd',     fn () => \Inertia\Inertia::render('Registries/Copd'))->name('registries.copd.ui');
+    // Phase O3 deleted: /registries-ui/* — canonical is /registries/{r} which
+    // now dual-serves JSON + Inertia via wantsJson() branch on DiseaseRegistryController::show.
 
     // Phase G7 (MVP completion roadmap): PRO surveys
     Route::get ('/pro/surveys',                         [\App\Http\Controllers\ProController::class, 'surveys'])->name('pro.surveys');
@@ -1358,14 +1357,13 @@ Route::post('/portal/logout',        [\App\Http\Controllers\ParticipantPortalCon
 Route::post('/portal/otp/send',      [\App\Http\Controllers\ParticipantPortalController::class, 'otpSend'])->name('portal.otp.send');
 Route::post('/portal/otp/verify',    [\App\Http\Controllers\ParticipantPortalController::class, 'otpVerify'])->name('portal.otp.verify');
 
-// Phase L2 — Portal Inertia UI pages (distinct paths from JSON endpoints)
-Route::get('/portal/home',          fn () => \Inertia\Inertia::render('Portal/Overview'))->name('portal.home.ui');
-Route::get('/portal/meds',          fn () => \Inertia\Inertia::render('Portal/Medications'))->name('portal.meds.ui');
-Route::get('/portal/allergies-ui',  fn () => \Inertia\Inertia::render('Portal/Allergies'))->name('portal.allergies.ui');
-Route::get('/portal/problems-ui',   fn () => \Inertia\Inertia::render('Portal/Problems'))->name('portal.problems.ui');
-Route::get('/portal/appts',         fn () => \Inertia\Inertia::render('Portal/Appointments'))->name('portal.appts.ui');
-Route::get('/portal/mail',          fn () => \Inertia\Inertia::render('Portal/Messages'))->name('portal.mail.ui');
-Route::get('/portal/reqs',          fn () => \Inertia\Inertia::render('Portal/Requests'))->name('portal.reqs.ui');
+// Phase O3 — /portal/requests GET renders the Inertia page;
+// the existing /portal/requests POST still persists the request row.
+Route::get('/portal/requests',       [\App\Http\Controllers\ParticipantPortalController::class, 'requestsIndex'])->name('portal.requests.index');
+// Phase O3 deleted: /portal/home, /portal/meds, /portal/allergies-ui,
+// /portal/problems-ui, /portal/appts, /portal/mail, /portal/reqs.
+// Canonical URLs for the portal are now the JSON endpoints above — each
+// controller method dual-serves Inertia HTML + JSON via wantsJson() branch.
 
 // Phase L2 — PWA manifest (served via Laravel so test suite covers it)
 Route::get('/manifest.webmanifest', function () {

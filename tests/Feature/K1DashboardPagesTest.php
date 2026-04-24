@@ -43,7 +43,8 @@ class K1DashboardPagesTest extends TestCase
     {
         $u = $this->user();
         $this->actingAs($u);
-        $this->get('/dashboards/risk')
+        // Phase O3: canonical URL is /dashboards/high-risk (dual-serves JSON+Inertia)
+        $this->get('/dashboards/high-risk')
             ->assertOk()
             ->assertInertia(fn ($page) => $page->component('Dashboards/HighRisk'));
     }

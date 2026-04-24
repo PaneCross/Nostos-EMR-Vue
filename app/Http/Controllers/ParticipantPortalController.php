@@ -61,6 +61,18 @@ class ParticipantPortalController extends Controller
         return $u;
     }
 
+    /**
+     * Phase O3 — resolve auth and prefer redirect to the login page for HTML
+     * browser requests (Inertia navigations). For JSON/axios, keep the 401.
+     */
+    private function requireAuthOrRedirect(Request $request): ParticipantPortalUser|\Symfony\Component\HttpFoundation\RedirectResponse
+    {
+        $u = $this->portalUser($request);
+        if ($u) return $u;
+        if ($request->wantsJson()) abort(401);
+        return redirect('/portal/login');
+    }
+
     /** POST /portal/login — session-backed, rate-limited. */
     public function login(Request $request): JsonResponse
     {
@@ -180,10 +192,14 @@ class ParticipantPortalController extends Controller
         return \Inertia\Inertia::render('Portal/Login');
     }
 
-    /** GET /portal/overview — participant basics. */
-    public function overview(Request $request): JsonResponse
+    /**
+     * GET /portal/overview — participant basics.
+     * Phase O3: dual-serve — JSON for axios; Inertia for browser navigation.
+     */
+    public function overview(Request $request): JsonResponse|\Inertia\Response|\Symfony\Component\HttpFoundation\RedirectResponse
     {
-        $u = $this->requireAuth($request);
+        $u = $this->requireAuthOrRedirect($request);
+        if ($u instanceof \Symfony\Component\HttpFoundation\RedirectResponse) return $u;
         $p = $u->participant;
 
         AuditLog::record(
@@ -194,6 +210,10 @@ class ParticipantPortalController extends Controller
             resourceId: $p->id,
             description: 'Portal overview viewed' . ($u->isProxy() ? ' (proxy)' : ''),
         );
+
+        if (! $request->wantsJson()) {
+            return \Inertia\Inertia::render('Portal/Overview');
+        }
 
         return response()->json([
             'participant' => [
@@ -209,9 +229,12 @@ class ParticipantPortalController extends Controller
     }
 
     /** GET /portal/medications — current active only. */
-    public function medications(Request $request): JsonResponse
+    public function medications(Request $request): JsonResponse|\Inertia\Response|\Symfony\Component\HttpFoundation\RedirectResponse
     {
-        $u = $this->requireAuth($request);
+        $u = $this->requireAuthOrRedirect($request);
+        if ($u instanceof \Symfony\Component\HttpFoundation\RedirectResponse) return $u;
+        if (! $request->wantsJson()) return \Inertia\Inertia::render('Portal/Medications');
+
         $meds = \App\Models\Medication::where('participant_id', $u->participant_id)
             ->where('status', 'active')
             ->orderBy('drug_name')
@@ -220,9 +243,12 @@ class ParticipantPortalController extends Controller
     }
 
     /** GET /portal/allergies */
-    public function allergies(Request $request): JsonResponse
+    public function allergies(Request $request): JsonResponse|\Inertia\Response|\Symfony\Component\HttpFoundation\RedirectResponse
     {
-        $u = $this->requireAuth($request);
+        $u = $this->requireAuthOrRedirect($request);
+        if ($u instanceof \Symfony\Component\HttpFoundation\RedirectResponse) return $u;
+        if (! $request->wantsJson()) return \Inertia\Inertia::render('Portal/Allergies');
+
         $rows = \App\Models\Allergy::where('participant_id', $u->participant_id)
             ->where('is_active', true)
             ->get(['allergen_name', 'severity', 'reaction_description']);
@@ -230,9 +256,12 @@ class ParticipantPortalController extends Controller
     }
 
     /** GET /portal/problems */
-    public function problems(Request $request): JsonResponse
+    public function problems(Request $request): JsonResponse|\Inertia\Response|\Symfony\Component\HttpFoundation\RedirectResponse
     {
-        $u = $this->requireAuth($request);
+        $u = $this->requireAuthOrRedirect($request);
+        if ($u instanceof \Symfony\Component\HttpFoundation\RedirectResponse) return $u;
+        if (! $request->wantsJson()) return \Inertia\Inertia::render('Portal/Problems');
+
         $rows = \App\Models\Problem::where('participant_id', $u->participant_id)
             ->where('status', 'active')
             ->get(['icd10_code', 'icd10_description', 'onset_date']);
@@ -240,9 +269,12 @@ class ParticipantPortalController extends Controller
     }
 
     /** GET /portal/appointments */
-    public function appointments(Request $request): JsonResponse
+    public function appointments(Request $request): JsonResponse|\Inertia\Response|\Symfony\Component\HttpFoundation\RedirectResponse
     {
-        $u = $this->requireAuth($request);
+        $u = $this->requireAuthOrRedirect($request);
+        if ($u instanceof \Symfony\Component\HttpFoundation\RedirectResponse) return $u;
+        if (! $request->wantsJson()) return \Inertia\Inertia::render('Portal/Appointments');
+
         $rows = \App\Models\Appointment::where('participant_id', $u->participant_id)
             ->where('scheduled_at', '>=', now()->subMonth())
             ->orderBy('scheduled_at', 'desc')
@@ -251,13 +283,24 @@ class ParticipantPortalController extends Controller
     }
 
     /** GET /portal/messages */
-    public function messagesIndex(Request $request): JsonResponse
+    public function messagesIndex(Request $request): JsonResponse|\Inertia\Response|\Symfony\Component\HttpFoundation\RedirectResponse
     {
-        $u = $this->requireAuth($request);
+        $u = $this->requireAuthOrRedirect($request);
+        if ($u instanceof \Symfony\Component\HttpFoundation\RedirectResponse) return $u;
+        if (! $request->wantsJson()) return \Inertia\Inertia::render('Portal/Messages');
+
         $rows = PortalMessage::forTenant($u->tenant_id)
             ->where('participant_id', $u->participant_id)
             ->orderByDesc('created_at')->get();
         return response()->json(['messages' => $rows]);
+    }
+
+    /** GET /portal/requests — Inertia render of the portal request form. */
+    public function requestsIndex(Request $request): \Inertia\Response|\Symfony\Component\HttpFoundation\RedirectResponse
+    {
+        $u = $this->requireAuthOrRedirect($request);
+        if ($u instanceof \Symfony\Component\HttpFoundation\RedirectResponse) return $u;
+        return \Inertia\Inertia::render('Portal/Requests');
     }
 
     /** POST /portal/messages */

@@ -18,10 +18,21 @@ class DiseaseRegistryController extends Controller
         abort_if(!$u, 401);
     }
 
-    public function show(Request $request, string $registry): JsonResponse
+    /**
+     * GET /registries/{registry}.
+     * Phase O3: dual-serve JSON + Inertia via wantsJson() branch.
+     * Registry page keys: diabetes | chf | copd.
+     */
+    public function show(Request $request, string $registry): JsonResponse|\Inertia\Response
     {
         $this->gate();
         $u = Auth::user();
+        if (! $request->wantsJson()) {
+            $componentMap = ['diabetes' => 'Diabetes', 'chf' => 'Chf', 'copd' => 'Copd'];
+            $component = $componentMap[strtolower($registry)] ?? null;
+            abort_if($component === null, 404);
+            return \Inertia\Inertia::render("Registries/{$component}");
+        }
         return response()->json($this->svc->cohort($u->tenant_id, $registry));
     }
 

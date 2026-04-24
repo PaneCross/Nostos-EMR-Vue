@@ -24,21 +24,22 @@ class K4RegistryPagesTest extends TestCase
     public function test_diabetes_page_renders(): void
     {
         $this->actingAs($this->user());
-        $this->get('/registries-ui/diabetes')->assertOk()
+        // Phase O3: canonical URL is /registries/{r} (dual-serves JSON+Inertia)
+        $this->get('/registries/diabetes')->assertOk()
             ->assertInertia(fn ($p) => $p->component('Registries/Diabetes'));
     }
 
     public function test_chf_page_renders(): void
     {
         $this->actingAs($this->user());
-        $this->get('/registries-ui/chf')->assertOk()
+        $this->get('/registries/chf')->assertOk()
             ->assertInertia(fn ($p) => $p->component('Registries/Chf'));
     }
 
     public function test_copd_page_renders(): void
     {
         $this->actingAs($this->user());
-        $this->get('/registries-ui/copd')->assertOk()
+        $this->get('/registries/copd')->assertOk()
             ->assertInertia(fn ($p) => $p->component('Registries/Copd'));
     }
 

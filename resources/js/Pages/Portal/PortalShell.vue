@@ -9,13 +9,13 @@ async function logout() {
 }
 
 const NAV = [
-  { href: '/portal/home', label: 'Overview' },
-  { href: '/portal/meds', label: 'Medications' },
-  { href: '/portal/allergies-ui', label: 'Allergies' },
-  { href: '/portal/problems-ui', label: 'Problems' },
-  { href: '/portal/appts', label: 'Appointments' },
-  { href: '/portal/mail', label: 'Messages' },
-  { href: '/portal/reqs', label: 'Requests' },
+  { href: '/portal/overview', label: 'Overview' },
+  { href: '/portal/medications', label: 'Medications' },
+  { href: '/portal/allergies', label: 'Allergies' },
+  { href: '/portal/problems', label: 'Problems' },
+  { href: '/portal/appointments', label: 'Appointments' },
+  { href: '/portal/messages', label: 'Messages' },
+  { href: '/portal/requests', label: 'Requests' },
 ]
 </script>
 

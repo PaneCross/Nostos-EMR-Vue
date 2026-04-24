@@ -45,11 +45,15 @@ class PredictiveRiskController extends Controller
         return response()->json(['scores' => $scores]);
     }
 
-    /** GET /dashboards/high-risk — top-N high risk across tenant. */
-    public function highRisk(Request $request): JsonResponse
+    /**
+     * GET /dashboards/high-risk — top-N high risk across tenant.
+     * Phase O3: dual-serve JSON + Inertia via wantsJson() branch.
+     */
+    public function highRisk(Request $request): JsonResponse|\Inertia\Response
     {
         $this->gate();
         $u = Auth::user();
+        if (! $request->wantsJson()) return \Inertia\Inertia::render('Dashboards/HighRisk');
         // latest row per participant per risk_type — cheap approximation:
         // grab scores from last 24h only, since job runs daily.
         $rows = PredictiveRiskScore::forTenant($u->tenant_id)

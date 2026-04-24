@@ -2,7 +2,7 @@
   "name": "NostosEMR Participant Portal",
   "short_name": "Nostos Portal",
   "description": "Participant-facing portal for NostosEMR (PACE).",
-  "start_url": "/portal/home",
+  "start_url": "/portal/overview",
   "scope": "/portal/",
   "display": "standalone",
   "background_color": "#0f172a",
