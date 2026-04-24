@@ -42,9 +42,12 @@ class AppServiceProvider extends ServiceProvider
         // TesseractOcrGateway when tesseract is installed, or to a paid
         // cloud gateway in production.
         $this->app->bind(\App\Services\Ocr\OcrGateway::class, function ($app) {
-            return config('services.ocr.driver') === 'tesseract'
-                ? new \App\Services\Ocr\TesseractOcrGateway()
-                : new \App\Services\Ocr\NullOcrGateway();
+            return match (config('services.ocr.driver')) {
+                'tesseract'          => new \App\Services\Ocr\TesseractOcrGateway(),
+                'textract'           => new \App\Services\Ocr\AwsTextractOcrGateway(),
+                'documentai'         => new \App\Services\Ocr\GoogleDocumentAiOcrGateway(),
+                default              => new \App\Services\Ocr\NullOcrGateway(),
+            };
         });
     }
 
