@@ -8,6 +8,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
+use Inertia\Response as InertiaResponse;
 
 class StaffTaskController extends Controller
 {
@@ -22,24 +23,36 @@ class StaffTaskController extends Controller
     /**
      * GET /tasks?view=mine|my_department|all
      */
-    public function index(Request $request): JsonResponse
+    public function index(Request $request): JsonResponse|InertiaResponse
     {
         $this->gate();
         $u = Auth::user();
         $view = $request->query('view', 'mine');
 
-        $query = StaffTask::forTenant($u->tenant_id);
+        $query = StaffTask::forTenant($u->tenant_id)
+            ->with(['participant:id,mrn,first_name,last_name', 'assignedUser:id,first_name,last_name,department', 'createdBy:id,first_name,last_name']);
         match ($view) {
             'my_department' => $query->where('assigned_to_department', $u->department),
             'all'           => null,
             default         => $query->where('assigned_to_user_id', $u->id),
         };
 
-        return response()->json([
-            'tasks'         => $query->orderBy('due_at')->limit(200)->get(),
-            'overdue_count' => StaffTask::forTenant($u->tenant_id)->overdue()
-                ->when($view === 'mine', fn ($q) => $q->where('assigned_to_user_id', $u->id))
-                ->count(),
+        $tasks = $query->orderBy('due_at')->limit(200)->get();
+        $overdueCount = StaffTask::forTenant($u->tenant_id)->overdue()
+            ->when($view === 'mine', fn ($q) => $q->where('assigned_to_user_id', $u->id))
+            ->count();
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'tasks'         => $tasks,
+                'overdue_count' => $overdueCount,
+            ]);
+        }
+        return \Inertia\Inertia::render('Tasks/Index', [
+            'tasks'         => $tasks,
+            'overdue_count' => $overdueCount,
+            'view'          => $view,
+            'current_user_department' => $u->department,
         ]);
     }
 
