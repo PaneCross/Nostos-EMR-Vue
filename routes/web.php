@@ -532,6 +532,13 @@ Route::middleware('auth')->group(function () {
     Route::post('/participants/{participant}/restraints/{episode}/idt-review',
         [\App\Http\Controllers\RestraintController::class, 'recordIdtReview'])->name('participants.restraints.idt-review');
 
+    // Phase G9 (MVP completion roadmap): Advanced BI — report builder + saved dashboards
+    Route::get ('/bi/schema',                 [\App\Http\Controllers\AdvancedBiController::class, 'schema'])->name('bi.schema');
+    Route::post('/bi/report',                 [\App\Http\Controllers\AdvancedBiController::class, 'runReport'])->name('bi.report');
+    Route::get ('/bi/dashboards',             [\App\Http\Controllers\AdvancedBiController::class, 'dashboardsIndex'])->name('bi.dashboards.index');
+    Route::post('/bi/dashboards',             [\App\Http\Controllers\AdvancedBiController::class, 'dashboardsStore'])->name('bi.dashboards.store');
+    Route::get ('/bi/dashboards/{dashboard}', [\App\Http\Controllers\AdvancedBiController::class, 'dashboardsShow'])->name('bi.dashboards.show');
+
     // Phase G8 (MVP completion roadmap): Predictive modeling
     Route::get ('/participants/{participant}/predictive-risk',          [\App\Http\Controllers\PredictiveRiskController::class, 'forParticipant'])->name('predictive.for_participant');
     Route::post('/participants/{participant}/predictive-risk/compute',  [\App\Http\Controllers\PredictiveRiskController::class, 'compute'])->name('predictive.compute');
