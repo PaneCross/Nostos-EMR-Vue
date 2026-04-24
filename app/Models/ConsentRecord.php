@@ -66,7 +66,7 @@ class ConsentRecord extends Model
     public const ESIGN_DISCLAIMER_VERSION = '2026.04.23-v1';
 
     protected $fillable = [
-        'participant_id', 'tenant_id',
+        'participant_id', 'tenant_id', 'consent_template_id',
         'consent_type', 'document_title', 'document_version', 'document_path',
         'status', 'acknowledged_by', 'acknowledged_at', 'representative_type',
         'expiration_date', 'notes', 'created_by_user_id',

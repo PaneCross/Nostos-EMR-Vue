@@ -532,6 +532,12 @@ Route::middleware('auth')->group(function () {
     Route::post('/participants/{participant}/restraints/{episode}/idt-review',
         [\App\Http\Controllers\RestraintController::class, 'recordIdtReview'])->name('participants.restraints.idt-review');
 
+    // Phase G4 (MVP completion roadmap): Consent templates + versioning
+    Route::get ('/consent-templates',                    [\App\Http\Controllers\ConsentTemplateController::class, 'index'])->name('consent_templates.index');
+    Route::post('/consent-templates',                    [\App\Http\Controllers\ConsentTemplateController::class, 'store'])->name('consent_templates.store');
+    Route::post('/consent-templates/{template}/approve', [\App\Http\Controllers\ConsentTemplateController::class, 'approve'])->name('consent_templates.approve');
+    Route::get ('/consent-templates/reprompt-queue',     [\App\Http\Controllers\ConsentTemplateController::class, 'repromptQueue'])->name('consent_templates.reprompt_queue');
+
     // Phase G3 (MVP completion roadmap): HEDIS/Stars quality measures
     Route::get ('/quality-measures',           [\App\Http\Controllers\QualityMeasureController::class, 'index'])->name('quality_measures.index');
     Route::get ('/quality-measures/snapshots', [\App\Http\Controllers\QualityMeasureController::class, 'snapshots'])->name('quality_measures.snapshots');
