@@ -83,6 +83,34 @@ const formatDate = (iso: string) =>
     new Date(iso).toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' })
 
 onMounted(() => load())
+
+// Phase O5 — detail modal
+const detailOpen = ref(false)
+const detailLoading = ref(false)
+const detail = ref<any | null>(null)
+
+async function showDetail(entry: AuditEntry) {
+    detailOpen.value = true
+    detailLoading.value = true
+    detail.value = null
+    try {
+        const r = await axios.get(`/it-admin/audit/log/${entry.id}`)
+        detail.value = r.data.log ?? null
+    } finally { detailLoading.value = false }
+}
+function closeDetail() { detailOpen.value = false; detail.value = null }
+
+function diffRows(oldVals: any, newVals: any): Array<{ key: string; old: any; new: any; changed: boolean }> {
+    const a = typeof oldVals === 'string' ? JSON.parse(oldVals || '{}') : (oldVals ?? {})
+    const b = typeof newVals === 'string' ? JSON.parse(newVals || '{}') : (newVals ?? {})
+    const keys = Array.from(new Set([...Object.keys(a ?? {}), ...Object.keys(b ?? {})])).sort()
+    return keys.map(k => ({
+        key: k,
+        old: a?.[k] ?? null,
+        new: b?.[k] ?? null,
+        changed: JSON.stringify(a?.[k] ?? null) !== JSON.stringify(b?.[k] ?? null),
+    }))
+}
 </script>
 
 <template>
@@ -175,7 +203,15 @@ onMounted(() => load())
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100 dark:divide-slate-700">
-                        <tr v-for="entry in entries" :key="entry.id" class="hover:bg-gray-50 dark:hover:bg-slate-700/50">
+                        <tr
+                            v-for="entry in entries"
+                            :key="entry.id"
+                            class="hover:bg-gray-50 dark:hover:bg-slate-700/50 cursor-pointer"
+                            data-testid="audit-row"
+                            @click="showDetail(entry)"
+                            @keydown.enter="showDetail(entry)"
+                            tabindex="0"
+                        >
                             <td class="px-4 py-3 font-mono text-xs text-gray-800 dark:text-slate-200">{{ entry.action }}</td>
                             <td class="px-4 py-3 text-gray-600 dark:text-slate-400">
                                 <span v-if="entry.resource_type">{{ entry.resource_type }}<span v-if="entry.resource_id"> #{{ entry.resource_id }}</span></span>
@@ -219,5 +255,70 @@ onMounted(() => load())
                 </div>
             </div>
         </div>
+
+        <!-- Phase O5 — audit detail modal -->
+        <Teleport to="body">
+            <div
+                v-if="detailOpen"
+                class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+                data-testid="audit-detail-modal"
+                @click.self="closeDetail"
+                @keydown.esc="closeDetail"
+                tabindex="0"
+            >
+                <div class="max-w-3xl w-full max-h-[90vh] overflow-y-auto rounded-xl bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 shadow-xl">
+                    <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-slate-700">
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-slate-100">Audit entry detail</h3>
+                        <button class="text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200" @click="closeDetail">✕</button>
+                    </div>
+                    <div class="p-6 space-y-4">
+                        <p v-if="detailLoading" class="text-sm text-gray-500 dark:text-slate-400">Loading…</p>
+                        <template v-else-if="detail">
+                            <dl class="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                                <dt class="text-gray-500 dark:text-slate-400">Action</dt>
+                                <dd class="font-mono text-gray-900 dark:text-slate-100">{{ detail.action }}</dd>
+                                <dt class="text-gray-500 dark:text-slate-400">Resource</dt>
+                                <dd class="text-gray-900 dark:text-slate-100">{{ detail.resource_type ?? '—' }} #{{ detail.resource_id ?? '—' }}</dd>
+                                <dt class="text-gray-500 dark:text-slate-400">User</dt>
+                                <dd class="text-gray-900 dark:text-slate-100">
+                                    {{ detail.user ? `${detail.user.first_name} ${detail.user.last_name}` : '—' }}
+                                    <span v-if="detail.user?.department" class="text-xs text-gray-500 dark:text-slate-400"> · {{ detail.user.department }}</span>
+                                </dd>
+                                <dt class="text-gray-500 dark:text-slate-400">IP / UA</dt>
+                                <dd class="font-mono text-xs text-gray-700 dark:text-slate-300 truncate">{{ detail.ip_address ?? '—' }} · {{ detail.user_agent ?? '—' }}</dd>
+                                <dt class="text-gray-500 dark:text-slate-400">When</dt>
+                                <dd class="text-gray-900 dark:text-slate-100">{{ formatDate(detail.created_at) }}</dd>
+                            </dl>
+                            <div v-if="detail.description" class="rounded bg-gray-50 dark:bg-slate-900 p-3 text-sm text-gray-800 dark:text-slate-200">
+                                {{ detail.description }}
+                            </div>
+                            <div v-if="detail.old_values || detail.new_values">
+                                <h4 class="text-sm font-semibold text-gray-900 dark:text-slate-100 mb-1">Before / after</h4>
+                                <table class="min-w-full text-xs">
+                                    <thead>
+                                        <tr class="text-left text-gray-500 dark:text-slate-400">
+                                            <th class="py-1 pr-4">Key</th>
+                                            <th class="py-1 pr-4">Old</th>
+                                            <th class="py-1">New</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-gray-200 dark:divide-slate-700">
+                                        <tr
+                                            v-for="row in diffRows(detail.old_values, detail.new_values)"
+                                            :key="row.key"
+                                            :class="row.changed ? 'bg-amber-50 dark:bg-amber-950/20' : ''"
+                                        >
+                                            <td class="py-1 pr-4 font-mono text-gray-700 dark:text-slate-300">{{ row.key }}</td>
+                                            <td class="py-1 pr-4 font-mono text-gray-600 dark:text-slate-400">{{ row.old ?? '—' }}</td>
+                                            <td class="py-1 font-mono text-gray-900 dark:text-slate-100">{{ row.new ?? '—' }}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </div>
+        </Teleport>
     </AppShell>
 </template>
