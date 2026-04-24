@@ -560,6 +560,10 @@ Route::middleware('auth')->group(function () {
     Route::post('/bi/dashboards',             [\App\Http\Controllers\AdvancedBiController::class, 'dashboardsStore'])->name('bi.dashboards.store');
     Route::get ('/bi/dashboards/{dashboard}', [\App\Http\Controllers\AdvancedBiController::class, 'dashboardsShow'])->name('bi.dashboards.show');
 
+    // Phase K2 — Inertia BI UI pages
+    Route::get('/bi/builder',    fn () => \Inertia\Inertia::render('Bi/ReportBuilder'))->name('bi.builder.ui');
+    Route::get('/bi/saved',      fn () => \Inertia\Inertia::render('Bi/Dashboards'))->name('bi.dashboards.ui');
+
     // Phase G8 (MVP completion roadmap): Predictive modeling
     Route::get ('/participants/{participant}/predictive-risk',          [\App\Http\Controllers\PredictiveRiskController::class, 'forParticipant'])->name('predictive.for_participant');
     Route::post('/participants/{participant}/predictive-risk/compute',  [\App\Http\Controllers\PredictiveRiskController::class, 'compute'])->name('predictive.compute');
