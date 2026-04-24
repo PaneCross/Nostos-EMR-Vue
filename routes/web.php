@@ -574,6 +574,12 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboards/gaps',     fn () => \Inertia\Inertia::render('Dashboards/CareGaps'))->name('dashboards.gaps.ui');
     Route::get('/dashboards/risk',     fn () => \Inertia\Inertia::render('Dashboards/HighRisk'))->name('dashboards.risk.ui');
 
+    // Phase K3 — Operational pages
+    Route::get('/ops/panel',       fn () => \Inertia\Inertia::render('Operations/Panel'))->name('ops.panel.ui');
+    Route::get('/ops/dietary',     fn () => \Inertia\Inertia::render('Operations/DietaryOrders'))->name('ops.dietary.ui');
+    Route::get('/ops/activities',  fn () => \Inertia\Inertia::render('Operations/ActivitiesCalendar'))->name('ops.activities.ui');
+    Route::get('/ops/huddle',      fn () => \Inertia\Inertia::render('Operations/Huddle'))->name('ops.huddle.ui');
+
     // Phase G7 (MVP completion roadmap): PRO surveys
     Route::get ('/pro/surveys',                         [\App\Http\Controllers\ProController::class, 'surveys'])->name('pro.surveys');
     Route::post('/pro/responses',                       [\App\Http\Controllers\ProController::class, 'storeResponse'])->name('pro.responses.store');
