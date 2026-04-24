@@ -800,6 +800,12 @@ Route::middleware('auth')->group(function () {
     Route::get('/mobile',           [\App\Http\Controllers\MobileHomeVisitsController::class, 'index'])->name('mobile.index');
     Route::get('/mobile/today',     [\App\Http\Controllers\MobileHomeVisitsController::class, 'todayJson'])->name('mobile.today');
 
+    // Phase M6 — billing reconciliation dashboards
+    Route::get('/billing/pde-reconciliation.json',        [\App\Http\Controllers\BillingReconciliationController::class, 'pdeJson'])->name('billing.pde.json');
+    Route::get('/billing/capitation-reconciliation.json', [\App\Http\Controllers\BillingReconciliationController::class, 'capitationJson'])->name('billing.capitation.json');
+    Route::get('/dashboards/pde-reconciliation',          fn () => \Inertia\Inertia::render('Dashboards/PdeReconciliation'))->name('dashboards.pde.ui');
+    Route::get('/dashboards/capitation-reconciliation',   fn () => \Inertia\Inertia::render('Dashboards/CapitationReconciliation'))->name('dashboards.capitation.ui');
+
     // Phase 14 (MVP roadmap): printable PDFs + appointment detail + global search
     Route::get ('/participants/{participant}/pdf/{kind}',
         [\App\Http\Controllers\ParticipantPdfController::class, 'generate'])

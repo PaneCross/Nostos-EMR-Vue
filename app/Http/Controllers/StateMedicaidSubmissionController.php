@@ -41,15 +41,25 @@ class StateMedicaidSubmissionController extends Controller
             ->where('state_code', $state)
             ->active()->first();
 
+        // Phase M6 — if a per-state adapter exists, transform the payload.
+        $rawPayload = $batch->file_content ?? $batch->edi_content ?? '';
+        $adapter = \App\Services\StateMedicaid\StateAdapterFactory::for($state);
+        $payload = $adapter
+            ? $adapter->transform($rawPayload, ['tenant_id' => $u->tenant_id, 'batch_id' => $batch->id])
+            : $rawPayload;
+        $format = $adapter?->format() ?? ($config?->submission_format ?: '837P');
+
         $submission = StateMedicaidSubmission::create([
             'tenant_id'        => $u->tenant_id,
             'state_config_id'  => $config?->id,
             'edi_batch_id'     => $batch->id,
             'state_code'       => $state,
-            'submission_format'=> $config?->submission_format ?: '837P',
+            'submission_format'=> $format,
             'status'           => 'staged_manual',
-            'payload_text'     => $batch->file_content ?? $batch->edi_content ?? '',
-            'response_notes'   => 'Scaffold — no real state transmission wired. Payload staged for manual portal upload.',
+            'payload_text'     => $payload,
+            'response_notes'   => $adapter
+                ? "Transformed via {$format} adapter. Awaiting manual portal upload."
+                : 'Scaffold — no per-state adapter for this state. Payload staged for manual portal upload.',
             'prepared_by_user_id' => $u->id,
         ]);
 
