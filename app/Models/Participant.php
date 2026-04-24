@@ -49,7 +49,7 @@ class Participant extends Model
     public const HOSPICE_IDT_REVIEW_DAYS = 180;
 
     protected $fillable = [
-        'tenant_id', 'site_id', 'mrn', 'barcode_value',
+        'tenant_id', 'site_id', 'mrn', 'barcode_value', 'primary_care_user_id',
         'first_name', 'last_name', 'preferred_name', 'dob', 'gender', 'pronouns',
         'ssn_last_four', 'medicare_id', 'medicare_a_start_date', 'medicare_b_start_date',
         'medicaid_id', 'county_fips_code', 'pace_contract_id', 'h_number',

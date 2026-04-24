@@ -532,6 +532,12 @@ Route::middleware('auth')->group(function () {
     Route::post('/participants/{participant}/restraints/{episode}/idt-review',
         [\App\Http\Controllers\RestraintController::class, 'recordIdtReview'])->name('participants.restraints.idt-review');
 
+    // Phase D1 (MVP completion roadmap): PCP panel management
+    Route::get ('/panel/my',       [\App\Http\Controllers\PanelController::class, 'mine'])->name('panel.mine');
+    Route::get ('/panel/sizes',    [\App\Http\Controllers\PanelController::class, 'sizes'])->name('panel.sizes');
+    Route::post('/panel/assign',   [\App\Http\Controllers\PanelController::class, 'assign'])->name('panel.assign');
+    Route::post('/panel/transfer', [\App\Http\Controllers\PanelController::class, 'transfer'])->name('panel.transfer');
+
     // Phase C5 (MVP completion roadmap): Adverse Drug Events
     Route::get ('/participants/{participant}/ade',
         [\App\Http\Controllers\AdverseDrugEventController::class, 'index'])->name('ade.index');
