@@ -29,11 +29,29 @@ class ParticipantPortalController extends Controller
      * In tests we use header X-Portal-User-Id; in production this is a
      * session-backed guard. Returns null for anonymous requests.
      */
+    /**
+     * Resolve the authenticated portal user. Session takes precedence; header
+     * kept as back-compat for the next 90 days (gated by config; see
+     * services.portal.allow_header_auth).
+     */
     private function portalUser(Request $request): ?ParticipantPortalUser
     {
-        $id = $request->header('X-Portal-User-Id');
-        if (! $id) return null;
-        return ParticipantPortalUser::where('id', $id)->where('is_active', true)->first();
+        // Session path (primary, post-I4).
+        $sid = $request->session()->get('portal_user_id');
+        if ($sid) {
+            $u = ParticipantPortalUser::where('id', $sid)->where('is_active', true)->first();
+            if ($u) return $u;
+            // Session stale — clear.
+            $request->session()->forget('portal_user_id');
+        }
+        // Header back-compat.
+        if (config('services.portal.allow_header_auth', true)) {
+            $hid = $request->header('X-Portal-User-Id');
+            if ($hid) {
+                return ParticipantPortalUser::where('id', $hid)->where('is_active', true)->first();
+            }
+        }
+        return null;
     }
 
     private function requireAuth(Request $request): ParticipantPortalUser
@@ -43,19 +61,47 @@ class ParticipantPortalController extends Controller
         return $u;
     }
 
-    /** POST /portal/login — simple password check (demo). */
+    /** POST /portal/login — session-backed, rate-limited. */
     public function login(Request $request): JsonResponse
     {
         $validated = $request->validate([
             'email'    => 'required|email',
             'password' => 'required|string',
         ]);
+
+        // Rate limiting: 5 attempts per email per 15 minutes.
+        $rlKey = 'portal_login:' . strtolower($validated['email']);
+        if (\Illuminate\Support\Facades\RateLimiter::tooManyAttempts($rlKey, 5)) {
+            $seconds = \Illuminate\Support\Facades\RateLimiter::availableIn($rlKey);
+            return response()->json([
+                'error'   => 'rate_limited',
+                'message' => "Too many attempts. Try again in {$seconds} seconds.",
+            ], 429);
+        }
+
         $user = ParticipantPortalUser::where('email', $validated['email'])
             ->where('is_active', true)->first();
         if (! $user || ! $user->password || ! Hash::check($validated['password'], $user->password)) {
+            \Illuminate\Support\Facades\RateLimiter::hit($rlKey, 900);
+            // Audit the failure even when user lookup failed — security signal.
+            AuditLog::record(
+                action: 'portal.login_failed',
+                tenantId: $user?->tenant_id ?? 0,
+                userId: null,
+                resourceType: 'participant_portal_user',
+                resourceId: $user?->id ?? 0,
+                description: "Failed portal login attempt: {$validated['email']}",
+            );
             return response()->json(['error' => 'invalid_credentials'], 401);
         }
+
+        \Illuminate\Support\Facades\RateLimiter::clear($rlKey);
         $user->update(['last_login_at' => now()]);
+
+        // Session-bind
+        $request->session()->regenerate();
+        $request->session()->put('portal_user_id', $user->id);
+
         AuditLog::record(
             action: 'portal.login',
             tenantId: $user->tenant_id,
@@ -65,6 +111,31 @@ class ParticipantPortalController extends Controller
             description: "Portal login: {$user->email}" . ($user->isProxy() ? ' (proxy)' : ''),
         );
         return response()->json(['user' => $user, 'portal_user_id' => $user->id]);
+    }
+
+    /** POST /portal/logout — clears session. */
+    public function logout(Request $request): JsonResponse
+    {
+        $u = $this->portalUser($request);
+        if ($u) {
+            AuditLog::record(
+                action: 'portal.logout',
+                tenantId: $u->tenant_id,
+                userId: null,
+                resourceType: 'participant_portal_user',
+                resourceId: $u->id,
+                description: "Portal logout: {$u->email}",
+            );
+        }
+        $request->session()->forget('portal_user_id');
+        $request->session()->regenerate();
+        return response()->json(['ok' => true]);
+    }
+
+    /** GET /portal/login — Inertia login page. */
+    public function loginPage(): \Inertia\Response
+    {
+        return \Inertia\Inertia::render('Portal/Login');
     }
 
     /** GET /portal/overview — participant basics. */

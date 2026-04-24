@@ -1281,7 +1281,11 @@ Route::middleware('auth')->group(function () {
 // No `auth` middleware — portal users are separate from staff users.
 // In production this would use a session-backed OTP guard; MVP uses a simple
 // header-based bearer check resolved inside the controller.
+// Phase I4 — session-backed auth with rate limiting. Header auth retained
+// during transition window (config: services.portal.allow_header_auth).
+Route::get ('/portal/login',         [\App\Http\Controllers\ParticipantPortalController::class, 'loginPage'])->name('portal.login_page');
 Route::post('/portal/login',         [\App\Http\Controllers\ParticipantPortalController::class, 'login'])->name('portal.login');
+Route::post('/portal/logout',        [\App\Http\Controllers\ParticipantPortalController::class, 'logout'])->name('portal.logout');
 Route::get ('/portal/overview',      [\App\Http\Controllers\ParticipantPortalController::class, 'overview'])->name('portal.overview');
 Route::get ('/portal/medications',   [\App\Http\Controllers\ParticipantPortalController::class, 'medications'])->name('portal.medications');
 Route::get ('/portal/allergies',     [\App\Http\Controllers\ParticipantPortalController::class, 'allergies'])->name('portal.allergies');
