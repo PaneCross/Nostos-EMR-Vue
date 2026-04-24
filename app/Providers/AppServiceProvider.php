@@ -29,6 +29,15 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(AlertService::class);
         $this->app->singleton(SdrDeadlineService::class);
         $this->app->singleton(\App\Services\AdlThresholdService::class);
+
+        // Phase G6 — OCR gateway defaults to null (safe + free). Swap to
+        // TesseractOcrGateway when tesseract is installed, or to a paid
+        // cloud gateway in production.
+        $this->app->bind(\App\Services\Ocr\OcrGateway::class, function ($app) {
+            return config('services.ocr.driver') === 'tesseract'
+                ? new \App\Services\Ocr\TesseractOcrGateway()
+                : new \App\Services\Ocr\NullOcrGateway();
+        });
     }
 
     public function boot(): void

@@ -81,10 +81,14 @@ class Document extends Model
         'document_category',
         'uploaded_by_user_id',
         'uploaded_at',
+        // Phase G6 — OCR
+        'ocr_text', 'ocr_extracted_fields', 'ocr_processed_at', 'ocr_engine',
     ];
 
     protected $casts = [
-        'uploaded_at'     => 'datetime',
+        'uploaded_at'           => 'datetime',
+        'ocr_processed_at'      => 'datetime',
+        'ocr_extracted_fields'  => 'array',
         'file_size_bytes' => 'integer',
     ];
 
