@@ -38,6 +38,10 @@ import AnticoagulationTab from './Tabs/AnticoagulationTab.vue'
 import AdeTab             from './Tabs/AdeTab.vue'
 import HospiceTab          from './Tabs/HospiceTab.vue'
 import DischargeTab        from './Tabs/DischargeTab.vue'
+import CareGapsTab          from './Tabs/CareGapsTab.vue'
+import GoalsOfCareTab       from './Tabs/GoalsOfCareTab.vue'
+import PredictiveRiskTab    from './Tabs/PredictiveRiskTab.vue'
+import TimelineTab          from './Tabs/TimelineTab.vue'
 import MedReconTab       from './Tabs/MedReconTab.vue'
 import OrdersTab         from './Tabs/OrdersTab.vue'
 import ContactsTab       from './Tabs/ContactsTab.vue'
@@ -119,6 +123,10 @@ const CLINICAL_TABS = [
   { key: 'ade',            label: 'ADE' },
   { key: 'hospice',        label: 'Hospice' },
   { key: 'discharge',      label: 'Discharge' },
+  { key: 'care_gaps',      label: 'Care Gaps' },
+  { key: 'goals_of_care',  label: 'Goals of Care' },
+  { key: 'predictive_risk', label: 'Predictive Risk' },
+  { key: 'timeline',       label: 'Timeline' },
   { key: 'med_recon',     label: 'Med Recon' },
   { key: 'orders',        label: 'Orders' },
   { key: 'sdoh',          label: 'SDOH' },
@@ -160,6 +168,10 @@ const TAB_COMPONENTS: Record<string, unknown> = {
   ade:           AdeTab,
   hospice:       HospiceTab,
   discharge:     DischargeTab,
+  care_gaps:     CareGapsTab,
+  goals_of_care: GoalsOfCareTab,
+  predictive_risk: PredictiveRiskTab,
+  timeline:      TimelineTab,
   med_recon:     MedReconTab,
   orders:        OrdersTab,
   sdoh:          SdohTab,
