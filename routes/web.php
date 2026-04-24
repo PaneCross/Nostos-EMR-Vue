@@ -532,6 +532,11 @@ Route::middleware('auth')->group(function () {
     Route::post('/participants/{participant}/restraints/{episode}/idt-review',
         [\App\Http\Controllers\RestraintController::class, 'recordIdtReview'])->name('participants.restraints.idt-review');
 
+    // Phase G3 (MVP completion roadmap): HEDIS/Stars quality measures
+    Route::get ('/quality-measures',           [\App\Http\Controllers\QualityMeasureController::class, 'index'])->name('quality_measures.index');
+    Route::get ('/quality-measures/snapshots', [\App\Http\Controllers\QualityMeasureController::class, 'snapshots'])->name('quality_measures.snapshots');
+    Route::post('/quality-measures/compute',   [\App\Http\Controllers\QualityMeasureController::class, 'compute'])->name('quality_measures.compute');
+
     // Phase G2 (MVP completion roadmap): Disease registries
     Route::get ('/registries/{registry}',       [\App\Http\Controllers\DiseaseRegistryController::class, 'show'])->name('registries.show');
     Route::get ('/registries/{registry}/export',[\App\Http\Controllers\DiseaseRegistryController::class, 'export'])->name('registries.export');

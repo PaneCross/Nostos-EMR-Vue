@@ -152,6 +152,13 @@ Schedule::job(\App\Jobs\PolypharmacyReviewQueueJob::class, 'compliance')->dailyA
     ->name('polypharmacy-review-queue')
     ->withoutOverlapping();
 
+// ─── Phase G3 (MVP roadmap): Nightly quality-measure snapshot ───────────────
+// Daily at 02:30. Iterates tenants + each seeded QualityMeasure; writes a
+// QualityMeasureSnapshot row per (tenant, measure, day).
+Schedule::job(\App\Jobs\QualityMeasureSnapshotJob::class, 'compliance')->dailyAt('02:30')
+    ->name('quality-measure-snapshot')
+    ->withoutOverlapping();
+
 // ─── Phase G1 (MVP roadmap): Care-gap calculation + task creation ───────────
 // Nightly at 02:00. Evaluates each enrolled participant against 7 preventive
 // measures, upserts CareGap rows, and auto-creates a primary_care task when
