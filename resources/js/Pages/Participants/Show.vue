@@ -34,6 +34,8 @@ import RestraintsTab     from './Tabs/RestraintsTab.vue'
 import AdlTab            from './Tabs/AdlTab.vue'
 import IadlTab           from './Tabs/IadlTab.vue'
 import TbScreeningTab    from './Tabs/TbScreeningTab.vue'
+import AnticoagulationTab from './Tabs/AnticoagulationTab.vue'
+import AdeTab             from './Tabs/AdeTab.vue'
 import MedReconTab       from './Tabs/MedReconTab.vue'
 import OrdersTab         from './Tabs/OrdersTab.vue'
 import ContactsTab       from './Tabs/ContactsTab.vue'
@@ -111,6 +113,8 @@ const CLINICAL_TABS = [
   { key: 'adl',           label: 'ADL' },
   { key: 'iadl',          label: 'IADL' },
   { key: 'tb_screening',  label: 'TB Screening' },
+  { key: 'anticoagulation', label: 'Anticoagulation' },
+  { key: 'ade',            label: 'ADE' },
   { key: 'med_recon',     label: 'Med Recon' },
   { key: 'orders',        label: 'Orders' },
   { key: 'sdoh',          label: 'SDOH' },
@@ -148,6 +152,8 @@ const TAB_COMPONENTS: Record<string, unknown> = {
   adl:           AdlTab,
   iadl:          IadlTab,
   tb_screening:  TbScreeningTab,
+  anticoagulation: AnticoagulationTab,
+  ade:           AdeTab,
   med_recon:     MedReconTab,
   orders:        OrdersTab,
   sdoh:          SdohTab,
