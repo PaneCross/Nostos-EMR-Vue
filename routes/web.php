@@ -532,6 +532,14 @@ Route::middleware('auth')->group(function () {
     Route::post('/participants/{participant}/restraints/{episode}/idt-review',
         [\App\Http\Controllers\RestraintController::class, 'recordIdtReview'])->name('participants.restraints.idt-review');
 
+    // Phase F1 (MVP completion roadmap): Short wins batch 1
+    Route::get ('/widgets/immunization-forecast', [\App\Http\Controllers\ShortWinsF1Controller::class, 'immunizationForecast'])->name('widgets.immunization_forecast');
+    Route::get ('/widgets/late-doses',            [\App\Http\Controllers\ShortWinsF1Controller::class, 'lateDoseTrend'])->name('widgets.late_doses');
+    Route::get ('/wounds/{wound}/photos',         [\App\Http\Controllers\ShortWinsF1Controller::class, 'wondPhotosIndex'])->name('wounds.photos.index');
+    Route::post('/wounds/{wound}/photos',         [\App\Http\Controllers\ShortWinsF1Controller::class, 'woundPhotosStore'])->name('wounds.photos.store');
+    Route::get ('/participants/{participant}/goals-of-care',  [\App\Http\Controllers\ShortWinsF1Controller::class, 'goalsOfCareIndex'])->name('goc.index');
+    Route::post('/participants/{participant}/goals-of-care',  [\App\Http\Controllers\ShortWinsF1Controller::class, 'goalsOfCareStore'])->name('goc.store');
+
     // Phase D4 (MVP completion roadmap): Activities programming
     Route::get ('/activities',                  [\App\Http\Controllers\ActivityController::class, 'index'])->name('activities.index');
     Route::post('/activities',                  [\App\Http\Controllers\ActivityController::class, 'store'])->name('activities.store');
