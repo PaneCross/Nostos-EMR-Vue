@@ -532,6 +532,14 @@ Route::middleware('auth')->group(function () {
     Route::post('/participants/{participant}/restraints/{episode}/idt-review',
         [\App\Http\Controllers\RestraintController::class, 'recordIdtReview'])->name('participants.restraints.idt-review');
 
+    // Phase C4 (MVP completion roadmap): Structured discharge workflow
+    Route::get ('/participants/{participant}/discharge-events',
+        [\App\Http\Controllers\DischargeEventController::class, 'index'])->name('discharge.index');
+    Route::post('/participants/{participant}/discharge-events',
+        [\App\Http\Controllers\DischargeEventController::class, 'store'])->name('discharge.store');
+    Route::post('/discharge-events/{event}/items/{key}/complete',
+        [\App\Http\Controllers\DischargeEventController::class, 'completeItem'])->name('discharge.complete_item');
+
     // Phase C3 (MVP completion roadmap): Hospice workflow + bereavement
     Route::post('/participants/{participant}/hospice/refer',
         [\App\Http\Controllers\HospiceController::class, 'refer'])->name('hospice.refer');

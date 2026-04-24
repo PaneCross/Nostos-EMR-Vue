@@ -145,6 +145,13 @@ Schedule::job(DenialAppealDeadlineAlertJob::class, 'compliance')->dailyAt('07:15
     ->name('denial-appeal-deadline')
     ->withoutOverlapping();
 
+// ─── Phase C4 (MVP roadmap): Discharge checklist overdue sweep ──────────────
+// Daily at 06:10. For each discharge event <=30d old with uncompleted overdue
+// items, warn the owning department. Dedup 3d per (event, item).
+Schedule::job(\App\Jobs\DischargeChecklistOverdueJob::class, 'compliance')->dailyAt('06:10')
+    ->name('discharge-checklist-overdue')
+    ->withoutOverlapping();
+
 // ─── Phase C3 (MVP roadmap): Hospice IDT-review overdue sweep ───────────────
 // Daily at 06:05. Hospice-enrolled participants whose last_idt_review is >180d
 // (or null) get a warning alert to primary_care + social_work + qa_compliance.
