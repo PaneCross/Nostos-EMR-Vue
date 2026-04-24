@@ -532,6 +532,12 @@ Route::middleware('auth')->group(function () {
     Route::post('/participants/{participant}/restraints/{episode}/idt-review',
         [\App\Http\Controllers\RestraintController::class, 'recordIdtReview'])->name('participants.restraints.idt-review');
 
+    // Phase C2a (MVP completion roadmap): TB screening (§460.71)
+    Route::get ('/participants/{participant}/tb-screenings',
+        [\App\Http\Controllers\TbScreeningController::class, 'index'])->name('participants.tb.index');
+    Route::post('/participants/{participant}/tb-screenings',
+        [\App\Http\Controllers\TbScreeningController::class, 'store'])->name('participants.tb.store');
+
     // Phase C1 (MVP completion roadmap): IADL assessments (Lawton scale)
     Route::get ('/participants/{participant}/iadl',
         [\App\Http\Controllers\IadlController::class, 'index'])->name('participants.iadl.index');
@@ -1141,6 +1147,8 @@ Route::middleware('auth')->group(function () {
         Route::get('/sentinel-events', [\App\Http\Controllers\ComplianceController::class, 'sentinelEvents'])->name('compliance.sentinel_events');
         // Phase B8b (MVP completion roadmap): ROI requests audit universe
         Route::get('/roi', [\App\Http\Controllers\ComplianceController::class, 'roi'])->name('compliance.roi');
+        // Phase C2a (MVP completion roadmap): TB screening audit universe
+        Route::get('/tb-screening', [\App\Http\Controllers\ComplianceController::class, 'tbScreening'])->name('compliance.tb_screening');
     });
 });
 

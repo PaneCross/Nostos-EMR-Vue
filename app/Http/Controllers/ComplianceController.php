@@ -18,6 +18,7 @@ use App\Models\Appeal;
 use App\Models\Incident;
 use App\Models\Participant;
 use App\Models\RoiRequest;
+use App\Models\TbScreening;
 use App\Models\Sdr;
 use App\Models\ServiceDenialNotice;
 use App\Models\StaffCredential;
@@ -546,6 +547,60 @@ class ComplianceController extends Controller
             'count_denied'      => $rows->where('status', 'denied')->count(),
             'window_start'      => $since->toIso8601String(),
             'window_end'        => now()->toIso8601String(),
+        ];
+
+        return response()->json(['rows' => $rows->values(), 'summary' => $summary]);
+    }
+
+    /**
+     * Phase C2a — TB screening universe. §460.71 annual TB screening audit pull.
+     * For each enrolled participant: latest screening + days to due + status band.
+     */
+    public function tbScreening(Request $request): JsonResponse
+    {
+        $this->gate($request);
+        $tenantId = $request->user()->tenant_id;
+
+        $participants = Participant::forTenant($tenantId)
+            ->where('enrollment_status', 'enrolled')
+            ->get(['id', 'mrn', 'first_name', 'last_name']);
+
+        $rows = $participants->map(function (Participant $p) {
+            $latest = TbScreening::where('participant_id', $p->id)
+                ->orderByDesc('performed_date')->first();
+            $days = $latest?->daysUntilDue();
+
+            $status = match (true) {
+                ! $latest       => 'missing',
+                $days === null  => 'missing',
+                $days < 0       => 'overdue',
+                $days === 0     => 'due_today',
+                $days <= 30     => 'due_30',
+                $days <= 60     => 'due_60',
+                default         => 'current',
+            };
+
+            return [
+                'id'                => $p->id,
+                'mrn'               => $p->mrn,
+                'name'              => $p->first_name . ' ' . $p->last_name,
+                'latest_type'       => $latest?->screening_type,
+                'latest_result'     => $latest?->result,
+                'performed_date'    => $latest?->performed_date?->toDateString(),
+                'next_due_date'     => $latest?->next_due_date?->toDateString(),
+                'days_until_due'    => $days,
+                'status'            => $status,
+                'href'              => "/participants/{$p->id}",
+            ];
+        });
+
+        $summary = [
+            'count_total'   => $rows->count(),
+            'count_current' => $rows->where('status', 'current')->count(),
+            'count_due_60'  => $rows->whereIn('status', ['due_60','due_30','due_today'])->count(),
+            'count_overdue' => $rows->where('status', 'overdue')->count(),
+            'count_missing' => $rows->where('status', 'missing')->count(),
+            'count_positive'=> TbScreening::forTenant($tenantId)->where('result','positive')->count(),
         ];
 
         return response()->json(['rows' => $rows->values(), 'summary' => $summary]);

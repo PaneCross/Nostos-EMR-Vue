@@ -145,6 +145,14 @@ Schedule::job(DenialAppealDeadlineAlertJob::class, 'compliance')->dailyAt('07:15
     ->name('denial-appeal-deadline')
     ->withoutOverlapping();
 
+// ─── Phase C2a (MVP roadmap): TB screening annual cadence (§460.71) ─────────
+// Daily at 06:00. For each enrolled participant with no screening or a
+// next_due_date ≤60 days out, emits threshold alerts (60/30/today/overdue).
+// Dedup 30d per (participant, threshold) via metadata.participant_id.
+Schedule::job(\App\Jobs\TbScreeningDueJob::class, 'compliance')->dailyAt('06:00')
+    ->name('tb-screening-due')
+    ->withoutOverlapping();
+
 // ─── Phase B8b (MVP roadmap): ROI response-deadline sweep (HIPAA §164.524) ──
 // Daily at 07:15. For each open RoiRequest:
 //   - T-5 days approaching: warning → qa_compliance (dedup 72h)

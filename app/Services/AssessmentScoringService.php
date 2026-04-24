@@ -31,7 +31,35 @@ class AssessmentScoringService
         'mini_cog',
         'fall_risk_morse',
         'katz_adl',
+        // Phase C2b — substance-use screening
+        'audit_c_alcohol',
+        'cage_alcohol',
+        'dast10_substance',
     ];
+
+    /**
+     * Phase C2b — Care-plan referral suggestions on positive screens.
+     * Map of (instrument, band) → referral hint.
+     */
+    public const REFERRAL_SUGGESTIONS = [
+        'audit_c_alcohol' => [
+            'positive' => ['dept' => 'behavioral_health', 'goal' => 'Behavioral-health referral for alcohol-use evaluation (AUDIT-C positive)'],
+        ],
+        'cage_alcohol' => [
+            'positive' => ['dept' => 'behavioral_health', 'goal' => 'Behavioral-health referral for alcohol-use evaluation (CAGE ≥2)'],
+        ],
+        'dast10_substance' => [
+            'moderate' => ['dept' => 'behavioral_health', 'goal' => 'BH referral for substance-use evaluation (DAST-10 moderate)'],
+            'substantial' => ['dept' => 'behavioral_health', 'goal' => 'BH referral for substance-use evaluation (DAST-10 substantial)'],
+            'severe' => ['dept' => 'behavioral_health', 'goal' => 'Urgent BH + SW referral for substance-use evaluation (DAST-10 severe)'],
+        ],
+    ];
+
+    /** Return a referral suggestion for a scored result, or null. */
+    public function referralFor(string $instrument, string $band): ?array
+    {
+        return self::REFERRAL_SUGGESTIONS[$instrument][$band] ?? null;
+    }
 
     /**
      * Instrument definition — questions, options, score weights.
@@ -40,11 +68,14 @@ class AssessmentScoringService
     public function definition(string $instrument): ?array
     {
         return match ($instrument) {
-            'phq9_depression' => $this->phq9(),
-            'mini_cog'        => $this->miniCog(),
-            'fall_risk_morse' => $this->morse(),
-            'katz_adl'        => $this->katzAdl(),
-            default           => null,
+            'phq9_depression'   => $this->phq9(),
+            'mini_cog'          => $this->miniCog(),
+            'fall_risk_morse'   => $this->morse(),
+            'katz_adl'          => $this->katzAdl(),
+            'audit_c_alcohol'   => $this->auditC(),
+            'cage_alcohol'      => $this->cage(),
+            'dast10_substance'  => $this->dast10(),
+            default             => null,
         };
     }
 
@@ -88,6 +119,23 @@ class AssessmentScoringService
     private function bandFor(string $instrument, int $total): array
     {
         return match ($instrument) {
+            // Phase C2b — substance-use screening
+            'audit_c_alcohol' => match (true) {
+                // Unified ≥4 cutoff for screening inclusivity (see memory note).
+                $total >= 4 => ['band' => 'positive', 'interpretation' => 'Positive screen for at-risk drinking (AUDIT-C ≥4). Confirmatory evaluation recommended.'],
+                default     => ['band' => 'negative', 'interpretation' => 'Negative screen (AUDIT-C 0–3).'],
+            },
+            'cage_alcohol' => match (true) {
+                $total >= 2 => ['band' => 'positive', 'interpretation' => 'Positive CAGE screen (≥2) — alcohol-use evaluation indicated.'],
+                default     => ['band' => 'negative', 'interpretation' => 'Negative CAGE screen (0–1).'],
+            },
+            'dast10_substance' => match (true) {
+                $total === 0 => ['band' => 'none',         'interpretation' => 'No substance-use concerns (DAST-10 = 0).'],
+                $total <= 2  => ['band' => 'low',          'interpretation' => 'Low level of problems (DAST-10 1–2).'],
+                $total <= 5  => ['band' => 'moderate',     'interpretation' => 'Moderate level of problems (DAST-10 3–5) — further assessment advised.'],
+                $total <= 8  => ['band' => 'substantial',  'interpretation' => 'Substantial level of problems (DAST-10 6–8) — assessment + treatment referral.'],
+                default      => ['band' => 'severe',       'interpretation' => 'Severe level of problems (DAST-10 9–10) — intensive intervention required.'],
+            },
             'phq9_depression' => match (true) {
                 $total <= 4  => ['band' => 'minimal',          'interpretation' => 'Minimal or no depression (0–4)'],
                 $total <= 9  => ['band' => 'mild',             'interpretation' => 'Mild depression (5–9)'],
@@ -114,6 +162,98 @@ class AssessmentScoringService
     }
 
     // ── Instrument definitions ─────────────────────────────────────────────
+
+    // ── Phase C2b instruments ──────────────────────────────────────────────
+
+    private function auditC(): array
+    {
+        $freq = [
+            ['value' => 0, 'label' => 'Never',             'weight' => 0],
+            ['value' => 1, 'label' => 'Monthly or less',   'weight' => 1],
+            ['value' => 2, 'label' => '2–4 times / month', 'weight' => 2],
+            ['value' => 3, 'label' => '2–3 times / week',  'weight' => 3],
+            ['value' => 4, 'label' => '4+ times / week',   'weight' => 4],
+        ];
+        $drinks = [
+            ['value' => 0, 'label' => '1 or 2',            'weight' => 0],
+            ['value' => 1, 'label' => '3 or 4',            'weight' => 1],
+            ['value' => 2, 'label' => '5 or 6',            'weight' => 2],
+            ['value' => 3, 'label' => '7 to 9',            'weight' => 3],
+            ['value' => 4, 'label' => '10 or more',        'weight' => 4],
+        ];
+        $binge = [
+            ['value' => 0, 'label' => 'Never',             'weight' => 0],
+            ['value' => 1, 'label' => 'Less than monthly', 'weight' => 1],
+            ['value' => 2, 'label' => 'Monthly',           'weight' => 2],
+            ['value' => 3, 'label' => 'Weekly',            'weight' => 3],
+            ['value' => 4, 'label' => 'Daily or almost daily','weight' => 4],
+        ];
+        return [
+            'instrument'  => 'audit_c_alcohol',
+            'title'       => 'AUDIT-C (Alcohol Use Screening)',
+            'description' => 'WHO AUDIT-C — 3-item alcohol-use screen. Positive ≥4.',
+            'max_score'   => 12,
+            'questions'   => [
+                ['id' => 'q1', 'text' => 'How often do you have a drink containing alcohol?', 'options' => $freq],
+                ['id' => 'q2', 'text' => 'How many standard drinks do you have on a typical day when you are drinking?', 'options' => $drinks],
+                ['id' => 'q3', 'text' => 'How often do you have 6 or more drinks on one occasion?', 'options' => $binge],
+            ],
+        ];
+    }
+
+    private function cage(): array
+    {
+        $yesNo = [
+            ['value' => 'no',  'label' => 'No',  'weight' => 0],
+            ['value' => 'yes', 'label' => 'Yes', 'weight' => 1],
+        ];
+        return [
+            'instrument'  => 'cage_alcohol',
+            'title'       => 'CAGE (Alcohol-Use Screening)',
+            'description' => 'Four yes/no items. Score ≥2 is a positive screen.',
+            'max_score'   => 4,
+            'questions'   => [
+                ['id' => 'c1', 'text' => 'Have you ever felt you should Cut down on your drinking?',       'options' => $yesNo],
+                ['id' => 'c2', 'text' => 'Have people Annoyed you by criticizing your drinking?',          'options' => $yesNo],
+                ['id' => 'c3', 'text' => 'Have you ever felt Guilty about drinking?',                      'options' => $yesNo],
+                ['id' => 'c4', 'text' => 'Have you ever had a drink first thing in the morning (Eye-opener) to steady your nerves or get rid of a hangover?', 'options' => $yesNo],
+            ],
+        ];
+    }
+
+    private function dast10(): array
+    {
+        // DAST-10 is mostly "yes = 1 point" but item 3 is reverse-scored
+        // (no = 1). We encode per-item option weights so the scorer handles
+        // this automatically without special-casing.
+        $yes1 = [
+            ['value' => 'no',  'label' => 'No',  'weight' => 0],
+            ['value' => 'yes', 'label' => 'Yes', 'weight' => 1],
+        ];
+        $no1 = [
+            ['value' => 'no',  'label' => 'No',  'weight' => 1],
+            ['value' => 'yes', 'label' => 'Yes', 'weight' => 0],
+        ];
+        $qs = [
+            ['id' => 'd1',  'text' => 'Have you used drugs other than those required for medical reasons?', 'options' => $yes1],
+            ['id' => 'd2',  'text' => 'Do you abuse more than one drug at a time?', 'options' => $yes1],
+            ['id' => 'd3',  'text' => 'Are you always able to stop using drugs when you want to? (reverse-scored)', 'options' => $no1],
+            ['id' => 'd4',  'text' => 'Have you had blackouts or flashbacks as a result of drug use?', 'options' => $yes1],
+            ['id' => 'd5',  'text' => 'Do you ever feel bad or guilty about your drug use?', 'options' => $yes1],
+            ['id' => 'd6',  'text' => 'Does your spouse (or parents) ever complain about your involvement with drugs?', 'options' => $yes1],
+            ['id' => 'd7',  'text' => 'Have you neglected your family because of drug use?', 'options' => $yes1],
+            ['id' => 'd8',  'text' => 'Have you engaged in illegal activities to obtain drugs?', 'options' => $yes1],
+            ['id' => 'd9',  'text' => 'Have you ever experienced withdrawal symptoms when you stopped?', 'options' => $yes1],
+            ['id' => 'd10', 'text' => 'Have you had medical problems as a result of your drug use?', 'options' => $yes1],
+        ];
+        return [
+            'instrument'  => 'dast10_substance',
+            'title'       => 'DAST-10 (Drug Abuse Screening Test)',
+            'description' => '10-item substance-use screen. 0=none, 1-2=low, 3-5=moderate, 6-8=substantial, 9-10=severe.',
+            'max_score'   => 10,
+            'questions'   => $qs,
+        ];
+    }
 
     private function phq9(): array
     {
