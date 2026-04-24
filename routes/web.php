@@ -580,6 +580,11 @@ Route::middleware('auth')->group(function () {
     Route::get('/ops/activities',  fn () => \Inertia\Inertia::render('Operations/ActivitiesCalendar'))->name('ops.activities.ui');
     Route::get('/ops/huddle',      fn () => \Inertia\Inertia::render('Operations/Huddle'))->name('ops.huddle.ui');
 
+    // Phase K4 — Disease registry Vue pages
+    Route::get('/registries-ui/diabetes', fn () => \Inertia\Inertia::render('Registries/Diabetes'))->name('registries.diabetes.ui');
+    Route::get('/registries-ui/chf',      fn () => \Inertia\Inertia::render('Registries/Chf'))->name('registries.chf.ui');
+    Route::get('/registries-ui/copd',     fn () => \Inertia\Inertia::render('Registries/Copd'))->name('registries.copd.ui');
+
     // Phase G7 (MVP completion roadmap): PRO surveys
     Route::get ('/pro/surveys',                         [\App\Http\Controllers\ProController::class, 'surveys'])->name('pro.surveys');
     Route::post('/pro/responses',                       [\App\Http\Controllers\ProController::class, 'storeResponse'])->name('pro.responses.store');
