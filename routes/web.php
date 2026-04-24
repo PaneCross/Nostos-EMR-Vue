@@ -1272,6 +1272,8 @@ Route::middleware('auth')->group(function () {
         Route::get('/roi', [\App\Http\Controllers\ComplianceController::class, 'roi'])->name('compliance.roi');
         // Phase C2a (MVP completion roadmap): TB screening audit universe
         Route::get('/tb-screening', [\App\Http\Controllers\ComplianceController::class, 'tbScreening'])->name('compliance.tb_screening');
+        // Phase I1 (launch-readiness roadmap): ADE reporting universe — closes C5 scope miss
+        Route::get('/ade-reporting', [\App\Http\Controllers\ComplianceController::class, 'ade'])->name('compliance.ade_reporting');
     });
 });
 

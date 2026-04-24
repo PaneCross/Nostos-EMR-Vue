@@ -14,6 +14,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AdverseDrugEvent;
 use App\Models\Appeal;
 use App\Models\Incident;
 use App\Models\Participant;
@@ -501,7 +502,7 @@ class ComplianceController extends Controller
      * Phase B8b — ROI requests universe (HIPAA §164.524 records-disclosure audit).
      * 12-month window with open + closed requests.
      */
-    public function roi(Request $request): JsonResponse
+    public function roi(Request $request): JsonResponse|InertiaResponse
     {
         $this->gate($request);
         $tenantId = $request->user()->tenant_id;
@@ -549,14 +550,20 @@ class ComplianceController extends Controller
             'window_end'        => now()->toIso8601String(),
         ];
 
-        return response()->json(['rows' => $rows->values(), 'summary' => $summary]);
+        if ($request->wantsJson()) {
+            return response()->json(['rows' => $rows->values(), 'summary' => $summary]);
+        }
+        return Inertia::render('Compliance/Roi', [
+            'rows'    => $rows->values(),
+            'summary' => $summary,
+        ]);
     }
 
     /**
      * Phase C2a — TB screening universe. §460.71 annual TB screening audit pull.
      * For each enrolled participant: latest screening + days to due + status band.
      */
-    public function tbScreening(Request $request): JsonResponse
+    public function tbScreening(Request $request): JsonResponse|InertiaResponse
     {
         $this->gate($request);
         $tenantId = $request->user()->tenant_id;
@@ -603,7 +610,77 @@ class ComplianceController extends Controller
             'count_positive'=> TbScreening::forTenant($tenantId)->where('result','positive')->count(),
         ];
 
-        return response()->json(['rows' => $rows->values(), 'summary' => $summary]);
+        if ($request->wantsJson()) {
+            return response()->json(['rows' => $rows->values(), 'summary' => $summary]);
+        }
+        return Inertia::render('Compliance/TbScreening', [
+            'rows'    => $rows->values(),
+            'summary' => $summary,
+        ]);
+    }
+
+    /**
+     * Phase I1 — ADE reporting universe (closes Phase C5 scope miss).
+     * 12-month Adverse Drug Event pull with MedWatch reporting status.
+     */
+    public function ade(Request $request): JsonResponse|InertiaResponse
+    {
+        $this->gate($request);
+        $tenantId = $request->user()->tenant_id;
+        $since = now()->subYear();
+
+        $rows = AdverseDrugEvent::forTenant($tenantId)
+            ->with([
+                'participant:id,mrn,first_name,last_name',
+                'medication:id,drug_name',
+                'reporter:id,first_name,last_name',
+            ])
+            ->where('onset_date', '>=', $since->toDateString())
+            ->orderByDesc('onset_date')
+            ->get()
+            ->map(function (AdverseDrugEvent $a) {
+                return [
+                    'id'                      => $a->id,
+                    'participant'             => [
+                        'id'   => $a->participant?->id,
+                        'mrn'  => $a->participant?->mrn,
+                        'name' => $a->participant ? ($a->participant->first_name . ' ' . $a->participant->last_name) : null,
+                    ],
+                    'medication'              => $a->medication?->drug_name,
+                    'onset_date'              => $a->onset_date?->toDateString(),
+                    'severity'                => $a->severity,
+                    'causality'               => $a->causality,
+                    'reaction_description'    => $a->reaction_description,
+                    'reporter'                => $a->reporter
+                        ? ($a->reporter->first_name . ' ' . $a->reporter->last_name) : null,
+                    'reported_to_medwatch_at' => $a->reported_to_medwatch_at?->toIso8601String(),
+                    'medwatch_tracking_number'=> $a->medwatch_tracking_number,
+                    'auto_allergy_created'    => (bool) $a->auto_allergy_created,
+                    'requires_medwatch'       => $a->requiresMedwatch(),
+                    'medwatch_overdue'        => $a->medwatchOverdue(),
+                    'outcome_text'            => $a->outcome_text,
+                    'href'                    => "/participants/{$a->participant_id}",
+                ];
+            });
+
+        $summary = [
+            'count_total'             => $rows->count(),
+            'count_severe_plus'       => $rows->whereIn('severity', ['severe', 'life_threatening', 'fatal'])->count(),
+            'count_requires_medwatch' => $rows->where('requires_medwatch', true)->count(),
+            'count_medwatch_reported' => $rows->whereNotNull('reported_to_medwatch_at')->count(),
+            'count_medwatch_overdue'  => $rows->where('medwatch_overdue', true)->count(),
+            'count_auto_allergy'      => $rows->where('auto_allergy_created', true)->count(),
+            'window_start'            => $since->toIso8601String(),
+            'window_end'              => now()->toIso8601String(),
+        ];
+
+        if ($request->wantsJson()) {
+            return response()->json(['rows' => $rows->values(), 'summary' => $summary]);
+        }
+        return Inertia::render('Compliance/AdeReporting', [
+            'rows'    => $rows->values(),
+            'summary' => $summary,
+        ]);
     }
 
     private function statusFor(Participant $p, ?int $days): string
