@@ -532,6 +532,16 @@ Route::middleware('auth')->group(function () {
     Route::post('/participants/{participant}/restraints/{episode}/idt-review',
         [\App\Http\Controllers\RestraintController::class, 'recordIdtReview'])->name('participants.restraints.idt-review');
 
+    // Phase D3 (MVP completion roadmap): Dietary orders
+    Route::get ('/participants/{participant}/dietary-orders',
+        [\App\Http\Controllers\DietaryOrderController::class, 'index'])->name('dietary.index');
+    Route::post('/participants/{participant}/dietary-orders',
+        [\App\Http\Controllers\DietaryOrderController::class, 'store'])->name('dietary.store');
+    Route::post('/dietary-orders/{order}/discontinue',
+        [\App\Http\Controllers\DietaryOrderController::class, 'discontinue'])->name('dietary.discontinue');
+    Route::get ('/dietary/roster',
+        [\App\Http\Controllers\DietaryOrderController::class, 'roster'])->name('dietary.roster');
+
     // Phase D2 (MVP completion roadmap): Staff task queue
     Route::get ('/tasks',                  [\App\Http\Controllers\StaffTaskController::class, 'index'])->name('tasks.index');
     Route::post('/tasks',                  [\App\Http\Controllers\StaffTaskController::class, 'store'])->name('tasks.store');
