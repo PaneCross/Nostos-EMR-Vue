@@ -532,6 +532,20 @@ Route::middleware('auth')->group(function () {
     Route::post('/participants/{participant}/restraints/{episode}/idt-review',
         [\App\Http\Controllers\RestraintController::class, 'recordIdtReview'])->name('participants.restraints.idt-review');
 
+    // Phase B8a (MVP completion roadmap): E-signature on consents
+    Route::post('/participants/{participant}/consents/{consent}/sign',
+        [\App\Http\Controllers\ConsentController::class, 'sign'])->name('participant.consents.sign');
+    Route::get ('/participants/{participant}/consents/{consent}/signed.pdf',
+        [\App\Http\Controllers\ConsentController::class, 'signedPdf'])->name('participant.consents.signed_pdf');
+
+    // Phase B8b (MVP completion roadmap): ROI requests
+    Route::get ('/participants/{participant}/roi-requests',
+        [\App\Http\Controllers\RoiRequestController::class, 'index'])->name('participants.roi.index');
+    Route::post('/participants/{participant}/roi-requests',
+        [\App\Http\Controllers\RoiRequestController::class, 'store'])->name('participants.roi.store');
+    Route::post('/roi-requests/{roi}/update-status',
+        [\App\Http\Controllers\RoiRequestController::class, 'updateStatus'])->name('roi.update_status');
+
     // Phase B6 (MVP completion roadmap): Critical-value acknowledgment
     Route::post('/critical-values/{ack}/acknowledge',
         [\App\Http\Controllers\VitalController::class, 'acknowledge'])->name('critical_values.acknowledge');
@@ -1119,6 +1133,8 @@ Route::middleware('auth')->group(function () {
         Route::get('/infections', [\App\Http\Controllers\ComplianceController::class, 'infections'])->name('compliance.infections');
         // Phase B3 (MVP completion roadmap): sentinel events audit universe
         Route::get('/sentinel-events', [\App\Http\Controllers\ComplianceController::class, 'sentinelEvents'])->name('compliance.sentinel_events');
+        // Phase B8b (MVP completion roadmap): ROI requests audit universe
+        Route::get('/roi', [\App\Http\Controllers\ComplianceController::class, 'roi'])->name('compliance.roi');
     });
 });
 

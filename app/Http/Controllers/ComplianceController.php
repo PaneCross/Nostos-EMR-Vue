@@ -17,6 +17,7 @@ namespace App\Http\Controllers;
 use App\Models\Appeal;
 use App\Models\Incident;
 use App\Models\Participant;
+use App\Models\RoiRequest;
 use App\Models\Sdr;
 use App\Models\ServiceDenialNotice;
 use App\Models\StaffCredential;
@@ -493,6 +494,61 @@ class ComplianceController extends Controller
             'rows'    => $rows->values(),
             'summary' => $summary,
         ]);
+    }
+
+    /**
+     * Phase B8b — ROI requests universe (HIPAA §164.524 records-disclosure audit).
+     * 12-month window with open + closed requests.
+     */
+    public function roi(Request $request): JsonResponse
+    {
+        $this->gate($request);
+        $tenantId = $request->user()->tenant_id;
+        $since = now()->subYear();
+
+        $rows = RoiRequest::forTenant($tenantId)
+            ->with([
+                'participant:id,mrn,first_name,last_name',
+                'fulfilledBy:id,first_name,last_name',
+            ])
+            ->where('requested_at', '>=', $since)
+            ->orderByDesc('requested_at')
+            ->get()
+            ->map(function (RoiRequest $r) {
+                return [
+                    'id'                      => $r->id,
+                    'participant'             => [
+                        'id'   => $r->participant?->id,
+                        'mrn'  => $r->participant?->mrn,
+                        'name' => $r->participant ? ($r->participant->first_name . ' ' . $r->participant->last_name) : null,
+                    ],
+                    'requestor_type'          => $r->requestor_type,
+                    'requestor_name'          => $r->requestor_name,
+                    'requestor_contact'       => $r->requestor_contact,
+                    'records_requested_scope' => $r->records_requested_scope,
+                    'requested_at'            => $r->requested_at?->toIso8601String(),
+                    'due_by'                  => $r->due_by?->toIso8601String(),
+                    'status'                  => $r->status,
+                    'fulfilled_at'            => $r->fulfilled_at?->toIso8601String(),
+                    'fulfilled_by'            => $r->fulfilledBy
+                        ? ($r->fulfilledBy->first_name . ' ' . $r->fulfilledBy->last_name) : null,
+                    'denial_reason'           => $r->denial_reason,
+                    'is_overdue'              => $r->isOverdue(),
+                    'days_until_due'          => $r->daysUntilDue(),
+                ];
+            });
+
+        $summary = [
+            'count_total'       => $rows->count(),
+            'count_open'        => $rows->whereIn('status', RoiRequest::OPEN_STATUSES)->count(),
+            'count_overdue'     => $rows->where('is_overdue', true)->count(),
+            'count_fulfilled'   => $rows->where('status', 'fulfilled')->count(),
+            'count_denied'      => $rows->where('status', 'denied')->count(),
+            'window_start'      => $since->toIso8601String(),
+            'window_end'        => now()->toIso8601String(),
+        ];
+
+        return response()->json(['rows' => $rows->values(), 'summary' => $summary]);
     }
 
     private function statusFor(Participant $p, ?int $days): string

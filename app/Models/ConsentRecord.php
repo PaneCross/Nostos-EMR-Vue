@@ -62,17 +62,33 @@ class ConsentRecord extends Model
 
     // ── Fillable ──────────────────────────────────────────────────────────────
 
+    /** Current ESIGN/UETA disclaimer version shown to signers. Bump when copy changes. */
+    public const ESIGN_DISCLAIMER_VERSION = '2026.04.23-v1';
+
     protected $fillable = [
         'participant_id', 'tenant_id',
         'consent_type', 'document_title', 'document_version', 'document_path',
         'status', 'acknowledged_by', 'acknowledged_at', 'representative_type',
         'expiration_date', 'notes', 'created_by_user_id',
+        // Phase B8a — e-signature fields
+        'signature_image_blob', 'signed_by_participant',
+        'proxy_signer_name', 'proxy_relationship',
+        'signed_ip_address', 'esign_disclaimer_version', 'signed_at',
     ];
 
     protected $casts = [
-        'acknowledged_at' => 'datetime',
-        'expiration_date' => 'date',
+        'acknowledged_at'       => 'datetime',
+        'expiration_date'       => 'date',
+        'signed_at'             => 'datetime',
+        'signed_by_participant' => 'boolean',
+        // Signature blob is encrypted at rest.
+        'signature_image_blob'  => 'encrypted',
     ];
+
+    public function isSigned(): bool
+    {
+        return $this->signed_at !== null && $this->signature_image_blob !== null;
+    }
 
     // ── Relationships ─────────────────────────────────────────────────────────
 

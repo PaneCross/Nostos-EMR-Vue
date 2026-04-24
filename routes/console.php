@@ -145,6 +145,14 @@ Schedule::job(DenialAppealDeadlineAlertJob::class, 'compliance')->dailyAt('07:15
     ->name('denial-appeal-deadline')
     ->withoutOverlapping();
 
+// ─── Phase B8b (MVP roadmap): ROI response-deadline sweep (HIPAA §164.524) ──
+// Daily at 07:15. For each open RoiRequest:
+//   - T-5 days approaching: warning → qa_compliance (dedup 72h)
+//   - Past due_by (overdue): critical → qa_compliance + executive (dedup 24h)
+Schedule::job(\App\Jobs\RoiDeadlineAlertJob::class, 'compliance')->dailyAt('07:15')
+    ->name('roi-deadline-sweep')
+    ->withoutOverlapping();
+
 // ─── Phase B6 (MVP roadmap): Critical-value escalation sweep ─────────────────
 // Hourly. Unacknowledged critical CriticalValueAcknowledgment rows past their
 // deadline_at get escalated_at stamped (once) and a critical alert to
