@@ -35,6 +35,7 @@ class ConsentRecord extends Model
     public const CONSENT_TYPES = [
         'npp_acknowledgment', 'hipaa_authorization',
         'treatment_consent', 'research_consent', 'photo_release', 'other',
+        'advance_directive',
     ];
 
     public const TYPE_LABELS = [
@@ -44,6 +45,7 @@ class ConsentRecord extends Model
         'research_consent'     => 'Research Consent',
         'photo_release'        => 'Photo / Media Release',
         'other'                => 'Other',
+        'advance_directive'    => 'Advance Directive',
     ];
 
     /** HIPAA §164.520: PACE must make good-faith effort to obtain NPP acknowledgment */

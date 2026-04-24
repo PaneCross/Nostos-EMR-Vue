@@ -518,6 +518,14 @@ Route::middleware('auth')->group(function () {
     Route::get ('/participants/{participant}/advance-directive/pdf',
         [\App\Http\Controllers\AdvanceDirectivePdfController::class, 'generate'])
         ->name('participants.advance_directive.pdf');
+    // Phase M1 — wizard
+    Route::post('/participants/{participant}/advance-directive',
+        [\App\Http\Controllers\AdvanceDirectiveWizardController::class, 'store'])
+        ->name('participants.advance_directive.store');
+    Route::get('/participants/{participant}/advance-directive/wizard',
+        fn (\App\Models\Participant $participant) =>
+            \Inertia\Inertia::render('AdvanceDirective/Wizard', ['participant' => $participant])
+        )->name('participants.advance_directive.wizard');
 
     // Phase 15 (MVP roadmap): medium-term wins batch — formulary, reports, imports, CDS, committees, HRIS, Medicaid, mobile
     // 15.10 Formulary
