@@ -532,6 +532,20 @@ Route::middleware('auth')->group(function () {
     Route::post('/participants/{participant}/restraints/{episode}/idt-review',
         [\App\Http\Controllers\RestraintController::class, 'recordIdtReview'])->name('participants.restraints.idt-review');
 
+    // Phase C3 (MVP completion roadmap): Hospice workflow + bereavement
+    Route::post('/participants/{participant}/hospice/refer',
+        [\App\Http\Controllers\HospiceController::class, 'refer'])->name('hospice.refer');
+    Route::post('/participants/{participant}/hospice/enroll',
+        [\App\Http\Controllers\HospiceController::class, 'enroll'])->name('hospice.enroll');
+    Route::post('/participants/{participant}/hospice/idt-review',
+        [\App\Http\Controllers\HospiceController::class, 'idtReview'])->name('hospice.idt_review');
+    Route::post('/participants/{participant}/hospice/death',
+        [\App\Http\Controllers\HospiceController::class, 'recordDeath'])->name('hospice.death');
+    Route::get ('/participants/{participant}/bereavement-contacts',
+        [\App\Http\Controllers\HospiceController::class, 'bereavementIndex'])->name('hospice.bereavement.index');
+    Route::post('/bereavement-contacts/{contact}/complete',
+        [\App\Http\Controllers\HospiceController::class, 'completeBereavement'])->name('hospice.bereavement.complete');
+
     // Phase C2a (MVP completion roadmap): TB screening (§460.71)
     Route::get ('/participants/{participant}/tb-screenings',
         [\App\Http\Controllers\TbScreeningController::class, 'index'])->name('participants.tb.index');

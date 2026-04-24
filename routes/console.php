@@ -145,6 +145,13 @@ Schedule::job(DenialAppealDeadlineAlertJob::class, 'compliance')->dailyAt('07:15
     ->name('denial-appeal-deadline')
     ->withoutOverlapping();
 
+// ─── Phase C3 (MVP roadmap): Hospice IDT-review overdue sweep ───────────────
+// Daily at 06:05. Hospice-enrolled participants whose last_idt_review is >180d
+// (or null) get a warning alert to primary_care + social_work + qa_compliance.
+Schedule::job(\App\Jobs\HospiceIdtReviewOverdueJob::class, 'compliance')->dailyAt('06:05')
+    ->name('hospice-idt-review-overdue')
+    ->withoutOverlapping();
+
 // ─── Phase C2a (MVP roadmap): TB screening annual cadence (§460.71) ─────────
 // Daily at 06:00. For each enrolled participant with no screening or a
 // next_due_date ≤60 days out, emits threshold alerts (60/30/today/overdue).

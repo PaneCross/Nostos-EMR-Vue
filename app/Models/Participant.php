@@ -42,6 +42,12 @@ class Participant extends Model
 
     protected $table = 'emr_participants';
 
+    /** Phase C3 — Hospice workflow state values. */
+    public const HOSPICE_STATUSES = ['none', 'referred', 'enrolled', 'graduated', 'deceased'];
+
+    /** Days an enrolled hospice participant can go without IDT review before alerting. */
+    public const HOSPICE_IDT_REVIEW_DAYS = 180;
+
     protected $fillable = [
         'tenant_id', 'site_id', 'mrn', 'barcode_value',
         'first_name', 'last_name', 'preferred_name', 'dob', 'gender', 'pronouns',
@@ -49,6 +55,9 @@ class Participant extends Model
         'medicaid_id', 'county_fips_code', 'pace_contract_id', 'h_number',
         'primary_language', 'interpreter_needed', 'interpreter_language',
         'enrollment_status', 'enrollment_date', 'disenrollment_date', 'disenrollment_reason', 'disenrollment_type',
+        // Phase C3 — hospice workflow state
+        'hospice_status', 'hospice_started_at', 'hospice_last_idt_review_at',
+        'hospice_provider_text', 'hospice_diagnosis_text',
         'nursing_facility_eligible', 'nf_certification_date',
         'nf_certification_expires_at', 'nf_recert_waived', 'nf_recert_waived_reason',
         'photo_path', 'is_active', 'created_by_user_id',
@@ -68,6 +77,9 @@ class Participant extends Model
         'nf_certification_date'         => 'date',
         'nf_certification_expires_at'   => 'date',
         'nf_recert_waived'              => 'boolean',
+        // Phase C3 — hospice timestamps
+        'hospice_started_at'            => 'datetime',
+        'hospice_last_idt_review_at'    => 'datetime',
         // W4-9: HPMS enrollment file fields (GAP-14)
         'medicare_a_start_date'         => 'date',
         'medicare_b_start_date'         => 'date',
