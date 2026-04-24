@@ -158,6 +158,13 @@ class PermissionService
                     ['label' => 'Care Plans',       'module' => 'care_plans',       'href' => '/clinical/care-plans'],
                     ['label' => 'Medications',      'module' => 'medications',      'href' => '/clinical/medications'],
                     ['label' => 'Orders',           'module' => 'orders',           'href' => '/orders'],
+                    // Phase O4 — Wave I-N clinical surfaces
+                    ['label' => 'My Panel',         'module' => 'participants',     'href' => '/ops/panel'],
+                    ['label' => 'Tasks',            'module' => 'assessments',      'href' => '/tasks'],
+                    ['label' => 'Home-Care Mobile', 'module' => 'participants',     'href' => '/mobile'],
+                    ['label' => 'Diabetes Registry','module' => 'participants',     'href' => '/registries/diabetes'],
+                    ['label' => 'CHF Registry',     'module' => 'participants',     'href' => '/registries/chf'],
+                    ['label' => 'COPD Registry',    'module' => 'participants',     'href' => '/registries/copd'],
                 ],
             ],
             [
@@ -167,6 +174,18 @@ class PermissionService
                     ['label' => 'IDT Dashboard',    'module' => 'idt_dashboard',    'href' => '/idt'],
                     ['label' => 'Meeting Minutes',  'module' => 'idt_minutes',      'href' => '/idt/meetings'],
                     ['label' => 'SDR Tracker',      'module' => 'sdr_tracker',      'href' => '/sdrs'],
+                    // Phase O4 — Wave I-N IDT surfaces
+                    ['label' => 'Team Huddle',      'module' => 'idt_dashboard',    'href' => '/ops/huddle'],
+                ],
+            ],
+
+            // Phase O4 — Wave I-N Operations group (dietary + activities)
+            [
+                'label' => 'Operations',
+                'icon'  => 'clipboard',
+                'items' => [
+                    ['label' => 'Dietary Orders',     'module' => 'care_plans',     'href' => '/ops/dietary'],
+                    ['label' => 'Activities Calendar','module' => 'care_plans',     'href' => '/ops/activities'],
                 ],
             ],
             [
@@ -210,6 +229,9 @@ class PermissionService
                     ['label' => 'Revenue Integrity',   'module' => 'revenue_integrity',    'href' => '/billing/revenue-integrity'],
                     // Phase 6 (MVP roadmap): CMS MMR/TRR reconciliation
                     ['label' => 'CMS Reconciliation',  'module' => 'cms_reconciliation',   'href' => '/billing/reconciliation'],
+                    // Phase O4 — Wave M6 reconciliation dashboards
+                    ['label' => 'PDE Reconciliation',  'module' => 'pde_records',          'href' => '/dashboards/pde-reconciliation'],
+                    ['label' => 'Capitation Reconciliation', 'module' => 'capitation',     'href' => '/dashboards/capitation-reconciliation'],
                 ],
             ],
             [
@@ -218,6 +240,12 @@ class PermissionService
                 'items' => [
                     ['label' => 'Reports',          'module' => 'reports',             'href' => '/reports'],
                     ['label' => 'Audit Log',        'module' => 'audit_log',           'href' => '/it-admin/audit'],
+                    // Phase O4 — Wave I-N BI + quality dashboards
+                    ['label' => 'Quality Measures', 'module' => 'reports',             'href' => '/dashboards/quality'],
+                    ['label' => 'Care Gaps',        'module' => 'reports',             'href' => '/dashboards/gaps'],
+                    ['label' => 'High-Risk Panel',  'module' => 'reports',             'href' => '/dashboards/high-risk'],
+                    ['label' => 'BI Report Builder','module' => 'reports',             'href' => '/bi/builder'],
+                    ['label' => 'Saved Dashboards', 'module' => 'reports',             'href' => '/bi/saved'],
                 ],
             ],
             // ── W4-1: QA / Compliance (42 CFR §460.120–§460.121) ──────────────
@@ -234,6 +262,10 @@ class PermissionService
                     ['label' => 'QAPI Annual Eval', 'module' => 'qapi_projects', 'href' => '/qapi/evaluations'],
                     // Phase 3 (MVP roadmap): CMS Level I / Level II quarterly reporting
                     ['label' => 'Level I/II Reporting', 'module' => 'level_ii_reporting', 'href' => '/compliance/level-ii-reporting'],
+                    // Phase O4 — Wave I compliance universes
+                    ['label' => 'ADE Reporting',    'module' => 'audit_log',     'href' => '/compliance/ade-reporting'],
+                    ['label' => 'ROI Requests',     'module' => 'audit_log',     'href' => '/compliance/roi'],
+                    ['label' => 'TB Screening',     'module' => 'audit_log',     'href' => '/compliance/tb-screening'],
                 ],
             ],
             [
