@@ -532,6 +532,12 @@ Route::middleware('auth')->group(function () {
     Route::post('/participants/{participant}/restraints/{episode}/idt-review',
         [\App\Http\Controllers\RestraintController::class, 'recordIdtReview'])->name('participants.restraints.idt-review');
 
+    // Phase C1 (MVP completion roadmap): IADL assessments (Lawton scale)
+    Route::get ('/participants/{participant}/iadl',
+        [\App\Http\Controllers\IadlController::class, 'index'])->name('participants.iadl.index');
+    Route::post('/participants/{participant}/iadl',
+        [\App\Http\Controllers\IadlController::class, 'store'])->name('participants.iadl.store');
+
     // Phase B8a (MVP completion roadmap): E-signature on consents
     Route::post('/participants/{participant}/consents/{consent}/sign',
         [\App\Http\Controllers\ConsentController::class, 'sign'])->name('participant.consents.sign');
