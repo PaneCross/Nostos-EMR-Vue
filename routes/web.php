@@ -796,6 +796,9 @@ Route::middleware('auth')->group(function () {
         [\App\Http\Controllers\StateMedicaidSubmissionController::class, 'index'])->name('state_medicaid.submissions.index');
     // 15.5 Mobile companion
     Route::get   ('/home-care/mobile-adl',               [\App\Http\Controllers\MobileCompanionController::class, 'adl'])->name('home_care.mobile_adl');
+    // Phase M5 — day list PWA
+    Route::get('/mobile',           [\App\Http\Controllers\MobileHomeVisitsController::class, 'index'])->name('mobile.index');
+    Route::get('/mobile/today',     [\App\Http\Controllers\MobileHomeVisitsController::class, 'todayJson'])->name('mobile.today');
 
     // Phase 14 (MVP roadmap): printable PDFs + appointment detail + global search
     Route::get ('/participants/{participant}/pdf/{kind}',
