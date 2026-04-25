@@ -182,6 +182,17 @@ class DemoEnvironmentSeeder extends Seeder
         $this->call(MedicationsReferenceSeeder::class);
         $this->call(Phase5CDataSeeder::class);
 
+        // Phase R5 — wire previously-orphan reference seeders so a fresh
+        // migrate:fresh --seed populates Beers Criteria, day-center schedule,
+        // PRO survey definitions, quality-measure registry, HCC mapping.
+        $this->command->info('');
+        $this->command->info('  Seeding Wave R reference data (Beers Criteria, HCC mapping, day-center, PRO, QM)...');
+        $this->call(BeersCriteriaSeeder::class);
+        $this->call(HccMappingSeeder::class);
+        $this->call(DayCenterScheduleSeeder::class);
+        $this->call(ProSurveySeeder::class);
+        $this->call(QualityMeasureSeeder::class);
+
         // ─── Phase 7C: Chat Channels ───────────────────────────────────────────
         // Auto-create 14 department channels + 1 broadcast channel for the tenant.
         // The super-admin (tj@nostos.tech) is used as the "created_by" user.

@@ -15,7 +15,11 @@ class DayCenterScheduleSeeder extends Seeder
 {
     public function run(): void
     {
-        $tenant = Tenant::where('slug', 'sunrise-pace-demo')->firstOrFail();
+        $tenant = Tenant::where('slug', 'sunrise-pace-demo')->first();
+        if (! $tenant) {
+            $this->command?->info('  No demo tenant found — skipping day-center schedule seeding.');
+            return;
+        }
 
         // Common day-center schedule patterns (weighted toward weekday attendance)
         $patterns = [
