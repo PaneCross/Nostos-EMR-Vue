@@ -784,6 +784,10 @@ Route::middleware('auth')->group(function () {
     Route::post('/prior-auth/{priorAuthRequest}/transition',
         [\App\Http\Controllers\PriorAuthRequestController::class, 'transition'])->name('prior_auth.transition');
 
+    // Phase R10 — clinician-accessible per-participant RAF + HCC V28 visibility
+    Route::get('/participants/{participant}/raf-snapshot',
+        [\App\Http\Controllers\ParticipantRafController::class, 'show'])->name('participants.raf_snapshot');
+
     // Phase R9 — marketing / referral-source / lead funnel
     Route::get('/enrollment/marketing-funnel',
         [\App\Http\Controllers\MarketingFunnelController::class, 'index'])->name('enrollment.marketing_funnel');
