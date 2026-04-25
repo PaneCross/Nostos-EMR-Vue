@@ -1641,3 +1641,15 @@ Route::prefix('integrations')->group(function () {
 
 // ─── Health Check ─────────────────────────────────────────────────────────────
 Route::get('/up', fn () => response()->json(['status' => 'ok']))->name('health');
+
+// ─── Phase W2 — Test-only routes for axios interceptor + Toaster wiring ──────
+// Gated to local + testing envs so production never exposes them. Lets a
+// Feature test fire a deliberate 5xx/4xx and assert the JSON shape the
+// frontend axios interceptor relies on (so a future renaming of detail.message
+// or status-code behavior would surface red instead of silent in production).
+if (app()->environment(['testing', 'local'])) {
+    Route::get('/__test/__500', fn () => response()->json(['message' => 'Deliberate 500 for Toaster test'], 500))->name('test_only.500');
+    Route::get('/__test/__403', fn () => response()->json(['message' => 'Deliberate 403 for Toaster test'], 403))->name('test_only.403');
+    Route::get('/__test/__409', fn () => response()->json(['message' => 'Deliberate 409 for Toaster test'], 409))->name('test_only.409');
+    Route::get('/__test/__422', fn () => response()->json(['message' => 'invalid', 'errors' => ['field' => ['required']]], 422))->name('test_only.422');
+}
