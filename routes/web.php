@@ -962,6 +962,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/idt/meetings',           [IdtMeetingController::class, 'store'])->name('idt.meetings.store');
     Route::get('/idt/meetings/{meeting}',  [IdtMeetingController::class, 'show'])->name('idt.meetings.show');
     Route::patch('/idt/meetings/{meeting}',[IdtMeetingController::class, 'update'])->name('idt.meetings.update');
+    // Phase R7 — structured attendance check-in for IDT meeting attendees
+    Route::post('/idt/meetings/{meeting}/attendance', [IdtMeetingController::class, 'recordAttendance'])->name('idt.meetings.attendance');
     Route::post('/idt/meetings/{meeting}/start',    [IdtMeetingController::class, 'start'])->name('idt.meetings.start');
     Route::post('/idt/meetings/{meeting}/complete', [IdtMeetingController::class, 'complete'])->name('idt.meetings.complete');
     Route::post('/idt/meetings/{meeting}/participants', [IdtMeetingController::class, 'addParticipant'])->name('idt.meetings.participants.add');

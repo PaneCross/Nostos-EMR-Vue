@@ -155,19 +155,77 @@ class IdtMeetingController extends Controller
      * PATCH /idt/meetings/{meeting}
      * Update meeting details (minutes, decisions, attendees). Not allowed on completed.
      */
+    /**
+     * Phase R7 — POST /idt/meetings/{meeting}/attendance
+     * Mark a user attended (or absent) at this meeting. Stored in attendees
+     * JSONB as an associative map of user_id → {status, recorded_at}.
+     */
+    public function recordAttendance(Request $request, IdtMeeting $meeting): JsonResponse
+    {
+        $this->authorizeForTenant($meeting, $request->user());
+        abort_if($meeting->isLocked(), 403, 'Completed meetings cannot be edited.');
+
+        $validated = $request->validate([
+            'user_id' => ['required', 'integer', 'exists:shared_users,id'],
+            'status'  => ['required', 'in:present,absent,excused'],
+        ]);
+
+        $attendees = is_array($meeting->attendees) ? $meeting->attendees : [];
+        // Normalize legacy [id, id, id] format → ['id' => ['status' => 'present']]
+        if (! empty($attendees) && array_is_list($attendees)) {
+            $attendees = array_combine(
+                array_map(fn ($id) => (string) $id, $attendees),
+                array_map(fn () => ['status' => 'present', 'recorded_at' => null], $attendees),
+            );
+        }
+        $attendees[(string) $validated['user_id']] = [
+            'status'      => $validated['status'],
+            'recorded_at' => now()->toIso8601String(),
+            'recorded_by' => $request->user()->id,
+        ];
+        $meeting->update([
+            'attendees'              => $attendees,
+            'revision'               => ($meeting->revision ?? 0) + 1,
+            'last_edited_at'         => now(),
+            'last_edited_by_user_id' => $request->user()->id,
+        ]);
+
+        return response()->json($meeting->refresh());
+    }
+
     public function update(Request $request, IdtMeeting $meeting): JsonResponse
     {
         $this->authorizeForTenant($meeting, $request->user());
         abort_if($meeting->isLocked(), 403, 'Completed meetings cannot be edited.');
 
         $validated = $request->validate([
-            'minutes_text' => ['nullable', 'string'],
-            'decisions'    => ['nullable', 'array'],
-            'attendees'    => ['nullable', 'array'],
-            'attendees.*'  => ['integer', 'exists:shared_users,id'],
+            'minutes_text'      => ['nullable', 'string'],
+            'decisions'         => ['nullable', 'array'],
+            'attendees'         => ['nullable', 'array'],
+            'attendees.*'       => ['integer', 'exists:shared_users,id'],
+            // Phase R7 — concurrent-edit guard. Client must echo back the
+            // revision it loaded; if the DB has advanced, return 409.
+            'expected_revision' => ['nullable', 'integer'],
         ]);
 
-        $meeting->update($validated);
+        if (isset($validated['expected_revision'])
+            && (int) $validated['expected_revision'] !== (int) $meeting->revision) {
+            return response()->json([
+                'error'             => 'revision_conflict',
+                'message'           => 'This meeting was edited by another user since you opened it. Reload to see the latest minutes.',
+                'current_revision'  => $meeting->revision,
+                'last_edited_at'    => $meeting->last_edited_at?->toIso8601String(),
+                'last_edited_by'    => $meeting->last_edited_by_user_id,
+            ], 409);
+        }
+
+        unset($validated['expected_revision']);
+
+        $meeting->update(array_merge($validated, [
+            'revision'               => ($meeting->revision ?? 0) + 1,
+            'last_edited_at'         => now(),
+            'last_edited_by_user_id' => $request->user()->id,
+        ]));
 
         return response()->json($meeting->refresh());
     }
