@@ -144,6 +144,9 @@ const reviewSaving = ref(false)
 const reviewSaved = ref(false)
 const minutesSaving = ref(false)
 const minutesSaved = ref(false)
+// Phase V2 — Audit-10 H1: surface auto-save failures so chart data isn't lost silently.
+const reviewSaveError = ref<string | null>(null)
+const minutesSaveError = ref<string | null>(null)
 const markingReviewed = ref(false)
 const completing = ref(false)
 const completeError = ref('')
@@ -179,6 +182,7 @@ function scheduleReviewSave() {
 async function saveReviewNow() {
   if (locked.value || !selectedReviewId.value) return
   reviewSaving.value = true
+  reviewSaveError.value = null
   try {
     await axios.patch(
       `/idt/meetings/${props.meeting.id}/participants/${selectedReviewId.value}`,
@@ -186,8 +190,9 @@ async function saveReviewNow() {
     )
     reviewSaved.value = true
     setTimeout(() => { reviewSaved.value = false }, 2500)
-  } catch {
-    // Non-blocking auto-save failure
+  } catch (e: any) {
+    // Phase V2 — non-blocking, but visible. Audit-10 H1.
+    reviewSaveError.value = `Auto-save failed (${e?.response?.status ?? 'network'}). Your changes are still in the form — try saving again.`
   } finally {
     reviewSaving.value = false
   }
@@ -210,8 +215,8 @@ async function markReviewed() {
     )
     router.reload({ only: ['meeting'] })
     if (next) selectedReviewId.value = next.id
-  } catch {
-    // Non-blocking
+  } catch (e: any) {
+    reviewSaveError.value = `Could not mark reviewed (${e?.response?.status ?? 'network'}). The participant remains in the queue.`
   } finally {
     markingReviewed.value = false
   }
@@ -240,12 +245,13 @@ function scheduleMinutesSave() {
 async function saveMinutesNow() {
   if (locked.value) return
   minutesSaving.value = true
+  minutesSaveError.value = null
   try {
     await axios.patch(`/idt/meetings/${props.meeting.id}`, { minutes_text: minutesText.value })
     minutesSaved.value = true
     setTimeout(() => { minutesSaved.value = false }, 2500)
-  } catch {
-    // Non-blocking
+  } catch (e: any) {
+    minutesSaveError.value = `Auto-save failed (${e?.response?.status ?? 'network'}). Minutes are still in the textarea — click outside to retry.`
   } finally {
     minutesSaving.value = false
   }
@@ -424,6 +430,14 @@ function fmtDate(dateStr: string): string {
                   Saved
                 </span>
                 <span
+                  v-if="reviewSaveError"
+                  role="alert"
+                  class="text-xs text-red-600 dark:text-red-400"
+                  data-testid="idt-review-save-error"
+                >
+                  {{ reviewSaveError }}
+                </span>
+                <span
                   v-if="selectedReview.reviewed_at"
                   class="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-green-50 dark:bg-green-950/60 text-green-700 dark:text-green-300 rounded ring-1 ring-green-600/20"
                 >
@@ -585,6 +599,9 @@ function fmtDate(dateStr: string): string {
               </label>
               <span v-if="minutesSaving" class="text-xs text-gray-400 dark:text-slate-500">Saving...</span>
               <span v-else-if="minutesSaved" class="text-xs text-green-600 dark:text-green-400">Saved</span>
+              <span v-if="minutesSaveError" role="alert" class="text-xs text-red-600 dark:text-red-400" data-testid="idt-minutes-save-error">
+                {{ minutesSaveError }}
+              </span>
             </div>
             <textarea
               v-model="minutesText"
