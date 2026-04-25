@@ -88,6 +88,21 @@ const rosterLoading = ref(false)
 const search = ref('')
 const savingId = ref<number | null>(null)
 
+// Phase RS2 — live event-status snapshot (4 buckets)
+interface EventStatus {
+    totals: { scheduled: number; arrived: number; checked_out: number; absent_or_cancelled: number; expected: number }
+}
+const eventStatus = ref<EventStatus | null>(null)
+let eventStatusInterval: ReturnType<typeof setInterval> | null = null
+async function loadEventStatus() {
+    try {
+        const r = await axios.get('/scheduling/day-center/event-status', {
+            params: { date: date.value, site_id: props.selectedSite },
+        })
+        eventStatus.value = r.data
+    } catch { /* silent — feature is read-only and best-effort */ }
+}
+
 // ── Summary from props (refreshes on Inertia reload) ──────────────────────────
 
 const summaryItems = computed(() => [
@@ -127,7 +142,15 @@ async function loadRoster() {
     }
 }
 
-onMounted(loadRoster)
+onMounted(() => {
+    loadRoster()
+    loadEventStatus()
+    eventStatusInterval = setInterval(loadEventStatus, 60_000) // 60s poll
+})
+import { onBeforeUnmount } from 'vue'
+onBeforeUnmount(() => {
+    if (eventStatusInterval) clearInterval(eventStatusInterval)
+})
 
 // ── Date change ───────────────────────────────────────────────────────────────
 
@@ -260,12 +283,46 @@ function statusLabel(status: string | null): string {
                     >
                         Manage Schedules
                     </a>
+                    <!-- Phase RS2 — printable roster PDF -->
+                    <a
+                        :href="`/scheduling/day-center/roster.pdf?date=${date}&site_id=${props.selectedSite}`"
+                        target="_blank"
+                        class="text-sm px-3 py-1.5 border border-gray-300 dark:border-slate-600 text-gray-700 dark:text-slate-300 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700"
+                    >
+                        Print Roster
+                    </a>
                     <input
                         type="date"
                         :value="date"
                         class="text-sm border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-1.5 dark:bg-slate-700"
                         @change="handleDateChange(($event.target as HTMLInputElement).value)"
                     />
+                </div>
+            </div>
+
+            <!-- Phase RS2 — Live event-status snapshot (4 buckets, polls every 60s) -->
+            <div v-if="eventStatus" class="bg-white dark:bg-slate-800 rounded-xl border border-blue-200 dark:border-blue-800 p-4 shadow-sm" data-testid="dc-live-roster">
+                <div class="flex items-center justify-between mb-2">
+                    <p class="text-sm font-semibold text-gray-700 dark:text-slate-300">Live Event Status</p>
+                    <p class="text-xs text-gray-500 dark:text-slate-400">{{ eventStatus.totals.expected }} expected today</p>
+                </div>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <div class="bg-slate-50 dark:bg-slate-900/40 rounded-lg px-3 py-2">
+                        <p class="text-2xl font-bold text-gray-700 dark:text-slate-300">{{ eventStatus.totals.scheduled }}</p>
+                        <p class="text-xs text-gray-500 dark:text-slate-400">Scheduled</p>
+                    </div>
+                    <div class="bg-emerald-50 dark:bg-emerald-900/30 rounded-lg px-3 py-2">
+                        <p class="text-2xl font-bold text-emerald-700 dark:text-emerald-300">{{ eventStatus.totals.arrived }}</p>
+                        <p class="text-xs text-emerald-700/80 dark:text-emerald-400/80">Arrived</p>
+                    </div>
+                    <div class="bg-blue-50 dark:bg-blue-900/30 rounded-lg px-3 py-2">
+                        <p class="text-2xl font-bold text-blue-700 dark:text-blue-300">{{ eventStatus.totals.checked_out }}</p>
+                        <p class="text-xs text-blue-700/80 dark:text-blue-400/80">Checked Out</p>
+                    </div>
+                    <div class="bg-amber-50 dark:bg-amber-900/30 rounded-lg px-3 py-2">
+                        <p class="text-2xl font-bold text-amber-700 dark:text-amber-300">{{ eventStatus.totals.absent_or_cancelled }}</p>
+                        <p class="text-xs text-amber-700/80 dark:text-amber-400/80">Absent/Cancelled</p>
+                    </div>
                 </div>
             </div>
 
