@@ -784,6 +784,12 @@ Route::middleware('auth')->group(function () {
     Route::post('/prior-auth/{priorAuthRequest}/transition',
         [\App\Http\Controllers\PriorAuthRequestController::class, 'transition'])->name('prior_auth.transition');
 
+    // Phase R8 — HPMS Incident Reports (5 CMS-aligned exports)
+    Route::get('/compliance/hpms-incident-reports',
+        [\App\Http\Controllers\HpmsIncidentReportController::class, 'index'])->name('compliance.hpms_incident_reports.index');
+    Route::get('/compliance/hpms-incident-reports/{report}.csv',
+        [\App\Http\Controllers\HpmsIncidentReportController::class, 'export'])->name('compliance.hpms_incident_reports.export');
+
     // Phase P4 — HIPAA §164.404 Breach Notification
     Route::get('/it-admin/breaches',
         [\App\Http\Controllers\BreachIncidentController::class, 'index'])->name('it_admin.breaches.index');
