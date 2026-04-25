@@ -69,14 +69,20 @@ function handleChange(key: string, value: PrefValue) {
     saved.value = false
 }
 
+const saveError = ref<string | null>(null)
 async function handleSave() {
     saving.value = true
+    saveError.value = null
     try {
-        await axios.patch('/profile/notifications', { preferences: prefs.value })
+        // Phase U2 — was axios.patch which 405'd against the PUT-only route;
+        // route now accepts both PUT and PATCH. Frontend uses PUT for clarity.
+        await axios.put('/profile/notifications', { preferences: prefs.value })
         saved.value = true
         setTimeout(() => { saved.value = false }, 3000)
-    } catch {
-        // ignore
+    } catch (e: any) {
+        // Surface failure rather than silently flipping saved=true (Audit-9 H7).
+        saveError.value = e?.response?.data?.message
+            ?? `Save failed (${e?.response?.status ?? 'network error'}). Try again.`
     } finally {
         saving.value = false
     }
@@ -150,6 +156,14 @@ async function handleSave() {
                 >
                     <CheckCircleIcon class="w-4 h-4" aria-hidden="true" />
                     Saved
+                </span>
+                <span
+                    v-if="saveError"
+                    class="inline-flex items-center gap-1.5 text-sm text-red-600 dark:text-red-400 font-medium"
+                    role="alert"
+                    aria-live="assertive"
+                >
+                    {{ saveError }}
                 </span>
             </div>
 

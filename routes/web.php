@@ -1334,7 +1334,7 @@ Route::middleware('auth')->group(function () {
     // ─── Phase 7C: Profile / Notification Preferences ─────────────────────────
     Route::prefix('profile')->name('profile.')->group(function () {
         Route::get('/notifications',  [ProfileController::class, 'notifications'])->name('notifications');
-        Route::put('/notifications',  [ProfileController::class, 'updateNotifications'])->name('notifications.update');
+        Route::match(['PUT', 'PATCH'], '/notifications', [ProfileController::class, 'updateNotifications'])->name('notifications.update');
     });
 
     // ─── W3-1: User Theme Preference ──────────────────────────────────────────

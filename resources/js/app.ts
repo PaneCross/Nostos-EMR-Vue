@@ -17,6 +17,35 @@ window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest'
 window.axios.defaults.withCredentials = true
 window.axios.defaults.withXSRFToken = true
 
+// ─── Phase U2 — global axios error surfacer ────────────────────────────────
+// Audit-9 found multiple empty catch{} blocks that swallow 4xx/5xx silently,
+// causing UIs to flip "saved=true" when nothing was persisted. This response
+// interceptor logs every failure to the console with status + URL + method
+// so a regression like POST→PUT method mismatch can no longer ship invisible.
+// On 419 (CSRF expiry) we reload to refresh the token. We do NOT toast/alert
+// because per-component catch handlers already render their own UX; this is
+// a safety-net log layer for engineers + future debugging.
+window.axios.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        const status = error?.response?.status
+        const url = error?.config?.url ?? '(no url)'
+        const method = (error?.config?.method ?? 'get').toUpperCase()
+        if (status === 419) {
+            // CSRF token mismatch — most often happens after server restart.
+            console.warn(`[axios] 419 CSRF expired on ${method} ${url}; reloading…`)
+            window.location.reload()
+            return Promise.reject(error)
+        }
+        if (status >= 400 || error.code === 'ERR_NETWORK') {
+            const statusLabel = status ?? error.code ?? 'network'
+            console.error(`[axios] ${method} ${url} failed (${statusLabel}):`,
+                error?.response?.data?.message ?? error?.message ?? error)
+        }
+        return Promise.reject(error)
+    },
+)
+
 // Bootstrap Reverb/Echo (WebSockets for real-time alerts + chat)
 import './echo'
 
