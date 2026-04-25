@@ -54,6 +54,14 @@ const filterStatus = ref<'all' | 'active' | 'inactive'>('all')
 const expandedRow = ref<number | null>(null)
 const togglingId = ref<number | null>(null)
 const savingDesignations = ref<number | null>(null)
+// Phase V1 — Audit-10 C1: per-user error surfacing instead of silent catch.
+const rowError = ref<{ id: number; message: string } | null>(null)
+function showRowError(id: number, message: string) {
+    rowError.value = { id, message }
+    setTimeout(() => {
+        if (rowError.value?.id === id) rowError.value = null
+    }, 6000)
+}
 const showProvision = ref(false)
 const provisioning = ref(false)
 const provisionError = ref('')
@@ -100,12 +108,16 @@ const toggleRow = (id: number) => {
 
 const toggleActive = async (user: UserRow) => {
     togglingId.value = user.id
+    rowError.value = null
     const action = user.is_active ? 'deactivate' : 'reactivate'
     try {
         await axios.post(`/it-admin/users/${user.id}/${action}`)
         users.value = users.value.map(u => u.id === user.id ? { ...u, is_active: !u.is_active } : u)
-    } catch {
-        // silently handle
+    } catch (e: any) {
+        // Phase V1 — surface failure rather than silent (Audit-10 C1).
+        const msg = e?.response?.data?.message
+            ?? `Could not ${action} user (${e?.response?.status ?? 'network error'}).`
+        showRowError(user.id, msg)
     } finally {
         togglingId.value = null
     }
@@ -116,10 +128,15 @@ const toggleDesignation = async (user: UserRow, key: string) => {
     const next = prev.includes(key) ? prev.filter(d => d !== key) : [...prev, key]
     users.value = users.value.map(u => u.id === user.id ? { ...u, designations: next } : u)
     savingDesignations.value = user.id
+    rowError.value = null
     try {
         await axios.patch(`/it-admin/users/${user.id}/designations`, { designations: next })
-    } catch {
+    } catch (e: any) {
+        // Roll back optimistic update + surface error (Audit-10 C1 sibling fix).
         users.value = users.value.map(u => u.id === user.id ? { ...u, designations: prev } : u)
+        const msg = e?.response?.data?.message
+            ?? `Could not save designation (${e?.response?.status ?? 'network error'}).`
+        showRowError(user.id, msg)
     } finally {
         savingDesignations.value = null
     }
@@ -265,6 +282,12 @@ const formatDate = (iso: string) =>
                                         >
                                             {{ togglingId === user.id ? '...' : (user.is_active ? 'Deactivate' : 'Reactivate') }}
                                         </button>
+                                        <span v-if="rowError && rowError.id === user.id"
+                                              role="alert"
+                                              class="text-xs text-red-600 dark:text-red-400 ml-2"
+                                              data-testid="users-row-error">
+                                            {{ rowError.message }}
+                                        </span>
                                         <button
                                             @click="toggleRow(user.id)"
                                             class="text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-300"
