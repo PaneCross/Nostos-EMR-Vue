@@ -32,12 +32,15 @@ class MobileHomeVisitsController extends Controller
 
     private function todayVisits($u): array
     {
+        // Phase P9 — strict scope:
+        //   • home_visit appointment_type only (was: any type)
+        //   • assigned-to-this-user only (was: also matched IS NULL → grabbed all unassigned)
+        // Prevents home-care nurses from seeing clinic / lab / specialist
+        // appointments in their PWA list.
         return Appointment::where('tenant_id', $u->tenant_id)
+            ->where('appointment_type', 'home_visit')
             ->whereDate('scheduled_start', now()->toDateString())
-            ->where(function ($q) use ($u) {
-                $q->where('provider_user_id', $u->id)
-                  ->orWhereNull('provider_user_id');
-            })
+            ->where('provider_user_id', $u->id)
             ->with('participant:id,first_name,last_name,mrn')
             ->orderBy('scheduled_start')
             ->limit(40)
