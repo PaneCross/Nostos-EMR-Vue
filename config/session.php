@@ -5,8 +5,11 @@ use Illuminate\Support\Str;
 return [
 
     'driver'          => env('SESSION_DRIVER', 'database'),
-    'lifetime'        => env('SESSION_LIFETIME', 120),
-    'expire_on_close' => env('SESSION_EXPIRE_ON_CLOSE', false),
+    // Phase P1 — HIPAA §164.312(a)(2)(iii) automatic logoff. 15 min idle is
+    // the standard healthcare-auditor expectation. Override via SESSION_LIFETIME
+    // if a tenant has documented compensating controls.
+    'lifetime'        => env('SESSION_LIFETIME', 15),
+    'expire_on_close' => env('SESSION_EXPIRE_ON_CLOSE', true),
     'encrypt'         => env('SESSION_ENCRYPT', false),
     'files'           => storage_path('framework/sessions'),
     'connection'      => env('SESSION_CONNECTION'),

@@ -113,6 +113,15 @@ Route::middleware('auth')->group(function () {
     // Logout (supports GET for timeout redirects and POST for manual logout)
     Route::match(['get', 'post'], '/auth/logout', [OtpController::class, 'logout'])->name('auth.logout'); // Named auth.logout — Fortify also registers 'logout'; duplicate names break route:cache
 
+    // Phase P1 — touch session to extend idle timeout when user clicks "Stay signed in"
+    Route::post('/auth/heartbeat', function () {
+        return response()->json([
+            'ok' => true,
+            'session_lifetime_minutes' => (int) config('session.lifetime'),
+            'expires_in_seconds' => (int) config('session.lifetime') * 60,
+        ]);
+    })->name('auth.heartbeat');
+
     // Root → redirect to department dashboard
     Route::get('/', [DashboardController::class, 'redirect'])->name('home');
 

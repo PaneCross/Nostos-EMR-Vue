@@ -387,7 +387,13 @@ function handleActivity() {
     if (!showIdleWarning.value) startIdleTimers()
 }
 
-function stayLoggedIn() {
+async function stayLoggedIn() {
+    // Phase P1 — hit /auth/heartbeat so the BACKEND session is extended,
+    // not just the JS timer. Without this, the modal resets but the server
+    // session can still expire silently mid-session.
+    try {
+        await axios.post('/auth/heartbeat')
+    } catch { /* non-blocking; if heartbeat fails the session was already gone */ }
     showIdleWarning.value = false
     idleCountdown.value = 60
     startIdleTimers()
