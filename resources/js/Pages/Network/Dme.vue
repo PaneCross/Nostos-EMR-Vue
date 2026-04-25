@@ -99,22 +99,34 @@ async function submitIssue() {
   }
 }
 
-// ── Return action ──────────────────────────────────────────────────────────
-async function returnIssuance(issuanceId: number) {
-  const condition = window.prompt('Return condition? (good/damaged/lost)', 'good')
-  if (! condition) return
-  if (! ['good', 'damaged', 'lost'].includes(condition)) {
-    alert('Invalid condition. Use good, damaged, or lost.')
-    return
-  }
+// ── Return action — Phase V7 inline panel instead of window.prompt ─────────
+const returnIssuanceId = ref<number | null>(null)
+const returnForm = ref<{ returned_at: string; return_condition: 'good' | 'damaged' | 'lost' }>({
+  returned_at: new Date().toISOString().slice(0, 10),
+  return_condition: 'good',
+})
+const returnSaving = ref(false)
+const returnError = ref<string | null>(null)
+function startReturn(issuanceId: number) {
+  returnIssuanceId.value = issuanceId
+  returnForm.value = { returned_at: new Date().toISOString().slice(0, 10), return_condition: 'good' }
+  returnError.value = null
+}
+async function submitReturn() {
+  if (! returnIssuanceId.value) return
+  returnSaving.value = true
+  returnError.value = null
   try {
-    await axios.post(`/network/dme/issuances/${issuanceId}/return`, {
-      returned_at: new Date().toISOString().slice(0, 10),
-      return_condition: condition,
-    })
+    await axios.post(`/network/dme/issuances/${returnIssuanceId.value}/return`, returnForm.value)
+    returnIssuanceId.value = null
     router.reload()
   } catch (e: any) {
-    alert(`Return failed: ${e?.response?.data?.message ?? 'Unknown error'}`)
+    const errs = e?.response?.data?.errors ?? null
+    returnError.value = (errs && Object.keys(errs).length)
+      ? Object.values(errs).flat().join('; ')
+      : (e?.response?.data?.message ?? 'Return failed.')
+  } finally {
+    returnSaving.value = false
   }
 }
 </script>
@@ -171,7 +183,7 @@ async function returnIssuance(issuanceId: number) {
             → {{ iss.participant.last_name }}, {{ iss.participant.first_name }} ({{ iss.participant.mrn }})
             <span class="text-gray-500 dark:text-slate-400 ml-2">issued {{ iss.issued_at }}</span>
           </span>
-          <button @click="returnIssuance(iss.id)"
+          <button @click="startReturn(iss.id)"
                   class="text-xs px-2 py-1 border border-blue-300 dark:border-blue-700 text-blue-600 dark:text-blue-400 rounded hover:bg-blue-50 dark:hover:bg-blue-900/20"
                   data-testid="dme-return-btn">
             Mark Returned
@@ -179,6 +191,35 @@ async function returnIssuance(issuanceId: number) {
         </li>
         <li v-if="open_issuances.length === 0" class="text-sm text-gray-500 dark:text-slate-400">No items currently issued.</li>
       </ul>
+
+      <!-- Phase V7 — return form (replaces window.prompt) -->
+      <div v-if="returnIssuanceId !== null"
+           class="mt-3 bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800 rounded-lg p-3"
+           data-testid="dme-return-form">
+        <div class="text-sm font-medium text-emerald-900 dark:text-emerald-200 mb-2">
+          Return DME issuance #{{ returnIssuanceId }}
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+          <input v-model="returnForm.returned_at" type="date"
+                 class="border rounded px-2 py-1.5 dark:bg-slate-900 dark:border-slate-600 dark:text-slate-100" />
+          <select v-model="returnForm.return_condition"
+                  class="border rounded px-2 py-1.5 dark:bg-slate-900 dark:border-slate-600 dark:text-slate-100">
+            <option value="good">Good</option>
+            <option value="damaged">Damaged</option>
+            <option value="lost">Lost</option>
+          </select>
+        </div>
+        <div class="mt-2 flex items-center gap-2">
+          <button @click="submitReturn" :disabled="returnSaving"
+                  class="px-3 py-1.5 bg-emerald-600 text-white rounded-lg disabled:opacity-50">
+            {{ returnSaving ? 'Saving…' : 'Confirm Return' }}
+          </button>
+          <button @click="returnIssuanceId = null" class="px-3 py-1.5 border rounded-lg text-gray-700 dark:text-slate-300">
+            Cancel
+          </button>
+          <span v-if="returnError" class="text-sm text-red-600 dark:text-red-400">{{ returnError }}</span>
+        </div>
+      </div>
 
       <!-- Issue form (modal-style overlay row) -->
       <div v-if="issueItemId !== null"

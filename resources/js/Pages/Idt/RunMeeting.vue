@@ -499,8 +499,8 @@ function fmtDate(dateStr: string): string {
                   :key="i"
                   class="flex items-start gap-2 rounded-lg border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-900/50 px-3 py-2"
                 >
-                  <div class="flex-1 grid grid-cols-3 gap-2">
-                    <div class="col-span-3">
+                  <div class="flex-1 grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    <div class="sm:col-span-3">
                       <input
                         v-model="item.description"
                         :disabled="locked"
