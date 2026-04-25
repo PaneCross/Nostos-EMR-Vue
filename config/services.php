@@ -42,4 +42,9 @@ return [
         'driver' => env('HIE_DRIVER', 'null'),
     ],
 
+    // Phase P5 — eligibility (X12 270/271) gateway (null | availity | change_healthcare)
+    'eligibility' => [
+        'driver' => env('ELIGIBILITY_DRIVER', 'null'),
+    ],
+
 ];

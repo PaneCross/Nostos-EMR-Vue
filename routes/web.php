@@ -770,6 +770,12 @@ Route::middleware('auth')->group(function () {
         [\App\Http\Controllers\AmendmentRequestController::class, 'decide'])
         ->name('amendment_requests.decide');
 
+    // Phase P5 — X12 270/271 eligibility
+    Route::get('/participants/{participant}/eligibility-checks',
+        [\App\Http\Controllers\EligibilityCheckController::class, 'index'])->name('eligibility.index');
+    Route::post('/participants/{participant}/eligibility-checks',
+        [\App\Http\Controllers\EligibilityCheckController::class, 'store'])->name('eligibility.store');
+
     // Phase P4 — HIPAA §164.404 Breach Notification
     Route::get('/it-admin/breaches',
         [\App\Http\Controllers\BreachIncidentController::class, 'index'])->name('it_admin.breaches.index');
