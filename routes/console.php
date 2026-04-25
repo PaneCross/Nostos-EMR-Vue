@@ -251,3 +251,13 @@ Schedule::job(\App\Jobs\SentinelEventDeadlineJob::class, 'compliance')->dailyAt(
 Schedule::job(\App\Jobs\OutbreakDetectionJob::class, 'compliance')->dailyAt('05:30')
     ->name('outbreak-detection-sweep')
     ->withoutOverlapping();
+
+// ─── Phase Q1 (audit-5 cleanup): HIPAA §164.526 amendment deadline sweep ─────
+Schedule::job(\App\Jobs\AmendmentDeadlineJob::class, 'compliance')->dailyAt('06:30')
+    ->name('amendment-deadline')
+    ->withoutOverlapping();
+
+// ─── Phase Q1 (audit-5 cleanup): HIPAA §164.408 breach notification sweep ────
+Schedule::job(\App\Jobs\BreachDeadlineJob::class, 'compliance')->dailyAt('07:00')
+    ->name('breach-hhs-deadline')
+    ->withoutOverlapping();

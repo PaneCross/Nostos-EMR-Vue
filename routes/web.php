@@ -793,6 +793,8 @@ Route::middleware('auth')->group(function () {
         [\App\Http\Controllers\BreachIncidentController::class, 'markIndividualsNotified'])->name('it_admin.breaches.individuals_notified');
     Route::post('/it-admin/breaches/{breachIncident}/hhs-notified',
         [\App\Http\Controllers\BreachIncidentController::class, 'markHhsNotified'])->name('it_admin.breaches.hhs_notified');
+    Route::get('/it-admin/breaches/{breachIncident}/letter/{participant}',
+        [\App\Http\Controllers\BreachIncidentController::class, 'generateLetter'])->name('it_admin.breaches.letter');
 
     // Phase B7 (MVP completion roadmap): Note templates + problem-based charting
     Route::get   ('/note-templates',

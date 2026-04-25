@@ -5,10 +5,13 @@ namespace App\Http\Controllers;
 
 use App\Models\AuditLog;
 use App\Models\BreachIncident;
+use App\Models\Participant;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Symfony\Component\HttpFoundation\Response;
 
 class BreachIncidentController extends Controller
 {
@@ -105,5 +108,41 @@ class BreachIncidentController extends Controller
             description: 'HHS breach notification submitted.',
         );
         return response()->json(['incident' => $breachIncident->fresh()]);
+    }
+
+    // Phase Q1 — generate HIPAA §164.404 individual notification letter PDF
+    public function generateLetter(Request $request, BreachIncident $breachIncident, Participant $participant): Response
+    {
+        $this->gate();
+        $u = Auth::user();
+        abort_if($breachIncident->tenant_id !== $u->tenant_id, 403);
+        abort_if($participant->tenant_id !== $u->tenant_id, 403);
+
+        $tenant = $u->tenant;
+        $address = $participant->addresses()->where('is_primary', true)->first()
+            ?? $participant->addresses()->first();
+        $addressLine = $address
+            ? trim(($address->street ?? '') . ', ' . ($address->city ?? '') . ', ' . ($address->state ?? '') . ' ' . ($address->zip ?? ''), ', ')
+            : null;
+
+        $pdf = Pdf::loadView('pdfs.breach_notification_letter', [
+            'breach'         => $breachIncident,
+            'participant'    => $participant,
+            'address'        => $addressLine,
+            'tenant_name'    => $tenant?->name,
+            'tenant_address' => $tenant?->address ?? null,
+            'tenant_phone'   => $tenant?->phone ?? null,
+            'signer_name'    => $u->first_name . ' ' . $u->last_name,
+            'signer_title'   => 'Privacy Officer',
+        ])->setPaper('letter', 'portrait');
+
+        AuditLog::record(
+            action: 'breach.letter_generated',
+            tenantId: $u->tenant_id, userId: $u->id,
+            resourceType: 'breach_incident', resourceId: $breachIncident->id,
+            description: "Breach notification letter generated for participant #{$participant->id}.",
+        );
+
+        return $pdf->stream("breach-notification-{$breachIncident->id}-participant-{$participant->id}.pdf");
     }
 }
