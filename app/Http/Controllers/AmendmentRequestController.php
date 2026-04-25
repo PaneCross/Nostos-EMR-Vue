@@ -10,12 +10,15 @@ namespace App\Http\Controllers;
 use App\Models\AmendmentRequest;
 use App\Models\AuditLog;
 use App\Models\Participant;
+use App\Services\PhiDisclosureService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class AmendmentRequestController extends Controller
 {
+    public function __construct(private PhiDisclosureService $disclosures) {}
+
     private function gateStaff(): void
     {
         $u = Auth::user();
@@ -89,6 +92,11 @@ class AmendmentRequestController extends Controller
             'status'             => 'required|in:under_review,accepted,denied,withdrawn',
             'decision_rationale' => 'nullable|string|max:4000',
             'patient_disagreement_statement' => 'nullable|string|max:4000',
+            // Phase Q3 — §164.526(c)(3) downstream notification recipients.
+            'share_with'                       => 'nullable|array|max:25',
+            'share_with.*.recipient_type'      => 'required_with:share_with|in:insurer,public_health,lab,family,legal,patient_self,provider,other',
+            'share_with.*.recipient_name'      => 'required_with:share_with|string|max:200',
+            'share_with.*.recipient_contact'   => 'nullable|string|max:200',
         ]);
 
         // Denied requires rationale per §164.526(d).
@@ -99,10 +107,33 @@ class AmendmentRequestController extends Controller
             ], 422);
         }
 
+        $shareWith = $validated['share_with'] ?? [];
+        unset($validated['share_with']);
+
         $amendmentRequest->update(array_merge($validated, [
             'reviewer_user_id'     => $u->id,
             'reviewer_decision_at' => in_array($validated['status'], ['accepted', 'denied'], true) ? now() : null,
         ]));
+
+        // Phase Q3 — On accept, log one PhiDisclosure per downstream recipient
+        // identified per §164.526(c)(3). Patient is always informed implicitly,
+        // not logged as a disclosure.
+        if ($validated['status'] === 'accepted') {
+            foreach ($shareWith as $r) {
+                $this->disclosures->record(
+                    tenantId: $u->tenant_id,
+                    participantId: $amendmentRequest->participant_id,
+                    recipientType: $r['recipient_type'],
+                    recipientName: $r['recipient_name'],
+                    purpose: 'amendment_notification',
+                    method: 'paper',
+                    recordsDescribed: "Amendment notification for accepted amendment request #{$amendmentRequest->id} per §164.526(c)(3).",
+                    disclosedByUserId: $u->id,
+                    recipientContact: $r['recipient_contact'] ?? null,
+                    related: $amendmentRequest,
+                );
+            }
+        }
 
         AuditLog::record(
             action: 'amendment.' . $validated['status'],
