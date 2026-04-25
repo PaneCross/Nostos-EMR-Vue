@@ -1056,6 +1056,10 @@ Route::middleware('auth')->group(function () {
         Route::post('/day-center/check-in', [DayCenterController::class, 'checkIn'])->name('scheduling.day-center.check-in');
         Route::post('/day-center/absent',   [DayCenterController::class, 'markAbsent'])->name('scheduling.day-center.absent');
         Route::get('/day-center/summary',   [DayCenterController::class, 'summary'])->name('scheduling.day-center.summary');
+        // Phase R6 — event-status snapshot + check-out + printable roster
+        Route::get('/day-center/event-status', [DayCenterController::class, 'eventStatus'])->name('scheduling.day-center.event_status');
+        Route::post('/day-center/check-out',   [DayCenterController::class, 'checkOut'])->name('scheduling.day-center.check-out');
+        Route::get('/day-center/roster.pdf',   [DayCenterController::class, 'rosterPdf'])->name('scheduling.day-center.roster_pdf');
         Route::get("/day-center/manage",  [DayCenterScheduleController::class, "index"])->name("scheduling.day-center.manage");
         Route::post("/day-center/manage/bulk", [DayCenterScheduleController::class, "bulkUpdate"])->name("scheduling.day-center.manage.bulk");
     });

@@ -19,6 +19,7 @@ use App\Models\DayCenterAttendance;
 use App\Models\Participant;
 use App\Models\Site;
 use App\Models\AuditLog;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -346,6 +347,146 @@ class DayCenterController extends Controller
         }
 
         return response()->json(['summary' => $summary]);
+    }
+
+    /**
+     * Phase R6 — POST /scheduling/day-center/check-out
+     * Records check-out time on an existing attendance record.
+     */
+    public function checkOut(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        $this->authorizeManage($user);
+
+        $validated = $request->validate([
+            'participant_id'  => ['required', 'integer', 'exists:emr_participants,id'],
+            'site_id'         => ['required', 'integer', 'exists:shared_sites,id'],
+            'attendance_date' => ['required', 'date'],
+            'check_out_time'  => ['nullable', 'date_format:H:i'],
+        ]);
+        $this->verifyParticipantTenant($validated['participant_id'], $user->tenant_id);
+
+        $attendance = DayCenterAttendance::where([
+            'tenant_id'       => $user->tenant_id,
+            'participant_id'  => $validated['participant_id'],
+            'site_id'         => $validated['site_id'],
+            'attendance_date' => $validated['attendance_date'],
+        ])->first();
+        abort_if(! $attendance, 404, 'No check-in on file for this participant + date.');
+
+        $attendance->update([
+            'check_out_time' => $validated['check_out_time'] ?? now()->format('H:i:s'),
+        ]);
+
+        AuditLog::record(
+            action: 'day_center.check_out',
+            resourceType: 'DayCenterAttendance',
+            resourceId: $attendance->id,
+            userId: $user->id,
+            tenantId: $user->tenant_id,
+            newValues: ['date' => $validated['attendance_date']],
+        );
+
+        return response()->json(['attendance' => $attendance]);
+    }
+
+    /**
+     * Phase R6 — GET /scheduling/day-center/event-status
+     * Live event-status snapshot grouped into the four CareHub-style buckets:
+     *   scheduled (no record yet), arrived (checked-in, not checked-out),
+     *   checked_out, absent_or_cancelled.
+     */
+    public function eventStatus(Request $request): JsonResponse
+    {
+        $user   = $request->user();
+        $date   = $request->query('date', now()->toDateString());
+        $siteId = (int) $request->query('site_id', $user->site_id);
+        $weekday = strtolower(substr(Carbon::parse($date)->format('D'), 0, 3));
+
+        // Roster of participants expected today (recurring schedule + appt overrides).
+        $expected = Participant::where('tenant_id', $user->tenant_id)
+            ->where('site_id', $siteId)
+            ->where('enrollment_status', 'enrolled')
+            ->where('is_active', true)
+            ->select('id', 'mrn', 'first_name', 'last_name', 'preferred_name', 'day_center_days')
+            ->get()
+            ->filter(fn ($p) => is_array($p->day_center_days) && in_array($weekday, $p->day_center_days, true))
+            ->keyBy('id');
+
+        // Records for today.
+        $records = DayCenterAttendance::forTenant($user->tenant_id)
+            ->forDate($date)
+            ->forSite($siteId)
+            ->get()
+            ->keyBy('participant_id');
+
+        $scheduled = [];
+        $arrived   = [];
+        $checkedOut = [];
+        $absentOrCancelled = [];
+
+        foreach ($expected as $pid => $p) {
+            $rec = $records->get($pid);
+            $row = [
+                'participant_id' => $p->id,
+                'mrn'            => $p->mrn,
+                'name'           => trim(($p->preferred_name ?: $p->first_name) . ' ' . $p->last_name),
+                'check_in_time'  => $rec?->check_in_time,
+                'check_out_time' => $rec?->check_out_time,
+                'status'         => $rec?->status,
+                'absent_reason'  => $rec?->absent_reason,
+            ];
+            if (! $rec) {
+                $scheduled[] = $row;
+            } elseif (in_array($rec->status, ['absent', 'excused'], true)) {
+                $absentOrCancelled[] = $row;
+            } elseif ($rec->check_out_time) {
+                $checkedOut[] = $row;
+            } else {
+                $arrived[] = $row;
+            }
+        }
+
+        return response()->json([
+            'date'    => $date,
+            'site_id' => $siteId,
+            'totals'  => [
+                'scheduled'           => count($scheduled),
+                'arrived'             => count($arrived),
+                'checked_out'         => count($checkedOut),
+                'absent_or_cancelled' => count($absentOrCancelled),
+                'expected'            => $expected->count(),
+            ],
+            'scheduled'            => $scheduled,
+            'arrived'              => $arrived,
+            'checked_out'          => $checkedOut,
+            'absent_or_cancelled'  => $absentOrCancelled,
+        ]);
+    }
+
+    /**
+     * Phase R6 — GET /scheduling/day-center/roster.pdf
+     * Printable attendance roster (PDF) for a given date + site.
+     */
+    public function rosterPdf(Request $request)
+    {
+        $user   = $request->user();
+        $date   = $request->query('date', now()->toDateString());
+        $siteId = (int) $request->query('site_id', $user->site_id);
+
+        $rosterPayload = json_decode($this->roster($request)->getContent(), true);
+        $site = Site::find($siteId);
+        $tenant = $user->tenant;
+
+        $pdf = Pdf::loadView('pdfs.day_center_roster', [
+            'rows'        => $rosterPayload['roster'] ?? [],
+            'date'        => $date,
+            'site_name'   => $site?->name ?? "Site #{$siteId}",
+            'tenant_name' => $tenant?->name ?? '',
+            'generated_at'=> now(),
+        ])->setPaper('letter', 'portrait');
+
+        return $pdf->stream("day-center-roster-{$siteId}-{$date}.pdf");
     }
 
     // ── Private helpers ───────────────────────────────────────────────────────
