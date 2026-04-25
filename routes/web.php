@@ -804,6 +804,10 @@ Route::middleware('auth')->group(function () {
     Route::post('/network/contracts/{contract}/rates',
         [\App\Http\Controllers\ContractedProviderController::class, 'storeRate'])->name('network.contracts.rates.store');
 
+    // Phase S5 — IBNR (Incurred But Not Reported) estimator
+    Route::get('/billing/ibnr',
+        [\App\Http\Controllers\IbnrController::class, 'index'])->name('billing.ibnr.index');
+
     // Phase S4 — Encounter Data Management (CMS EDS) submission gateway
     Route::get('/billing/encounter-data-submission',
         [\App\Http\Controllers\EncounterDataSubmissionController::class, 'index'])->name('billing.encounter_data_submission.index');

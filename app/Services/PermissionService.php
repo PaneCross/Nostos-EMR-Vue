@@ -237,6 +237,9 @@ class PermissionService
                     ['label' => 'Contracted Providers',      'module' => 'capitation',     'href' => '/network/contracted-providers'],
                     // Phase S3 — DME tracking
                     ['label' => 'DME Inventory',             'module' => 'capitation',     'href' => '/network/dme'],
+                    // Phase S4 + S5
+                    ['label' => 'Encounter Data Submission', 'module' => 'edi_batches',    'href' => '/billing/encounter-data-submission'],
+                    ['label' => 'IBNR Estimator',            'module' => 'capitation',     'href' => '/billing/ibnr'],
                 ],
             ],
             [
