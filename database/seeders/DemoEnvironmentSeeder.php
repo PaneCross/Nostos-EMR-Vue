@@ -368,6 +368,15 @@ class DemoEnvironmentSeeder extends Seeder
         $this->command->info('  Seeding system note templates (Phase B7)...');
         $this->call(SystemNoteTemplateSeeder::class);
 
+        // ─── Wave I-M demo data (Phase O9) ─────────────────────────────────────
+        // Populates IADL, TB, Anticoagulation, ADE, Hospice, Discharge,
+        // CareGap, GoalsOfCare, PredictiveRisk, Dietary, Activity, StaffTask,
+        // and SavedDashboard rows for 2-3 enrolled demo participants per tenant.
+        // Without this, every Wave I-N tab renders empty on a fresh demo seed.
+        $this->command->info('');
+        $this->command->info('  Seeding Wave I-M demo data (IADL/TB/Anticoag/ADE/Hospice/Discharge/...)...');
+        $this->call(WaveIMDemoSeeder::class);
+
         // ─── Participant Photos ────────────────────────────────────────────────
         // Downloads pravatar.cc placeholder images for the first 15 enrolled
         // participants so the photo upload feature is visually testable.
