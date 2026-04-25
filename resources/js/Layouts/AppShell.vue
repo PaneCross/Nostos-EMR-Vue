@@ -63,6 +63,7 @@ import {
 } from '@heroicons/vue/24/outline'
 import type { PageProps, SiteContext } from '@/types'
 import IdleWarningModal from '@/Components/IdleWarningModal.vue'
+import Toaster from '@/Components/Toaster.vue'
 
 // ── Nav types (mirrors PermissionService output) ───────────────────────────────
 interface NavItem {
@@ -467,6 +468,9 @@ function handleGlobalKey(e: KeyboardEvent) {
         :countdown="idleCountdown"
         @stay-logged-in="stayLoggedIn"
     />
+
+    <!-- Phase V5 — global toast surface for axios errors + ad-hoc emits -->
+    <Toaster />
 
     <!-- Impersonation banner -->
     <div

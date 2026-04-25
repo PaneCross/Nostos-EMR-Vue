@@ -17,14 +17,20 @@ window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest'
 window.axios.defaults.withCredentials = true
 window.axios.defaults.withXSRFToken = true
 
-// ─── Phase U2 — global axios error surfacer ────────────────────────────────
+// ─── Phase U2 + V5 — global axios error surfacer ───────────────────────────
 // Audit-9 found multiple empty catch{} blocks that swallow 4xx/5xx silently,
 // causing UIs to flip "saved=true" when nothing was persisted. This response
-// interceptor logs every failure to the console with status + URL + method
-// so a regression like POST→PUT method mismatch can no longer ship invisible.
-// On 419 (CSRF expiry) we reload to refresh the token. We do NOT toast/alert
-// because per-component catch handlers already render their own UX; this is
-// a safety-net log layer for engineers + future debugging.
+// interceptor logs every failure to the console AND emits a 'nostos:toast'
+// CustomEvent picked up by Components/Toaster.vue (mounted in AppShell).
+// On 419 (CSRF expiry) we reload to refresh the token.
+//
+// Toast policy:
+//   - 5xx and ERR_NETWORK always toast (server / connectivity failure)
+//   - 4xx toasts only for non-validation errors (skip 422 since per-component
+//     forms already render per-field validation, and skip 401 since redirect
+//     handles auth)
+//   - Per-component catch handlers still own their inline UX; toast is a
+//     last-resort safety net for empty-catch patterns that haven't been swept.
 window.axios.interceptors.response.use(
     (response) => response,
     (error) => {
@@ -32,15 +38,29 @@ window.axios.interceptors.response.use(
         const url = error?.config?.url ?? '(no url)'
         const method = (error?.config?.method ?? 'get').toUpperCase()
         if (status === 419) {
-            // CSRF token mismatch — most often happens after server restart.
             console.warn(`[axios] 419 CSRF expired on ${method} ${url}; reloading…`)
             window.location.reload()
             return Promise.reject(error)
         }
         if (status >= 400 || error.code === 'ERR_NETWORK') {
             const statusLabel = status ?? error.code ?? 'network'
-            console.error(`[axios] ${method} ${url} failed (${statusLabel}):`,
-                error?.response?.data?.message ?? error?.message ?? error)
+            const message = error?.response?.data?.message ?? error?.message ?? 'Request failed'
+            console.error(`[axios] ${method} ${url} failed (${statusLabel}):`, message)
+
+            // Toast policy: surface 5xx + network errors, plus 403/409.
+            // Skip 422 (per-field forms render their own UX) and 401 (auth redirect).
+            const shouldToast =
+                error.code === 'ERR_NETWORK'
+                || (typeof status === 'number' && (status >= 500 || status === 403 || status === 409))
+            if (shouldToast) {
+                window.dispatchEvent(new CustomEvent('nostos:toast', {
+                    detail: {
+                        message: `${message} (${statusLabel})`,
+                        severity: 'error',
+                        timeout: 6000,
+                    },
+                }))
+            }
         }
         return Promise.reject(error)
     },
