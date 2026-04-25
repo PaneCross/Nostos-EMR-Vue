@@ -42,9 +42,15 @@ class PortalOtpService
             'attempts'   => 0,
         ]);
 
-        // MVP: DB-persisted code only. Real delivery (SMS or portal-branded email)
-        // is a follow-up when a vendor is contracted — see paywall report.
-        // For local/staging, the code can be pulled from shared_otp_codes.
+        // Phase O10 — branded email delivery. Demo deliverability via Mailpit.
+        // Production needs a HIPAA-BAA mail vendor (paywall item 12). The
+        // wrapper try/catch keeps the OTP itself valid even if dispatch fails;
+        // the row is already persisted above and admins can retrieve it.
+        try {
+            Mail::to($user->email)->send(new \App\Mail\PortalOtpMail($user, $code));
+        } catch (\Throwable $e) {
+            \Log::warning("Portal OTP mail dispatch failed for {$user->email}: " . $e->getMessage());
+        }
 
         AuditLog::record(
             action: 'portal.otp_sent',
