@@ -770,6 +770,16 @@ Route::middleware('auth')->group(function () {
         [\App\Http\Controllers\AmendmentRequestController::class, 'decide'])
         ->name('amendment_requests.decide');
 
+    // Phase P4 — HIPAA §164.404 Breach Notification
+    Route::get('/it-admin/breaches',
+        [\App\Http\Controllers\BreachIncidentController::class, 'index'])->name('it_admin.breaches.index');
+    Route::post('/it-admin/breaches',
+        [\App\Http\Controllers\BreachIncidentController::class, 'store'])->name('it_admin.breaches.store');
+    Route::post('/it-admin/breaches/{breachIncident}/individuals-notified',
+        [\App\Http\Controllers\BreachIncidentController::class, 'markIndividualsNotified'])->name('it_admin.breaches.individuals_notified');
+    Route::post('/it-admin/breaches/{breachIncident}/hhs-notified',
+        [\App\Http\Controllers\BreachIncidentController::class, 'markHhsNotified'])->name('it_admin.breaches.hhs_notified');
+
     // Phase B7 (MVP completion roadmap): Note templates + problem-based charting
     Route::get   ('/note-templates',
         [\App\Http\Controllers\NoteTemplateController::class, 'index'])->name('note_templates.index');
