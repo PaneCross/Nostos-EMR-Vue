@@ -58,7 +58,8 @@ class DayCenterAttendanceTest extends TestCase
             ->forTenant($this->tenant->id)
             ->forSite($this->site->id)
             ->create([
-                'day_center_days' => ['mon', 'tue', 'wed', 'thu', 'fri'],
+                // Cover all 7 days so the roster test passes weekend CI runs too.
+                'day_center_days' => ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'],
             ]);
     }
 

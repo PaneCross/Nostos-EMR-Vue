@@ -48,7 +48,7 @@ class O1SchemaCleanupTest extends TestCase
             app_path('Http/Controllers/ImmunizationSubmissionController.php'),
             app_path('Http/Controllers/CcdaController.php'),
             app_path('Http/Controllers/ClinicalDecisionSupportController.php'),
-            app_path('Http/Controllers/MobileCompanionController.php'),
+            // O8 deleted MobileCompanionController.php; replaced by MobileHomeVisitsController.
             app_path('Http/Controllers/AdvanceDirectivePdfController.php'),
         ];
         foreach ($controllers as $path) {
