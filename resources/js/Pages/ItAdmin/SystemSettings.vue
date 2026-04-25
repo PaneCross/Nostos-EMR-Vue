@@ -80,7 +80,13 @@ const form = useForm({
 })
 
 const submit = () => {
-    form.put('/admin/settings')
+    // Phase W4 — Audit-11 M2: preserveScroll keeps the user near the field
+    // they were editing instead of jumping to the page top on a 422.
+    // preserveState keeps form input visible after the validation roundtrip.
+    form.put('/admin/settings', {
+        preserveScroll: true,
+        preserveState: true,
+    })
 }
 </script>
 
