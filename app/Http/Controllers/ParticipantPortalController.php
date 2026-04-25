@@ -366,6 +366,23 @@ class ParticipantPortalController extends Controller
             ]);
         }
 
+        // Phase P3 — Amendment requests also create an AmendmentRequest row
+        // with the §164.526(b)(2) 60-day deadline.
+        if ($validated['request_type'] === 'amendment') {
+            \App\Models\AmendmentRequest::create([
+                'tenant_id'                   => $u->tenant_id,
+                'participant_id'              => $u->participant_id,
+                'requested_by_portal_user_id' => $u->id,
+                'target_record_type'          => $validated['payload']['target_record_type'] ?? null,
+                'target_record_id'            => $validated['payload']['target_record_id'] ?? null,
+                'target_field_or_section'     => $validated['payload']['target_field_or_section'] ?? null,
+                'requested_change'            => $validated['payload']['requested_change'] ?? 'No detail provided',
+                'justification'               => $validated['payload']['justification'] ?? null,
+                'status'                      => 'pending',
+                'deadline_at'                 => now()->addDays(\App\Models\AmendmentRequest::RESPONSE_DAYS),
+            ]);
+        }
+
         AuditLog::record(
             action: 'portal.request_submitted',
             tenantId: $u->tenant_id,

@@ -1,0 +1,118 @@
+<?php
+
+// ─── AmendmentRequestController — Phase P3 ──────────────────────────────────
+// HIPAA §164.526 Right to Amend. Patient/proxy submits via portal; staff
+// triages via /compliance/amendments queue.
+// ─────────────────────────────────────────────────────────────────────────────
+
+namespace App\Http\Controllers;
+
+use App\Models\AmendmentRequest;
+use App\Models\AuditLog;
+use App\Models\Participant;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+
+class AmendmentRequestController extends Controller
+{
+    private function gateStaff(): void
+    {
+        $u = Auth::user();
+        abort_if(! $u, 401);
+        $allow = ['qa_compliance', 'it_admin', 'social_work', 'primary_care'];
+        abort_unless($u->isSuperAdmin() || in_array($u->department, $allow, true), 403);
+    }
+
+    /** GET /compliance/amendments — staff triage queue. */
+    public function index(Request $request): JsonResponse|\Inertia\Response
+    {
+        $this->gateStaff();
+        $u = Auth::user();
+        $rows = AmendmentRequest::forTenant($u->tenant_id)
+            ->with(['participant:id,mrn,first_name,last_name', 'reviewer:id,first_name,last_name'])
+            ->orderByRaw("CASE status WHEN 'pending' THEN 0 WHEN 'under_review' THEN 1 ELSE 2 END")
+            ->orderBy('deadline_at')
+            ->get();
+
+        if (! $request->wantsJson()) {
+            return \Inertia\Inertia::render('Compliance/AmendmentRequests', [
+                'requests' => $rows,
+            ]);
+        }
+        return response()->json(['requests' => $rows]);
+    }
+
+    /** POST /participants/{p}/amendment-requests — staff-side create (portal also creates via portal flow). */
+    public function store(Request $request, Participant $participant): JsonResponse
+    {
+        $this->gateStaff();
+        $u = Auth::user();
+        abort_if($participant->tenant_id !== $u->tenant_id, 403);
+
+        $validated = $request->validate([
+            'target_record_type'      => 'nullable|string|max:60',
+            'target_record_id'        => 'nullable|integer',
+            'target_field_or_section' => 'nullable|string|max:100',
+            'requested_change'        => 'required|string|min:5|max:8000',
+            'justification'           => 'nullable|string|max:4000',
+            'requested_by_portal_user_id' => 'nullable|integer|exists:emr_participant_portal_users,id',
+        ]);
+
+        $row = AmendmentRequest::create(array_merge($validated, [
+            'tenant_id'      => $participant->tenant_id,
+            'participant_id' => $participant->id,
+            'status'         => 'pending',
+            'deadline_at'    => now()->addDays(AmendmentRequest::RESPONSE_DAYS),
+        ]));
+
+        AuditLog::record(
+            action: 'amendment.requested',
+            tenantId: $u->tenant_id,
+            userId: $u->id,
+            resourceType: 'amendment_request',
+            resourceId: $row->id,
+            description: "Amendment request opened for participant #{$participant->id}.",
+        );
+
+        return response()->json(['request' => $row], 201);
+    }
+
+    /** POST /amendment-requests/{id}/decide — accept | deny | withdraw. */
+    public function decide(Request $request, AmendmentRequest $amendmentRequest): JsonResponse
+    {
+        $this->gateStaff();
+        $u = Auth::user();
+        abort_if($amendmentRequest->tenant_id !== $u->tenant_id, 403);
+
+        $validated = $request->validate([
+            'status'             => 'required|in:under_review,accepted,denied,withdrawn',
+            'decision_rationale' => 'nullable|string|max:4000',
+            'patient_disagreement_statement' => 'nullable|string|max:4000',
+        ]);
+
+        // Denied requires rationale per §164.526(d).
+        if ($validated['status'] === 'denied' && empty($validated['decision_rationale'])) {
+            return response()->json([
+                'error'   => 'rationale_required',
+                'message' => 'Denial requires decision_rationale per §164.526(d)(1)(ii).',
+            ], 422);
+        }
+
+        $amendmentRequest->update(array_merge($validated, [
+            'reviewer_user_id'     => $u->id,
+            'reviewer_decision_at' => in_array($validated['status'], ['accepted', 'denied'], true) ? now() : null,
+        ]));
+
+        AuditLog::record(
+            action: 'amendment.' . $validated['status'],
+            tenantId: $u->tenant_id,
+            userId: $u->id,
+            resourceType: 'amendment_request',
+            resourceId: $amendmentRequest->id,
+            description: "Amendment request #{$amendmentRequest->id} → {$validated['status']}.",
+        );
+
+        return response()->json(['request' => $amendmentRequest->fresh()]);
+    }
+}

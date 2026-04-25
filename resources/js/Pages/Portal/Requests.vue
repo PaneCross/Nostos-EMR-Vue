@@ -29,6 +29,19 @@ function contactUpdate() {
   if (!phone && !address) return
   submit('contact_update', { phone, address })
 }
+
+function amendmentRequest() {
+  const target = prompt('Which part of your record? (e.g. "demographics", "allergies", "problem list")')
+  if (!target) return
+  const change = prompt('Describe the change you are requesting:')
+  if (!change) return
+  const justification = prompt('Why? (optional)') ?? ''
+  submit('amendment', {
+    target_field_or_section: target,
+    requested_change: change,
+    justification,
+  })
+}
 </script>
 
 <template>
@@ -45,6 +58,10 @@ function contactUpdate() {
       <button :disabled="submitting" class="rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-4 text-left hover:border-blue-400 disabled:opacity-50" @click="contactUpdate">
         <div class="font-medium text-slate-900 dark:text-slate-100">Update contact information</div>
         <div class="text-xs text-slate-500 dark:text-slate-400">Phone number, address, or emergency contact.</div>
+      </button>
+      <button :disabled="submitting" class="rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-4 text-left hover:border-blue-400 disabled:opacity-50" @click="amendmentRequest">
+        <div class="font-medium text-slate-900 dark:text-slate-100">Request a record amendment</div>
+        <div class="text-xs text-slate-500 dark:text-slate-400">HIPAA §164.526 — 60-day decision window.</div>
       </button>
     </div>
   </PortalShell>

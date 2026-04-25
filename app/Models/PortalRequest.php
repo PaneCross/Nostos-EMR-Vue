@@ -9,7 +9,7 @@ class PortalRequest extends Model
 {
     protected $table = 'emr_portal_requests';
 
-    public const TYPES    = ['records', 'appointment', 'contact_update'];
+    public const TYPES    = ['records', 'appointment', 'contact_update', 'amendment'];
     public const STATUSES = ['pending', 'processed', 'rejected'];
 
     protected $fillable = [

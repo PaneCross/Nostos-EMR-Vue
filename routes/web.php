@@ -759,6 +759,17 @@ Route::middleware('auth')->group(function () {
         [\App\Http\Controllers\PhiDisclosureController::class, 'index'])
         ->name('it_admin.phi_disclosures.index');
 
+    // Phase P3 — HIPAA §164.526 Right to Amend
+    Route::get('/compliance/amendments',
+        [\App\Http\Controllers\AmendmentRequestController::class, 'index'])
+        ->name('compliance.amendments.index');
+    Route::post('/participants/{participant}/amendment-requests',
+        [\App\Http\Controllers\AmendmentRequestController::class, 'store'])
+        ->name('amendment_requests.store');
+    Route::post('/amendment-requests/{amendmentRequest}/decide',
+        [\App\Http\Controllers\AmendmentRequestController::class, 'decide'])
+        ->name('amendment_requests.decide');
+
     // Phase B7 (MVP completion roadmap): Note templates + problem-based charting
     Route::get   ('/note-templates',
         [\App\Http\Controllers\NoteTemplateController::class, 'index'])->name('note_templates.index');
