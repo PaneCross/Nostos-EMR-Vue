@@ -112,6 +112,8 @@ class Appointment extends Model
         'tenant_id',
         'site_id',
         'appointment_type',
+        'meeting_url',
+        'meeting_provider',
         'provider_user_id',
         'location_id',
         'scheduled_start',

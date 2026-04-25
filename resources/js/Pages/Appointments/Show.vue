@@ -27,6 +27,8 @@ interface Appointment {
     transport_required: boolean
     notes: string | null
     cancellation_reason: string | null
+    meeting_url: string | null
+    meeting_provider: string | null
 }
 
 const props = defineProps<{
@@ -126,6 +128,34 @@ async function transition(action: 'confirm' | 'complete' | 'cancel' | 'no-show')
                     <div><dt class="text-slate-500 dark:text-slate-400">Site</dt><dd class="text-slate-900 dark:text-slate-100">{{ appointment.site?.name ?? '—' }}</dd></div>
                     <div><dt class="text-slate-500 dark:text-slate-400">Transport required</dt><dd class="text-slate-900 dark:text-slate-100">{{ appointment.transport_required ? 'Yes' : 'No' }}</dd></div>
                 </dl>
+            </div>
+
+            <!-- Phase P7 — Telehealth meeting URL surfaces -->
+            <div
+                v-if="appointment.appointment_type === 'telehealth'"
+                class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-5 space-y-3"
+            >
+                <h2 class="text-sm font-semibold text-slate-900 dark:text-slate-100">Telehealth visit</h2>
+                <a
+                    v-if="appointment.meeting_url"
+                    :href="appointment.meeting_url"
+                    target="_blank" rel="noopener"
+                    class="inline-block rounded bg-blue-600 px-3 py-1.5 text-sm text-white hover:bg-blue-700"
+                    data-testid="telehealth-join-button"
+                >
+                    Join visit
+                </a>
+                <div
+                    v-else
+                    class="rounded bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-700 p-3 text-xs text-amber-800 dark:text-amber-200"
+                    data-testid="telehealth-missing-banner"
+                >
+                    No meeting link set. Paste your Zoom / Doximity / Jitsi link in the appointment notes for now —
+                    real-time video integration is paywall-gated (paywall report item 18).
+                </div>
+                <div v-if="appointment.meeting_provider" class="text-xs text-slate-500 dark:text-slate-400">
+                    Provider: {{ appointment.meeting_provider }}
+                </div>
             </div>
 
             <div class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-5 space-y-3">
