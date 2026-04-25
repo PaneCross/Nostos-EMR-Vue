@@ -792,6 +792,12 @@ Route::middleware('auth')->group(function () {
     Route::get('/enrollment/marketing-funnel',
         [\App\Http\Controllers\MarketingFunnelController::class, 'index'])->name('enrollment.marketing_funnel');
 
+    // Phase R11 — CMS PACE Audit Protocol 2.0 universe pulls (3-attempt limit)
+    Route::get('/compliance/cms-audit-universes',
+        [\App\Http\Controllers\CmsAuditUniverseController::class, 'index'])->name('compliance.cms_audit_universes.index');
+    Route::get('/compliance/cms-audit-universes/{universe}.csv',
+        [\App\Http\Controllers\CmsAuditUniverseController::class, 'export'])->name('compliance.cms_audit_universes.export');
+
     // Phase R8 — HPMS Incident Reports (5 CMS-aligned exports)
     Route::get('/compliance/hpms-incident-reports',
         [\App\Http\Controllers\HpmsIncidentReportController::class, 'index'])->name('compliance.hpms_incident_reports.index');
