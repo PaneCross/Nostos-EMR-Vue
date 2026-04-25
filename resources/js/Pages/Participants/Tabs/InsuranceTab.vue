@@ -243,10 +243,74 @@ const progressPct = computed(() => {
 function money(n: number): string {
     return '$' + (n ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
+
+// Phase RS3 — RAF / HCC V28 snapshot
+interface RafSnapshot {
+    model_label: string
+    current_year: number
+    prior_year: number
+    current: { raf_score: number }
+    prior:   { raf_score: number }
+    delta: number
+    delta_label: string
+    gap_count: number
+    hcc_gaps: Array<{ icd10_code: string; hcc_label: string; raf_value: number; estimated_monthly_impact?: number | null }>
+}
+const raf = ref<RafSnapshot | null>(null)
+const rafFailed = ref(false)
+async function loadRaf() {
+    try {
+        const r = await axios.get(`/participants/${props.participant.id}/raf-snapshot`)
+        raf.value = r.data
+    } catch { rafFailed.value = true }
+}
+onMounted(loadRaf)
 </script>
 
 <template>
   <div class="p-6">
+
+    <!-- Phase RS3 — Per-participant RAF / HCC V28 snapshot -->
+    <section v-if="raf" class="mb-6 rounded-xl border bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-700 p-5 shadow-sm" data-testid="raf-card">
+      <div class="flex items-start justify-between mb-3">
+        <div>
+          <h3 class="text-base font-semibold text-slate-900 dark:text-slate-100">
+            RAF / HCC Snapshot
+            <span class="text-xs font-medium text-slate-500 ml-1">{{ raf.model_label }}</span>
+          </h3>
+          <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+            CY {{ raf.current_year }} vs CY {{ raf.prior_year }}
+          </p>
+        </div>
+        <span class="text-xs px-2 py-0.5 rounded-full"
+              :class="raf.delta > 0 ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300'
+                    : raf.delta < 0 ? 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300'
+                    : 'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300'">
+          {{ raf.delta_label }} ({{ raf.delta > 0 ? '+' : '' }}{{ raf.delta }})
+        </span>
+      </div>
+      <div class="grid grid-cols-3 gap-3">
+        <div class="rounded-lg bg-slate-50 dark:bg-slate-900/40 px-3 py-2">
+          <p class="text-2xl font-bold text-slate-800 dark:text-slate-100">{{ raf.current.raf_score }}</p>
+          <p class="text-xs text-slate-500 dark:text-slate-400">Current RAF</p>
+        </div>
+        <div class="rounded-lg bg-slate-50 dark:bg-slate-900/40 px-3 py-2">
+          <p class="text-2xl font-bold text-slate-700 dark:text-slate-300">{{ raf.prior.raf_score }}</p>
+          <p class="text-xs text-slate-500 dark:text-slate-400">Prior RAF</p>
+        </div>
+        <div class="rounded-lg bg-amber-50 dark:bg-amber-900/30 px-3 py-2">
+          <p class="text-2xl font-bold text-amber-700 dark:text-amber-300">{{ raf.gap_count }}</p>
+          <p class="text-xs text-amber-700/80 dark:text-amber-400/80">HCC Gaps</p>
+        </div>
+      </div>
+      <ul v-if="raf.hcc_gaps.length" class="mt-3 space-y-1">
+        <li v-for="g in raf.hcc_gaps.slice(0, 5)" :key="g.icd10_code"
+            class="flex justify-between text-sm px-3 py-1.5 bg-amber-50/60 dark:bg-amber-900/20 rounded">
+          <span class="text-slate-800 dark:text-slate-200">{{ g.icd10_code }} — {{ g.hcc_label }}</span>
+          <span class="text-amber-800 dark:text-amber-300 font-medium">RAF {{ g.raf_value }}</span>
+        </li>
+      </ul>
+    </section>
 
     <!-- Phase 7 (MVP roadmap): Medicaid spend-down / share-of-cost panel -->
     <section v-if="spendDown && spendDown.coverage?.has_spend_down"
