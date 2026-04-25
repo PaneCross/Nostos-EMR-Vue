@@ -23,6 +23,7 @@ namespace App\Http\Controllers;
 use App\Models\AuditLog;
 use App\Models\CapitationRecord;
 use App\Models\Participant;
+use App\Services\SpendDownService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -159,6 +160,28 @@ class CapitationController extends Controller
             'private_pay_rate'     => ['nullable', 'numeric', 'min:0'],
             'rate_effective_date'  => ['nullable', 'date'],
         ]);
+
+        // Phase R1 — block Medicaid capitation when share-of-cost obligation
+        // for this period is unmet (per SpendDownService design memo).
+        if ((float) $data['medicaid_rate'] > 0) {
+            $participant = Participant::find($data['participant_id']);
+            if ($participant && app(SpendDownService::class)->capitationBlocked($participant, $data['month_year'])) {
+                $status = app(SpendDownService::class)->periodStatus($participant, $data['month_year']);
+                AuditLog::record(
+                    action: 'billing.capitation.blocked_spend_down',
+                    resourceType: 'Participant',
+                    resourceId: $participant->id,
+                    tenantId: $tenantId,
+                    userId: $request->user()->id,
+                    newValues: ['period' => $data['month_year'], 'remaining' => $status['remaining'] ?? null],
+                );
+                return response()->json([
+                    'error'        => 'spend_down_unmet',
+                    'message'      => "Medicaid capitation for {$data['month_year']} is blocked: spend-down obligation not met.",
+                    'spend_down'   => $status,
+                ], 422);
+            }
+        }
 
         $record = CapitationRecord::create(array_merge($data, ['tenant_id' => $tenantId]));
 
