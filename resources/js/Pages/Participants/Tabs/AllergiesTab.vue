@@ -81,6 +81,9 @@ async function submit() {
   } catch (err: unknown) {
     const e = err as { response?: { data?: { message?: string } } }
     error.value = e.response?.data?.message ?? 'Failed to save allergy.'
+  } finally {
+    // Phase W1 — Audit-11 H1: must clear saving on every code path so the
+    // submit button doesn't stay disabled after a successful save + reopen.
     saving.value = false
   }
 }
