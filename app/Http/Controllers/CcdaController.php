@@ -12,6 +12,7 @@ use App\Models\AuditLog;
 use App\Models\Participant;
 use App\Services\CcdaExportService;
 use App\Services\CcdaImportService;
+use App\Services\PhiDisclosureService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -19,7 +20,8 @@ class CcdaController extends Controller
 {
     public function __construct(
         private CcdaExportService $exporter,
-        private CcdaImportService $importer
+        private CcdaImportService $importer,
+        private PhiDisclosureService $disclosures,
     ) {}
 
     private function gate(): void
@@ -46,6 +48,19 @@ class CcdaController extends Controller
             resourceType: 'participant',
             resourceId: $participant->id,
             description: 'C-CDA export',
+        );
+
+        // Phase Q2 — HIPAA §164.528 Accounting of Disclosures
+        $this->disclosures->record(
+            tenantId: $u->tenant_id,
+            participantId: $participant->id,
+            recipientType: 'provider',
+            recipientName: trim(($u->first_name ?? '') . ' ' . ($u->last_name ?? '')) ?: ('User #' . $u->id),
+            purpose: 'treatment',
+            method: 'portal',
+            recordsDescribed: 'C-CDA R2.1 Continuity of Care Document (XML).',
+            disclosedByUserId: $u->id,
+            related: $participant,
         );
 
         $filename = sprintf('ccda-%s-%s.xml',

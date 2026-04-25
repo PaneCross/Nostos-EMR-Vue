@@ -64,11 +64,14 @@ use App\Models\SocialDeterminant;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Models\Vital;
+use App\Services\PhiDisclosureService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class FhirController extends Controller
 {
+    public function __construct(private PhiDisclosureService $disclosures) {}
+
     // ── Patient ───────────────────────────────────────────────────────────────
 
     /**
@@ -636,6 +639,25 @@ class FhirController extends Controller
                 'token_name'      => $request->attributes->get('fhir_token')?->name,
             ])
         );
+
+        // Phase Q2 — HIPAA §164.528 Accounting of Disclosures
+        // Participant-scoped reads disclose PHI to the OAuth client. Practitioner
+        // and Organization reads disclose only directory data → not logged here.
+        $participantScoped = ! in_array($resourceType, ['Practitioner', 'Organization'], true);
+        if ($participantScoped) {
+            $token = $request->attributes->get('fhir_token');
+            $clientName = $token?->name ?: 'FHIR API client';
+            $this->disclosures->record(
+                tenantId: $tenantId,
+                participantId: $resourceId,
+                recipientType: 'other',
+                recipientName: $clientName,
+                purpose: 'tpo',
+                method: 'api',
+                recordsDescribed: "FHIR R4 {$resourceType} read (count={$count})",
+                disclosedByUserId: $request->attributes->get('fhir_user_id'),
+            );
+        }
     }
 
     /** Return a single FHIR resource as JSON with correct Content-Type. */

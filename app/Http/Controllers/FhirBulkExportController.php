@@ -27,13 +27,17 @@ use App\Models\ApiToken;
 use App\Models\AuditLog;
 use App\Models\FhirBulkExportJob;
 use App\Services\FhirBulkExportService;
+use App\Services\PhiDisclosureService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class FhirBulkExportController extends Controller
 {
-    public function __construct(private FhirBulkExportService $svc) {}
+    public function __construct(
+        private FhirBulkExportService $svc,
+        private PhiDisclosureService $disclosures,
+    ) {}
 
     // ── POST /fhir/R4/$export ────────────────────────────────────────────────
     public function export(Request $request)
@@ -165,6 +169,10 @@ class FhirBulkExportController extends Controller
 
         $fullPath = Storage::disk(FhirBulkExportService::DISK)->path($path);
 
+        // Phase Q2 — HIPAA §164.528 Accounting of Disclosures. Record one
+        // disclosure per distinct participant referenced by this file.
+        $this->recordBulkDisclosures($fullPath, $type, $token, $request, $job->id);
+
         return new StreamedResponse(function () use ($fullPath) {
             readfile($fullPath);
         }, 200, [
@@ -198,6 +206,49 @@ class FhirBulkExportController extends Controller
         );
 
         return response('', 202);
+    }
+
+    /**
+     * Phase Q2 — extract distinct participant IDs from an NDJSON file and
+     * record one PhiDisclosure per (participant, file) pair.
+     */
+    private function recordBulkDisclosures(string $fullPath, string $resourceType, ApiToken $token, Request $request, int $jobId): void
+    {
+        $participantIds = [];
+        $fh = @fopen($fullPath, 'rb');
+        if (! $fh) return;
+        try {
+            while (($line = fgets($fh)) !== false) {
+                $row = json_decode($line, true);
+                if (! is_array($row)) continue;
+                if ($resourceType === 'Patient') {
+                    if (! empty($row['id']) && is_numeric($row['id'])) {
+                        $participantIds[(int) $row['id']] = true;
+                    }
+                } else {
+                    $ref = $row['subject']['reference'] ?? ($row['patient']['reference'] ?? null);
+                    if ($ref && preg_match('#Patient/(\d+)#', $ref, $m)) {
+                        $participantIds[(int) $m[1]] = true;
+                    }
+                }
+                if (count($participantIds) > 1000) break; // safety cap per file
+            }
+        } finally {
+            fclose($fh);
+        }
+        $clientName = $token->name ?: 'FHIR Bulk Export client';
+        foreach (array_keys($participantIds) as $pid) {
+            $this->disclosures->record(
+                tenantId: $token->tenant_id,
+                participantId: $pid,
+                recipientType: 'other',
+                recipientName: $clientName,
+                purpose: 'tpo',
+                method: 'api',
+                recordsDescribed: "FHIR Bulk Export {$resourceType}.ndjson (job #{$jobId})",
+                disclosedByUserId: $token->user_id,
+            );
+        }
     }
 
     private function opOutcome(int $status, string $code, string $message)
