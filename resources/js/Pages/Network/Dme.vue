@@ -1,6 +1,8 @@
 <script setup lang="ts">
-// ─── Network / DME — Phase S3 ──────────────────────────────────────────────
-import { Head } from '@inertiajs/vue3'
+// ─── Network / DME — Phase S3 + U4 management UI ───────────────────────────
+import { ref } from 'vue'
+import { Head, router } from '@inertiajs/vue3'
+import axios from 'axios'
 import AppShell from '@/Layouts/AppShell.vue'
 
 interface Item {
@@ -26,30 +28,177 @@ defineProps<{
   item_statuses: string[]
   return_conditions: string[]
 }>()
+
+// ── New-item form ──────────────────────────────────────────────────────────
+const showAddItem = ref(false)
+const addItemSaving = ref(false)
+const addItemError = ref<string | null>(null)
+const newItem = ref({
+  item_type: '', manufacturer: '', model: '', serial_number: '', hcpcs_code: '',
+  purchase_date: '', purchase_cost: '', notes: '',
+})
+async function submitAddItem() {
+  addItemSaving.value = true
+  addItemError.value = null
+  try {
+    await axios.post('/network/dme', { ...newItem.value, purchase_cost: newItem.value.purchase_cost || null })
+    showAddItem.value = false
+    newItem.value = {
+      item_type: '', manufacturer: '', model: '', serial_number: '', hcpcs_code: '',
+      purchase_date: '', purchase_cost: '', notes: '',
+    }
+    router.reload()
+  } catch (e: any) {
+    addItemError.value = e?.response?.data?.message ?? 'Failed to register DME item.'
+  } finally {
+    addItemSaving.value = false
+  }
+}
+
+// ── Issue form (for available items) ───────────────────────────────────────
+const issueItemId = ref<number | null>(null)
+const issueForm = ref({ participant_mrn: '', issued_at: new Date().toISOString().slice(0, 10), expected_return_at: '' })
+const issueSaving = ref(false)
+const issueError = ref<string | null>(null)
+function startIssue(itemId: number) {
+  issueItemId.value = itemId
+  issueForm.value = { participant_mrn: '', issued_at: new Date().toISOString().slice(0, 10), expected_return_at: '' }
+  issueError.value = null
+}
+async function submitIssue() {
+  if (! issueItemId.value) return
+  issueSaving.value = true
+  issueError.value = null
+  try {
+    // Resolve MRN → participant_id via existing search endpoint.
+    const lookup = await axios.get('/participants/search', { params: { q: issueForm.value.participant_mrn } })
+    const results = Array.isArray(lookup.data) ? lookup.data : (lookup.data?.results ?? lookup.data?.participants ?? [])
+    const participant = results[0]
+    if (! participant) {
+      issueError.value = 'No participant found with that MRN.'
+      return
+    }
+    await axios.post(`/network/dme/${issueItemId.value}/issue`, {
+      participant_id: participant.id,
+      issued_at: issueForm.value.issued_at,
+      expected_return_at: issueForm.value.expected_return_at || null,
+    })
+    issueItemId.value = null
+    router.reload()
+  } catch (e: any) {
+    issueError.value = e?.response?.data?.message ?? 'Failed to issue DME.'
+  } finally {
+    issueSaving.value = false
+  }
+}
+
+// ── Return action ──────────────────────────────────────────────────────────
+async function returnIssuance(issuanceId: number) {
+  const condition = window.prompt('Return condition? (good/damaged/lost)', 'good')
+  if (! condition) return
+  if (! ['good', 'damaged', 'lost'].includes(condition)) {
+    alert('Invalid condition. Use good, damaged, or lost.')
+    return
+  }
+  try {
+    await axios.post(`/network/dme/issuances/${issuanceId}/return`, {
+      returned_at: new Date().toISOString().slice(0, 10),
+      return_condition: condition,
+    })
+    router.reload()
+  } catch (e: any) {
+    alert(`Return failed: ${e?.response?.data?.message ?? 'Unknown error'}`)
+  }
+}
 </script>
 
 <template>
   <AppShell>
     <Head title="DME Tracking" />
     <div class="max-w-6xl mx-auto px-6 py-8">
-      <h1 class="text-2xl font-bold text-gray-900 dark:text-slate-100">DME Inventory</h1>
-      <p class="text-sm text-gray-600 dark:text-slate-400 mt-1">Durable medical equipment lifecycle: issue → service → return.</p>
+      <div class="flex items-start justify-between">
+        <div>
+          <h1 class="text-2xl font-bold text-gray-900 dark:text-slate-100">DME Inventory</h1>
+          <p class="text-sm text-gray-600 dark:text-slate-400 mt-1">Durable medical equipment lifecycle: register → issue → service → return.</p>
+        </div>
+        <button @click="showAddItem = !showAddItem"
+                class="text-sm px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                data-testid="dme-add-toggle">
+          {{ showAddItem ? 'Cancel' : '+ Register Item' }}
+        </button>
+      </div>
+
+      <!-- Add-item form -->
+      <form v-if="showAddItem" @submit.prevent="submitAddItem"
+            class="mt-4 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl p-4 grid grid-cols-1 sm:grid-cols-3 gap-3"
+            data-testid="dme-add-form">
+        <div class="sm:col-span-3 text-xs text-gray-500 dark:text-slate-400">All fields except item_type are optional.</div>
+        <input v-model="newItem.item_type" required placeholder="Item type (e.g. walker, cpap)"
+               class="border rounded px-2 py-1.5 dark:bg-slate-900 dark:border-slate-600 dark:text-slate-100" />
+        <input v-model="newItem.manufacturer" placeholder="Manufacturer"
+               class="border rounded px-2 py-1.5 dark:bg-slate-900 dark:border-slate-600 dark:text-slate-100" />
+        <input v-model="newItem.model" placeholder="Model"
+               class="border rounded px-2 py-1.5 dark:bg-slate-900 dark:border-slate-600 dark:text-slate-100" />
+        <input v-model="newItem.serial_number" placeholder="Serial #"
+               class="border rounded px-2 py-1.5 dark:bg-slate-900 dark:border-slate-600 dark:text-slate-100" />
+        <input v-model="newItem.hcpcs_code" placeholder="HCPCS code"
+               class="border rounded px-2 py-1.5 dark:bg-slate-900 dark:border-slate-600 dark:text-slate-100" />
+        <input v-model="newItem.purchase_cost" placeholder="Purchase cost ($)" type="number" step="0.01"
+               class="border rounded px-2 py-1.5 dark:bg-slate-900 dark:border-slate-600 dark:text-slate-100" />
+        <div class="sm:col-span-3 flex items-center gap-2">
+          <button :disabled="addItemSaving" type="submit"
+                  class="px-3 py-1.5 bg-emerald-600 text-white rounded-lg disabled:opacity-50">
+            {{ addItemSaving ? 'Saving…' : 'Save' }}
+          </button>
+          <span v-if="addItemError" class="text-sm text-red-600 dark:text-red-400">{{ addItemError }}</span>
+        </div>
+      </form>
 
       <!-- Open issuances -->
       <h2 class="text-lg font-semibold text-gray-900 dark:text-slate-100 mt-6">Open Issuances</h2>
       <ul class="mt-2 space-y-2">
         <li v-for="iss in open_issuances" :key="iss.id"
-            class="bg-white dark:bg-slate-800 border border-amber-200 dark:border-amber-800 rounded-lg px-3 py-2 flex justify-between text-sm">
+            class="bg-white dark:bg-slate-800 border border-amber-200 dark:border-amber-800 rounded-lg px-3 py-2 flex justify-between items-center text-sm">
           <span class="text-gray-900 dark:text-slate-100">
             {{ iss.item.item_type }} · {{ iss.item.manufacturer }} {{ iss.item.model }}
             → {{ iss.participant.last_name }}, {{ iss.participant.first_name }} ({{ iss.participant.mrn }})
+            <span class="text-gray-500 dark:text-slate-400 ml-2">issued {{ iss.issued_at }}</span>
           </span>
-          <span class="text-gray-500 dark:text-slate-400">
-            issued {{ iss.issued_at }}<span v-if="iss.expected_return_at"> · expected back {{ iss.expected_return_at }}</span>
-          </span>
+          <button @click="returnIssuance(iss.id)"
+                  class="text-xs px-2 py-1 border border-blue-300 dark:border-blue-700 text-blue-600 dark:text-blue-400 rounded hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                  data-testid="dme-return-btn">
+            Mark Returned
+          </button>
         </li>
         <li v-if="open_issuances.length === 0" class="text-sm text-gray-500 dark:text-slate-400">No items currently issued.</li>
       </ul>
+
+      <!-- Issue form (modal-style overlay row) -->
+      <div v-if="issueItemId !== null"
+           class="mt-3 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-lg p-3"
+           data-testid="dme-issue-form">
+        <div class="text-sm font-medium text-blue-900 dark:text-blue-200 mb-2">
+          Issue item #{{ issueItemId }} to participant
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+          <input v-model="issueForm.participant_mrn" placeholder="Participant MRN"
+                 class="border rounded px-2 py-1.5 dark:bg-slate-900 dark:border-slate-600 dark:text-slate-100" />
+          <input v-model="issueForm.issued_at" type="date"
+                 class="border rounded px-2 py-1.5 dark:bg-slate-900 dark:border-slate-600 dark:text-slate-100" />
+          <input v-model="issueForm.expected_return_at" type="date" placeholder="Expected return"
+                 class="border rounded px-2 py-1.5 dark:bg-slate-900 dark:border-slate-600 dark:text-slate-100" />
+        </div>
+        <div class="mt-2 flex items-center gap-2">
+          <button @click="submitIssue" :disabled="issueSaving"
+                  class="px-3 py-1.5 bg-emerald-600 text-white rounded-lg disabled:opacity-50">
+            {{ issueSaving ? 'Issuing…' : 'Issue' }}
+          </button>
+          <button @click="issueItemId = null" class="px-3 py-1.5 border rounded-lg text-gray-700 dark:text-slate-300">
+            Cancel
+          </button>
+          <span v-if="issueError" class="text-sm text-red-600 dark:text-red-400">{{ issueError }}</span>
+        </div>
+      </div>
 
       <!-- Inventory -->
       <h2 class="text-lg font-semibold text-gray-900 dark:text-slate-100 mt-8">Inventory</h2>
@@ -62,7 +211,7 @@ defineProps<{
               <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-slate-400">Serial</th>
               <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-slate-400">HCPCS</th>
               <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-slate-400">Status</th>
-              <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-slate-400">Next Service</th>
+              <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-slate-400">Action</th>
             </tr>
           </thead>
           <tbody>
@@ -81,7 +230,13 @@ defineProps<{
                                               'bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-slate-300'
                 ]">{{ i.status }}</span>
               </td>
-              <td class="px-3 py-2 text-sm text-gray-700 dark:text-slate-300">{{ i.next_service_due || '—' }}</td>
+              <td class="px-3 py-2 text-sm text-right">
+                <button v-if="i.status === 'available'" @click="startIssue(i.id)"
+                        class="text-xs px-2 py-1 border border-blue-300 dark:border-blue-700 text-blue-600 dark:text-blue-400 rounded hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                        data-testid="dme-issue-btn">
+                  Issue
+                </button>
+              </td>
             </tr>
             <tr v-if="items.length === 0">
               <td colspan="6" class="px-3 py-4 text-center text-sm text-gray-500 dark:text-slate-400">No DME items registered yet.</td>
