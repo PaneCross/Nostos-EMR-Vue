@@ -30,6 +30,7 @@ use App\Http\Requests\StoreMedReconciliationRequest;
 use App\Http\Requests\StoreMedicationRequest;
 use App\Models\AuditLog;
 use App\Models\DrugInteractionAlert;
+use App\Models\DrugLabInteraction;
 use App\Models\EmarRecord;
 use App\Models\FormularyEntry;
 use App\Models\Medication;
@@ -144,10 +145,22 @@ class MedicationController extends Controller
             newValues:    ['drug_name' => $medication->drug_name, 'status' => 'active'],
         );
 
+        // Phase R2 — drug-lab monitoring suggestions surfaced to prescriber.
+        $labMonitoring = DrugLabInteraction::forDrugName($medication->drug_name)->map(fn ($i) => [
+            'lab_name'      => $i->lab_name,
+            'loinc_code'    => $i->loinc_code,
+            'every_days'    => $i->monitoring_frequency_days,
+            'critical_low'  => $i->critical_low,
+            'critical_high' => $i->critical_high,
+            'units'         => $i->units,
+            'notes'         => $i->notes,
+        ])->values();
+
         return response()->json([
             'medication'      => $medication->load('prescribingProvider:id,first_name,last_name'),
             'new_alerts'      => $newAlerts,
             'pa_suggestion'   => $paSuggestion,
+            'lab_monitoring'  => $labMonitoring,
         ], 201);
     }
 
