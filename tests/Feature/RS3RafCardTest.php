@@ -12,6 +12,6 @@ class RS3RafCardTest extends TestCase
         $vue = file_get_contents(resource_path('js/Pages/Participants/Tabs/InsuranceTab.vue'));
         $this->assertStringContainsString('/raf-snapshot', $vue);
         $this->assertStringContainsString('data-testid="raf-card"', $vue);
-        $this->assertStringContainsString('CMS-HCC V28', $vue) ?: $this->assertStringContainsString('model_label', $vue);
+        $this->assertStringContainsString('model_label', $vue);
     }
 }
