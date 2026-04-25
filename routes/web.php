@@ -776,6 +776,14 @@ Route::middleware('auth')->group(function () {
     Route::post('/participants/{participant}/eligibility-checks',
         [\App\Http\Controllers\EligibilityCheckController::class, 'store'])->name('eligibility.store');
 
+    // Phase P6 — Prior Authorization workflow
+    Route::get('/pharmacy/prior-auth',
+        [\App\Http\Controllers\PriorAuthRequestController::class, 'queue'])->name('prior_auth.queue');
+    Route::post('/participants/{participant}/prior-auth',
+        [\App\Http\Controllers\PriorAuthRequestController::class, 'store'])->name('prior_auth.store');
+    Route::post('/prior-auth/{priorAuthRequest}/transition',
+        [\App\Http\Controllers\PriorAuthRequestController::class, 'transition'])->name('prior_auth.transition');
+
     // Phase P4 — HIPAA §164.404 Breach Notification
     Route::get('/it-admin/breaches',
         [\App\Http\Controllers\BreachIncidentController::class, 'index'])->name('it_admin.breaches.index');
