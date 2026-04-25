@@ -34,7 +34,12 @@ class O2PwaRegistrationTest extends TestCase
 
     public function test_sw_cache_version_is_bumped(): void
     {
+        // Phase P11 — Vite plugin auto-bumps to nostos-portal-{YYYYMMDDHHMMSS}.
         $sw = file_get_contents(public_path('sw.js'));
-        $this->assertStringContainsString("nostos-portal-v2", $sw);
+        $this->assertMatchesRegularExpression(
+            "/const CACHE = 'nostos-portal-(v2|\\d{14})';/",
+            $sw,
+            'sw.js CACHE must be either initial v2 or a build-time YYYYMMDDHHMMSS stamp.'
+        );
     }
 }
