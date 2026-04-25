@@ -18,7 +18,9 @@ class U4ManagementUisTest extends TestCase
         // Each handler hits the right route.
         $this->assertStringContainsString("axios.post('/network/dme'", $vue);
         $this->assertStringContainsString('/network/dme/${issueItemId.value}/issue', $vue);
-        $this->assertStringContainsString('/network/dme/issuances/${issuanceId}/return', $vue);
+        // Phase V7 changed the return flow from window.prompt+returnIssuance(id)
+        // to an inline form using returnIssuanceId.value. Keep this test in sync.
+        $this->assertStringContainsString('/network/dme/issuances/${returnIssuanceId.value}/return', $vue);
         // Participant search route is correct (not /api/participants/search).
         $this->assertStringContainsString("axios.get('/participants/search'", $vue);
         $this->assertStringNotContainsString("'/api/participants/search'", $vue);
