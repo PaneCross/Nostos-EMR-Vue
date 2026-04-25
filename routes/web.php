@@ -1395,6 +1395,8 @@ Route::middleware('auth')->group(function () {
         Route::get('/tb-screening', [\App\Http\Controllers\ComplianceController::class, 'tbScreening'])->name('compliance.tb_screening');
         // Phase I1 (launch-readiness roadmap): ADE reporting universe — closes C5 scope miss
         Route::get('/ade-reporting', [\App\Http\Controllers\ComplianceController::class, 'ade'])->name('compliance.ade_reporting');
+        // Phase P11 — Reportable infectious disease CSV (manual state DPH upload)
+        Route::get('/reportable-infections.csv', [\App\Http\Controllers\ComplianceController::class, 'reportableInfectionsCsv'])->name('compliance.reportable_infections.csv');
     });
 });
 

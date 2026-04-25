@@ -683,6 +683,36 @@ class ComplianceController extends Controller
         ]);
     }
 
+    /**
+     * Phase P11 — Reportable infectious disease CSV export.
+     * Each state has its own DPH portal + format; this is a manual upload bridge.
+     * GET /compliance/reportable-infections.csv
+     */
+    public function reportableInfectionsCsv(Request $request)
+    {
+        $this->gate($request);
+        $u = $request->user();
+        // Hard-coded notifiable set per CDC/state DPH common reporting list.
+        $notifiable = ['mrsa', 'tuberculosis', 'covid_19', 'influenza', 'norovirus', 'c_diff'];
+        $rows = \App\Models\InfectionCase::forTenant($u->tenant_id)
+            ->whereIn('organism_type', $notifiable)
+            ->orderBy('onset_date')->get();
+        $out = "case_id,participant_id,organism,onset_date,severity,reported_to_state_at\n";
+        foreach ($rows as $r) {
+            $out .= sprintf(
+                "%d,%d,%s,%s,%s,%s\n",
+                $r->id, $r->participant_id, $r->organism_type,
+                $r->onset_date?->toDateString() ?? '',
+                $r->severity ?? '',
+                $r->reported_to_state_at?->toIso8601String() ?? '',
+            );
+        }
+        return response($out, 200, [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="reportable-infections-' . now()->toDateString() . '.csv"',
+        ]);
+    }
+
     private function statusFor(Participant $p, ?int $days): string
     {
         if (! $p->nf_certification_date && ! $p->nf_recert_waived) return 'missing';

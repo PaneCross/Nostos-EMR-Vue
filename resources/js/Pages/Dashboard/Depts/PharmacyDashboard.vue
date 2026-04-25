@@ -222,9 +222,11 @@ const orderItems = computed<ActionItem[]>(() =>
         <div class="rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4 shadow-sm">
             <div class="flex items-baseline justify-between mb-3">
                 <h3 class="text-sm font-semibold text-gray-900 dark:text-slate-100">Beers PIM Rollup</h3>
-                <span class="text-xs text-gray-500 dark:text-slate-400">
+                <!-- Phase P11 — honest empty-state when tenant has no enrolled participants -->
+                <span v-if="beersRollup.enrolled_total > 0" class="text-xs text-gray-500 dark:text-slate-400">
                     {{ beersRollup.participants_with_pims }}/{{ beersRollup.enrolled_total }} enrolled
                 </span>
+                <span v-else class="text-xs text-gray-400 italic">no enrolled participants</span>
             </div>
             <p class="text-xs text-gray-500 dark:text-slate-400 mb-2">Top PIM categories across panel.</p>
             <ul v-if="beersRollup.top_pim_categories?.length" class="text-sm space-y-1">
@@ -237,6 +239,9 @@ const orderItems = computed<ActionItem[]>(() =>
                     <span class="font-semibold text-gray-900 dark:text-slate-100">{{ c.count }}</span>
                 </li>
             </ul>
+            <p v-else-if="beersRollup.enrolled_total === 0" class="text-sm text-gray-500 dark:text-slate-400">
+                No enrolled participants in this tenant yet.
+            </p>
             <p v-else class="text-sm text-gray-500 dark:text-slate-400">No PIMs detected on enrolled panel.</p>
         </div>
 
