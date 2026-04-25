@@ -163,8 +163,9 @@ class EnrollmentService
      * Updates enrollment_status, disenrollment_date, disenrollment_reason on the
      * participant record.
      *
-     * If cms_notification_required = true, a placeholder audit entry is created
-     * to flag the HPMS reporting requirement (TODO Phase 6B: create QA task).
+     * If cms_notification_required = true, the disenroll() method below creates
+     * a dedicated SDR for the enrollment department to file the HPMS notification
+     * (Phase Q7 closes the original Phase-6B TODO via SDR rather than QA task).
      *
      * Valid reasons: voluntary, involuntary, deceased, moved, nf_admission, other.
      *
@@ -330,6 +331,18 @@ class EnrollmentService
             'created_by_user_id' => $user->id,
         ]);
 
-        // TODO Phase 7C: Create participant IDT chat channel
+        // Phase Q7 — auto-create the participant_idt chat channel for this participant.
+        \App\Models\ChatChannel::firstOrCreate(
+            [
+                'tenant_id'      => $referral->tenant_id,
+                'channel_type'   => 'participant_idt',
+                'participant_id' => $participant->id,
+            ],
+            [
+                'name'               => "IDT: {$participant->first_name} {$participant->last_name} ({$participant->mrn})",
+                'created_by_user_id' => $user->id,
+                'is_active'          => true,
+            ]
+        );
     }
 }

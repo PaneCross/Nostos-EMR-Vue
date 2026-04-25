@@ -34,6 +34,7 @@ use App\Models\Appointment;
 use App\Models\AuditLog;
 use App\Models\Location;
 use App\Models\Participant;
+use App\Services\AlertService;
 use App\Services\ConflictDetectionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -435,7 +436,19 @@ class AppointmentController extends Controller
             description:  "Participant {$participant->mrn} marked no-show for {$appointment->appointment_type} appointment",
         );
 
-        // TODO Phase 5B: Fire alert to transportation/scheduling departments for no-show follow-up
+        // Phase Q7 — alert to transportation + scheduling on no-show.
+        app(AlertService::class)->create([
+            'tenant_id'          => $user->tenant_id,
+            'participant_id'     => $participant->id,
+            'alert_type'         => 'appointment_no_show',
+            'severity'           => 'info',
+            'title'              => 'Appointment no-show',
+            'message'            => "Participant {$participant->first_name} {$participant->last_name} (MRN {$participant->mrn}) was a no-show for a {$appointment->appointment_type} appointment on " . $appointment->scheduled_start->format('M j, Y g:i A') . '. Follow up to reschedule and confirm transportation.',
+            'target_departments' => ['transportation', 'enrollment'],
+            'source_module'      => 'scheduling',
+            'metadata'           => ['appointment_id' => $appointment->id, 'appointment_type' => $appointment->appointment_type],
+            'created_by_system'  => true,
+        ]);
 
         return response()->json($appointment->fresh());
     }
