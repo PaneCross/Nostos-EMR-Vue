@@ -2,11 +2,14 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class DmeItem extends Model
 {
+    use HasFactory;
+
     protected $table = 'emr_dme_items';
 
     public const STATUSES = ['available', 'issued', 'servicing', 'retired', 'lost'];

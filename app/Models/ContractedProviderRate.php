@@ -2,11 +2,14 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ContractedProviderRate extends Model
 {
+    use HasFactory;
+
     protected $table = 'emr_contracted_provider_rates';
 
     protected $fillable = ['contract_id', 'cpt_code', 'rate_amount', 'modifier', 'notes'];

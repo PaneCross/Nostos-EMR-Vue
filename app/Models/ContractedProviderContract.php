@@ -2,12 +2,15 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ContractedProviderContract extends Model
 {
+    use HasFactory;
+
     protected $table = 'emr_contracted_provider_contracts';
 
     public const REIMBURSEMENT_BASES = [

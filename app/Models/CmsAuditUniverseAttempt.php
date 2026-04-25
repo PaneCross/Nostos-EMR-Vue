@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class CmsAuditUniverseAttempt extends Model
 {
+    use HasFactory;
+
     protected $table = 'emr_cms_audit_universe_attempts';
 
     public const UNIVERSES = ['sdr', 'grievances', 'disenrollments', 'appeals'];

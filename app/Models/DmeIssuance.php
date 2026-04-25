@@ -2,11 +2,14 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class DmeIssuance extends Model
 {
+    use HasFactory;
+
     protected $table = 'emr_dme_issuances';
 
     public const RETURN_CONDITIONS = ['good', 'damaged', 'lost'];

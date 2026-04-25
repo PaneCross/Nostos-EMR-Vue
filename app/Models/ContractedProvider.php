@@ -7,12 +7,15 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ContractedProvider extends Model
 {
+    use HasFactory;
+
     protected $table = 'emr_contracted_providers';
 
     public const PROVIDER_TYPES = [
