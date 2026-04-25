@@ -31,7 +31,17 @@ class Alert extends Model
     public const UPDATED_AT = null;
 
     // ── Source modules ────────────────────────────────────────────────────────
-    public const SOURCE_MODULES = ['adl', 'assessment', 'sdr', 'allergy', 'manual', 'chat'];
+    // NOTE: not enforced as a CHECK constraint in DB — this list documents the
+    // production callers seen across app/Jobs and app/Services. Keep in sync.
+    public const SOURCE_MODULES = [
+        'adl', 'assessment', 'sdr', 'allergy', 'manual', 'chat',
+        'integration', 'documentation_compliance', 'roi', 'breach',
+        'amendment', 'sentinel_event', 'restraint', 'tb_screening',
+        'compliance', 'idt', 'anticoag', 'assessments',
+        'critical_value', 'bcma', 'beers', 'predictive_risk',
+        'care_gap', 'care_plan', 'panel_management', 'no_show',
+        'scheduling',
+    ];
 
     // ── Severity levels ───────────────────────────────────────────────────────
     public const SEVERITIES = ['info', 'warning', 'critical'];
