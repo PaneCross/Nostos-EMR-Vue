@@ -13,6 +13,7 @@ namespace App\Http\Controllers;
 use App\Models\AuditLog;
 use App\Models\IadlRecord;
 use App\Models\Participant;
+use App\Models\StaffTask;
 use App\Services\IadlScoringService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -105,9 +106,28 @@ class IadlController extends Controller
             description: "IADL recorded for participant #{$participant->id}: {$scored['total']}/8 ({$scored['interpretation']}).",
         );
 
+        // Phase R3 — auto-create one StaffTask per impaired-item referral
+        // suggestion so the right department picks it up via the tasks queue.
+        $tasksCreated = [];
+        foreach ($record->referralSuggestions() as $sugg) {
+            $tasksCreated[] = StaffTask::create([
+                'tenant_id'              => $u->tenant_id,
+                'participant_id'         => $participant->id,
+                'assigned_to_department' => $sugg['dept'],
+                'created_by_user_id'     => $u->id,
+                'title'                  => "IADL referral: {$sugg['item']}",
+                'description'            => $sugg['goal'] . " (Auto-created from IADL record #{$record->id}; total {$scored['total']}/8 — {$scored['interpretation']}.)",
+                'priority'               => $scored['interpretation'] === 'severe_impairment' ? 'high' : 'normal',
+                'status'                 => 'pending',
+                'related_to_type'        => IadlRecord::class,
+                'related_to_id'          => $record->id,
+            ]);
+        }
+
         return response()->json([
             'record'      => $record,
             'suggestions' => $record->referralSuggestions(),
+            'tasks'       => $tasksCreated,
         ], 201);
     }
 }

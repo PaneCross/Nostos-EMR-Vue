@@ -11,13 +11,18 @@ use App\Http\Requests\StoreAssessmentRequest;
 use App\Models\Assessment;
 use App\Models\AuditLog;
 use App\Models\Participant;
+use App\Models\StaffTask;
 use App\Services\AlertService;
+use App\Services\AssessmentScoringService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class AssessmentController extends Controller
 {
-    public function __construct(private AlertService $alertService) {}
+    public function __construct(
+        private AlertService $alertService,
+        private AssessmentScoringService $scorer,
+    ) {}
 
     private function authorizeForTenant(Participant $participant, $user): void
     {
@@ -72,7 +77,38 @@ class AssessmentController extends Controller
         // W4-4: Create clinical alert when a scored assessment crosses a threshold.
         $this->maybeCreateAssessmentAlert($assessment, $participant, $user->tenant_id);
 
+        // Phase R3 — Auto-create a StaffTask when AssessmentScoringService
+        // has a referral suggestion for this (instrument, band) combination.
+        $this->maybeAutoReferral($assessment, $participant, $user);
+
         return response()->json($assessment->load('author:id,first_name,last_name'), 201);
+    }
+
+    private function maybeAutoReferral(Assessment $assessment, Participant $participant, $user): void
+    {
+        if (! in_array($assessment->assessment_type, AssessmentScoringService::INSTRUMENTS, true)) {
+            return;
+        }
+        $responses = is_array($assessment->responses) ? $assessment->responses : [];
+        if (empty($responses)) return;
+        $scored = $this->scorer->score($assessment->assessment_type, $responses);
+        if (! $scored || empty($scored['band'])) return;
+
+        $hint = $this->scorer->referralFor($assessment->assessment_type, $scored['band']);
+        if (! $hint) return;
+
+        StaffTask::create([
+            'tenant_id'              => $user->tenant_id,
+            'participant_id'         => $participant->id,
+            'assigned_to_department' => $hint['dept'],
+            'created_by_user_id'     => $user->id,
+            'title'                  => "Assessment referral: {$assessment->typeLabel()}",
+            'description'            => $hint['goal'] . " (Auto-created from assessment #{$assessment->id}; band={$scored['band']}.)",
+            'priority'               => in_array($scored['band'], ['severe', 'substantial'], true) ? 'high' : 'normal',
+            'status'                 => 'pending',
+            'related_to_type'        => Assessment::class,
+            'related_to_id'          => $assessment->id,
+        ]);
     }
 
     /**
