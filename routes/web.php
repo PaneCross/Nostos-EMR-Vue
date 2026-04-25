@@ -792,6 +792,18 @@ Route::middleware('auth')->group(function () {
     Route::get('/enrollment/marketing-funnel',
         [\App\Http\Controllers\MarketingFunnelController::class, 'index'])->name('enrollment.marketing_funnel');
 
+    // Phase S2 — Contracted-provider network + per-contract rates
+    Route::get('/network/contracted-providers',
+        [\App\Http\Controllers\ContractedProviderController::class, 'index'])->name('network.contracted_providers.index');
+    Route::post('/network/contracted-providers',
+        [\App\Http\Controllers\ContractedProviderController::class, 'store'])->name('network.contracted_providers.store');
+    Route::post('/network/contracted-providers/{contractedProvider}/contracts',
+        [\App\Http\Controllers\ContractedProviderController::class, 'storeContract'])->name('network.contracted_providers.contracts.store');
+    Route::get('/network/contracts/{contract}/rates',
+        [\App\Http\Controllers\ContractedProviderController::class, 'showRates'])->name('network.contracts.rates.index');
+    Route::post('/network/contracts/{contract}/rates',
+        [\App\Http\Controllers\ContractedProviderController::class, 'storeRate'])->name('network.contracts.rates.store');
+
     // Phase R11 — CMS PACE Audit Protocol 2.0 universe pulls (3-attempt limit)
     Route::get('/compliance/cms-audit-universes',
         [\App\Http\Controllers\CmsAuditUniverseController::class, 'index'])->name('compliance.cms_audit_universes.index');

@@ -233,6 +233,8 @@ class PermissionService
                     // Phase O4 — Wave M6 reconciliation dashboards
                     ['label' => 'PDE Reconciliation',  'module' => 'pde_records',          'href' => '/dashboards/pde-reconciliation'],
                     ['label' => 'Capitation Reconciliation', 'module' => 'capitation',     'href' => '/dashboards/capitation-reconciliation'],
+                    // Phase S2 — Contracted-provider network
+                    ['label' => 'Contracted Providers',      'module' => 'capitation',     'href' => '/network/contracted-providers'],
                 ],
             ],
             [
