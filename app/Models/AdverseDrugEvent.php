@@ -3,10 +3,13 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class AdverseDrugEvent extends Model
 {
+    use HasFactory;
+
     protected $table = 'emr_adverse_drug_events';
 
     public const SEVERITIES  = ['mild', 'moderate', 'severe', 'life_threatening', 'fatal'];

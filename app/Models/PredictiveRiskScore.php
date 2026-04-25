@@ -3,9 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class PredictiveRiskScore extends Model
 {
+    use HasFactory;
+
     protected $table = 'emr_predictive_risk_scores';
 
     public const RISK_TYPES = ['disenrollment', 'acute_event'];

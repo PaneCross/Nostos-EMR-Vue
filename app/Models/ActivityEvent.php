@@ -3,11 +3,14 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ActivityEvent extends Model
 {
+    use HasFactory;
+
     protected $table = 'emr_activity_events';
 
     public const CATEGORIES = ['social', 'physical', 'cognitive', 'creative', 'spiritual', 'therapeutic'];

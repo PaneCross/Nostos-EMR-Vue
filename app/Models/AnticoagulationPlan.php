@@ -9,11 +9,14 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class AnticoagulationPlan extends Model
 {
+    use HasFactory;
+
     protected $table = 'emr_anticoagulation_plans';
 
     public const AGENTS = ['warfarin', 'apixaban', 'rivaroxaban', 'dabigatran', 'edoxaban', 'enoxaparin', 'other'];

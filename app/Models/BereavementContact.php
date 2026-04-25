@@ -8,10 +8,13 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class BereavementContact extends Model
 {
+    use HasFactory;
+
     protected $table = 'emr_bereavement_contacts';
 
     public const TYPES    = ['day_15', 'day_30', 'month_3'];

@@ -10,10 +10,13 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class DischargeEvent extends Model
 {
+    use HasFactory;
+
     protected $table = 'emr_discharge_events';
 
     /** Standard 8-item discharge checklist. due_days is days post-discharge. */

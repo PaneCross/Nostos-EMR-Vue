@@ -7,10 +7,13 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class InrResult extends Model
 {
+    use HasFactory;
+
     protected $table = 'emr_inr_results';
 
     protected $fillable = [

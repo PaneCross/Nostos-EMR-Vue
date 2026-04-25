@@ -3,10 +3,13 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class CareGap extends Model
 {
+    use HasFactory;
+
     protected $table = 'emr_care_gaps';
 
     public const MEASURES = [
