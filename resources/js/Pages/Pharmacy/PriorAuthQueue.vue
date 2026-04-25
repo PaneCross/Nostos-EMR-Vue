@@ -35,7 +35,12 @@ async function transition(req: any, status: string) {
     await axios.post(`/prior-auth/${req.id}/transition`, payload)
     router.reload({ only: ['requests'] })
   } catch (e: any) {
-    alert(e?.response?.data?.message ?? 'Failed')
+    // Phase V4 — surface per-field 422 errors instead of a generic alert.
+    const errs = e?.response?.data?.errors ?? null
+    const msg = (errs && Object.keys(errs).length)
+      ? Object.values(errs).flat().join('; ')
+      : (e?.response?.data?.message ?? 'Failed')
+    alert(msg)
   } finally { transitioning.value = null }
 }
 </script>

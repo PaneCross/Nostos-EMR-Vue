@@ -49,7 +49,11 @@ async function submitAddItem() {
     }
     router.reload()
   } catch (e: any) {
-    addItemError.value = e?.response?.data?.message ?? 'Failed to register DME item.'
+    // Phase V4 — extract per-field 422 errors when present, else fall back to message.
+    const errs = e?.response?.data?.errors ?? null
+    addItemError.value = (errs && Object.keys(errs).length)
+      ? Object.values(errs).flat().join('; ')
+      : (e?.response?.data?.message ?? 'Failed to register DME item.')
   } finally {
     addItemSaving.value = false
   }
@@ -86,7 +90,10 @@ async function submitIssue() {
     issueItemId.value = null
     router.reload()
   } catch (e: any) {
-    issueError.value = e?.response?.data?.message ?? 'Failed to issue DME.'
+    const errs = e?.response?.data?.errors ?? null
+    issueError.value = (errs && Object.keys(errs).length)
+      ? Object.values(errs).flat().join('; ')
+      : (e?.response?.data?.message ?? 'Failed to issue DME.')
   } finally {
     issueSaving.value = false
   }

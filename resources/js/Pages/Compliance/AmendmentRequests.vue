@@ -36,7 +36,14 @@ async function decide(req: any, status: string) {
     })
     router.reload({ only: ['requests'] })
   } catch (e: any) {
-    alert(e?.response?.data?.message ?? 'Failed')
+    // Phase V4 — surface per-field 422 errors. Critical for the deny path:
+    // §164.526(d)(1)(ii) requires decision_rationale; users must see WHY their
+    // submit was rejected, not just a generic "Failed".
+    const errs = e?.response?.data?.errors ?? null
+    const msg = (errs && Object.keys(errs).length)
+      ? Object.values(errs).flat().join('; ')
+      : (e?.response?.data?.message ?? 'Failed')
+    alert(msg)
   } finally { decidingId.value = null }
 }
 

@@ -38,7 +38,11 @@ async function submit() {
     showForm.value = false
     router.reload({ only: ['incidents'] })
   } catch (e: any) {
-    error.value = e?.response?.data?.message ?? 'Save failed'
+    // Phase V4 — extract per-field 422 errors when present.
+    const errs = e?.response?.data?.errors ?? null
+    error.value = (errs && Object.keys(errs).length)
+      ? Object.values(errs).flat().join('; ')
+      : (e?.response?.data?.message ?? 'Save failed')
   } finally { saving.value = false }
 }
 
