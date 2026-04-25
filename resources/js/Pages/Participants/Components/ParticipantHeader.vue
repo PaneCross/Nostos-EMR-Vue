@@ -88,25 +88,31 @@ const riskBand = ref<string | null>(null)       // 'low' | 'medium' | 'high'
 const riskScore = ref<number | null>(null)
 const careGapCount = ref<number | null>(null)
 
+// Phase O11 — sentinel flags so a 403/500 surfaces honestly as "—" instead
+// of looking identical to a successful "0 hits" state.
+const beersFailed = ref(false)
+const riskFailed = ref(false)
+const careGapsFailed = ref(false)
+
 onMounted(async () => {
   const id = props.participant.id
   // Fire all three in parallel; swallow individual failures so a 403 on one
-  // doesn't blank the rest.
+  // doesn't blank the rest. Track the failure so the template can render "—".
   axios.get(`/participants/${id}/beers-flags`).then(r => {
     const rows = r.data?.flags ?? r.data?.rows ?? []
     beersCount.value = Array.isArray(rows) ? rows.length : 0
-  }).catch(() => { beersCount.value = 0 })
+  }).catch(() => { beersFailed.value = true })
   axios.get(`/participants/${id}/predictive-risk`).then(r => {
     const latest = r.data?.latest ?? {}
     // Prefer acute_event for demo-visible chip; fall back to disenrollment.
     const s = latest['acute_event'] ?? latest['disenrollment'] ?? null
     riskBand.value = s?.band ?? null
     riskScore.value = s?.score ?? null
-  }).catch(() => {})
+  }).catch(() => { riskFailed.value = true })
   axios.get(`/participants/${id}/care-gaps`).then(r => {
     const gaps = r.data?.gaps ?? []
     careGapCount.value = Array.isArray(gaps) ? gaps.filter((g: any) => !g.satisfied).length : 0
-  }).catch(() => { careGapCount.value = 0 })
+  }).catch(() => { careGapsFailed.value = true })
 })
 
 const RISK_CHIP_CLASS: Record<string, string> = {
@@ -389,6 +395,14 @@ const sectionHdr = 'text-xs font-bold text-slate-500 dark:text-slate-400 upperca
             Beers · {{ beersCount }}
           </span>
           <span
+            v-else-if="beersFailed"
+            title="Beers data unavailable for your role."
+            class="inline-flex items-center px-2 py-0.5 rounded border text-xs font-medium bg-gray-50 dark:bg-slate-800 text-gray-500 dark:text-slate-400 border-gray-200 dark:border-slate-700"
+            data-testid="chip-beers-failed"
+          >
+            Beers · —
+          </span>
+          <span
             v-if="riskBand"
             :title="`Predictive acute-event risk: ${riskScore}/100 (${riskBand})`"
             :class="['inline-flex items-center px-2 py-0.5 rounded border text-xs font-medium', RISK_CHIP_CLASS[riskBand] ?? 'bg-gray-100 text-gray-600']"
@@ -396,11 +410,27 @@ const sectionHdr = 'text-xs font-bold text-slate-500 dark:text-slate-400 upperca
             Risk · {{ riskBand }}<span v-if="riskScore !== null" class="ml-1 opacity-70">({{ riskScore }})</span>
           </span>
           <span
+            v-else-if="riskFailed"
+            title="Predictive risk data unavailable for your role."
+            class="inline-flex items-center px-2 py-0.5 rounded border text-xs font-medium bg-gray-50 dark:bg-slate-800 text-gray-500 dark:text-slate-400 border-gray-200 dark:border-slate-700"
+            data-testid="chip-risk-failed"
+          >
+            Risk · —
+          </span>
+          <span
             v-if="careGapCount !== null && careGapCount > 0"
             title="Open preventive-care gaps"
             :class="['inline-flex items-center px-2 py-0.5 rounded border text-xs font-medium', careGapCount >= 3 ? 'bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800' : 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800']"
           >
             Care gaps · {{ careGapCount }}
+          </span>
+          <span
+            v-else-if="careGapsFailed"
+            title="Care-gap data unavailable for your role."
+            class="inline-flex items-center px-2 py-0.5 rounded border text-xs font-medium bg-gray-50 dark:bg-slate-800 text-gray-500 dark:text-slate-400 border-gray-200 dark:border-slate-700"
+            data-testid="chip-care-gaps-failed"
+          >
+            Care gaps · —
           </span>
         </div>
       </div>

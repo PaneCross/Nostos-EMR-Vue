@@ -50,17 +50,28 @@ onBeforeUnmount(stop)
 </script>
 
 <template>
-  <button
-    type="button"
-    :disabled="!supported"
-    class="inline-flex items-center gap-1 rounded px-2 py-1 text-xs"
-    :class="recording ? 'bg-red-600 text-white' : 'bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200'"
-    @click="recording ? stop() : start()"
-    :title="supported ? 'Dictate' : 'Voice not supported in this browser'"
-  >
-    <StopIcon v-if="recording" class="h-4 w-4" />
-    <MicrophoneIcon v-else class="h-4 w-4" />
-    {{ recording ? 'Stop' : 'Dictate' }}
+  <div class="inline-flex flex-col items-end gap-1">
+    <button
+      type="button"
+      :disabled="!supported"
+      class="inline-flex items-center gap-1 rounded px-2 py-1 text-xs"
+      :class="recording ? 'bg-red-600 text-white' : 'bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200'"
+      @click="recording ? stop() : start()"
+      :title="supported ? 'Dictate' : 'Voice entry not available in this browser. Use Chrome, Edge, or Safari Desktop.'"
+      data-testid="voice-note-button"
+    >
+      <StopIcon v-if="recording" class="h-4 w-4" />
+      <MicrophoneIcon v-else class="h-4 w-4" />
+      {{ recording ? 'Stop' : 'Dictate' }}
+    </button>
+    <!-- Phase O11 — visible fallback message instead of silent disable -->
+    <span
+      v-if="!supported"
+      class="text-[10px] text-amber-700 dark:text-amber-400"
+      data-testid="voice-note-unsupported"
+    >
+      Voice entry not supported — try Chrome / Edge / Safari Desktop.
+    </span>
     <span v-if="error" class="sr-only">{{ error }}</span>
-  </button>
+  </div>
 </template>

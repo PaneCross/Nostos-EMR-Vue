@@ -77,13 +77,27 @@ class StateMedicaidSubmissionController extends Controller
         ], 201);
     }
 
-    public function index(Request $request): JsonResponse
+    public const HONEST_BANNER = 'State Medicaid encounter transmission is scaffold-only. Payloads are staged here for manual portal upload; real per-state transmission requires a state portal contract + credentials. See paywall report item 8.';
+
+    public function index(Request $request): JsonResponse|\Inertia\Response
     {
         $this->gate();
         $u = Auth::user();
+        $submissions = StateMedicaidSubmission::forTenant($u->tenant_id)
+            ->orderByDesc('created_at')->limit(100)->get();
+
+        // Phase O11 — dual-serve so the banner is actually visible on the
+        // existing /state-medicaid/submissions URL when navigated to in a browser.
+        if (! $request->wantsJson()) {
+            return \Inertia\Inertia::render('Operations/StateMedicaidSubmissions', [
+                'submissions' => $submissions,
+                'banner'      => self::HONEST_BANNER,
+            ]);
+        }
+
         return response()->json([
-            'submissions' => StateMedicaidSubmission::forTenant($u->tenant_id)
-                ->orderByDesc('created_at')->limit(100)->get(),
+            'submissions' => $submissions,
+            'banner'      => self::HONEST_BANNER,
         ]);
     }
 }
