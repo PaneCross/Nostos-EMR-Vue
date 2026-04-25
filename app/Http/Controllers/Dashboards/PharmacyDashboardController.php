@@ -328,17 +328,15 @@ class PharmacyDashboardController extends Controller
         $enrolled = \App\Models\Participant::forTenant($tenantId)
             ->where('enrollment_status', 'enrolled')->get(['id']);
 
-        $participantsWithPims = 0;
+        // Phase P8 — batch path: O(1) queries instead of O(N participants).
+        $batch = $beers->evaluateBatch($enrolled);
+        $participantsWithPims = count($batch);
         $pimCounts = [];
-        foreach ($enrolled as $p) {
-            $flags = $beers->evaluate($p);
-            if (! empty($flags)) {
-                $participantsWithPims++;
-                foreach ($flags as $f) {
-                    foreach ($f['flags'] as $pim) {
-                        $key = $pim['risk_category'];
-                        $pimCounts[$key] = ($pimCounts[$key] ?? 0) + 1;
-                    }
+        foreach ($batch as $row) {
+            foreach ($row['flags'] as $f) {
+                foreach ($f['flags'] as $pim) {
+                    $key = $pim['risk_category'];
+                    $pimCounts[$key] = ($pimCounts[$key] ?? 0) + 1;
                 }
             }
         }
