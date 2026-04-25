@@ -235,6 +235,8 @@ class PermissionService
                     ['label' => 'Capitation Reconciliation', 'module' => 'capitation',     'href' => '/dashboards/capitation-reconciliation'],
                     // Phase S2 — Contracted-provider network
                     ['label' => 'Contracted Providers',      'module' => 'capitation',     'href' => '/network/contracted-providers'],
+                    // Phase S3 — DME tracking
+                    ['label' => 'DME Inventory',             'module' => 'capitation',     'href' => '/network/dme'],
                 ],
             ],
             [

@@ -804,6 +804,16 @@ Route::middleware('auth')->group(function () {
     Route::post('/network/contracts/{contract}/rates',
         [\App\Http\Controllers\ContractedProviderController::class, 'storeRate'])->name('network.contracts.rates.store');
 
+    // Phase S3 — DME tracking
+    Route::get('/network/dme',
+        [\App\Http\Controllers\DmeController::class, 'index'])->name('network.dme.index');
+    Route::post('/network/dme',
+        [\App\Http\Controllers\DmeController::class, 'store'])->name('network.dme.store');
+    Route::post('/network/dme/{dme}/issue',
+        [\App\Http\Controllers\DmeController::class, 'issue'])->name('network.dme.issue');
+    Route::post('/network/dme/issuances/{issuance}/return',
+        [\App\Http\Controllers\DmeController::class, 'return_'])->name('network.dme.return');
+
     // Phase R11 — CMS PACE Audit Protocol 2.0 universe pulls (3-attempt limit)
     Route::get('/compliance/cms-audit-universes',
         [\App\Http\Controllers\CmsAuditUniverseController::class, 'index'])->name('compliance.cms_audit_universes.index');
