@@ -13,12 +13,25 @@ class ParticipantContact extends Model
 
     protected $table = 'emr_participant_contacts';
 
+    public const LEGAL_ROLES = ['durable_poa', 'healthcare_proxy', 'legal_guardian', 'court_appointed', 'none'];
+    public const RELATIONSHIP_ROLES = ['spouse', 'partner', 'parent', 'child', 'sibling', 'grandchild', 'friend', 'other'];
+
+    public const LEGAL_ROLE_LABELS = [
+        'durable_poa'      => 'Durable Power of Attorney',
+        'healthcare_proxy' => 'Healthcare Proxy',
+        'legal_guardian'   => 'Legal Guardian',
+        'court_appointed'  => 'Court-Appointed Representative',
+        'none'             => 'None',
+    ];
+
     protected $fillable = [
         'participant_id', 'contact_type',
         'first_name', 'last_name', 'relationship',
         'phone_primary', 'phone_secondary', 'email',
         'is_legal_representative', 'is_emergency_contact',
         'priority_order', 'notes',
+        // Phase S1 — structured legal + relationship roles
+        'legal_role', 'relationship_role',
     ];
 
     protected $casts = [
