@@ -149,6 +149,29 @@ class RoiRequestController extends Controller
             description:  "ROI request #{$roi->id} transitioned to {$validated['status']}.",
         );
 
+        // Phase P2 — log to HIPAA Accounting of Disclosures when fulfilled.
+        if ($validated['status'] === 'fulfilled') {
+            $recipientType = match ($roi->requestor_type ?? 'self') {
+                'self'        => 'patient_self',
+                'legal_rep'   => 'legal',
+                'provider'    => 'provider',
+                'insurer'     => 'insurer',
+                default       => 'other',
+            };
+            app(\App\Services\PhiDisclosureService::class)->record(
+                tenantId:         $u->tenant_id,
+                participantId:    $roi->participant_id,
+                recipientType:    $recipientType,
+                recipientName:    $roi->requestor_name ?? 'unknown',
+                purpose:          'ROI request #' . $roi->id . ' fulfilled',
+                method:           'paper',
+                recordsDescribed: $roi->records_requested_scope ?? 'unspecified scope',
+                disclosedByUserId: $u->id,
+                recipientContact: $roi->requestor_contact ?? null,
+                related:          $roi,
+            );
+        }
+
         return response()->json(['request' => $roi->fresh()]);
     }
 }

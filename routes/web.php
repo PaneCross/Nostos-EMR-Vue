@@ -751,6 +751,14 @@ Route::middleware('auth')->group(function () {
     Route::get('/participants/{participant}/critical-values',
         [\App\Http\Controllers\VitalController::class, 'pendingCriticalValues'])->name('critical_values.pending');
 
+    // Phase P2 — HIPAA §164.528 Accounting of Disclosures
+    Route::get('/participants/{participant}/phi-disclosures',
+        [\App\Http\Controllers\PhiDisclosureController::class, 'forParticipant'])
+        ->name('phi_disclosures.for_participant');
+    Route::get('/it-admin/phi-disclosures',
+        [\App\Http\Controllers\PhiDisclosureController::class, 'index'])
+        ->name('it_admin.phi_disclosures.index');
+
     // Phase B7 (MVP completion roadmap): Note templates + problem-based charting
     Route::get   ('/note-templates',
         [\App\Http\Controllers\NoteTemplateController::class, 'index'])->name('note_templates.index');

@@ -56,6 +56,19 @@ class HieController extends Controller
             description: "CCD published via {$this->gateway()->name()} ({$result['transmission_id']}).",
         );
 
+        // Phase P2 — HIPAA §164.528 Accounting of Disclosures.
+        app(\App\Services\PhiDisclosureService::class)->record(
+            tenantId:         $participant->tenant_id,
+            participantId:    $participant->id,
+            recipientType:    'provider',
+            recipientName:    'HIE: ' . $this->gateway()->name(),
+            purpose:          'CCD published to Health Information Exchange for treatment continuity',
+            method:           'hie',
+            recordsDescribed: 'C-CDA Continuity of Care Document (full clinical summary)',
+            disclosedByUserId: $u->id,
+            related:          $participant,
+        );
+
         return response()->json(['gateway' => $this->gateway()->name(), 'result' => $result]);
     }
 

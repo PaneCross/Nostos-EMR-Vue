@@ -171,6 +171,19 @@ class EhiExportController extends Controller
             description:  "EHI export downloaded for {$participant->mrn}",
         );
 
+        // Phase P2 — HIPAA §164.528 Accounting of Disclosures.
+        app(\App\Services\PhiDisclosureService::class)->record(
+            tenantId:         $user->tenant_id,
+            participantId:    $participant->id,
+            recipientType:    'patient_self',
+            recipientName:    $participant->first_name . ' ' . $participant->last_name,
+            purpose:          '21st Century Cures Act EHI export — patient right of access',
+            method:           'portal',
+            recordsDescribed: 'Full EHI ZIP export (FHIR Bundle + facesheet PDF)',
+            disclosedByUserId: $user->id,
+            related:          $export,
+        );
+
         $path = Storage::disk('local')->path($export->file_path);
 
         return response()->download(
