@@ -180,18 +180,21 @@ class Phase15MediumWinsTest extends TestCase
 
     // ── 15.5 Mobile ADL ─────────────────────────────────────────────────────
 
-    public function test_mobile_adl_renders_for_home_care_staff(): void
+    public function test_mobile_adl_redirects_to_canonical_mobile_page(): void
     {
+        // Phase O8: /home-care/mobile-adl now redirects to /mobile (the canonical
+        // home-care day-list entry). MobileAdl.vue was deleted; the ADL quick-
+        // capture flow lives on the participant ADL tab reachable from /mobile.
         $this->actingAs($this->homeCare);
-        $this->get('/home-care/mobile-adl')
-            ->assertOk()
-            ->assertSee('MobileAdl', false); // Inertia component name in page JSON
+        $this->get('/home-care/mobile-adl')->assertRedirect('/mobile');
     }
 
-    public function test_mobile_adl_blocks_non_home_care(): void
+    public function test_mobile_page_blocks_non_home_care(): void
     {
+        // Note: /mobile allows home_care + primary_care + therapies + it_admin.
+        // qa_compliance is not in that set, so it gets 403.
         $this->actingAs($this->qa);
-        $this->get('/home-care/mobile-adl')->assertForbidden();
+        $this->get('/mobile')->assertForbidden();
     }
 
     // ── 15.6 CDS ────────────────────────────────────────────────────────────
