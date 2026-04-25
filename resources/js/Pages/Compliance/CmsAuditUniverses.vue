@@ -1,8 +1,9 @@
 <script setup lang="ts">
-// ─── Compliance / CMS Audit Universes — Phase R11 ──────────────────────────
+// ─── Compliance / CMS Audit Universes — Phase R11 + V3 ─────────────────────
 // CMS PACE Audit Protocol 2.0 universe-pull workspace.
 import { ref } from 'vue'
-import { Head } from '@inertiajs/vue3'
+import { Head, router } from '@inertiajs/vue3'
+import axios from 'axios'
 import AppShell from '@/Layouts/AppShell.vue'
 
 interface UniverseStatus {
@@ -29,8 +30,55 @@ const LABELS: Record<string, string> = {
   appeals: 'Appeals',
 }
 
-function downloadUrl(universe: string): string {
-  return `/compliance/cms-audit-universes/${universe}.csv?audit_id=${auditId.value}`
+// Phase V3 — Audit-10 H2: Generate via axios so 409 max-attempts and 422
+// validation errors render inline rather than a raw browser tab.
+const generating = ref<string | null>(null)
+const cardError = ref<Record<string, string>>({})
+
+async function generate(universe: string) {
+  generating.value = universe
+  cardError.value = { ...cardError.value, [universe]: '' }
+  try {
+    const url = `/compliance/cms-audit-universes/${universe}.csv?audit_id=${encodeURIComponent(auditId.value)}`
+    const r = await axios.get(url, { responseType: 'blob' })
+
+    // Trigger browser download.
+    const cd = (r.headers['content-disposition'] ?? '') as string
+    const filename = /filename="?([^"]+)"?/.exec(cd)?.[1]
+        ?? `cms-universe-${universe}-${auditId.value}.csv`
+    const blob = new Blob([r.data], { type: 'text/csv' })
+    const link = document.createElement('a')
+    link.href = URL.createObjectURL(blob)
+    link.download = filename
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    URL.revokeObjectURL(link.href)
+
+    // Reload to refresh attempts_used + last_passed status.
+    router.reload({ only: ['universes'] })
+  } catch (e: any) {
+    // Server error responses come back as a Blob too — read and parse.
+    let message = ''
+    if (e?.response?.data instanceof Blob) {
+      try {
+        const text = await e.response.data.text()
+        message = JSON.parse(text)?.message ?? text
+      } catch { message = await e.response.data.text() }
+    } else {
+      message = e?.response?.data?.message ?? e?.message ?? 'Generation failed.'
+    }
+    const status = e?.response?.status
+    if (status === 409) {
+      cardError.value = { ...cardError.value, [universe]: `Maximum 3 attempts reached. ${message}`.trim() }
+    } else if (status === 422) {
+      cardError.value = { ...cardError.value, [universe]: `Validation failed: ${message}` }
+    } else {
+      cardError.value = { ...cardError.value, [universe]: message || `Failed (${status ?? 'network'}).` }
+    }
+  } finally {
+    generating.value = null
+  }
 }
 </script>
 
@@ -68,14 +116,23 @@ function downloadUrl(universe: string): string {
                 </span>
               </div>
             </div>
-            <a v-if="status.attempts_used < status.max_attempts" :href="downloadUrl(key as string)"
-               class="text-sm px-3 py-1.5 border border-blue-300 dark:border-blue-700 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20">
-              Generate
-            </a>
+            <button v-if="status.attempts_used < status.max_attempts"
+                    @click="generate(key as string)"
+                    :disabled="generating === key"
+                    class="text-sm px-3 py-1.5 border border-blue-300 dark:border-blue-700 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 disabled:opacity-50"
+                    data-testid="cms-universe-generate">
+              {{ generating === key ? 'Generating…' : 'Generate' }}
+            </button>
             <span v-else class="text-xs text-red-700 dark:text-red-400">Limit reached</span>
           </div>
           <div v-if="status.last_attempt_at" class="text-xs text-gray-500 dark:text-slate-400 mt-2">
             Last: {{ status.last_attempt_at }} · {{ status.last_row_count }} rows
+          </div>
+          <div v-if="cardError[key as string]"
+               role="alert"
+               class="mt-2 text-xs text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-900/20 rounded px-2 py-1"
+               data-testid="cms-universe-error">
+            {{ cardError[key as string] }}
           </div>
         </div>
       </div>
