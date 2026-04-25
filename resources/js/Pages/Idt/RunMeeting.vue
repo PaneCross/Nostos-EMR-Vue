@@ -49,9 +49,18 @@ interface IdtMeeting {
   minutes_text: string | null
   facilitator: { id: number; first_name: string; last_name: string } | null
   participant_reviews: ParticipantReview[]
+  // Phase U3 — attendees JSONB: map of user_id → { status, recorded_at, recorded_by }
+  attendees: Record<string, { status: string; recorded_at: string | null; recorded_by: number | null }> | null
 }
 
-const props = defineProps<{ meeting: IdtMeeting }>()
+interface TenantUser {
+  id: number
+  first_name: string
+  last_name: string
+  department: string
+}
+
+const props = defineProps<{ meeting: IdtMeeting; tenant_users: TenantUser[] }>()
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -98,6 +107,34 @@ const selectedReview = computed<ParticipantReview | null>(
 // Per-participant editable state
 const summaryText = ref('')
 const actionItems = ref<ActionItem[]>([])
+
+// ── Phase U3 — attendance ─────────────────────────────────────────────────────
+const attendeesMap = ref<Record<string, { status: string; recorded_at: string | null; recorded_by: number | null }>>(
+  (props.meeting.attendees && !Array.isArray(props.meeting.attendees)) ? { ...props.meeting.attendees } : {},
+)
+function attendanceStatusFor(userId: number): string {
+  return attendeesMap.value[String(userId)]?.status ?? 'unmarked'
+}
+async function markAttendance(userId: number, status: 'present' | 'absent' | 'excused') {
+  if (locked.value) return
+  try {
+    const r = await axios.post(`/idt/meetings/${props.meeting.id}/attendance`, {
+      user_id: userId, status,
+    })
+    // Backend returns the full meeting with updated attendees JSON.
+    const updated = r.data?.attendees
+    if (updated && !Array.isArray(updated)) {
+      attendeesMap.value = { ...updated }
+    } else {
+      // Optimistic fallback if the response shape changes.
+      attendeesMap.value[String(userId)] = {
+        status, recorded_at: new Date().toISOString(), recorded_by: null,
+      }
+    }
+  } catch (e: any) {
+    alert(`Could not record attendance: ${e?.response?.data?.message ?? e?.message ?? 'Unknown error'}`)
+  }
+}
 
 // Meeting minutes
 const minutesText = ref(props.meeting.minutes_text ?? '')
@@ -493,6 +530,52 @@ function fmtDate(dateStr: string): string {
               </div>
             </div>
           </template>
+
+          <!-- Phase U3 — Attendance roster -->
+          <div class="border-t border-gray-100 dark:border-slate-700 pt-6 mb-6" data-testid="idt-attendance">
+            <div class="flex items-center justify-between mb-2">
+              <label class="text-sm font-medium text-gray-700 dark:text-slate-300">Attendance</label>
+              <span class="text-xs text-gray-500 dark:text-slate-400">
+                {{ Object.values(attendeesMap).filter(a => a.status === 'present').length }}
+                of {{ tenant_users.length }} present
+              </span>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <div v-for="u in tenant_users" :key="u.id"
+                   class="bg-slate-50 dark:bg-slate-900/40 rounded-lg px-3 py-2 flex items-center justify-between text-sm">
+                <div>
+                  <div class="text-gray-900 dark:text-slate-100">{{ u.last_name }}, {{ u.first_name }}</div>
+                  <div class="text-xs text-gray-500 dark:text-slate-400">{{ u.department }}</div>
+                </div>
+                <div class="flex gap-1">
+                  <button type="button" :disabled="locked" @click="markAttendance(u.id, 'present')"
+                          :class="['px-2 py-1 rounded text-xs',
+                            attendanceStatusFor(u.id) === 'present'
+                              ? 'bg-emerald-600 text-white'
+                              : 'bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-600 text-gray-700 dark:text-slate-300 hover:bg-emerald-50']">
+                    P
+                  </button>
+                  <button type="button" :disabled="locked" @click="markAttendance(u.id, 'absent')"
+                          :class="['px-2 py-1 rounded text-xs',
+                            attendanceStatusFor(u.id) === 'absent'
+                              ? 'bg-red-600 text-white'
+                              : 'bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-600 text-gray-700 dark:text-slate-300 hover:bg-red-50']">
+                    A
+                  </button>
+                  <button type="button" :disabled="locked" @click="markAttendance(u.id, 'excused')"
+                          :class="['px-2 py-1 rounded text-xs',
+                            attendanceStatusFor(u.id) === 'excused'
+                              ? 'bg-amber-500 text-white'
+                              : 'bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-600 text-gray-700 dark:text-slate-300 hover:bg-amber-50']">
+                    E
+                  </button>
+                </div>
+              </div>
+            </div>
+            <p v-if="tenant_users.length === 0" class="text-sm text-gray-500 dark:text-slate-400 mt-2">
+              No clinical users in this tenant — attendance roster is empty.
+            </p>
+          </div>
 
           <!-- Meeting minutes (always visible) -->
           <div class="border-t border-gray-100 dark:border-slate-700 pt-6">

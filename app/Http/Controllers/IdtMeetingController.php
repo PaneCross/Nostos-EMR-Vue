@@ -146,8 +146,18 @@ class IdtMeetingController extends Controller
             'participantReviews.participant:id,mrn,first_name,last_name,dob',
         ]);
 
+        // Phase U3 — pass tenant clinical users so the Run-Meeting page can
+        // render the attendance roster + present/absent toggles.
+        $tenantUsers = \App\Models\User::where('tenant_id', $request->user()->tenant_id)
+            ->where('is_active', true)
+            ->whereIn('department', ['primary_care', 'therapies', 'social_work', 'behavioral_health',
+                'dietary', 'activities', 'home_care', 'transportation', 'pharmacy', 'idt'])
+            ->orderBy('last_name')
+            ->get(['id', 'first_name', 'last_name', 'department']);
+
         return Inertia::render('Idt/RunMeeting', [
-            'meeting' => $meeting,
+            'meeting'      => $meeting,
+            'tenant_users' => $tenantUsers,
         ]);
     }
 
