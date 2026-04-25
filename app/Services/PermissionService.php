@@ -146,6 +146,7 @@ class PermissionService
                 'items' => [
                     ['label' => 'All Participants', 'module' => 'participants',    'href' => '/participants'],
                     ['label' => 'Enrollment / Intake', 'module' => 'enrollment',  'href' => '/enrollment'],
+                    ['label' => 'Marketing Funnel',    'module' => 'enrollment',  'href' => '/enrollment/marketing-funnel'],
                 ],
             ],
             [
@@ -266,6 +267,9 @@ class PermissionService
                     ['label' => 'ADE Reporting',    'module' => 'audit_log',     'href' => '/compliance/ade-reporting'],
                     ['label' => 'ROI Requests',     'module' => 'audit_log',     'href' => '/compliance/roi'],
                     ['label' => 'TB Screening',     'module' => 'audit_log',     'href' => '/compliance/tb-screening'],
+                    // Phase RS1 — Wave R surface entries
+                    ['label' => 'HPMS Incident Reports', 'module' => 'audit_log', 'href' => '/compliance/hpms-incident-reports'],
+                    ['label' => 'CMS Audit Universes',   'module' => 'audit_log', 'href' => '/compliance/cms-audit-universes'],
                 ],
             ],
             [
