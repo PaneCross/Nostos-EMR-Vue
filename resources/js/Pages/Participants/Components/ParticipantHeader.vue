@@ -94,6 +94,11 @@ const beersFailed = ref(false)
 const riskFailed = ref(false)
 const careGapsFailed = ref(false)
 
+// Phase Q4 — eligibility chip (latest 270/271 check status)
+const eligibilityStatus = ref<string | null>(null)
+const eligibilityCheckedAt = ref<string | null>(null)
+const eligibilityFailed = ref(false)
+
 onMounted(async () => {
   const id = props.participant.id
   // Fire all three in parallel; swallow individual failures so a 403 on one
@@ -113,7 +118,22 @@ onMounted(async () => {
     const gaps = r.data?.gaps ?? []
     careGapCount.value = Array.isArray(gaps) ? gaps.filter((g: any) => !g.satisfied).length : 0
   }).catch(() => { careGapsFailed.value = true })
+  // Phase Q4 — latest eligibility check
+  axios.get(`/participants/${id}/eligibility-checks`).then(r => {
+    const latest = (r.data?.checks ?? [])[0]
+    if (latest) {
+      eligibilityStatus.value = latest.response_status
+      eligibilityCheckedAt.value = latest.requested_at
+    }
+  }).catch(() => { eligibilityFailed.value = true })
 })
+
+const ELIG_CHIP_CLASS: Record<string, string> = {
+  active:     'bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700',
+  inactive:   'bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300 border-red-300 dark:border-red-700',
+  unknown:    'bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-400 border-gray-200 dark:border-slate-700',
+  not_active: 'bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-700',
+}
 
 const RISK_CHIP_CLASS: Record<string, string> = {
   high:   'bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300 border-red-300 dark:border-red-700',
@@ -431,6 +451,24 @@ const sectionHdr = 'text-xs font-bold text-slate-500 dark:text-slate-400 upperca
             data-testid="chip-care-gaps-failed"
           >
             Care gaps · —
+          </span>
+          <!-- Phase Q4 — eligibility chip -->
+          <span
+            v-if="eligibilityStatus"
+            :title="`Latest 270/271 eligibility ${eligibilityStatus} (checked ${eligibilityCheckedAt})`"
+            :class="['inline-flex items-center px-2 py-0.5 rounded border text-xs font-medium', ELIG_CHIP_CLASS[eligibilityStatus] ?? 'bg-gray-100 text-gray-600']"
+            data-testid="chip-eligibility"
+            @click="emit('tab-change', 'insurance')"
+          >
+            Eligibility · {{ eligibilityStatus }}
+          </span>
+          <span
+            v-else-if="eligibilityFailed"
+            title="Eligibility data unavailable for your role."
+            class="inline-flex items-center px-2 py-0.5 rounded border text-xs font-medium bg-gray-50 dark:bg-slate-800 text-gray-500 dark:text-slate-400 border-gray-200 dark:border-slate-700"
+            data-testid="chip-eligibility-failed"
+          >
+            Eligibility · —
           </span>
         </div>
       </div>

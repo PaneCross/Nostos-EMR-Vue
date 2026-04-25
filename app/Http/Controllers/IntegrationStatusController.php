@@ -16,6 +16,7 @@ namespace App\Http\Controllers;
 use App\Jobs\ProcessHl7AdtJob;
 use App\Jobs\ProcessLabResultJob;
 use App\Models\AuditLog;
+use App\Models\EligibilityCheck;
 use App\Models\IntegrationLog;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -53,10 +54,26 @@ class IntegrationStatusController extends Controller
             ->limit(20)
             ->get(['id', 'connector_type', 'direction', 'status', 'error_message', 'retry_count', 'created_at', 'processed_at']);
 
+        // Phase Q4 — eligibility driver visibility for IT admin
+        $eligibilityDriver = config('services.eligibility.driver', 'null');
+        $eligibility = [
+            'driver'           => $eligibilityDriver,
+            'driver_label'     => match ($eligibilityDriver) {
+                'availity'           => 'Availity (X12 270/271 — paywall item 16)',
+                'change_healthcare'  => 'Change Healthcare (X12 270/271 — paywall item 16)',
+                default              => 'Null gateway (no real eligibility verification)',
+            },
+            'is_real_vendor'   => in_array($eligibilityDriver, ['availity', 'change_healthcare'], true),
+            'recent_checks_30d' => EligibilityCheck::forTenant($tenantId)
+                ->where('requested_at', '>=', now()->subDays(30))->count(),
+            'config_note'      => 'Set ELIGIBILITY_DRIVER=availity|change_healthcare in .env once a vendor contract is signed. Until then, the Null gateway returns honest-labeled "unknown" responses.',
+        ];
+
         return Inertia::render('ItAdmin/Integrations', [
             'summary'        => $summary,
             'recentLog'      => $recentLog,
             'connectorTypes' => IntegrationLog::CONNECTOR_TYPES,
+            'eligibility'    => $eligibility,
         ]);
     }
 

@@ -34,10 +34,19 @@ interface LogEntry {
     error_message: string | null
 }
 
+interface EligibilityConfig {
+    driver: string
+    driver_label: string
+    is_real_vendor: boolean
+    recent_checks_30d: number
+    config_note: string
+}
+
 interface Props {
     summary: Record<string, ConnectorSummary>
     recentLog: LogEntry[]
     connectorTypes: string[]
+    eligibility?: EligibilityConfig
 }
 
 const props = defineProps<Props>()
@@ -126,6 +135,32 @@ onMounted(() => {}) // log already loaded from props
                     <h1 class="text-2xl font-bold text-gray-900 dark:text-slate-100">Integrations</h1>
                     <p class="text-sm text-gray-500 dark:text-slate-400">Inbound HL7 and lab result connector health</p>
                 </div>
+            </div>
+
+            <!-- Phase Q4 — Eligibility driver card -->
+            <div v-if="eligibility" class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-4 shadow-sm mb-6" data-testid="eligibility-driver-card">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="font-semibold text-gray-900 dark:text-slate-100">X12 270/271 Eligibility (Phase P5)</span>
+                    <span :class="[
+                        'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium',
+                        eligibility.is_real_vendor
+                            ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300'
+                            : 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300'
+                    ]">
+                        {{ eligibility.is_real_vendor ? 'Vendor active' : 'Null gateway (no real verification)' }}
+                    </span>
+                </div>
+                <div class="text-sm text-gray-700 dark:text-slate-300">
+                    <div class="flex justify-between">
+                        <span>Active driver</span>
+                        <span class="font-medium">{{ eligibility.driver_label }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>Checks (last 30d)</span>
+                        <span class="font-medium">{{ eligibility.recent_checks_30d }}</span>
+                    </div>
+                </div>
+                <p class="mt-3 text-xs text-gray-500 dark:text-slate-400 italic">{{ eligibility.config_note }}</p>
             </div>
 
             <!-- Connector cards -->
