@@ -31,6 +31,7 @@ use App\Http\Requests\StoreMedicationRequest;
 use App\Models\AuditLog;
 use App\Models\DrugInteractionAlert;
 use App\Models\EmarRecord;
+use App\Models\FormularyEntry;
 use App\Models\Medication;
 use App\Models\MedReconciliation;
 use App\Models\Participant;
@@ -113,6 +114,26 @@ class MedicationController extends Controller
         // Check for drug-drug interactions with existing active medications
         $newAlerts = $this->interactionService->checkInteractions($medication, $participant);
 
+        // Phase Q5 — Prior auth auto-suggest: if formulary marks this drug as
+        // requiring PA, surface a suggestion to the prescriber UI. Match on
+        // exact drug_name within tenant; fall back to generic_name match.
+        $paSuggestion = null;
+        $formularyHit = FormularyEntry::where('tenant_id', $user->tenant_id)
+            ->where(function ($q) use ($medication) {
+                $q->where('drug_name', $medication->drug_name)
+                  ->orWhere('generic_name', $medication->drug_name);
+            })
+            ->first();
+        if ($formularyHit && $formularyHit->prior_authorization_required) {
+            $paSuggestion = [
+                'required'         => true,
+                'formulary_entry_id' => $formularyHit->id,
+                'rxnorm_code'      => $formularyHit->rxnorm_code,
+                'message'          => "Formulary indicates prior authorization is required for {$medication->drug_name}. Open the Prior Auth queue to start a request.",
+                'queue_url'        => '/pharmacy/prior-auth',
+            ];
+        }
+
         AuditLog::record(
             action:       'medication.added',
             tenantId:     $user->tenant_id,
@@ -124,8 +145,9 @@ class MedicationController extends Controller
         );
 
         return response()->json([
-            'medication'     => $medication->load('prescribingProvider:id,first_name,last_name'),
-            'new_alerts'     => $newAlerts,
+            'medication'      => $medication->load('prescribingProvider:id,first_name,last_name'),
+            'new_alerts'      => $newAlerts,
+            'pa_suggestion'   => $paSuggestion,
         ], 201);
     }
 
