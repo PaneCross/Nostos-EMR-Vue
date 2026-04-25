@@ -125,9 +125,11 @@ function checkBadgeClass(status: string): string {
 }
 
 async function runCheck() {
+  // Phase U1 — checklist data is computed live by the GET /billing/compliance-checklist/data
+  // endpoint; there is no separate POST. "Run Check" simply refreshes the data.
   running.value = true
   try {
-    await axios.post('/billing/compliance/check')
+    await axios.get('/billing/compliance-checklist/data')
     router.reload()
   } finally {
     running.value = false

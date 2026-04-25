@@ -142,11 +142,11 @@ const props = defineProps<{
 const statusFilter = ref(props.filters?.status ?? '')
 
 function applyFilter() {
-  router.get('/billing/denials', { status: statusFilter.value || undefined }, { preserveState: true })
+  router.get('/finance/denials', { status: statusFilter.value || undefined }, { preserveState: true })
 }
 
 function changePage(page: number) {
-  router.get('/billing/denials', { status: statusFilter.value || undefined, page }, { preserveState: true })
+  router.get('/finance/denials', { status: statusFilter.value || undefined, page }, { preserveState: true })
 }
 
 function navigateToParticipant(id: number) {

@@ -136,12 +136,12 @@ let searchTimer: ReturnType<typeof setTimeout> | null = null
 function applyFilter() {
   if (searchTimer) clearTimeout(searchTimer)
   searchTimer = setTimeout(() => {
-    router.get('/billing/remittance', { payer: payerSearch.value || undefined }, { preserveState: true })
+    router.get('/finance/remittance', { payer: payerSearch.value || undefined }, { preserveState: true })
   }, 300)
 }
 
 function changePage(page: number) {
-  router.get('/billing/remittance', { payer: payerSearch.value || undefined, page }, { preserveState: true })
+  router.get('/finance/remittance', { payer: payerSearch.value || undefined, page }, { preserveState: true })
 }
 
 function statusClass(status: string): string {

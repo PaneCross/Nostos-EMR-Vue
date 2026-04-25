@@ -121,15 +121,13 @@ function selectRow(id: number) {
                     </select>
                 </div>
 
-                <!-- New Encounter -->
-                <button
-                    type="button"
-                    class="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
-                    @click="router.visit('/billing/encounters/create')"
-                >
-                    <PlusIcon class="w-4 h-4" aria-hidden="true" />
-                    New Encounter
-                </button>
+                <!-- Phase U1 — encounter creation happens via clinical flow
+                     (Appointment → Encounter auto-create); no standalone create UI.
+                     Manual entry is via POST /billing/encounters with full 837P fields,
+                     used by integration tests + API consumers, not finance staff. -->
+                <span class="text-xs text-gray-500 dark:text-slate-400 italic px-3 py-1.5">
+                    Encounters auto-generate from clinical visits. Manual entry via API.
+                </span>
             </div>
 
             <!-- ── Table ── -->

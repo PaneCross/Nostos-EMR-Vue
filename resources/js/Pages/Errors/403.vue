@@ -47,7 +47,7 @@ import { ShieldExclamationIcon } from '@heroicons/vue/24/outline'
                     Go Back
                 </button>
                 <button
-                    @click="router.visit('/dashboard')"
+                    @click="router.visit('/')"
                     class="inline-flex items-center gap-2 rounded-lg border border-slate-300 dark:border-slate-700 px-5 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
                     aria-label="Go to dashboard"
                 >

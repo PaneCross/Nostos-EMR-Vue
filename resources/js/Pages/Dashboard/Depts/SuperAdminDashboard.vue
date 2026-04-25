@@ -13,7 +13,7 @@ defineProps<{ departmentLabel: string; role: string }>()
             <button
                 type="button"
                 class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-6 text-left hover:shadow-md transition-shadow"
-                @click="router.visit('/super-admin')"
+                @click="router.visit('/super-admin-panel')"
             >
                 <p class="text-sm font-semibold text-slate-800 dark:text-slate-200">Super Admin Panel</p>
                 <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Tenant management, health monitoring, and onboarding.</p>

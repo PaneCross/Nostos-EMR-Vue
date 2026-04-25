@@ -39,7 +39,7 @@ import { MagnifyingGlassIcon } from '@heroicons/vue/24/outline'
 
             <!-- Action -->
             <button
-                @click="router.visit('/dashboard')"
+                @click="router.visit('/')"
                 class="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-blue-700 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-500"
                 aria-label="Go to dashboard"
             >
