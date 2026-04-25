@@ -25,6 +25,19 @@ class SubmitRcaRequest extends FormRequest
         ];
     }
 
+    /**
+     * Phase W3 — Sentinel-event RCA per Phase B3: 30-day deadline (42 CFR §460.136
+     * QAPI), so message wording cites the regulatory expectation.
+     */
+    public function messages(): array
+    {
+        return [
+            'rca_text.required' => 'Per 42 CFR §460.136 QAPI, sentinel-event Root Cause Analyses require documented narrative.',
+            'rca_text.min'      => 'RCA must be at least 50 characters describing the underlying cause(s); CMS auditors reject thin RCAs.',
+            'rca_text.max'      => 'RCA text exceeds 20,000 characters. Attach supporting documents separately.',
+        ];
+    }
+
     protected function failedAuthorization(): never
     {
         abort(403, 'Only QA Compliance, Primary Care, or IT Admin may submit an RCA.');

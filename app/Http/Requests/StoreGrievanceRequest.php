@@ -23,4 +23,19 @@ class StoreGrievanceRequest extends FormRequest
             'cms_reportable'       => ['boolean'],
         ];
     }
+
+    /**
+     * Phase W3 — domain-aware messages tied to 42 CFR §460.122 (grievance procedures).
+     */
+    public function messages(): array
+    {
+        return [
+            'participant_id.required' => 'Select the participant filing this grievance.',
+            'filed_by_name.required'  => 'Per §460.122(b), grievances must identify who filed them.',
+            'filed_by_type.required'  => 'Indicate filer type: participant, family, caregiver, etc.',
+            'category.required'       => 'A grievance category is required for §460.122 reporting.',
+            'description.required'    => 'Provide a description of the grievance (minimum 10 characters).',
+            'description.min'         => 'Grievance description must be at least 10 characters.',
+        ];
+    }
 }

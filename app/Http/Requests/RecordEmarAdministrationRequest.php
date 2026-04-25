@@ -29,4 +29,18 @@ class RecordEmarAdministrationRequest extends FormRequest
             'notes'            => ['nullable', 'string', 'max:1000'],
         ];
     }
+
+    /**
+     * Phase W3 — messages emphasize the medication-administration audit trail.
+     */
+    public function messages(): array
+    {
+        return [
+            'status.required'           => 'Select an administration status (given, refused, held, not_available, or missed).',
+            'status.in'                 => 'Status must be one of: given, refused, held, not_available, missed.',
+            'administered_at.required_if' => 'When marking a dose given, the administration time is required for the eMAR audit trail.',
+            'reason_not_given.required' => 'Per medication-administration policy, doses not given (refused/held/not_available/missed) must include a reason.',
+            'witness_user_id.exists'    => 'Witness user not found. Controlled substances often require a witness signature.',
+        ];
+    }
 }

@@ -46,4 +46,22 @@ class StoreClinicalNoteRequest extends FormRequest
             'secondary_problem_ids.*' => ['integer', 'exists:emr_problems,id'],
         ];
     }
+
+    /**
+     * Phase W3 — CFR-aware validation messages for user-visible 422 surfaces.
+     */
+    public function messages(): array
+    {
+        return [
+            'note_type.required'         => 'Select a note type before saving.',
+            'note_type.in'               => 'That note type is not allowed. Choose from: ' . implode(', ', \App\Models\ClinicalNote::NOTE_TYPES) . '.',
+            'visit_type.required'        => 'Visit type is required (in_center, home_visit, telehealth, or phone).',
+            'visit_date.required'        => 'Visit date is required.',
+            'visit_date.before_or_equal' => 'Visit date cannot be in the future.',
+            'department.required'        => 'Author department is required for chart attribution.',
+            'late_entry_reason.required_if' => 'Per 42 CFR §460.210, late chart entries require a documented reason explaining the delay.',
+            'note_template_id.exists'    => 'Note template not found or no longer available.',
+            'primary_problem_id.exists'  => 'Linked problem not found on this participant\'s problem list.',
+        ];
+    }
 }
