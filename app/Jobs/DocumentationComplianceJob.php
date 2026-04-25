@@ -56,7 +56,7 @@ class DocumentationComplianceJob implements ShouldQueue
                     ->where('alert_type', 'unsigned_note')
                     ->where('source_module', 'documentation_compliance')
                     ->where('participant_id', $note->participant_id)
-                    ->whereJsonContains('new_values->note_id', $note->id)
+                    ->whereJsonContains('metadata->note_id', $note->id)
                     ->where('is_active', true)
                     ->exists();
 
@@ -76,7 +76,7 @@ class DocumentationComplianceJob implements ShouldQueue
                     'severity'           => 'warning',
                     'target_departments' => [$note->department, 'qa_compliance'],
                     'created_by_system'  => true,
-                    'new_values'         => ['note_id' => $note->id],
+                    'metadata'           => ['note_id' => $note->id],
                 ]);
 
                 $unsignedCount++;
@@ -91,7 +91,7 @@ class DocumentationComplianceJob implements ShouldQueue
                     ->where('alert_type', 'assessment_overdue')
                     ->where('source_module', 'documentation_compliance')
                     ->where('participant_id', $assessment->participant_id)
-                    ->whereJsonContains('new_values->assessment_id', $assessment->id)
+                    ->whereJsonContains('metadata->assessment_id', $assessment->id)
                     ->where('is_active', true)
                     ->exists();
 
@@ -112,7 +112,7 @@ class DocumentationComplianceJob implements ShouldQueue
                     'severity'           => 'info',
                     'target_departments' => [$assessment->department ?? 'qa_compliance'],
                     'created_by_system'  => true,
-                    'new_values'         => ['assessment_id' => $assessment->id],
+                    'metadata'           => ['assessment_id' => $assessment->id],
                 ]);
 
                 $overdueCount++;

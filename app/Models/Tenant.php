@@ -38,6 +38,11 @@ class Tenant extends Model
         return $this->hasMany(User::class, 'tenant_id');
     }
 
+    public function participants(): HasMany
+    {
+        return $this->hasMany(Participant::class, 'tenant_id');
+    }
+
     public function isBrokerMode(): bool
     {
         return $this->transport_mode === 'broker';

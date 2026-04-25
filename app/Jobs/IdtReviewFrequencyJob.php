@@ -99,6 +99,48 @@ class IdtReviewFrequencyJob implements ShouldQueue
 
                 $alertsCreated++;
             }
+
+            // Phase R4 — 42 CFR §460.116(b): advance directive must be reviewed
+            // at every IDT reassessment. Warn when the on-file review timestamp
+            // is missing or older than 6 months (matches IDT cadence).
+            $adOverdue = Participant::forTenant($tenant->id)
+                ->where('enrollment_status', 'enrolled')
+                ->where('is_active', true)
+                ->whereNull('deleted_at')
+                ->where(function ($q) {
+                    $q->whereNull('advance_directive_reviewed_at')
+                      ->orWhere('advance_directive_reviewed_at', '<', now()->subMonths(6));
+                })
+                ->get();
+
+            foreach ($adOverdue as $participant) {
+                $existing = Alert::where('tenant_id', $tenant->id)
+                    ->where('participant_id', $participant->id)
+                    ->where('alert_type', 'advance_directive_review_overdue')
+                    ->where('is_active', true)
+                    ->exists();
+                if ($existing) continue;
+
+                Alert::create([
+                    'tenant_id'          => $tenant->id,
+                    'participant_id'     => $participant->id,
+                    'source_module'      => 'idt',
+                    'alert_type'         => 'advance_directive_review_overdue',
+                    'title'              => 'Advance Directive Review Overdue',
+                    'message'            => "{$participant->first_name} {$participant->last_name} ({$participant->mrn})"
+                        . ' has no advance-directive review in the last 6 months.'
+                        . ' 42 CFR §460.116(b) requires AD review at every IDT reassessment.',
+                    'severity'           => 'warning',
+                    'target_departments' => ['social_work', 'primary_care'],
+                    'metadata'           => [
+                        'participant_mrn'                => $participant->mrn,
+                        'advance_directive_reviewed_at'  => $participant->advance_directive_reviewed_at?->toDateString(),
+                    ],
+                    'created_by_system'  => true,
+                    'is_active'          => true,
+                ]);
+                $alertsCreated++;
+            }
         });
 
         Log::info('IdtReviewFrequencyJob complete', [
