@@ -784,6 +784,10 @@ Route::middleware('auth')->group(function () {
     Route::post('/prior-auth/{priorAuthRequest}/transition',
         [\App\Http\Controllers\PriorAuthRequestController::class, 'transition'])->name('prior_auth.transition');
 
+    // Phase R9 — marketing / referral-source / lead funnel
+    Route::get('/enrollment/marketing-funnel',
+        [\App\Http\Controllers\MarketingFunnelController::class, 'index'])->name('enrollment.marketing_funnel');
+
     // Phase R8 — HPMS Incident Reports (5 CMS-aligned exports)
     Route::get('/compliance/hpms-incident-reports',
         [\App\Http\Controllers\HpmsIncidentReportController::class, 'index'])->name('compliance.hpms_incident_reports.index');
