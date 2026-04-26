@@ -47,7 +47,13 @@ class BreachIncident extends Model
         if ($affected >= self::LARGE_BREACH_THRESHOLD) {
             return $discovered->copy()->addDays(self::LARGE_BREACH_DEADLINE_DAYS);
         }
-        return Carbon::create($discovered->year + 1, 3, 1, 0, 0, 0, $discovered->timezone);
+        // Phase X5 — Audit-12 M3: HHS deadline calendar-year boundary must be
+        // computed in UTC. A breach discovered Dec 31 23:30 PST is Jan 1 next
+        // year in UTC; reading $discovered->year without normalizing skews
+        // the "year following discovery" anchor by 12 months in either
+        // direction at the year boundary.
+        $utc = $discovered->copy()->setTimezone('UTC');
+        return Carbon::create($utc->year + 1, 3, 1, 0, 0, 0, 'UTC');
     }
 
     public function isLargeBreach(): bool { return $this->affected_count >= self::LARGE_BREACH_THRESHOLD; }

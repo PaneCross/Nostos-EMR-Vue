@@ -385,19 +385,31 @@ class ParticipantController extends Controller
             'photo' => ['required', 'image', 'mimetypes:image/jpeg,image/png,image/webp', 'max:4096'],
         ]);
 
-        // Delete existing photo file if present
-        if ($participant->photo_path) {
-            Storage::disk('public')->delete($participant->photo_path);
-        }
-
+        // Phase X5 — Audit-12 L2: store-then-update-then-delete-old order so a
+        // failed DB update doesn't orphan the user with no photo. Old file is
+        // only deleted after the new photo_path is committed.
+        $oldPath  = $participant->photo_path;
         $ext      = $request->file('photo')->extension();
         $path     = $request->file('photo')->storeAs(
             "participants/{$participant->id}",
-            "photo.{$ext}",
+            "photo-" . now()->format('YmdHis') . ".{$ext}",
             'public'
         );
 
-        $participant->update(['photo_path' => $path]);
+        try {
+            $participant->update(['photo_path' => $path]);
+        } catch (\Throwable $e) {
+            // DB update failed — clean up the just-uploaded file so we don't
+            // leave it orphaned on disk.
+            \Illuminate\Support\Facades\Storage::disk('public')->delete($path);
+            throw $e;
+        }
+
+        // Old file removal happens last so it never leaves the participant
+        // pointing at a deleted file mid-flight.
+        if ($oldPath && $oldPath !== $path) {
+            \Illuminate\Support\Facades\Storage::disk('public')->delete($oldPath);
+        }
 
         AuditLog::record(
             action:       'participant.photo.uploaded',
