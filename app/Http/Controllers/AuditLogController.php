@@ -81,21 +81,38 @@ class AuditLogController extends Controller
     }
 
     /**
-     * Export the full audit log as a CSV file for compliance audits.
-     * Capped at 10,000 rows. Filename includes today's date.
+     * Export the audit log as a CSV file for compliance audits.
+     *
+     * Phase Y6 (Audit-13 L8): default window capped at the last 90 days +
+     * 10,000 rows. Without a date filter, large tenants (1M+ rows) caused
+     * a full table scan that blocked other IT-admin activity for ~30s.
+     * Callers can override the window with ?from=YYYY-MM-DD&to=YYYY-MM-DD,
+     * but the row cap still applies.
      */
     public function exportAuditCsv(Request $request): Response
     {
         $this->requireItAdmin($request);
         $tenantId = $request->user()->tenant_id;
 
+        $from = $request->filled('from')
+            ? \Illuminate\Support\Carbon::parse($request->query('from'))->startOfDay()
+            : now()->subDays(90)->startOfDay();
+        $to = $request->filled('to')
+            ? \Illuminate\Support\Carbon::parse($request->query('to'))->endOfDay()
+            : now()->endOfDay();
+
         $rows = AuditLog::where('tenant_id', $tenantId)
+            ->whereBetween('created_at', [$from, $to])
             ->with('user:id,first_name,last_name')
             ->orderByDesc('created_at')
             ->limit(10000)
             ->get();
 
-        $filename = 'audit_log_' . now()->format('Y-m-d') . '.csv';
+        $filename = sprintf(
+            'audit_log_%s_to_%s.csv',
+            $from->format('Y-m-d'),
+            $to->format('Y-m-d'),
+        );
         $headers  = [
             'Content-Type'        => 'text/csv; charset=utf-8',
             'Content-Disposition' => "attachment; filename=\"{$filename}\"",
