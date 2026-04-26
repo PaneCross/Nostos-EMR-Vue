@@ -53,7 +53,11 @@ class CcdaImportService
 
         libxml_use_internal_errors(true);
         $dom = new \DOMDocument();
-        if (! @$dom->loadXML($xmlContent)) {
+        // Phase X4 — Audit-12 M1: protect against XXE (XML External Entity)
+        // attacks. LIBXML_NONET disables network access; LIBXML_NOENT keeps
+        // entity substitution off. CCDA imports never need external DTDs or
+        // remote entity resolution.
+        if (! @$dom->loadXML($xmlContent, LIBXML_NONET)) {
             $errors = libxml_get_errors();
             libxml_clear_errors();
             throw new \InvalidArgumentException('Invalid C-CDA XML: ' . ($errors[0]->message ?? 'parse error'));
