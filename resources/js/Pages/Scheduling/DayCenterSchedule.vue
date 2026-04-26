@@ -6,6 +6,20 @@
   Route: GET /scheduling/day-center/manage
 -->
 <script setup lang="ts">
+// ─── Scheduling/DayCenterSchedule ───────────────────────────────────────────
+// Bulk-edit each participant's recurring weekly day-center pattern (e.g.
+// "Mary attends Mon/Wed/Fri at the East site"). Changes stage in a pending
+// queue and require explicit batch approval — protects against accidental
+// single-click edits to production schedules.
+//
+// Audience: Center Manager, Scheduling staff, IDT (recommends pattern).
+//
+// Notable rules:
+//   - Day-center frequency is part of the participant's plan of care; major
+//     changes need IDT acknowledgement (see Idt/RunMeeting.vue).
+//   - Pending changes show pre/post diff so reviewers see what they're
+//     approving before commit.
+// ────────────────────────────────────────────────────────────────────────────
 import { ref, computed, watch } from 'vue'
 import { Head } from '@inertiajs/vue3'
 import axios from 'axios'

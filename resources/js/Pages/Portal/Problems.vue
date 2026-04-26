@@ -1,4 +1,9 @@
 <script setup lang="ts">
+// ─── Portal/Problems.vue ─────────────────────────────────────────────────────
+// Participant Portal page. Read-only view of the participant's active problem
+// list (ICD-10 coded diagnoses). Corrections go through the amendment workflow
+// (HIPAA §164.526 right to amend).
+// ─────────────────────────────────────────────────────────────────────────────
 import { ref, onMounted } from 'vue'
 import axios from 'axios'
 import PortalShell from './PortalShell.vue'

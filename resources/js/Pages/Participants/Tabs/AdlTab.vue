@@ -1,9 +1,14 @@
 <script setup lang="ts">
-// ─── AdlTab.vue ───────────────────────────────────────────────────────────────
-// ADL tracking. Lazy-loads latest status per category + thresholds via API.
-// "Record ADL" form (3-col: category + independence level + notes). Blue form.
-// Current status grid shows 10 PACE ADL categories with color-coded badges.
-// ─────────────────────────────────────────────────────────────────────────────
+// ─── AdlTab.vue ────────────────────────────────────────────────────────────
+// ADL — Activities of Daily Living (bathing, dressing, eating,
+// toileting, transferring, continence — 6 core items, plus 4 PACE-
+// specific extensions for 10 total). Each record is a point-in-time
+// independence-level rating per category. Color-coded badges show
+// current status across all 10 categories.
+//
+// Append-only audit trail. Write access: primary_care, day_center,
+// home_care, nursing.
+// ───────────────────────────────────────────────────────────────────────────
 
 import { ref, onMounted } from 'vue'
 import axios from 'axios'

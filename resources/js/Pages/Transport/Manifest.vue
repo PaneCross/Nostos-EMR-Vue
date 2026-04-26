@@ -1,10 +1,16 @@
 <script setup lang="ts">
-// Transport/Manifest.vue
-// Daily run-sheet for the transportation team. Shows all scheduled transport
-// requests for a selected date/site with real-time status updates via Reverb.
-// Transport integration with Nostos transport app is pending deployment - a
-// ComingSoonBanner is shown inline across the manifest content area.
-// Route: GET /transport/manifest → Inertia::render('Transport/Manifest')
+// ─── Transport/Manifest ─────────────────────────────────────────────────────
+// Daily run-sheet for the Transportation department: every scheduled
+// pickup/return for a chosen date + site, with real-time status updates
+// pushed over Reverb (Laravel websockets).
+//
+// Vendor wiring: controller -> TransportBridgeService -> vendor adapter.
+//   Currently only the Null adapter is active (internal-mode); the inline
+//   ComingSoonBanner reflects this, do NOT remove without a real vendor.
+// PAYWALL-DEFERRED: real-time GPS / dispatch hooks live behind the adapter
+//   interface; the page renders correctly with an empty manifest pre-go-live.
+// Driver-side mobile screens are in `Pages/Mobile/...` (out of scope here).
+// ────────────────────────────────────────────────────────────────────────────
 
 import { ref, computed, onMounted } from 'vue'
 import { Head, usePage } from '@inertiajs/vue3'

@@ -1,6 +1,8 @@
 <script setup lang="ts">
 // ─── ActivitiesDashboard.vue ──────────────────────────────────────────────────
-// Activities department live dashboard.
+// Activities department live dashboard. Used by recreational therapy / activities
+// staff to see today's group sessions, participant activity goals, open SDRs
+// (Significant Decline Reports), and unsigned activity notes.
 // Endpoints:
 //   GET /dashboards/activities/schedule  → { appointments[] }
 //   GET /dashboards/activities/goals     → { goals[] }

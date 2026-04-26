@@ -1,5 +1,17 @@
 <script setup lang="ts">
-// ─── Network / Contracted Providers — Phase S2 + U4 management UI ──────────
+// ─── Network/ContractedProviders ────────────────────────────────────────────
+// Manage the PACE program's external contracted-provider network — specialists,
+// hospitals, ancillary services with negotiated per-CPT rates that the program
+// uses to estimate downstream cost when authorizing referrals.
+//
+// Audience: Network Management, Finance, Contracting.
+//
+// Notable rules:
+//   - Per-CPT (Current Procedural Terminology) rate overrides are stored
+//     against each contract; absence of a CPT-specific rate falls back to
+//     the contracted percent-of-Medicare default.
+//   - Effective-date windows are honored; expired contracts surface red.
+// ────────────────────────────────────────────────────────────────────────────
 import { ref } from 'vue'
 import { Head, router } from '@inertiajs/vue3'
 import axios from 'axios'

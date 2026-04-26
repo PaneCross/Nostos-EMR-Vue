@@ -1,8 +1,17 @@
 <script setup lang="ts">
-// ─── Compliance/Infections.vue ───────────────────────────────────────────────
-// Phase B2. Surveyor-ready 12-month infection surveillance pull.
-// 42 CFR §460 + CMS PACE Audit Protocol + CDC LTC surveillance.
-// ─────────────────────────────────────────────────────────────────────────────
+// ─── Compliance/Infections ──────────────────────────────────────────────────
+// Audit-pull universe: 12-month infection surveillance log + auto-detected
+// outbreaks (>=3 same-organism cases at the same site within 7 days).
+//
+// Audience: QA Compliance, Primary Care, Infection Preventionist.
+//
+// Notable rules:
+//   - 42 CFR §460 — infection control program is required.
+//   - Aligned with CDC long-term-care (LTC) surveillance definitions.
+//   - Outbreak detection is automated; declared outbreaks send critical
+//     alerts to qa_compliance + primary_care + it_admin.
+//   - Append-only — historical cases are immutable (audit trail).
+// ────────────────────────────────────────────────────────────────────────────
 import { ref, computed } from 'vue'
 import { Head, Link } from '@inertiajs/vue3'
 import AppShell from '@/Layouts/AppShell.vue'

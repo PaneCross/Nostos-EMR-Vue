@@ -1,10 +1,17 @@
 <script setup lang="ts">
-// Transport/Dashboard.vue
-// Shows all active participants with their transport-relevant flags (wheelchair,
-// stretcher, oxygen, behavioral) and home address. Click any row to navigate
-// to that participant's profile. Transport integration with Nostos transport app
-// is pending deployment - an amber notice is shown in the header.
-// Route: GET /transport → Inertia::render('Transport/Dashboard')
+// ─── Transport/Dashboard ────────────────────────────────────────────────────
+// Roster of enrolled PACE (Programs of All-Inclusive Care for the Elderly)
+// participants with transport-relevant flags + home addresses, used by the
+// Transportation department to plan day-center pickups.
+//
+// Vendor wiring: this is the staff-facing page. Backend goes
+//   TransportController -> TransportBridgeService -> vendor adapter. Today
+//   the only adapter is the Null adapter (internal-mode, no real dispatch).
+// PAYWALL-DEFERRED: real vendor integration (RoutingBox, Tobi Cloud, etc.)
+//   is gated behind a signed contract. The amber banner in the header makes
+//   the not-wired state explicit; do NOT remove it without a vendor live.
+// Driver-side mobile companion (`Pages/Mobile/...`) is a separate surface.
+// ────────────────────────────────────────────────────────────────────────────
 
 import { ref, computed } from 'vue'
 import { Head, usePage, router } from '@inertiajs/vue3'

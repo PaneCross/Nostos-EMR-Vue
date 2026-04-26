@@ -1,4 +1,9 @@
 <script setup lang="ts">
+// ─── Portal/Medications.vue ──────────────────────────────────────────────────
+// Participant Portal page. Read-only list of the participant's active
+// medications (drug, dose, sig, prescriber). Refill requests are submitted
+// from Portal/Requests.vue, not from this page.
+// ─────────────────────────────────────────────────────────────────────────────
 import { ref, onMounted } from 'vue'
 import axios from 'axios'
 import PortalShell from './PortalShell.vue'

@@ -1,5 +1,9 @@
 <script setup lang="ts">
 // ─── Operations/Huddle.vue — Phase K3 ────────────────────────────────────────
+// Daily department huddle view. Quick at-a-glance summary used at morning
+// stand-ups: today's appointments, alerts, urgent items per selected
+// department. Department selector switches data source.
+// ─────────────────────────────────────────────────────────────────────────────
 import { ref, onMounted } from 'vue'
 import { Head } from '@inertiajs/vue3'
 import axios from 'axios'

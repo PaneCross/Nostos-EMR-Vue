@@ -1,6 +1,16 @@
 <script setup lang="ts">
-// Phase I1. ROI requests compliance universe (HIPAA §164.524). Inertia branch
-// of the existing B8b JSON endpoint.
+// ─── Compliance/Roi ─────────────────────────────────────────────────────────
+// Audit-pull universe for ROI (Release of Information) requests — i.e. a
+// participant or their representative invoking their HIPAA right to access
+// their own medical record. (NOT return-on-investment.)
+//
+// Audience: QA Compliance, Health Information Management.
+//
+// Notable rules:
+//   - HIPAA §164.524 — covered entity must respond to an access request
+//     within 30 days; one 30-day extension allowed with written notice.
+//   - Append-only — closed/fulfilled rows are historical and immutable.
+// ────────────────────────────────────────────────────────────────────────────
 import { ref, computed } from 'vue'
 import { Head, Link } from '@inertiajs/vue3'
 import AppShell from '@/Layouts/AppShell.vue'

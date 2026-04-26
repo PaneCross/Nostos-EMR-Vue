@@ -1,6 +1,8 @@
 <script setup lang="ts">
 // ─── EnrollmentDashboard.vue ──────────────────────────────────────────────────
-// Enrollment department live dashboard.
+// Enrollment department live dashboard. Tracks the PACE enrollment funnel from
+// referral through intake through final enrollment, plus disenrollments and
+// nursing-facility level-of-care recertifications (42 CFR §460.160).
 // Endpoints:
 //   GET /dashboards/enrollment/pipeline            → { pipeline[], total_active, declined_this_month, withdrawn_this_month }
 //   GET /dashboards/enrollment/eligibility-pending → { referrals[], count }

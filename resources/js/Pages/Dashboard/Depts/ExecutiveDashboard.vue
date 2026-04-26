@@ -1,6 +1,8 @@
 <script setup lang="ts">
 // ─── ExecutiveDashboard.vue ───────────────────────────────────────────────────
-// Executive role live dashboard.
+// Executive role live dashboard. Org-wide KPIs (Key Performance Indicators) for
+// PACE leadership: enrollment, capitation revenue by site, per-site comparison,
+// and per-department compliance roll-ups. Cross-site read access only.
 // Endpoints:
 //   GET /dashboards/executive/org-overview      → org KPIs
 //   GET /dashboards/executive/site-comparison   → per-site metrics

@@ -1,5 +1,13 @@
 <script setup lang="ts">
-// ─── PredictiveRiskTab.vue — Phase J4 ───────────────────────────────────────
+// ─── PredictiveRiskTab.vue ─────────────────────────────────────────────────
+// Risk-score dashboard: hospitalization, fall, mortality, frailty, etc.
+// Each model shows latest score + history sparkline. "Recompute"
+// triggers backend recalculation against current chart data.
+//
+// Scores are advisory — they inform IDT (Interdisciplinary Team — the
+// PACE clinical team that meets weekly) discussion but do not auto-
+// trigger orders. Models live in app/Services/PredictiveRisk/.
+// ───────────────────────────────────────────────────────────────────────────
 import { ref, onMounted, computed } from 'vue'
 import axios from 'axios'
 

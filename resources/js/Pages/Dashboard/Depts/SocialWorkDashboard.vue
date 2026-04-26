@@ -1,6 +1,8 @@
 <script setup lang="ts">
 // ─── SocialWorkDashboard.vue ──────────────────────────────────────────────────
-// Social Work department live dashboard.
+// Social Work department live dashboard. Used by PACE social workers for the
+// day's schedule, psychosocial alerts, open SDRs (Significant Decline Reports),
+// and incidents requiring SW follow-up (e.g. APS reports, caregiver issues).
 // Endpoints:
 //   GET /dashboards/social-work/schedule   → { appointments[] }
 //   GET /dashboards/social-work/alerts     → { alerts[], unacknowledged_count }

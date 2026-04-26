@@ -1,5 +1,16 @@
 <script setup lang="ts">
-// Phase I1. ADE reporting compliance universe (closes Phase C5 scope miss).
+// ─── Compliance/AdeReporting ────────────────────────────────────────────────
+// Audit-pull universe for ADEs (Adverse Drug Events) — patient harm
+// associated with medication use. Surfaces serious / fatal events that may
+// require FDA MedWatch reporting and CMS audit response.
+//
+// Audience: QA Compliance, Pharmacy leadership.
+//
+// Notable rules:
+//   - 42 CFR §460.200 (QAPI) — adverse events must be tracked + analyzed.
+//   - FDA MedWatch reporting threshold for serious/unexpected events.
+//   - Append-only — historical events cannot be edited (audit trail).
+// ────────────────────────────────────────────────────────────────────────────
 import { ref, computed } from 'vue'
 import { Head, Link } from '@inertiajs/vue3'
 import AppShell from '@/Layouts/AppShell.vue'

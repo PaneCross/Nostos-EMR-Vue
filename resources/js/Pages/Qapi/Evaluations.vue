@@ -1,8 +1,16 @@
 <script setup lang="ts">
-// ─── QAPI Annual Evaluations ──────────────────────────────────────────────────
-// 42 CFR §460.200 — annual evaluation artifact reviewed by governing body.
-// Authors: QA Compliance + IT Admin + Super Admin.
-// ─────────────────────────────────────────────────────────────────────────────
+// ─── Qapi/Evaluations ───────────────────────────────────────────────────────
+// QAPI (Quality Assessment / Performance Improvement) annual evaluation
+// artifact — the year-end document the governing body must review and sign.
+//
+// Audience: QA Compliance authors; IT Admin + Super Admin can edit; the
+// governing body reads + signs.
+//
+// Notable rules:
+//   - 42 CFR §460.200 — annual QAPI evaluation must be performed and
+//     reviewed by the governing body.
+//   - One evaluation per program-year (DB-enforced unique constraint).
+// ────────────────────────────────────────────────────────────────────────────
 
 import { computed, ref } from 'vue'
 import { Head, router } from '@inertiajs/vue3'

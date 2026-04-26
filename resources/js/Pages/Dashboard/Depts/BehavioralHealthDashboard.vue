@@ -1,6 +1,8 @@
 <script setup lang="ts">
 // ─── BehavioralHealthDashboard.vue ───────────────────────────────────────────
-// Behavioral Health department live dashboard.
+// Behavioral Health department live dashboard. KPIs surfaced for BH clinicians:
+// today's schedule, overdue + due-soon mental-health assessments (PHQ-9, etc.),
+// open SDRs (Significant Decline Reports), and active behavioral-health goals.
 // Endpoints:
 //   GET /dashboards/behavioral-health/schedule     → { appointments[] }
 //   GET /dashboards/behavioral-health/assessments  → { overdue[], due_soon[], overdue_count, due_soon_count }

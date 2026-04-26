@@ -1,5 +1,10 @@
 <script setup lang="ts">
 // ─── Operations/StateMedicaidSubmissions.vue — Phase O11 ────────────────────
+// Read-only log of state-Medicaid enrollment/disenrollment submissions. Each
+// state has its own portal/format — this page records what was submitted, when,
+// and the status. The submission gateway itself is per-state vendor scaffolding;
+// this page is the audit history.
+// ─────────────────────────────────────────────────────────────────────────────
 import { Head } from '@inertiajs/vue3'
 import AppShell from '@/Layouts/AppShell.vue'
 import { ExclamationTriangleIcon } from '@heroicons/vue/24/outline'

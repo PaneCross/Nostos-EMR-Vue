@@ -1,18 +1,15 @@
 <script setup lang="ts">
-// ─── OrdersTab.vue ────────────────────────────────────────────────────────────
-// Clinical orders (CPOE) tab. Loads orders for a participant, shows status
-// lifecycle with expand-to-history and inline action buttons.
+// ─── OrdersTab.vue ─────────────────────────────────────────────────────────
+// Clinical orders — CPOE (Computerized Provider Order Entry). Lists
+// orders for a participant with status lifecycle, expand-to-history,
+// and inline action buttons.
 //
 // Status flow: pending → acknowledged → [resulted] → completed
-//                                   └─────────────────────→ cancelled
+//                                   └────────────────→ cancelled
 //
-// Actions (matching backend routes):
-//   POST /orders              (create — prescriber depts only)
-//   POST /orders/{id}/acknowledge   (pending only)
-//   POST /orders/{id}/result        (non-terminal, requires result_summary)
-//   POST /orders/{id}/complete      (non-terminal)
-//   POST /orders/{id}/cancel        (non-terminal, requires cancellation_reason)
-// ─────────────────────────────────────────────────────────────────────────────
+// Routes: POST /orders (prescriber depts only); /orders/{id}/
+// acknowledge, /result, /complete, /cancel.
+// ───────────────────────────────────────────────────────────────────────────
 
 import { ref, onMounted } from 'vue'
 import axios from 'axios'

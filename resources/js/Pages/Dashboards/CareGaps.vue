@@ -1,5 +1,10 @@
 <script setup lang="ts">
-// ─── CareGaps.vue — Phase K1 ─────────────────────────────────────────────────
+// ─── Dashboards/CareGaps.vue — Phase K1 ──────────────────────────────────────
+// Population-health "care gaps" view: participants who are missing recommended
+// screenings or interventions (annual flu vaccine, A1c, mammogram, etc.) per
+// HEDIS / CMS Stars measures. Two views: org-wide summary + the logged-in
+// clinician's own panel.
+// ─────────────────────────────────────────────────────────────────────────────
 import { ref, computed, onMounted } from 'vue'
 import { Head } from '@inertiajs/vue3'
 import axios from 'axios'

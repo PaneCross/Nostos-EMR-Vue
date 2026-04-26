@@ -1,6 +1,8 @@
 <script setup lang="ts">
 // ─── PrimaryCareDashboard.vue ─────────────────────────────────────────────────
-// Primary Care department live dashboard.
+// Primary Care department live dashboard. Used by PCPs and primary-care nurses
+// for today's clinic schedule, clinical alerts, unsigned notes / overdue
+// assessments, abnormal vitals, open clinical orders, and active wound cases.
 // Endpoints:
 //   GET /dashboards/primary-care/schedule  → appointments[]
 //   GET /dashboards/primary-care/alerts    → alerts[]

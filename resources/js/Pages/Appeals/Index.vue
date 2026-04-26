@@ -1,8 +1,16 @@
 <script setup lang="ts">
-// ─── Appeals/Index ────────────────────────────────────────────────────────────
-// List of §460.122 appeals with aging color coding (green → yellow → red as
-// the decision window is consumed). QA compliance + enrollment + super_admin.
-// ─────────────────────────────────────────────────────────────────────────────
+// ─── Appeals/Index ──────────────────────────────────────────────────────────
+// Queue of formal appeals filed by PACE participants against service denial.
+// Distinct from Grievances (general complaints): appeals contest a specific
+// denial decision and have hard CMS-mandated decision deadlines.
+//
+// Audience: QA Compliance, Enrollment, Super Admin roles.
+//
+// Notable rules:
+//   - 42 CFR §460.122 — standard appeals decided within 30 days; expedited
+//     appeals within 72 hours. Row coloring (green/yellow/red) tracks how
+//     much of that decision window has been consumed.
+// ────────────────────────────────────────────────────────────────────────────
 
 import { computed, ref } from 'vue'
 import { Head, Link, router } from '@inertiajs/vue3'

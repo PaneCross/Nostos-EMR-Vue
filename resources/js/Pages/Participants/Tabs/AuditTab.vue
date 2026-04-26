@@ -1,4 +1,14 @@
 <script setup lang="ts">
+// ─── AuditTab.vue ──────────────────────────────────────────────────────────
+// Per-participant audit trail viewer. Read-only list of every action
+// taken against this chart (logins-to-record, edits, signs, prints,
+// PHI disclosures). Sourced from `auditLogs` Inertia prop. Searchable
+// by action keyword + filter by action type. Visibility gated by
+// `canViewAudit` (it_admin / qa_compliance / executive only).
+//
+// HIPAA §164.528 (accounting of disclosures): members can request who
+// saw their PHI — this log is the source of that report.
+// ───────────────────────────────────────────────────────────────────────────
 import { ref, computed } from 'vue'
 import { ShieldCheckIcon, MagnifyingGlassIcon } from '@heroicons/vue/24/outline'
 

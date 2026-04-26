@@ -1,8 +1,16 @@
 <script setup lang="ts">
-// ─── Finance/Dashboard.vue ────────────────────────────────────────────────────
-// Finance department overview: KPI cards, recent capitation table, and
-// expiring authorizations table. Data injected from FinanceDashboardController.
-// ─────────────────────────────────────────────────────────────────────────────
+// ─── Finance/Dashboard ──────────────────────────────────────────────────────
+// Finance landing page: high-level KPIs (capitation revenue, claims-paid,
+// medical-loss ratio), recent capitation receipts, and authorizations
+// expiring soon (which would interrupt downstream cap payment).
+//
+// Audience: Finance department + Executive read-through.
+//
+// Notable rules:
+//   - All numbers are read-only here; this is a dashboard, not a register.
+//     For source-of-truth detail use Capitation, Encounters, Reconciliation.
+//   - Expiring-auth tile is the early warning for revenue continuity.
+// ────────────────────────────────────────────────────────────────────────────
 
 import { Head } from '@inertiajs/vue3'
 import {

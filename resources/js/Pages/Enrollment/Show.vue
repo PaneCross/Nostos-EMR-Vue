@@ -1,12 +1,20 @@
 <script setup lang="ts">
-// ─── Enrollment/Show.vue ──────────────────────────────────────────────────────
-// Referral detail page. Shows the full referral record and provides status
-// transition controls matching the CMS enrollment state machine.
+// ─── Enrollment/Show ────────────────────────────────────────────────────────
+// Referral detail + state-transition controls. One Referral record drives a
+// Potential Enrollee from first contact through (hopefully) full enrollment.
 //
-// Valid forward path: new → intake_scheduled → intake_in_progress →
-//   intake_complete → eligibility_pending → pending_enrollment → enrolled
-// Any non-terminal state can also exit → declined / withdrawn
-// ─────────────────────────────────────────────────────────────────────────────
+// Audience: Enrollment department.
+//
+// Valid forward path:
+//   new -> intake_scheduled -> intake_in_progress -> intake_complete
+//        -> eligibility_pending -> pending_enrollment -> enrolled
+// Any non-terminal state can exit to declined / withdrawn.
+//
+// Notable rules:
+//   - 42 CFR §460.150-158 — enrollment determination, NF-LOC + medical
+//     necessity required before "enrolled".
+//   - State machine is enforced server-side (UI is presentation only).
+// ────────────────────────────────────────────────────────────────────────────
 
 import { ref, computed } from 'vue'
 import { Head, Link, router } from '@inertiajs/vue3'

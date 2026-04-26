@@ -1,5 +1,17 @@
 <script setup lang="ts">
-// ─── Billing / Encounter Data Submission — Phase S4 ────────────────────────
+// ─── Billing/EncounterDataSubmission ────────────────────────────────────────
+// EDS (Encounter Data System) submission tracker — for PACE plans, all
+// participant encounters must be reported to CMS as encounter data so CMS
+// can risk-adjust capitation. This page lists generated batches + status.
+//
+// Audience: Finance + IT Admin (config).
+//
+// Notable rules:
+//   - PAYWALL-DEFERRED: EDS gateway is a scaffold today; live transmission
+//     to the CMS EDS endpoint requires CMS submitter ID + signed agreement.
+//   - Encounter capture is canonical here; suppressing encounters from EDS
+//     can directly reduce risk-adjusted capitation revenue.
+// ────────────────────────────────────────────────────────────────────────────
 import { Head } from '@inertiajs/vue3'
 import AppShell from '@/Layouts/AppShell.vue'
 

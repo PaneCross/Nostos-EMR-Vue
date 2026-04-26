@@ -1,5 +1,9 @@
 <script setup lang="ts">
 // ─── Operations/DietaryOrders.vue — Phase K3 ─────────────────────────────────
+// Kitchen/food-service roster. Lists active diet orders grouped by diet type
+// (regular / cardiac / renal / pureed / etc.) so kitchen staff can plan meal
+// prep for the day-center census.
+// ─────────────────────────────────────────────────────────────────────────────
 import { ref, onMounted } from 'vue'
 import { Head, Link } from '@inertiajs/vue3'
 import axios from 'axios'

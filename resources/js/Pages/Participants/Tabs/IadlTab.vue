@@ -1,10 +1,13 @@
 <script setup lang="ts">
-// ─── IadlTab.vue ─────────────────────────────────────────────────────────────
-// Phase J1 — Lawton IADL assessment. 8 binary items + interpretation bands.
-// Uses existing endpoints:
-//   GET  /participants/{p}/iadl   → { records, trend, baseline, current }
-//   POST /participants/{p}/iadl   → record + suggestions
-// ─────────────────────────────────────────────────────────────────────────────
+// ─── IadlTab.vue ───────────────────────────────────────────────────────────
+// IADL — Instrumental Activities of Daily Living (Lawton 8-item
+// scale: phone, shopping, cooking, housekeeping, laundry, transport,
+// meds, finances). Each item is binary independent / needs-help.
+// Rolls up to 4 bands (independent / mild / moderate / severe).
+// Impaired items in 4 key domains auto-suggest department referrals.
+//
+// Routes: GET/POST /participants/{p}/iadl.
+// ───────────────────────────────────────────────────────────────────────────
 
 import { ref, computed, onMounted } from 'vue'
 import axios from 'axios'

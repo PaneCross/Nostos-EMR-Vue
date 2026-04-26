@@ -1,5 +1,17 @@
 <script setup lang="ts">
-// ─── RegistryView.vue — Phase K4 shared registry view ────────────────────────
+// ─── Registries/RegistryView ────────────────────────────────────────────────
+// Generic disease-registry view — rendered for CHF (Congestive Heart Failure),
+// COPD (Chronic Obstructive Pulmonary Disease), Diabetes, and any other
+// registries via the `registry` prop. Lists every enrolled participant with
+// the condition + their care-gap status (last A1C, last echo, etc.).
+//
+// Audience: Primary Care, IDT for population health.
+//
+// Notable rules:
+//   - Membership is computed from active problem list entries (SNOMED-coded);
+//     adding/removing a problem updates registry membership automatically.
+//   - Care-gap thresholds align with HEDIS / Stars measure specifications.
+// ────────────────────────────────────────────────────────────────────────────
 import { ref, computed, onMounted } from 'vue'
 import { Head, Link } from '@inertiajs/vue3'
 import axios from 'axios'

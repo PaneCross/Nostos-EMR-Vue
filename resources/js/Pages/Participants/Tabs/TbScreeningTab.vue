@@ -1,9 +1,13 @@
 <script setup lang="ts">
-// ─── TbScreeningTab.vue ───────────────────────────────────────────────────────
-// Phase J1 — TB screening per 42 CFR §460.71 (annual cadence).
-//   GET  /participants/{p}/tb-screenings
-//   POST /participants/{p}/tb-screenings
-// ─────────────────────────────────────────────────────────────────────────────
+// ─── TbScreeningTab.vue ────────────────────────────────────────────────────
+// TB (Tuberculosis) screening. PACE regulation 42 CFR §460.71 requires
+// annual screening for every participant. Supported test types: PPD
+// (Mantoux skin test — induration_mm required), QuantiFERON, T-SPOT,
+// chest X-ray, symptom-only. Backend job warns at 60/30/today and
+// flags overdue.
+//
+// Routes: GET/POST /participants/{p}/tb-screenings.
+// ───────────────────────────────────────────────────────────────────────────
 import { ref, onMounted, computed } from 'vue'
 import axios from 'axios'
 import { PlusIcon } from '@heroicons/vue/24/outline'

@@ -1,5 +1,8 @@
 <script setup lang="ts">
 // ─── Portal/Login.vue — I4 password + L1 OTP ────────────────────────────────
+// Login page for the participant + caregiver Portal (separate from the staff
+// EMR login). Supports two modes: password and email OTP. Rate-limited.
+// ─────────────────────────────────────────────────────────────────────────────
 import { ref } from 'vue'
 import { Head, router } from '@inertiajs/vue3'
 import axios from 'axios'

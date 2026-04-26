@@ -1,6 +1,17 @@
 <script setup lang="ts">
-// ─── Enrollment / Marketing Funnel — Phase R9 ──────────────────────────────
-// Lead-source attribution + conversion funnel for the enrollment pipeline.
+// ─── Enrollment/MarketingFunnel ─────────────────────────────────────────────
+// Lead-source attribution + stage-by-stage conversion funnel for the
+// enrollment pipeline. Helps marketing measure which referral channels
+// (hospital DC planners, community events, web) are actually converting.
+//
+// Audience: Marketing + Enrollment leadership.
+//
+// Notable rules:
+//   - PACE marketing must follow CMS PACE marketing guidelines — no
+//     misleading benefit claims, must distinguish PACE from Medicare
+//     Advantage. (Compliance text owned by Marketing.)
+//   - Read-only view; marketing source is captured at referral creation.
+// ────────────────────────────────────────────────────────────────────────────
 import { Head } from '@inertiajs/vue3'
 import AppShell from '@/Layouts/AppShell.vue'
 

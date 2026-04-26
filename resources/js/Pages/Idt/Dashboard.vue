@@ -9,6 +9,19 @@
   Props:  todayMeetings, upcomingMeetings, recentMeetings (arrays of IdtMeeting)
 -->
 <script setup lang="ts">
+// ─── Idt/Dashboard ──────────────────────────────────────────────────────────
+// Landing page for IDT (Interdisciplinary Team) meetings — the cross-discipline
+// case-conferencing required by PACE. Shows today's meetings (in-progress +
+// scheduled), upcoming, and recently completed.
+//
+// Audience: Every clinical role; facilitators schedule new meetings here.
+//
+// Notable rules:
+//   - 42 CFR §460.102 — IDT must meet to develop + review each participant's
+//     plan of care; cadence of every 6 months minimum (30 days for new
+//     enrollees and after significant change).
+//   - Meeting + per-participant review records live in `emr_idt_*` tables.
+// ────────────────────────────────────────────────────────────────────────────
 import { ref } from 'vue'
 import { Head, router } from '@inertiajs/vue3'
 import axios from 'axios'

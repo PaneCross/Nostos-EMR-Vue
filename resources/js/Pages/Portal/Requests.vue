@@ -1,4 +1,11 @@
 <script setup lang="ts">
+// ─── Portal/Requests.vue ─────────────────────────────────────────────────────
+// Participant Portal "self-service requests" page. Buttons that submit common
+// requests to the care team: refill request, transport request, ROI (Release
+// of Information — HIPAA-authorized PHI release to a 3rd party), record
+// amendment (HIPAA §164.526), and accounting-of-disclosures (HIPAA §164.528).
+// Each submit creates a staff task for the appropriate department.
+// ─────────────────────────────────────────────────────────────────────────────
 import { ref } from 'vue'
 import axios from 'axios'
 import PortalShell from './PortalShell.vue'

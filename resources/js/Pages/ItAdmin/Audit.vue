@@ -4,6 +4,19 @@
      and pagination for the full append-only shared_audit_logs table. -->
 
 <script setup lang="ts">
+// ─── ItAdmin/Audit ──────────────────────────────────────────────────────────
+// HIPAA audit-log viewer: read-only browser of the append-only
+// `shared_audit_logs` table. Filterable by action type, resource type,
+// date range; CSV export for surveyor / legal review.
+//
+// Audience: IT Admin only.
+//
+// Notable rules:
+//   - HIPAA §164.312(b) — covered entities must record + examine activity
+//     in systems that contain ePHI. This is the human review surface.
+//   - Append-only — entries are immutable. UI cannot edit / delete; the
+//     CSV export is the surveyor-handoff format.
+// ────────────────────────────────────────────────────────────────────────────
 import { ref, onMounted } from 'vue'
 import { Head } from '@inertiajs/vue3'
 import AppShell from '@/Layouts/AppShell.vue'

@@ -1,9 +1,17 @@
 <script setup lang="ts">
-// ─── Compliance / Level I-II Reporting ────────────────────────────────────────
-// CMS PACE Level I / Level II quarterly submissions.
-// Honest labeling: "Mark CMS Submitted" records upload timestamp only.
-// No automated HPMS transmission wired yet.
-// ─────────────────────────────────────────────────────────────────────────────
+// ─── Compliance/LevelIiReporting ────────────────────────────────────────────
+// CMS PACE quarterly quality-indicator submissions: Level I (mortality,
+// falls w/ injury, pressure injuries stage 2+, vaccinations, etc.) and
+// Level II (more granular root-cause fields).
+//
+// Audience: QA Compliance.
+//
+// Notable rules:
+//   - Per-indicator aggregators feed CSV output; "Mark CMS Submitted" only
+//     records the upload timestamp — no automated HPMS (Health Plan
+//     Management System) transmission is wired pre-go-live.
+//   - Quarterly cadence; missed quarters surface as red banners.
+// ────────────────────────────────────────────────────────────────────────────
 
 import { computed, ref } from 'vue'
 import { Head, router } from '@inertiajs/vue3'

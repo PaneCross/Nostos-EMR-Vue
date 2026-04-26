@@ -1,5 +1,18 @@
 <script setup lang="ts">
-// ─── AdvanceDirective/Wizard.vue — Phase M1 ──────────────────────────────────
+// ─── AdvanceDirective/Wizard ────────────────────────────────────────────────
+// Step-through wizard for capturing a participant's advance directives:
+// DNR (Do Not Resuscitate), DPOA (Durable Power of Attorney for healthcare),
+// living will preferences, and POLST/MOLST physician orders.
+//
+// Audience: Social Work primary; clinicians can review.
+//
+// Notable rules:
+//   - Patient Self-Determination Act + 42 CFR §460.156 — programs must
+//     ask + document advance-directive status at enrollment and on change.
+//   - Documents are e-signed (ESIGN/UETA-compliant capture); historical
+//     versions are retained (append-only — supersession, not deletion).
+//   - Periodic AD review job nudges clinicians when a directive ages out.
+// ────────────────────────────────────────────────────────────────────────────
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { Head, router } from '@inertiajs/vue3'
 import axios from 'axios'

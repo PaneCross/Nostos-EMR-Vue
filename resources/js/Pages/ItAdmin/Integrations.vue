@@ -4,6 +4,20 @@
      Failed events can be retried directly from the log table. -->
 
 <script setup lang="ts">
+// ─── ItAdmin/Integrations ───────────────────────────────────────────────────
+// Health panel for inbound/outbound integrations: HL7 (Health Level 7)
+// ADT (Admission/Discharge/Transfer) feeds, lab-results feeds, eligibility,
+// transport, etc. Status cards + filterable event log; failed events can
+// be retried inline.
+//
+// Audience: IT Admin only.
+//
+// Notable rules:
+//   - Adapter pattern: each connector type has a vendor adapter. Most
+//     non-default vendors are PAYWALL-DEFERRED (see paywall report).
+//   - Retry is idempotent — duplicate ADT messages are de-duped server-side
+//     by message control ID.
+// ────────────────────────────────────────────────────────────────────────────
 import { ref, computed, onMounted } from 'vue'
 import { Head } from '@inertiajs/vue3'
 import AppShell from '@/Layouts/AppShell.vue'

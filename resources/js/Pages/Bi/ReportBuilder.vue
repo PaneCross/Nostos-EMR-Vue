@@ -1,5 +1,17 @@
 <script setup lang="ts">
-// ─── ReportBuilder.vue — Phase K2 ────────────────────────────────────────────
+// ─── Bi/ReportBuilder ───────────────────────────────────────────────────────
+// Self-service report builder — pick a domain (encounters / participants /
+// quality indicators / capitation), filter, group, and visualize. Saved
+// reports become reusable widgets in Bi/Dashboards.vue.
+//
+// Audience: BI editors (typically QA Compliance + Finance + Exec).
+//
+// Notable rules:
+//   - Queries run via a server-side allowlisted query builder — users
+//     cannot inject arbitrary SQL.
+//   - Tenant-scoped at every level; cross-tenant data leakage is impossible
+//     by design.
+// ────────────────────────────────────────────────────────────────────────────
 import { ref, computed, onMounted } from 'vue'
 import { Head } from '@inertiajs/vue3'
 import axios from 'axios'

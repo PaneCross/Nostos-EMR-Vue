@@ -1,10 +1,15 @@
 <script setup lang="ts">
-// ─── AdeTab.vue ──────────────────────────────────────────────────────────────
-// Phase J2 — Adverse Drug Events. Severe+ auto-creates Allergy (C5 backend).
+// ─── AdeTab.vue ────────────────────────────────────────────────────────────
+// ADE — Adverse Drug Events. Harmful medication reactions captured
+// per-event with severity (mild → fatal), causality (definite →
+// unlikely), and a "reported to FDA MedWatch" flag. Severity ≥ severe
+// auto-creates a corresponding Allergy record (Phase C5 backend).
+//
+// Routes:
 //   GET  /participants/{p}/ade
 //   POST /participants/{p}/ade
 //   POST /ade/{ade}/mark-reported
-// ─────────────────────────────────────────────────────────────────────────────
+// ───────────────────────────────────────────────────────────────────────────
 import { ref, onMounted } from 'vue'
 import axios from 'axios'
 import { PlusIcon } from '@heroicons/vue/24/outline'

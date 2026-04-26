@@ -1,8 +1,17 @@
 <script setup lang="ts">
-// ─── Clinical/Vitals.vue ──────────────────────────────────────────────────────
-// Vitals overview across all participants. Client-side search by name/MRN.
-// Out-of-range values highlighted. "Current" vs "Overdue" status badge.
-// ─────────────────────────────────────────────────────────────────────────────
+// ─── Clinical/Vitals ────────────────────────────────────────────────────────
+// Cross-roster vitals snapshot: latest BP / HR / SpO2 / temp / weight per
+// participant + a current/overdue badge against expected cadence.
+//
+// Audience: Primary Care, nursing.
+//
+// Notable rules:
+//   - Out-of-range values are evaluated against tenant-overrideable
+//     VitalThreshold defaults; criticals open a CriticalValueAck record
+//     (2h ack deadline) and warnings get an 8h deadline.
+//   - Hourly escalation job alerts qa_compliance + executive on overdue
+//     critical-value acknowledgements.
+// ────────────────────────────────────────────────────────────────────────────
 
 import { ref, computed } from 'vue'
 import { Head, router } from '@inertiajs/vue3'

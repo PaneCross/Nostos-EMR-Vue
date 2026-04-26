@@ -1,5 +1,13 @@
 <script setup lang="ts">
-// ─── TimelineTab.vue — Phase J4 ─────────────────────────────────────────────
+// ─── TimelineTab.vue ───────────────────────────────────────────────────────
+// Unified chronological feed of everything that happened to this
+// participant: notes, orders, vitals, meds, encounters, incidents,
+// transfers, etc. Server-merged from multiple tables and color-coded
+// by `kind`. Read-only — clicks deep-link to the source record.
+//
+// Useful as the "what's been going on" view for IDT (Interdisciplinary
+// Team) huddles and for new staff orienting to a chart.
+// ───────────────────────────────────────────────────────────────────────────
 import { ref, onMounted } from 'vue'
 import axios from 'axios'
 

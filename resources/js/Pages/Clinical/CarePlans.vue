@@ -1,10 +1,17 @@
 <script setup lang="ts">
-// ─── Clinical/CarePlans.vue ───────────────────────────────────────────────────
-// Care plan status overview for all participants. Shows plan status badges,
-// version numbers, goal counts, effective dates, and review due dates.
-// Review-due dates past today are highlighted red per 42 CFR §460.104 IDT cadence.
-// Client-side search by name or MRN; rows with no care plan sort to the bottom.
-// ─────────────────────────────────────────────────────────────────────────────
+// ─── Clinical/CarePlans ─────────────────────────────────────────────────────
+// Org-wide care-plan health view: one row per enrolled participant showing
+// plan status, version, goal count, effective + review-due dates. Lets the
+// IDT spot anyone overdue for plan-of-care review at a glance.
+//
+// Audience: All clinical roles + IDT facilitators.
+//
+// Notable rules:
+//   - 42 CFR §460.104 — IDT must develop + review the plan of care at
+//     enrollment, every 6 months, and after significant change. Past-due
+//     review dates render red here.
+//   - Care plans are versioned (append-only); editing creates a new version.
+// ────────────────────────────────────────────────────────────────────────────
 
 import { ref, computed } from 'vue'
 import { Head, router } from '@inertiajs/vue3'

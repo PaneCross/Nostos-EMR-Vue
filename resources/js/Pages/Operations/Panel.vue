@@ -1,5 +1,9 @@
 <script setup lang="ts">
 // ─── Operations/Panel.vue — Phase K3 ─────────────────────────────────────────
+// Panel-management view. Each PCP / care-manager has a "panel" of assigned
+// participants — this page shows the current user's panel plus a comparison
+// of panel sizes across the org (for load-balancing decisions).
+// ─────────────────────────────────────────────────────────────────────────────
 import { ref, onMounted } from 'vue'
 import { Head, Link } from '@inertiajs/vue3'
 import axios from 'axios'

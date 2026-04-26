@@ -1,6 +1,11 @@
 <script setup lang="ts">
 // ─── IdtDashboard.vue ─────────────────────────────────────────────────────────
-// IDT (Interdisciplinary Team) department live dashboard.
+// IDT (Interdisciplinary Team) department live dashboard. The IDT is the core
+// PACE care-planning body — clinicians from 11 disciplines meet to review each
+// participant. Shows scheduled IDT meetings, overdue SDRs by department, care
+// plans needing review, and significant participant changes since last review.
+// 42 CFR §460.102 mandates IDT review at enrollment, semi-annually, and on
+// significant change.
 // Endpoints:
 //   GET /dashboards/idt/meetings              → { meetings[] }
 //   GET /dashboards/idt/overdue-sdrs          → { departments[] } (each: { department, sdrs[] })

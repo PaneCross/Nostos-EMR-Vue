@@ -1,9 +1,13 @@
 <script setup lang="ts">
-// ─── ImmunizationsTab.vue ─────────────────────────────────────────────────────
-// Immunization record list. Add immunization form with VIS (Vaccine Information
-// Statement) tracking — vis_given (bool) and vis_publication_date. Highlights
-// annual flu and pneumococcal vaccines. Append-only per 42 CFR 460.
-// ─────────────────────────────────────────────────────────────────────────────
+// ─── ImmunizationsTab.vue ──────────────────────────────────────────────────
+// Immunization record list. Each entry tracks vaccine, lot, site,
+// route, administered date, plus VIS (Vaccine Information Statement —
+// the federally required patient handout) given/date. Annual flu and
+// pneumococcal shots are highlighted to surface PACE quality measures.
+//
+// Append-only per 42 CFR §460 record-retention rules — corrections
+// go through the HIPAA §164.526 amendment workflow.
+// ───────────────────────────────────────────────────────────────────────────
 
 import { ref, onMounted } from 'vue'
 import axios from 'axios'

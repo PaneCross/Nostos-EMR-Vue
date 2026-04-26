@@ -1,9 +1,17 @@
 <script setup lang="ts">
-// ─── Enrollment/Index.vue ─────────────────────────────────────────────────────
-// Kanban-style enrollment pipeline board. Each column represents a referral
-// status. Cards can be clicked to open the referral detail page. A modal
-// allows creating new referral records via POST /enrollment/referrals.
-// ─────────────────────────────────────────────────────────────────────────────
+// ─── Enrollment/Index ───────────────────────────────────────────────────────
+// Kanban board for the PACE enrollment pipeline: every prospect moves through
+// columns from referral -> intake -> eligibility -> enrolled (or
+// declined / withdrawn). One card == one Referral record.
+//
+// Audience: Enrollment department + Marketing.
+//
+// Notable rules:
+//   - PACE language: pre-enrollment people are "Potential Enrollees" (not
+//     "Participants" — that term is reserved for fully enrolled members).
+//   - 42 CFR §460.150-158 govern enrollment determination + effective dates.
+//   - State machine is enforced server-side; the UI hides invalid transitions.
+// ────────────────────────────────────────────────────────────────────────────
 
 import { ref, reactive } from 'vue'
 import { Head, router } from '@inertiajs/vue3'

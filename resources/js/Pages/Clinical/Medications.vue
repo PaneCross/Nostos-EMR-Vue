@@ -1,9 +1,18 @@
 <script setup lang="ts">
-// ─── Clinical/Medications.vue ─────────────────────────────────────────────────
-// Medication overview for the clinical department. Shows 4 KPI cards followed
-// by a searchable participant table with active/PRN/controlled counts and open
-// drug interaction alerts. Rows with open alerts get an amber left border.
-// ─────────────────────────────────────────────────────────────────────────────
+// ─── Clinical/Medications ───────────────────────────────────────────────────
+// Org-wide medication overview: 4 KPIs + searchable participant table with
+// active / PRN / controlled-substance counts and any open drug-drug
+// interaction alerts.
+//
+// Audience: Primary Care prescribers + Pharmacy.
+//
+// Notable rules:
+//   - Beers Criteria + polypharmacy alerts are evaluated against the active
+//     med list; rows with open alerts get an amber left border.
+//   - Controlled-substance counts trip ePrescribing/EPCS workflows (DrFirst
+//     Rcopia integration is paywall-deferred — current state surfaces
+//     internal records only).
+// ────────────────────────────────────────────────────────────────────────────
 
 import { ref, computed } from 'vue'
 import { Head, router } from '@inertiajs/vue3'

@@ -1,6 +1,16 @@
 <script setup lang="ts">
-// ─── Compliance / HPMS Incident Reports — Phase R8 ─────────────────────────
-// Five CMS-aligned incident exports for HPMS submission.
+// ─── Compliance/HpmsIncidentReports ─────────────────────────────────────────
+// Five CMS-aligned incident exports formatted for upload to HPMS (Health
+// Plan Management System — the CMS submission portal for PACE plans).
+//
+// Audience: QA Compliance.
+//
+// Notable rules:
+//   - Reports cover falls w/ injury, sentinel events, infection outbreaks,
+//     unanticipated deaths, and elopements per CMS PACE reporting guidance.
+//   - "Mark Submitted" is honest-labeled — no auto-transmission to HPMS;
+//     uploads are still done manually via the CMS portal pre-go-live.
+// ────────────────────────────────────────────────────────────────────────────
 import { ref } from 'vue'
 import { Head } from '@inertiajs/vue3'
 import AppShell from '@/Layouts/AppShell.vue'

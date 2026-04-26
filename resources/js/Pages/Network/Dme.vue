@@ -1,5 +1,17 @@
 <script setup lang="ts">
-// ─── Network / DME — Phase S3 + U4 management UI ───────────────────────────
+// ─── Network/Dme ────────────────────────────────────────────────────────────
+// DME (Durable Medical Equipment) inventory + lifecycle: walkers, hospital
+// beds, oxygen concentrators, CPAP machines etc. Tracks issuance to a
+// participant, in-service period, return / replacement / disposal.
+//
+// Audience: Network Management, Therapy, Home Care, Center Manager.
+//
+// Notable rules:
+//   - DME items are assets — issuance/return events are append-only for
+//     financial accounting + CMS audit traceability.
+//   - Inline return form prevents losing track of high-value equipment when
+//     a participant is discharged or expires.
+// ────────────────────────────────────────────────────────────────────────────
 import { ref } from 'vue'
 import { Head, router } from '@inertiajs/vue3'
 import axios from 'axios'

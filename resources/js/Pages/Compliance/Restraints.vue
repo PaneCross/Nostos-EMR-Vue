@@ -1,8 +1,17 @@
 <script setup lang="ts">
-// ─── Compliance/Restraints.vue ───────────────────────────────────────────────
-// Phase B1. Surveyor-ready 12-month restraint episodes pull.
-// 42 CFR §460 + CMS PACE Audit Protocol.
-// ─────────────────────────────────────────────────────────────────────────────
+// ─── Compliance/Restraints ──────────────────────────────────────────────────
+// Audit-pull universe: every physical or chemical restraint episode in the
+// last 12 months, exportable for a CMS surveyor on demand.
+//
+// Audience: QA Compliance, Primary Care leadership. Read-only here; restraint
+// episodes are recorded inside the participant chart.
+//
+// Notable rules:
+//   - 42 CFR §460 — physical/chemical restraints require monitoring
+//     observations + IDT (Interdisciplinary Team) review.
+//   - CMS PACE Audit Protocol 2.0 universe-pull format.
+//   - Append-only — historical episodes cannot be edited (audit trail).
+// ────────────────────────────────────────────────────────────────────────────
 import { ref, computed } from 'vue'
 import { Head, Link } from '@inertiajs/vue3'
 import AppShell from '@/Layouts/AppShell.vue'

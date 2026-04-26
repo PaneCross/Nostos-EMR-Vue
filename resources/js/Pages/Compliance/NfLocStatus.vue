@@ -1,12 +1,16 @@
 <script setup lang="ts">
-// ─── Compliance/NfLocStatus.vue ──────────────────────────────────────────────
-// 42 CFR §460.160(b)(2) — annual NF-LOC (Nursing Facility Level of Care)
-// recertification status across enrolled participants. Surveyor-ready.
+// ─── Compliance/NfLocStatus ─────────────────────────────────────────────────
+// Audit universe for NF-LOC (Nursing Facility Level of Care) — the state
+// medical-eligibility determination that every enrolled PACE participant
+// must hold and renew annually to remain enrolled.
 //
-// Fixed in Phase A1: controller called Inertia::render('Compliance/NfLocStatus')
-// but this Vue page didn't exist. Any hit to /compliance/nf-loc-status would
-// have 500'd.
-// ─────────────────────────────────────────────────────────────────────────────
+// Audience: QA Compliance, Enrollment.
+//
+// Notable rules:
+//   - 42 CFR §460.160(b)(2) — annual NF-LOC recertification required.
+//   - Lapse triggers an involuntary disenrollment workflow (do not let
+//     this page rot — it is a CMS surveyor target).
+// ────────────────────────────────────────────────────────────────────────────
 import { ref, computed } from 'vue'
 import { Head, Link } from '@inertiajs/vue3'
 import AppShell from '@/Layouts/AppShell.vue'

@@ -1,5 +1,18 @@
 <script setup lang="ts">
-// ─── Compliance/AmendmentRequests.vue — Phase P3 ────────────────────────────
+// ─── Compliance/AmendmentRequests ───────────────────────────────────────────
+// Staff queue for HIPAA record-amendment requests — when a participant asks
+// the PACE program to correct or augment something in their medical record.
+//
+// Audience: QA Compliance, Health Information Management.
+//
+// Notable rules:
+//   - HIPAA §164.526 — amendment requests must be answered within 60 days
+//     (one 30-day extension allowed).
+//   - A denial requires a written rationale; if granted, downstream parties
+//     who previously received the disclosed PHI must be notified per
+//     §164.526(c)(3) (linked via PhiDisclosure share_with[]).
+//   - Concurrency-protected: deciding the same request twice returns 409.
+// ────────────────────────────────────────────────────────────────────────────
 import { ref, computed } from 'vue'
 import { Head, router } from '@inertiajs/vue3'
 import axios from 'axios'

@@ -1,6 +1,15 @@
 <script setup lang="ts">
-// Phase I1. TB screening compliance universe (42 CFR §460.71). Inertia branch
-// of the existing C2a JSON endpoint.
+// ─── Compliance/TbScreening ─────────────────────────────────────────────────
+// Audit-pull universe: tuberculosis screening status for every enrolled
+// participant + employees who have direct participant contact.
+//
+// Audience: QA Compliance, Primary Care, HR (for staff TB tracking).
+//
+// Notable rules:
+//   - 42 CFR §460.71 — annual TB screening cadence required.
+//   - PPD-method rows must record induration_mm or are flagged invalid.
+//   - Daily job thresholds: 60d / 30d / today / overdue surface here.
+// ────────────────────────────────────────────────────────────────────────────
 import { ref, computed } from 'vue'
 import { Head, Link } from '@inertiajs/vue3'
 import AppShell from '@/Layouts/AppShell.vue'

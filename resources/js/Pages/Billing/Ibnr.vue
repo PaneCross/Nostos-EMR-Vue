@@ -1,5 +1,17 @@
 <script setup lang="ts">
-// ─── Billing / IBNR Estimator — Phase S5 ───────────────────────────────────
+// ─── Billing/Ibnr ───────────────────────────────────────────────────────────
+// IBNR (Incurred But Not Reported) estimator — claims for services already
+// delivered but not yet billed/processed. Critical for accurate monthly
+// financial close because PACE programs bear full medical risk under cap.
+//
+// Audience: Finance / Actuarial.
+//
+// Notable rules:
+//   - Lag-based estimator: completion factors derived from historical claim
+//     lag pattern. Estimates are advisory; actuarial sign-off required for
+//     external reporting.
+//   - Read-only here; estimate is recomputed nightly.
+// ────────────────────────────────────────────────────────────────────────────
 import { Head } from '@inertiajs/vue3'
 import AppShell from '@/Layouts/AppShell.vue'
 

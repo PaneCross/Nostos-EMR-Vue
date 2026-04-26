@@ -1,8 +1,16 @@
 <script setup lang="ts">
-// ─── Clinical/Notes.vue ───────────────────────────────────────────────────────
-// Clinical notes browser. Filterable by department, note type, and status.
-// Rows link into the participant chart (/participants/{id}).
-// ─────────────────────────────────────────────────────────────────────────────
+// ─── Clinical/Notes ─────────────────────────────────────────────────────────
+// Cross-participant browser of clinical notes (progress notes, IDT notes,
+// SW notes, etc.). Filterable by department, note type, and signing status.
+//
+// Audience: All clinical roles; QA Compliance for unsigned-note review.
+//
+// Notable rules:
+//   - Notes follow a draft -> signed lifecycle. Once signed, content is
+//     immutable; addenda must be appended (CMS audit trail integrity).
+//   - HCC RAF (Hierarchical Condition Category Risk Adjustment Factor)
+//     recalculation fires automatically when a problem-linked note is signed.
+// ────────────────────────────────────────────────────────────────────────────
 
 import { ref } from 'vue'
 import { Head, router } from '@inertiajs/vue3'

@@ -4,6 +4,18 @@
   Rows are clickable to navigate to the grievance detail view.
 -->
 <script setup lang="ts">
+// ─── Grievances/Index ───────────────────────────────────────────────────────
+// PACE grievance queue. Grievances are general complaints from a participant
+// or family member (quality of service, staff conduct, food, transport, etc.)
+// — distinct from Appeals (which contest a specific service denial decision).
+//
+// Audience: QA Compliance department primarily; intake from any user.
+//
+// Notable rules:
+//   - 42 CFR §460.120 — grievance system; written notice + 30-day resolution
+//     target. The "CMS Reportable" tab surfaces ones requiring HPMS upload.
+//   - Day-25 aging alert + amber row color when nearing the 30-day deadline.
+// ────────────────────────────────────────────────────────────────────────────
 import { ref, computed } from 'vue'
 import { Head, usePage, router } from '@inertiajs/vue3'
 import AppShell from '@/Layouts/AppShell.vue'

@@ -12,6 +12,20 @@
            requestTypes, departments
 -->
 <script setup lang="ts">
+// ─── Sdrs/Index ─────────────────────────────────────────────────────────────
+// SDR (Service Delivery Request) queue — the internal hand-off ticket between
+// PACE departments (e.g. Primary Care -> Pharmacy "please refill X").
+//
+// Audience: every clinical/operational department. Filter tabs scope to the
+// user's own dept, items assigned to them, the org-wide overdue list, and
+// (QA Compliance only) the all-tenants view.
+//
+// Notable rules:
+//   - 42 CFR §460.121 — service delivery requests must be acted on within
+//     a 72-hour window; the time-remaining countdown drives this UI.
+//   - Status transitions (acknowledge/in-progress/complete) are PATCH'd via
+//     axios so Inertia state is preserved (no full-page reload).
+// ────────────────────────────────────────────────────────────────────────────
 import { ref, computed } from 'vue'
 import { Head, router } from '@inertiajs/vue3'
 import axios from 'axios'

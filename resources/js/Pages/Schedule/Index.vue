@@ -20,6 +20,19 @@
   Props:  appointmentTypes, typeLabels, typeColors, locations
 -->
 <script setup lang="ts">
+// ─── Schedule/Index ─────────────────────────────────────────────────────────
+// Org-wide week-view appointment calendar — clinical visits, IDT meetings,
+// transport pickups, etc. New-appointment modal includes participant
+// typeahead + transport-need flag.
+//
+// Audience: Front-desk + every department that books appointments.
+//
+// Notable rules:
+//   - Appointments store UTC datetimes; display time renders in the
+//     tenant's configured timezone (set in ItAdmin/SystemSettings).
+//   - Transport-flagged appointments cascade to the Transport manifest
+//     for that date (Transport/Manifest.vue).
+// ────────────────────────────────────────────────────────────────────────────
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { Head } from '@inertiajs/vue3'
 import axios from 'axios'

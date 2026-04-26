@@ -1,4 +1,9 @@
 <script setup lang="ts">
+// ─── Portal/Appointments.vue ─────────────────────────────────────────────────
+// Participant Portal page. Lists upcoming + past appointments. Participant can
+// submit an appointment-request (free-text reason) which becomes a staff task
+// for scheduling. Direct booking is intentionally NOT supported — IDT routes.
+// ─────────────────────────────────────────────────────────────────────────────
 import { ref, onMounted } from 'vue'
 import axios from 'axios'
 import PortalShell from './PortalShell.vue'

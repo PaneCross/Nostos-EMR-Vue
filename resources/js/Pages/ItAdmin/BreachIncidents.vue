@@ -1,5 +1,17 @@
 <script setup lang="ts">
-// ─── ItAdmin/BreachIncidents.vue — Phase P4 ─────────────────────────────────
+// ─── ItAdmin/BreachIncidents ────────────────────────────────────────────────
+// HIPAA breach-incident tracker: log a suspected/confirmed unauthorized PHI
+// disclosure, count affected individuals, calculate the regulatory
+// notification deadlines, and generate per-participant breach letters.
+//
+// Audience: IT Admin + Privacy Officer.
+//
+// Notable rules:
+//   - HIPAA §164.404 — individual notification within 60 days of discovery.
+//   - HIPAA §164.408 — HHS notification: within 60 days for ≥500 affected;
+//     by March 1 of the following year for under-500 incidents.
+//   - Year boundaries are computed in UTC to keep deadlines deterministic.
+// ────────────────────────────────────────────────────────────────────────────
 import { ref } from 'vue'
 import { Head, router } from '@inertiajs/vue3'
 import axios from 'axios'

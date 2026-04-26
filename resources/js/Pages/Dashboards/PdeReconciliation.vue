@@ -1,4 +1,11 @@
 <script setup lang="ts">
+// ─── Dashboards/PdeReconciliation.vue ────────────────────────────────────────
+// Pharmacy/Finance analytics page. PDE (Prescription Drug Event) records are
+// the Part D claim records the org submits to CMS. This page reconciles
+// submitted vs accepted vs rejected PDEs by month so pharmacy + finance can
+// track Part D claim health.
+// Data: GET /billing/pde-reconciliation.json — bar chart + table.
+// ─────────────────────────────────────────────────────────────────────────────
 import { ref, computed, onMounted } from 'vue'
 import { Head } from '@inertiajs/vue3'
 import axios from 'axios'

@@ -5,6 +5,20 @@
   A compliance banner shows whether the minimum active project count is met.
 -->
 <script setup lang="ts">
+// ─── Qapi/Projects ──────────────────────────────────────────────────────────
+// Kanban of active QAPI (Quality Assessment / Performance Improvement)
+// improvement projects — each project addresses a specific quality gap with
+// goals, interventions, and measured outcomes.
+//
+// Audience: QA Compliance.
+//
+// Notable rules:
+//   - 42 CFR §460.136-§460.140 — PACE programs must run an active QAPI
+//     program. The compliance banner flags if the minimum active project
+//     count for the org isn't met.
+//   - Five status columns: proposed -> in progress -> measuring ->
+//     completed -> suspended. Suspension requires rationale.
+// ────────────────────────────────────────────────────────────────────────────
 import { ref, computed } from 'vue'
 import { Head, usePage, router } from '@inertiajs/vue3'
 import AppShell from '@/Layouts/AppShell.vue'

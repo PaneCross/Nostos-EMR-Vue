@@ -1,6 +1,8 @@
 <script setup lang="ts">
 // ─── HomeCareDashboard.vue ────────────────────────────────────────────────────
-// Home Care department live dashboard.
+// Home Care department live dashboard. Used by home-care nurses + aides for the
+// day's home visit schedule, ADL/IADL alerts (Activities of Daily Living),
+// home-care goals, open SDRs, and active wound-care cases.
 // Endpoints:
 //   GET /dashboards/home-care/schedule    → { appointments[] }
 //   GET /dashboards/home-care/adl-alerts  → { alerts[], unacknowledged_count }

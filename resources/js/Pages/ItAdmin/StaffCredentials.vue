@@ -1,7 +1,17 @@
 <script setup lang="ts">
-// ─── IT Admin / Staff Credentials ─────────────────────────────────────────────
-// §460.64-71 staff credential + training hours tracking.
-// ─────────────────────────────────────────────────────────────────────────────
+// ─── ItAdmin/StaffCredentials ───────────────────────────────────────────────
+// Personnel credentials + annual training hours: licensure (RN, MD, PT, OT,
+// SW etc.), DEA, BLS / CPR, TB clearance, and required PACE training hours
+// per role.
+//
+// Audience: IT Admin / HR / Center Manager.
+//
+// Notable rules:
+//   - 42 CFR §460.64-71 — staff qualification + training requirements;
+//     CMS surveyors will pull credentials per personnel audit protocol.
+//   - Daily expiration alert job warns at T-30/T-7 and escalates after lapse.
+//   - Append-only credential history; superseded rows retained.
+// ────────────────────────────────────────────────────────────────────────────
 
 import { ref, computed } from 'vue'
 import { Head, Link, router } from '@inertiajs/vue3'

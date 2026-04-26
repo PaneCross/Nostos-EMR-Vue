@@ -1,5 +1,13 @@
 <script setup lang="ts">
-// ─── GoalsOfCareTab.vue — Phase J4 ───────────────────────────────────────────
+// ─── GoalsOfCareTab.vue ────────────────────────────────────────────────────
+// Goals-of-Care conversations: longitudinal record of advance-care-
+// planning discussions with the participant + family. Captures who
+// was present, what was discussed, what decisions were made, and any
+// code-status change (e.g. full-code → DNR — Do Not Resuscitate).
+//
+// Append-only by clinical convention; corrections go through the
+// HIPAA §164.526 amendment workflow, not in-place edit.
+// ───────────────────────────────────────────────────────────────────────────
 import { ref, onMounted } from 'vue'
 import axios from 'axios'
 import { PlusIcon } from '@heroicons/vue/24/outline'

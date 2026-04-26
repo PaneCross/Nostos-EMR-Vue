@@ -1,5 +1,10 @@
 <script setup lang="ts">
-// ─── HighRisk.vue — Phase K1 ─────────────────────────────────────────────────
+// ─── Dashboards/HighRisk.vue — Phase K1 ──────────────────────────────────────
+// High-risk participant registry. Lists participants flagged by the predictive
+// risk model (recent hospitalization, polypharmacy, fall history, etc.) so the
+// IDT can prioritize outreach. Supports filters by risk category.
+// IDT = Interdisciplinary Team.
+// ─────────────────────────────────────────────────────────────────────────────
 import { ref, computed, onMounted } from 'vue'
 import { Head, Link } from '@inertiajs/vue3'
 import axios from 'axios'

@@ -1,8 +1,24 @@
 <script setup lang="ts">
 // ─── AppShell.vue ─────────────────────────────────────────────────────────────
 // Root layout for all authenticated NostosEMR pages.
-// Sidebar: collapsible via hamburger, default expanded, per-user localStorage.
-// Nav: group accordion (expanded) + flyout on hover (collapsed).
+//
+// What lives here:
+//   - The left sidebar (collapsible via hamburger, default expanded;
+//     per-user preference saved in localStorage).
+//   - The top app bar (tenant + site context, user menu, dark-mode toggle,
+//     notifications bell, Cmd+K global search).
+//   - The Toaster component (V5/W2 — surfaces axios errors as toasts).
+//   - The IdleWarningModal (HIPAA-required inactivity warning + auto-logout).
+//
+// Nav style: when expanded, the sidebar shows a group-accordion. When
+// collapsed, hovering an icon shows a flyout panel. Department-specific
+// nav items are filtered server-side (HandleInertiaRequests middleware
+// passes the current user's permissions) so this file just renders what's
+// allowed.
+//
+// Stack note: this is THE only layout. Every Inertia page renders inside it
+// (set per-page via `defineOptions({ layout: AppShell })`). New pages only
+// need a layout opt-in if they're full-bleed (login, OAuth, error pages).
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { ref, computed, onMounted, onUnmounted, type Component } from 'vue'

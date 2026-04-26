@@ -1,4 +1,9 @@
 <script setup lang="ts">
+// ─── Portal/Overview.vue ─────────────────────────────────────────────────────
+// Participant Portal landing page. Shows the participant a summary of their
+// own info: name, MRN, PCP, next appointment, recent labs/notes. Quick links
+// to deeper pages (medications, allergies, problems, messages, requests).
+// ─────────────────────────────────────────────────────────────────────────────
 import { ref, onMounted } from 'vue'
 import axios from 'axios'
 import PortalShell from './PortalShell.vue'

@@ -1,6 +1,8 @@
 <script setup lang="ts">
 // ─── PharmacyDashboard.vue ────────────────────────────────────────────────────
-// Pharmacy department live dashboard.
+// Pharmacy department live dashboard. Used by pharmacists to review new + DC'd
+// medication orders, drug-drug interaction alerts, controlled-substance log
+// entries, refills due, and STAT pharmacy orders.
 // Endpoints:
 //   GET /dashboards/pharmacy/med-changes   → { new_orders[], discontinued[] }
 //   GET /dashboards/pharmacy/interactions  → { alerts[] }

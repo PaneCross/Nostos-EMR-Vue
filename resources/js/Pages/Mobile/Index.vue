@@ -1,5 +1,9 @@
 <script setup lang="ts">
 // ─── Mobile/Index.vue — Phase M5 (home-care day list) ───────────────────────
+// Mobile-optimized home-care companion. Used by home-care nurses + aides on
+// phones/tablets in the field: today's visit list with one-tap navigation to
+// each participant + voice-note dictation for quick charting between visits.
+// ─────────────────────────────────────────────────────────────────────────────
 import { ref } from 'vue'
 import { Head, Link } from '@inertiajs/vue3'
 import VoiceNoteButton from '@/Components/Voice/VoiceNoteButton.vue'

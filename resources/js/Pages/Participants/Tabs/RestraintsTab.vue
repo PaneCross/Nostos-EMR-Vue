@@ -1,9 +1,14 @@
 <script setup lang="ts">
-// ─── RestraintsTab.vue ───────────────────────────────────────────────────────
-// Phase B1 (MVP completion roadmap). Physical + chemical restraint episodes
-// with monitoring observations and IDT review tracking. 42 CFR §460 + CMS
-// PACE Audit Protocol.
-// ─────────────────────────────────────────────────────────────────────────────
+// ─── RestraintsTab.vue ─────────────────────────────────────────────────────
+// Physical + chemical restraint episodes with monitoring observations
+// and IDT (Interdisciplinary Team) review tracking. Restraint use is
+// a high-scrutiny event under 42 CFR §460 and the CMS PACE Audit
+// Protocol — every episode requires periodic monitoring (every 4h)
+// and an IDT review within 24h.
+//
+// Append-only: episodes are never deleted, only ended. Write access:
+// primary_care, qa_compliance.
+// ───────────────────────────────────────────────────────────────────────────
 import { ref, reactive, computed, onMounted } from 'vue'
 import axios from 'axios'
 

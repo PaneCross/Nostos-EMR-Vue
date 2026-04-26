@@ -1,6 +1,18 @@
 <script setup lang="ts">
-// ─── ItAdmin/PhiDisclosures.vue — Phase P2 ──────────────────────────────────
-// HIPAA §164.528 Accounting of Disclosures viewer.
+// ─── ItAdmin/PhiDisclosures ─────────────────────────────────────────────────
+// HIPAA "Accounting of Disclosures" viewer — every time PHI was shared with
+// an outside party (other than for treatment/payment/operations) is logged
+// here, so a participant can request the list at any time.
+//
+// Audience: IT Admin / Privacy Officer.
+//
+// Notable rules:
+//   - HIPAA §164.528 — covered entity must be able to produce a list of
+//     disclosures for the previous 6 years on participant request.
+//   - Append-only — entries are immutable. Captured automatically by the
+//     PhiDisclosureService when CCDA / FHIR / Bulk Export / amendment
+//     §164.526(c)(3) downstream notifications fire.
+// ────────────────────────────────────────────────────────────────────────────
 import { Head } from '@inertiajs/vue3'
 import AppShell from '@/Layouts/AppShell.vue'
 import { ShieldCheckIcon } from '@heroicons/vue/24/outline'

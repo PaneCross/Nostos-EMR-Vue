@@ -1,8 +1,16 @@
 <script setup lang="ts">
-// ─── Clinical/Assessments.vue ─────────────────────────────────────────────────
-// Assessment worklist with three tabs: Overdue, Due Soon (14 days), Recently
-// Completed. Visual urgency via row tinting. Rows link to participant chart.
-// ─────────────────────────────────────────────────────────────────────────────
+// ─── Clinical/Assessments ───────────────────────────────────────────────────
+// Worklist of standardized clinical assessments due across the participant
+// roster (PHQ-9 depression, Mini-Cog, Morse fall risk, Katz ADL, Lawton IADL,
+// AUDIT-C, etc.). Three tabs: Overdue, Due Soon (14 days), Recently Completed.
+//
+// Audience: Clinical staff (Primary Care, Behavioral Health, Social Work).
+//
+// Notable rules:
+//   - 42 CFR §460.104 — comprehensive assessment at enrollment + every 6
+//     months minimum (or after significant change).
+//   - Overdue rows are clickable into the participant chart for completion.
+// ────────────────────────────────────────────────────────────────────────────
 
 import { ref, computed } from 'vue'
 import { Head, router } from '@inertiajs/vue3'

@@ -1,11 +1,13 @@
 <script setup lang="ts">
-// ─── AnticoagulationTab.vue ──────────────────────────────────────────────────
-// Phase J2 — Anticoagulation plan + INR tracking (warfarin + DOACs).
-//   GET  /participants/{p}/anticoagulation
-//   POST /participants/{p}/anticoagulation/plans
-//   POST /anticoagulation-plans/{plan}/stop
-//   POST /participants/{p}/anticoagulation/inr
-// ─────────────────────────────────────────────────────────────────────────────
+// ─── AnticoagulationTab.vue ────────────────────────────────────────────────
+// Anticoagulation plan + INR (International Normalized Ratio — the
+// warfarin lab) tracking. Supports warfarin (target INR window) and
+// DOACs (direct oral anticoagulants — apixaban, rivaroxaban,
+// dabigatran, edoxaban; INR not monitored). Out-of-range INR auto-
+// emits warning or critical alerts to clinical staff.
+//
+// Routes: GET /participants/{p}/anticoagulation; POST plans / stop / inr.
+// ───────────────────────────────────────────────────────────────────────────
 import { ref, computed, onMounted } from 'vue'
 import axios from 'axios'
 import { PlusIcon } from '@heroicons/vue/24/outline'

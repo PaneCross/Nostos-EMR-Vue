@@ -5,6 +5,19 @@
   to investigate, resolve, escalate, or withdraw the grievance.
 -->
 <script setup lang="ts">
+// ─── Grievances/Show ────────────────────────────────────────────────────────
+// Detail + workflow page for a single grievance: investigation notes,
+// resolution / escalation, CMS-reportability flag, notify-participant
+// action, and append-only activity timeline.
+//
+// Audience: QA Compliance staff working the grievance; read-only for others.
+//
+// Notable rules:
+//   - 42 CFR §460.120 — grievance system; resolution within 30 days, written
+//     notice to the participant, and HPMS (Health Plan Management System,
+//     CMS submission portal) upload for reportable categories.
+//   - Append-only — timeline events cannot be edited (CMS audit trail).
+// ────────────────────────────────────────────────────────────────────────────
 import { ref, computed, onMounted } from 'vue'
 import { Head, usePage, router } from '@inertiajs/vue3'
 import AppShell from '@/Layouts/AppShell.vue'

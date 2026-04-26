@@ -1,4 +1,11 @@
 <script setup lang="ts">
+// ─── Dashboards/CapitationReconciliation.vue ─────────────────────────────────
+// Finance/Executive analytics page. Compares CMS-paid capitation per month
+// against the org's expected capitation (member months x rate), so finance
+// can spot under/over-payment from CMS by month and follow up.
+// CMS = Centers for Medicare & Medicaid Services.
+// Data: GET /billing/capitation-reconciliation.json — bar chart + table.
+// ─────────────────────────────────────────────────────────────────────────────
 import { ref, computed, onMounted } from 'vue'
 import { Head } from '@inertiajs/vue3'
 import axios from 'axios'

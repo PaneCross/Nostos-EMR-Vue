@@ -1,6 +1,8 @@
 <script setup lang="ts">
 // ─── DietaryDashboard.vue ─────────────────────────────────────────────────────
-// Dietary department live dashboard.
+// Dietary department live dashboard. Used by RDNs and food-service staff to track
+// nutrition assessments, dietary goals, diet/texture orders, and critical food
+// allergies for kitchen prep.
 // Endpoints:
 //   GET /dashboards/dietary/assessments   → { overdue[], due_soon[], overdue_count, due_soon_count }
 //   GET /dashboards/dietary/goals         → { goals[] }

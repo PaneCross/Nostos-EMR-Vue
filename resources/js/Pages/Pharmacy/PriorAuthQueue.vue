@@ -1,5 +1,17 @@
 <script setup lang="ts">
-// ─── Pharmacy/PriorAuthQueue.vue — Phase P6 ─────────────────────────────────
+// ─── Pharmacy/PriorAuthQueue ────────────────────────────────────────────────
+// Internal queue of medications awaiting prior authorization (PA) — surfaces
+// when the formulary marks a drug PA-required so Pharmacy can submit the
+// auth request to the payer before dispense.
+//
+// Audience: Pharmacy department.
+//
+// Notable rules:
+//   - Auto-suggested by MedicationController::store when formulary flags PA.
+//   - PAYWALL-DEFERRED: real payer-direct PA submission (CoverMyMeds, etc.)
+//     is paywall item 17. Today this is an internal worklist only — staff
+//     still submit PAs via the payer's existing portal/fax.
+// ────────────────────────────────────────────────────────────────────────────
 import { ref } from 'vue'
 import { Head, router } from '@inertiajs/vue3'
 import axios from 'axios'

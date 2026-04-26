@@ -1,5 +1,14 @@
 <script setup lang="ts">
-// ─── CareGapsTab.vue — Phase J4 ──────────────────────────────────────────────
+// ─── CareGapsTab.vue ───────────────────────────────────────────────────────
+// HEDIS / Stars-style preventive-care gap list for this participant.
+// Lazy-loads from /participants/{id}/care-gaps. Each row is a measure
+// (annual flu, mammogram, A1C, etc.) with status (open / satisfied /
+// not-applicable) and last-completed date when known.
+//
+// Read-only here. Closing a gap happens via the underlying clinical
+// action (placing the order, charting the result) — this tab just
+// surfaces the worklist.
+// ───────────────────────────────────────────────────────────────────────────
 import { ref, onMounted } from 'vue'
 import axios from 'axios'
 

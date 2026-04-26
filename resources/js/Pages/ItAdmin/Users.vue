@@ -4,6 +4,21 @@
      designations and use the provision modal to create new user accounts. -->
 
 <script setup lang="ts">
+// ─── ItAdmin/Users ──────────────────────────────────────────────────────────
+// User provisioning + role/department/designation assignment for tenant
+// staff. Search, department filter, active toggle, expandable rows for
+// designation management, modal for new-user creation.
+//
+// Audience: IT Admin only.
+//
+// Notable rules:
+//   - Department + designation drive feature gating across the EMR; pay
+//     attention to the `shared_users_department_check` enum (canonical
+//     departments). Nurses currently sit under primary_care/home_care —
+//     no `nursing` enum value yet.
+//   - Active toggle is reversible; deletion is intentionally not exposed
+//     (audit trail integrity — flip to inactive instead).
+// ────────────────────────────────────────────────────────────────────────────
 import { ref, computed } from 'vue'
 import { Head, usePage, router } from '@inertiajs/vue3'
 import AppShell from '@/Layouts/AppShell.vue'

@@ -1,8 +1,17 @@
 <script setup lang="ts">
-// ─── Enrollment/Transfers.vue ─────────────────────────────────────────────────
-// Admin view for participant site transfers. Lists all transfers with status
-// filtering and pagination. Clicking a row navigates to the participant profile.
-// ─────────────────────────────────────────────────────────────────────────────
+// ─── Enrollment/Transfers ───────────────────────────────────────────────────
+// Admin view for participant site transfers — when an enrolled member moves
+// between PACE day-center sites within the organization (relocation, capacity
+// rebalancing, family preference).
+//
+// Audience: Enrollment, Center Managers, Super Admin.
+//
+// Notable rules:
+//   - Site change requires an updated transport plan + IDT acknowledgement
+//     before the effective date.
+//   - This is a different workflow from disenrollment (which is governed
+//     by 42 CFR §460.160-164).
+// ────────────────────────────────────────────────────────────────────────────
 
 import { ref } from 'vue'
 import { Head, router } from '@inertiajs/vue3'

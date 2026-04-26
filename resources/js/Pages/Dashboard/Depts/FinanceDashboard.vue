@@ -1,6 +1,9 @@
 <script setup lang="ts">
 // ─── FinanceDashboard.vue ─────────────────────────────────────────────────────
-// Finance department live dashboard.
+// Finance department live dashboard. Used by billing/finance staff to monitor
+// CMS capitation revenue, prior authorizations expiring soon, encounter volume,
+// open denials with revenue at risk, and recent remittance batches.
+// CMS = Centers for Medicare & Medicaid Services.
 // Endpoints:
 //   GET /dashboards/finance/capitation         → { current_month, current_total, current_participant_count, prior_month, prior_total, change_percent }
 //   GET /dashboards/finance/authorizations     → { authorizations[], expiring_count, expiring_this_week }

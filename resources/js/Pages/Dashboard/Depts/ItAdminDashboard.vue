@@ -1,6 +1,9 @@
 <script setup lang="ts">
 // ─── ItAdminDashboard.vue ─────────────────────────────────────────────────────
-// IT Admin department live dashboard.
+// IT Admin department live dashboard. Used by tenant IT admins for user
+// provisioning trends, integration connector health (FHIR / lab / pharmacy /
+// clearinghouse), the audit log, system config, and break-glass PHI access
+// events that need review (HIPAA emergency-access tracking).
 // Endpoints:
 //   GET /dashboards/it-admin/users        → { recently_provisioned[], recently_deactivated[], total_active, total_inactive }
 //   GET /dashboards/it-admin/integrations → { connectors[{ connector_type, last_status, error_count, is_healthy, total_today, last_message_at }] }

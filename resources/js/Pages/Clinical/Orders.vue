@@ -1,10 +1,17 @@
 <script setup lang="ts">
-// ─── Clinical/Orders.vue ──────────────────────────────────────────────────────
-// CPOE orders worklist for clinical staff. Shows 3 KPI cards (pending, active,
-// STAT) followed by a filterable table of all orders. Status and priority
-// filters trigger server-side re-renders via Inertia router.get with
-// preserveState so the URL reflects current filter state.
-// ─────────────────────────────────────────────────────────────────────────────
+// ─── Clinical/Orders ────────────────────────────────────────────────────────
+// CPOE (Computerized Provider Order Entry) worklist: every clinical order
+// (labs, imaging, referrals, durable medical equipment, etc.) across the
+// enrolled roster. KPIs for pending / active / STAT.
+//
+// Audience: Prescribers, nursing, ancillary departments fulfilling orders.
+//
+// Notable rules:
+//   - Filters use Inertia router.get with preserveState so URLs are
+//     bookmarkable / shareable while staying SPA-fast.
+//   - STAT orders raise a critical alert to the assigned department.
+//   - Append-only audit trail: status changes are timestamped + signed.
+// ────────────────────────────────────────────────────────────────────────────
 
 import { ref, computed } from 'vue'
 import { Head, router } from '@inertiajs/vue3'

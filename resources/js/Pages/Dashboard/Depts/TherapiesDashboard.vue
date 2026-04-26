@@ -1,6 +1,8 @@
 <script setup lang="ts">
 // ─── TherapiesDashboard.vue ───────────────────────────────────────────────────
-// Therapies department live dashboard.
+// Therapies department live dashboard (PT / OT / ST — Physical, Occupational,
+// Speech). Today's schedule, therapy goals, open SDRs, unsigned therapy notes,
+// and active therapy orders.
 // Endpoints:
 //   GET /dashboards/therapies/schedule  → appointments[]
 //   GET /dashboards/therapies/goals     → { goals[] }

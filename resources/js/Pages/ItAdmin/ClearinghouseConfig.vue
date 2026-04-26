@@ -1,10 +1,18 @@
 <script setup lang="ts">
-// ─── ItAdmin/ClearinghouseConfig.vue ─────────────────────────────────────────
-// Phase 12 (MVP roadmap). IT-admin-only page for configuring the claims
-// clearinghouse adapter. Default is "No vendor — manual upload"; activating
-// a real adapter requires a signed trading-partner agreement. Honest-label
-// banner at the top makes the status explicit.
-// ─────────────────────────────────────────────────────────────────────────────
+// ─── ItAdmin/ClearinghouseConfig ────────────────────────────────────────────
+// Switch the active claims clearinghouse adapter (Availity / Change
+// Healthcare / Office Ally / Null = manual upload). 837P (X12 EDI
+// professional claims) and 835 (remittance) flow through the chosen adapter.
+//
+// Audience: IT Admin only.
+//
+// Notable rules:
+//   - PAYWALL-DEFERRED: Availity / CHC / Office Ally adapters throw on use
+//     until a trading-partner agreement is signed. Default is the Null
+//     adapter (stages 837P files for manual upload via the payer portal).
+//   - The "no vendor / manual upload" banner is honest-labeling — do not
+//     remove it without a real signed contract.
+// ────────────────────────────────────────────────────────────────────────────
 import { ref, reactive } from 'vue'
 import { Head, usePage } from '@inertiajs/vue3'
 import axios from 'axios'

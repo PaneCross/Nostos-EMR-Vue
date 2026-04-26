@@ -1,5 +1,9 @@
 <script setup lang="ts">
 // ─── Operations/ActivitiesCalendar.vue — Phase K3 ────────────────────────────
+// Day-center activities calendar. Activities staff schedule group programs
+// (bingo, exercise, music therapy, outings) here for participants to attend.
+// Shows a 7-day window by default; staff can create new events inline.
+// ─────────────────────────────────────────────────────────────────────────────
 import { ref, computed, onMounted } from 'vue'
 import { Head } from '@inertiajs/vue3'
 import axios from 'axios'

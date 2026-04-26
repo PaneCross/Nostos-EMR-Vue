@@ -1,7 +1,17 @@
 <script setup lang="ts">
-// ─── Billing / Enrollment Reconciliation ──────────────────────────────────────
-// CMS MMR + TRR ingest + discrepancy worklist. Phase 6 (MVP roadmap).
-// ─────────────────────────────────────────────────────────────────────────────
+// ─── Billing/Reconciliation ─────────────────────────────────────────────────
+// Enrollment reconciliation against CMS files: ingest MMR (Monthly Membership
+// Report — who CMS thinks is enrolled) + TRR (Transaction Reply Report —
+// CMS's response to enrollment transactions submitted) and surface every
+// discrepancy as a worklist item.
+//
+// Audience: Enrollment + Finance.
+//
+// Notable rules:
+//   - Capitation is paid only for participants CMS shows as enrolled; an
+//     unresolved MMR discrepancy is a directly-revenue-impacting bug.
+//   - Resolution actions are append-only audit-logged for CMS surveyors.
+// ────────────────────────────────────────────────────────────────────────────
 
 import { computed, ref } from 'vue'
 import { Head, router } from '@inertiajs/vue3'

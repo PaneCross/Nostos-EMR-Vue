@@ -1,5 +1,9 @@
 <script setup lang="ts">
-// ─── QualityMeasures.vue — Phase K1 ──────────────────────────────────────────
+// ─── Dashboards/QualityMeasures.vue — Phase K1 ───────────────────────────────
+// Quality measures dashboard. Tracks HEDIS/CMS Stars rates over time
+// (numerator/denominator with trendlines) so QA + leadership can see whether
+// quality scores are improving or backsliding month-over-month.
+// ─────────────────────────────────────────────────────────────────────────────
 import { ref, computed, onMounted } from 'vue'
 import { Head } from '@inertiajs/vue3'
 import axios from 'axios'

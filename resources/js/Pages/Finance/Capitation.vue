@@ -1,8 +1,18 @@
 <script setup lang="ts">
-// ─── Finance/Capitation.vue ───────────────────────────────────────────────────
-// Capitation management: 3 KPI cards, participant records table with search.
-// Data injected as Inertia props from CapitationController.
-// ─────────────────────────────────────────────────────────────────────────────
+// ─── Finance/Capitation ─────────────────────────────────────────────────────
+// Per-participant capitation tracking: the per-member-per-month amount CMS
+// (and state Medicaid) pays the PACE program to bear all medical risk for
+// that person. Searchable table + 3 KPIs.
+//
+// Audience: Finance.
+//
+// Notable rules:
+//   - Capitation amount is risk-adjusted via HCC (Hierarchical Condition
+//     Category) -> RAF (Risk Adjustment Factor); diagnosis capture in
+//     clinical notes directly drives revenue here.
+//   - Receipts are append-only; corrections are posted as new rows tied
+//     to the original (no destructive edits).
+// ────────────────────────────────────────────────────────────────────────────
 
 import { ref, computed } from 'vue'
 import { Head, router } from '@inertiajs/vue3'

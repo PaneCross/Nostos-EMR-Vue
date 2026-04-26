@@ -1,8 +1,17 @@
 <script setup lang="ts">
-// ─── Compliance/SentinelEvents.vue ───────────────────────────────────────────
-// Phase B3. Surveyor-ready 12-month sentinel events pull. 42 CFR §460.136.
-// Dual-deadline tracking: CMS 5-day + RCA 30-day.
-// ─────────────────────────────────────────────────────────────────────────────
+// ─── Compliance/SentinelEvents ──────────────────────────────────────────────
+// Audit-pull universe: 12 months of sentinel events (death or serious harm
+// not related to natural course of illness) with dual deadline tracking.
+//
+// Audience: QA Compliance, Executive leadership.
+//
+// Notable rules:
+//   - 42 CFR §460.136 — sentinel events require CMS reporting + RCA
+//     (Root Cause Analysis).
+//   - Dual deadlines: 5-day CMS notification + 30-day RCA completion.
+//     Daily job warns at T-2 and escalates after a missed deadline.
+//   - Append-only — historical events are immutable (audit trail).
+// ────────────────────────────────────────────────────────────────────────────
 import { ref, computed } from 'vue'
 import { Head, Link } from '@inertiajs/vue3'
 import AppShell from '@/Layouts/AppShell.vue'

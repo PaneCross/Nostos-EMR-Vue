@@ -1,5 +1,15 @@
 <script setup lang="ts">
-// ─── Dashboards.vue — Phase K2 ───────────────────────────────────────────────
+// ─── Bi/Dashboards ──────────────────────────────────────────────────────────
+// BI (Business Intelligence) dashboard catalog — saved, tenant-defined
+// charts that visualize quality / utilization / financial KPIs over time.
+//
+// Audience: Executive, QA Compliance, Finance, anyone with BI viewer role.
+//
+// Notable rules:
+//   - Each dashboard is composed of widgets that read from saved BI reports
+//     (see Bi/ReportBuilder.vue). All data is tenant-scoped.
+//   - No PHI in widget titles or filters — these can appear in screenshots.
+// ────────────────────────────────────────────────────────────────────────────
 import { ref, onMounted } from 'vue'
 import { Head, Link } from '@inertiajs/vue3'
 import axios from 'axios'

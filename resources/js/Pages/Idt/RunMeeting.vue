@@ -11,6 +11,21 @@
   Props:   meeting (IdtMeeting with participant_reviews eager-loaded)
 -->
 <script setup lang="ts">
+// ─── Idt/RunMeeting ─────────────────────────────────────────────────────────
+// Live IDT (Interdisciplinary Team) meeting conductor: facilitator walks the
+// participant queue, captures discipline-specific notes per participant,
+// records action items + due dates, and saves meeting minutes.
+//
+// Audience: IDT meeting facilitator (typically Center Manager or Care Mgr);
+// other team members observe in the same browser session via Reverb.
+//
+// Notable rules:
+//   - 42 CFR §460.102 — every plan-of-care review must be evidenced.
+//   - Auto-save: per-participant review @ 2s debounce, minutes @ 3s debounce
+//     to survive accidental tab-closes mid-meeting.
+//   - Completed meetings are fully locked (read-only) — past records cannot
+//     be altered (CMS audit trail integrity).
+// ────────────────────────────────────────────────────────────────────────────
 import { ref, computed, watch } from 'vue'
 import { Head, router } from '@inertiajs/vue3'
 import axios from 'axios'

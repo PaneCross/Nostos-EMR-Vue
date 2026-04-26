@@ -1,8 +1,16 @@
 <script setup lang="ts">
-// ─── Appeals/Show ─────────────────────────────────────────────────────────────
-// Detail view for a single §460.122 appeal: metadata, clock, decision form,
-// PDFs (ack + decision), event timeline.
-// ─────────────────────────────────────────────────────────────────────────────
+// ─── Appeals/Show ───────────────────────────────────────────────────────────
+// Detail / decision page for a single PACE appeal: metadata, decision-window
+// clock, decide form (uphold / reverse / partial), generated PDFs (ack +
+// decision letter), and append-only event timeline.
+//
+// Audience: QA Compliance + assigned reviewer.
+//
+// Notable rules:
+//   - 42 CFR §460.122 — appeals; 30-day standard / 72-hour expedited.
+//   - Append-only — past timeline events cannot be edited (audit trail
+//     integrity for CMS surveyor review).
+// ────────────────────────────────────────────────────────────────────────────
 
 import { computed, ref } from 'vue'
 import { Head, Link, router, usePage } from '@inertiajs/vue3'

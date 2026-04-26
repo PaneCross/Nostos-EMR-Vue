@@ -11,6 +11,19 @@
            absentReasons, canManage
 -->
 <script setup lang="ts">
+// ─── Scheduling/DayCenter ───────────────────────────────────────────────────
+// Daily attendance roster for the PACE day center: check-in / late / absent
+// (with reason). Loads the enrolled roster + any existing attendance records
+// for the selected date and lets center staff record presence in real time.
+//
+// Audience: Day-center staff + Center Manager.
+//
+// Notable rules:
+//   - Day-center attendance is a CMS quality indicator; absences feed into
+//     the Level I/II quarterly submission.
+//   - Attendance status is editable for the current day only; historical
+//     dates are read-only (CMS audit trail integrity).
+// ────────────────────────────────────────────────────────────────────────────
 import { ref, computed, onMounted, watch } from 'vue'
 import { Head, router } from '@inertiajs/vue3'
 import axios from 'axios'

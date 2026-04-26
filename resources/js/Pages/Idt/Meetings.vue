@@ -7,6 +7,18 @@
   Props:   meetings (paginator), filters (status string)
 -->
 <script setup lang="ts">
+// ─── Idt/Meetings ───────────────────────────────────────────────────────────
+// Paginated archive of IDT (Interdisciplinary Team) meetings, filterable by
+// scheduled / in-progress / completed status. Click-through opens the
+// run-meeting conductor page (see Idt/RunMeeting.vue).
+//
+// Audience: All clinical roles; QA Compliance for retroactive review.
+//
+// Notable rules:
+//   - 42 CFR §460.102 — IDT meeting + per-participant plan-of-care review
+//     evidence must be retained for CMS audit.
+//   - Completed meetings are read-only (audit trail integrity).
+// ────────────────────────────────────────────────────────────────────────────
 import { ref } from 'vue'
 import { Head, Link, router } from '@inertiajs/vue3'
 import AppShell from '@/Layouts/AppShell.vue'

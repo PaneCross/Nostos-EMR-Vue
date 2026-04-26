@@ -4,6 +4,19 @@
      status grid and links to the state Medicaid configuration page. -->
 
 <script setup lang="ts">
+// ─── ItAdmin/SystemSettings ─────────────────────────────────────────────────
+// Tenant-level configuration: CMS PACE contract number, state, organization
+// timezone, plus a status grid for active integration connectors and a link
+// to per-state Medicaid configuration.
+//
+// Audience: IT Admin only.
+//
+// Notable rules:
+//   - PACE contract number is the tenant's CMS identifier; changing it
+//     mid-year is highly unusual and should be coordinated with Finance.
+//   - Timezone change affects every cron / deadline job — be deliberate.
+//   - Form uses preserveScroll so admins don't lose place after save.
+// ────────────────────────────────────────────────────────────────────────────
 import { ref } from 'vue'
 import { Head, useForm, router } from '@inertiajs/vue3'
 import AppShell from '@/Layouts/AppShell.vue'

@@ -6,6 +6,19 @@
   All data except compliance tabs is delivered as Inertia props.
 -->
 <script setup lang="ts">
+// ─── Qa/Dashboard ───────────────────────────────────────────────────────────
+// QA Compliance landing page: 11 KPIs, open incident queue, lazy-loaded
+// compliance tabs (incidents / unsigned notes / overdue assessments /
+// grievances), security posture widget, and CSV exports.
+//
+// Audience: QA Compliance department, Executive read-through.
+//
+// Notable rules:
+//   - All KPIs feed the org's CMS audit posture; this is the single page a
+//     QA director should be able to walk a surveyor through.
+//   - Security widget summarizes BAA / SRA / encryption status (see
+//     ItAdmin/Security.vue for the editable detail).
+// ────────────────────────────────────────────────────────────────────────────
 import { ref, computed, onMounted } from 'vue'
 import { Head, usePage, router } from '@inertiajs/vue3'
 import AppShell from '@/Layouts/AppShell.vue'

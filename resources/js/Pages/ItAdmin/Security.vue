@@ -4,6 +4,20 @@
      IT Admins can add and edit BAA/SRA records and view runtime encryption posture. -->
 
 <script setup lang="ts">
+// ─── ItAdmin/Security ───────────────────────────────────────────────────────
+// HIPAA security posture dashboard — three tabs:
+//   - BAA (Business Associate Agreement) records: signed contracts with
+//     vendors that touch PHI on the org's behalf.
+//   - SRA (Security Risk Analysis) records: annual self-audit per HIPAA.
+//   - Encryption status: at-rest + in-transit checklist (runtime probed).
+//
+// Audience: IT Admin / Privacy Officer.
+//
+// Notable rules:
+//   - HIPAA §164.308(a)(1)(ii)(A) — periodic risk analysis required.
+//   - HIPAA §164.308(b) — written BAA required before any PHI sharing.
+//   - Per-row append-only history; superseded BAAs/SRAs are retained.
+// ────────────────────────────────────────────────────────────────────────────
 import { ref } from 'vue'
 import { Head, router } from '@inertiajs/vue3'
 import AppShell from '@/Layouts/AppShell.vue'

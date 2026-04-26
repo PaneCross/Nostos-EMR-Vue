@@ -5,6 +5,18 @@
      highlighted in amber per 45 CFR 164.312(a)(2)(ii). -->
 
 <script setup lang="ts">
+// ─── ItAdmin/BreakGlass ─────────────────────────────────────────────────────
+// "Break-the-glass" emergency access review: when a clinician needs to read
+// a chart they normally couldn't (e.g. cross-site emergency), the system
+// allows the read but records a break-glass event for after-the-fact review.
+//
+// Audience: IT Admin + supervisors review/ack each event.
+//
+// Notable rules:
+//   - 45 CFR §164.312(a)(2)(ii) — emergency-access procedure must exist and
+//     be reviewed. Events older than 24h without supervisor ack render amber.
+//   - Append-only — events cannot be deleted; ack is the only mutation.
+// ────────────────────────────────────────────────────────────────────────────
 import { ref, computed } from 'vue'
 import { Head, usePage } from '@inertiajs/vue3'
 import AppShell from '@/Layouts/AppShell.vue'

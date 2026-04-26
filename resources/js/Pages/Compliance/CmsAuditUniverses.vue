@@ -1,6 +1,17 @@
 <script setup lang="ts">
-// ─── Compliance / CMS Audit Universes — Phase R11 + V3 ─────────────────────
-// CMS PACE Audit Protocol 2.0 universe-pull workspace.
+// ─── Compliance/CmsAuditUniverses ───────────────────────────────────────────
+// Centralised workspace for generating CMS audit "universes" — the standard
+// data extracts a CMS (Centers for Medicare & Medicaid Services) surveyor
+// requests during a PACE audit (one CSV per protocol section).
+//
+// Audience: QA Compliance only. Generation can be expensive; a 409 Conflict
+// is returned if a generation job is already in progress for that universe.
+//
+// Notable rules:
+//   - CMS PACE Audit Protocol 2.0 — defines the universe formats.
+//   - Each universe is an append-only snapshot pinned to its run timestamp;
+//     do not mutate stored CSVs after the fact.
+// ────────────────────────────────────────────────────────────────────────────
 import { ref } from 'vue'
 import { Head, router } from '@inertiajs/vue3'
 import axios from 'axios'

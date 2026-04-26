@@ -1,7 +1,13 @@
 <script setup lang="ts">
-// ─── DischargeTab.vue ────────────────────────────────────────────────────────
-// Phase J3 — Discharge events + 8-item checklist with per-item completion.
-// ─────────────────────────────────────────────────────────────────────────────
+// ─── DischargeTab.vue ──────────────────────────────────────────────────────
+// Discharge events from a facility (hospital, SNF, ED) plus an 8-item
+// post-discharge checklist (home visit, med-rec, follow-up appt, etc.)
+// with per-item completion tracking. PACE keeps the participant on
+// discharge — this tab tracks the transition-of-care tasks IDT
+// (Interdisciplinary Team) owes them in the next 7-30 days.
+//
+// Write access: primary_care, social_work, home_care.
+// ───────────────────────────────────────────────────────────────────────────
 import { ref, onMounted } from 'vue'
 import axios from 'axios'
 import { PlusIcon, CheckCircleIcon } from '@heroicons/vue/24/outline'

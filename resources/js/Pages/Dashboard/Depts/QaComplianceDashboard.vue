@@ -1,6 +1,9 @@
 <script setup lang="ts">
 // ─── QaComplianceDashboard.vue ────────────────────────────────────────────────
-// QA / Compliance department live dashboard.
+// QA / Compliance department live dashboard. Used by QAPI (Quality Assessment /
+// Performance Improvement) staff to monitor SDR (Significant Decline Report)
+// timeliness, overdue assessments, unsigned notes, open incidents (RCA pending),
+// overdue care plans, and recent hospitalizations. Drives 42 CFR §460.200 QAPI.
 // Endpoints:
 //   GET /dashboards/qa-compliance/metrics    → { sdr_compliance_rate, overdue_assessments_count, unsigned_notes_count, open_incidents_count, overdue_care_plans_count, hospitalizations_count }
 //   GET /dashboards/qa-compliance/incidents  → { incidents[], open_count, rca_pending_count }

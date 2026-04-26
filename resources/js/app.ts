@@ -1,5 +1,23 @@
 // ─── NostosEMR Vue — Application Entry Point ─────────────────────────────────
-// Bootstraps the Inertia + Vue 3 SPA.
+// Bootstraps the Inertia + Vue 3 SPA. This file runs ONCE per page-load on
+// the client and configures everything every page depends on:
+//
+//   1. Vue 3 + Inertia client setup (lazy-loads page components on demand).
+//   2. Global axios config (sends cookies, XSRF token, X-Requested-With header).
+//   3. Global axios response interceptor (V5/W2) — surfaces 5xx, 403, 409,
+//      and network failures as toasts via the 'nostos:toast' CustomEvent
+//      that Components/Toaster.vue listens for. Skips 422 (forms render
+//      their own per-field errors) and 401 (auth redirect handles it).
+//      Reloads the page on 419 (CSRF expired) to refresh the token.
+//   4. Reverb / Laravel Echo bootstrap for WebSocket alerts + chat.
+//
+// Stack acronym primer (one-liner each):
+//   Inertia = a thin layer that lets Laravel return Vue components from
+//             controllers like a server-side framework, without an SPA API.
+//   Vite    = the dev server + production bundler (replaces Webpack).
+//   Reverb  = Laravel's WebSocket server (real-time alerts, chat).
+//   Echo    = the Laravel-flavored client wrapper around Pusher protocol.
+//
 // All page components are lazy-loaded via dynamic import for code splitting.
 // ─────────────────────────────────────────────────────────────────────────────
 
