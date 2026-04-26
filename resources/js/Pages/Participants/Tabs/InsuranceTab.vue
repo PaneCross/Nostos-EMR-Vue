@@ -106,8 +106,17 @@ async function submit() {
     }
     showModal.value = false; form.value = blankForm()
   } catch (err: unknown) {
-    const e = err as { response?: { data?: { message?: string } } }
-    error.value = e.response?.data?.message ?? 'Failed to save.'
+    // Phase Y5 (Audit-13 H2): extract field-level 422 errors so the user can
+    // see WHICH field is bad, not just a generic "Failed to save."
+    const e = err as { response?: { data?: { message?: string; errors?: Record<string, string[]> } } }
+    const fieldErrors = e.response?.data?.errors
+    if (fieldErrors && Object.keys(fieldErrors).length) {
+      const firstField = Object.keys(fieldErrors)[0]
+      const firstMsg = fieldErrors[firstField]?.[0] ?? 'Validation failed.'
+      error.value = `${firstField}: ${firstMsg}`
+    } else {
+      error.value = e.response?.data?.message ?? 'Failed to save.'
+    }
     saving.value = false
   }
 }
@@ -142,12 +151,25 @@ interface SpendDownPayload {
 const spendDown = ref<SpendDownPayload | null>(null)
 const spendDownLoading = ref(false)
 
+const spendDownLoadError = ref<string | null>(null)
 async function loadSpendDown() {
     spendDownLoading.value = true
+    spendDownLoadError.value = null
     try {
         const res = await axios.get(`/participants/${props.participant.id}/spend-down`)
         spendDown.value = res.data
-    } catch { /* silent */ }
+    } catch (err: unknown) {
+        // Phase Y5 (Audit-13 H3): the previous silent catch produced no UX
+        // signal — user couldn't tell empty-vs-failed. Now logs + sets a
+        // visible inline error string. The V5 axios interceptor already
+        // dispatched a toast for 5xx, so this is the secondary inline cue.
+        const e = err as { response?: { status?: number } }
+        spendDownLoadError.value = e.response?.status === 404
+            ? null  // no spend-down for this participant — expected, no error
+            : 'Could not load spend-down data. Reload to retry.'
+        // eslint-disable-next-line no-console
+        console.warn('[InsuranceTab] spend-down load failed', err)
+    }
     finally { spendDownLoading.value = false }
 }
 
@@ -311,6 +333,13 @@ onMounted(loadRaf)
         </li>
       </ul>
     </section>
+
+    <!-- Phase Y5 (Audit-13 H3): visible spend-down load failure indicator -->
+    <div v-if="spendDownLoadError"
+         class="mb-4 rounded-md border border-rose-300 dark:border-rose-700 bg-rose-50 dark:bg-rose-950/40 px-4 py-2 text-sm text-rose-800 dark:text-rose-200"
+         role="alert">
+      {{ spendDownLoadError }}
+    </div>
 
     <!-- Phase 7 (MVP roadmap): Medicaid spend-down / share-of-cost panel -->
     <section v-if="spendDown && spendDown.coverage?.has_spend_down"
