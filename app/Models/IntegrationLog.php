@@ -1,15 +1,21 @@
 <?php
 
-// ─── IntegrationLog Model ──────────────────────────────────────────────────────
-// Records every inbound/outbound integration message for audit and retry.
+// ─── IntegrationLog ───────────────────────────────────────────────────────────
+// Append-only log of every external integration message exchanged with this
+// EMR — used for audit, troubleshooting, and retry of failed deliveries.
 //
-// Key behaviors:
-//   - Append-only: no updated_at, no SoftDeletes
-//   - Status lifecycle: pending → processed | failed; failed → retried
-//   - IT Admin can retry failed entries (increments retry_count)
-//   - raw_payload stored as JSONB for query-ability
+// Connectors that write here:
+//  - hl7_adt        : HL7 (Health Level 7) ADT (Admission/Discharge/Transfer)
+//                     messages from hospital partners — tells us when our
+//                     participant is admitted/discharged elsewhere.
+//  - lab_results    : Inbound HL7 ORU lab results.
+//  - pharmacy_ncpdp : Pharmacy network messaging (NCPDP standard).
+// Lifecycle: pending → processed | failed; failed entries can be retried by
+// IT Admin (status flips to `retried`, retry_count increments).
 //
-// Used by: Hl7AdtConnector, LabResultConnector, IntegrationStatusController
+// Notable rules:
+//  - Append-only: no `updated_at`, no soft-deletes (HIPAA non-repudiation).
+//  - Tenant-scoped: every query must filter by tenant_id.
 // ─────────────────────────────────────────────────────────────────────────────
 
 namespace App\Models;

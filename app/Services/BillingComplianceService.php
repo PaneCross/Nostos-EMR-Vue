@@ -4,6 +4,25 @@
 // Computes the billing compliance checklist for the Finance department.
 // Powers GET /billing/compliance-checklist (Finance/ComplianceChecklist.tsx).
 //
+// PLAIN-ENGLISH PURPOSE: PACE organizations get paid a fixed monthly amount per
+// member (capitation) instead of fee-per-visit. CMS requires us to prove our
+// billing pipeline is healthy — encounters logged, diagnoses coded, payment
+// reconciled. This service runs the daily "are we billing-clean?" check.
+//
+// Acronym glossary used in this file:
+//   PACE  = Programs of All-Inclusive Care for the Elderly (Medicare/Medicaid program for frail elderly 55+).
+//   CMS   = Centers for Medicare & Medicaid Services (the federal regulator that pays us).
+//   RAF   = Risk Adjustment Factor — a per-member multiplier on the CMS payment.
+//           Sicker members → higher RAF → more payment. Computed from diagnoses.
+//   HCC   = Hierarchical Condition Category — diagnostic groupings CMS uses to
+//           compute RAF. "HCC gap" = a known diagnosis we never coded, leaving money on the table.
+//   HPMS  = Health Plan Management System — CMS's contractor portal where PACE orgs
+//           upload monthly enrollment + disenrollment files.
+//   PDE   = Prescription Drug Event — every Part-D prescription dispensed produces
+//           a PDE record we submit to CMS for reconciliation.
+//   TrOOP = True Out-Of-Pocket — Part D's running total of what a member has
+//           personally paid this year. Crossing thresholds changes their cost-share.
+//
 // Five checklist categories (per CMS PACE billing requirements):
 //   1. Encounter Data       — completeness, diagnosis codes, pending queue
 //   2. Risk Adjustment      — RAF scores current, HCC gaps identified, stale records

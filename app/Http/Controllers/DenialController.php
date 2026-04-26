@@ -6,6 +6,7 @@
 // Surfaces DenialRecord entries created automatically by Process835RemittanceJob
 // when a CLP02 claim status of '3' (denied) is encountered in an 835 ERA file.
 //
+// 120-day deadline = Medicare appeal window per 42 CFR §405.942.
 // The denial lifecycle (42 CFR §405.942 — 120-day CMS Medicare appeal deadline):
 //   open → appealing → won | lost | written_off
 //

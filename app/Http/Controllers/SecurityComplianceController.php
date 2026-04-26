@@ -4,6 +4,27 @@
 // HIPAA Security Rule compliance management: BAA tracking + SRA records +
 // runtime encryption status checklist.
 //
+// PLAIN-ENGLISH PURPOSE: HIPAA requires us to (a) sign a BAA with any vendor
+// that touches PHI on our behalf, (b) do an annual SRA documenting where PHI
+// lives and how we protect it, (c) prove encryption is on. This controller
+// is where IT Admin tracks all of that.
+//
+// Acronym glossary used in this file:
+//   HIPAA = Health Insurance Portability and Accountability Act (federal patient-
+//           privacy law). Has two main rules: Privacy Rule (who can see PHI)
+//           and Security Rule (technical/admin/physical safeguards).
+//   PHI   = Protected Health Information — anything that identifies a patient
+//           combined with a clinical fact.
+//   BAA   = Business Associate Agreement — HIPAA-required contract with any
+//           vendor that touches PHI on our behalf (cloud host, billing service,
+//           lab, etc.). 45 CFR §164.502(e).
+//   SRA   = Security Risk Analysis — the annual self-audit of where PHI lives
+//           and what could go wrong. 45 CFR §164.308(a)(1)(ii)(A) requires it.
+//   "Break-the-glass" = the security pattern where any clinician CAN reach a
+//                       restricted record in an emergency, but the access is
+//                       logged and reviewed after the fact. PACE does this so
+//                       a code-blue isn't blocked by a permissions error.
+//
 // Resolves BLOCKER-01 (encryption at rest) and BLOCKER-03 (SRA / BAA tracking)
 // from the 2026-03-31 compliance audit.
 //

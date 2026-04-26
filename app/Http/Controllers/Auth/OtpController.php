@@ -1,5 +1,24 @@
 <?php
 
+// ─── OtpController ────────────────────────────────────────────────────────────
+// Passwordless staff login via OTP (One-Time Password) emailed codes.
+//
+// Three endpoints:
+//   GET  /login              showLogin   — renders the Vue login page.
+//   POST /auth/request-otp   requestOtp  — emails a 6-digit code (always 200,
+//                                          never reveals whether the email
+//                                          is registered).
+//   POST /auth/verify-otp    verifyOtp   — verifies the code and signs the
+//                                          user in, returning the dashboard
+//                                          redirect URL.
+//   POST /auth/logout        logout      — invalidates session; logs reason
+//                                          (timeout vs explicit) to AuditLog.
+//
+// Notable rules:
+//  - Rate-limited to 5 attempts per minute per IP on both request + verify
+//    (HIPAA §164.312 brute-force safeguard).
+// ─────────────────────────────────────────────────────────────────────────────
+
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;

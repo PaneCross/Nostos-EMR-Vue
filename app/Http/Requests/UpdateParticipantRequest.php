@@ -1,5 +1,24 @@
 <?php
 
+// ─── UpdateParticipantRequest ────────────────────────────────────────────────
+// Validates edits to an existing PACE participant record. Field-level RBAC
+// (Role-Based Access Control) is applied: every authenticated user can
+// edit a "base" set (preferences, language, advance directives,
+// demographics for SDOH/clinical use), but enrollment-sensitive fields
+// (legal name, dob, Medicare/Medicaid IDs, enrollment_status,
+// disenrollment fields) are gated to enrollment + it_admin.
+//
+// Auth gate: Any authenticated user; per-field gating happens inside
+//            rules() based on the user's department.
+// Validates: base set always includes preferred_name, languages,
+//            interpreter flags, advance-directive fields, race/ethnicity,
+//            marital status, legal-rep, religion, veteran status,
+//            education. Enrollment-only set adds site, legal name, dob,
+//            payer IDs, enrollment_status + the disenrollment trio.
+// Notable rules: 42 CFR §460.96 (advance directives) and §460.160(b)
+//                (death is a disenrollment reason, not a status).
+// ─────────────────────────────────────────────────────────────────────────────
+
 namespace App\Http\Requests;
 
 use App\Support\DisenrollmentTaxonomy;

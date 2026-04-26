@@ -1,5 +1,21 @@
 <?php
 
+// ─── Tenant ───────────────────────────────────────────────────────────────────
+// Top-level multi-tenancy root. One row per PACE (Programs of All-Inclusive
+// Care for the Elderly) organization served by this EMR install.
+//
+// A tenant owns Sites (physical day-center locations), Users (staff), and —
+// indirectly through Site/Participant — every clinical record in the system.
+// `cms_contract_id` is the federal Centers for Medicare & Medicaid Services
+// contract number issued to the PACE org. `transport_mode` chooses whether
+// participant rides are dispatched by an outside broker or in-house fleet.
+//
+// Notable rules:
+//  - Tenant-scoped: every clinical query MUST filter by tenant_id. Cross-
+//    tenant access is a HIPAA breach (45 CFR §164.312 access controls).
+//  - `auto_logout_minutes` per-tenant tunes the inactivity-timeout safeguard.
+// ─────────────────────────────────────────────────────────────────────────────
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;

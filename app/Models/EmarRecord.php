@@ -20,7 +20,7 @@
 //   refused       — Participant declined; reason_not_given required
 //   held          — Held per MD order; reason_not_given required
 //   not_available — Drug not in stock; reason_not_given required
-//   late          — Scheduled window passed without administration
+//   late          — Scheduled window passed without administration (set by LateMarDetectionJob, not by direct user action)
 //   missed        — Nurse explicitly marked as missed
 // ──────────────────────────────────────────────────────────────────────────────
 

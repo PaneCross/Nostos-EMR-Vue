@@ -3,6 +3,24 @@
 // ─── HccRiskScoringService ────────────────────────────────────────────────────
 // Maps participant ICD-10 diagnoses to CMS-HCC categories for risk adjustment.
 //
+// PLAIN-ENGLISH PURPOSE: PACE organizations get paid a flat monthly rate per
+// member, but CMS multiplies that rate by a risk score so we get more for
+// sicker members and less for healthy ones. The risk score is built from each
+// member's documented diagnoses. If a diagnosis exists in the chart but never
+// makes it onto a submitted encounter, CMS doesn't see it and we don't get
+// paid for it. This service finds those "gaps" — known diagnoses that haven't
+// been billed yet this calendar year — so finance can fix them.
+//
+// Acronym glossary used in this file:
+//   ICD-10 = International Classification of Diseases v10 — the standard
+//            diagnosis code system (e.g. "I50.32" = chronic systolic heart failure).
+//   HCC    = Hierarchical Condition Category — CMS's grouping of diagnoses.
+//            Many ICD-10 codes map to the same HCC. Each HCC has a RAF weight.
+//   RAF    = Risk Adjustment Factor — the per-member multiplier on the CMS
+//            capitation rate. RAF 1.0 = average; >1.0 = sicker; <1.0 = healthier.
+//   CMS    = Centers for Medicare & Medicaid Services (federal regulator/payer).
+//   PACE   = Programs of All-Inclusive Care for the Elderly.
+//
 // CMS uses the HCC risk adjustment model to calculate PACE capitation rates.
 // Each participant's documented ICD-10 diagnoses map to HCC categories via
 // emr_hcc_mappings. The sum of HCC RAF values (+ demographic factors) produces

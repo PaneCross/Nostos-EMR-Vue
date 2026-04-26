@@ -3,6 +3,7 @@
 // ─── AuditLogController ───────────────────────────────────────────────────────
 // IT Admin panel: HIPAA-required audit log viewer and CSV exporter.
 // Every read and write in the system is recorded to shared_audit_logs (append-only).
+// Append-only by design — HIPAA non-repudiation. Never UPDATE these rows; new actions get new rows.
 // IT Admin can search and filter this log, and export it as CSV for compliance audits.
 //
 // Routes (all require department='it_admin'):

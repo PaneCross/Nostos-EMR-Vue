@@ -4,9 +4,24 @@
 // Daily job that identifies enrolled participants who are overdue for their
 // 6-month IDT reassessment and creates deduplicating warning alerts.
 //
-// 42 CFR §460.104(c): The IDT must reassess each participant at least every
-// 6 months, and more frequently when there is a significant change in status.
-// This is a common CMS survey deficiency in PACE programs.
+// PLAIN-ENGLISH PURPOSE: PACE law says the clinical team must sit down and
+// re-review each member's care plan every 6 months. This job runs every day
+// and asks "anyone go more than 180 days without a review?" If yes, it drops
+// a warning into the IDT alert feed. It deduplicates so the same overdue
+// member doesn't generate a fresh alert every morning.
+//
+// Acronym glossary:
+//   IDT  = Interdisciplinary Team (PACE clinical team meeting weekly).
+//   PACE = Programs of All-Inclusive Care for the Elderly.
+//   CMS  = Centers for Medicare & Medicaid Services (federal regulator).
+//
+// 42 CFR §460.104(c) in plain English: "Reassess each enrolled member at
+// least every 6 months, and sooner if their condition changes meaningfully."
+// (See also §460.104(b) — the "significant change triggers a 30-day
+// reassessment" rule, surfaced via SignificantChangeOverdueJob.)
+//
+// CMS surveyors check for this every PACE audit. Late reassessments are one
+// of the most-cited deficiencies — hence the daily nag.
 //
 // Schedule: daily at 07:30 (staggered from TransferCompletionJob at 7am)
 // Queue:    idt-review

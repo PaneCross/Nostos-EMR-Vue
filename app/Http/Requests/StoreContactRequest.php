@@ -1,5 +1,19 @@
 <?php
 
+// ─── StoreContactRequest ─────────────────────────────────────────────────────
+// Validates adding a contact person to a participant's chart — emergency
+// contact, next of kin, POA (Power of Attorney — a legal representative),
+// caregiver, primary-care or specialist physician outside PACE, etc.
+//
+// Auth gate: Any authenticated user; finer-grained checks are in the
+//            controller.
+// Validates: contact_type (enum), first/last name (required), optional
+//            relationship + phones + email, boolean flags for
+//            is_legal_representative and is_emergency_contact, and a
+//            priority_order (1–99) used to rank contacts on the
+//            participant header.
+// ─────────────────────────────────────────────────────────────────────────────
+
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;

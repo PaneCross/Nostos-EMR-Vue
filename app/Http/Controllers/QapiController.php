@@ -2,6 +2,7 @@
 
 // ─── QapiController ───────────────────────────────────────────────────────────
 // CRUD for QAPI (Quality Assessment and Performance Improvement) projects.
+// 42 CFR §460.136-140 — Quality Assessment / Performance Improvement requirements for PACE: organized program with annual evaluation.
 //
 // 42 CFR §460.136–§460.140: PACE organizations must maintain at least 2 active
 // QI projects at any time of the year. This controller tracks the full project

@@ -3,6 +3,21 @@
 // ─── RiskAdjustmentService ────────────────────────────────────────────────────
 // Manages CMS-HCC risk adjustment data lifecycle for PACE participants.
 //
+// PLAIN-ENGLISH PURPOSE: This is the high-level service that drives the
+// "are we capturing every diagnosis we should be billing for?" workflow.
+// See HccRiskScoringService for the heavy mapping math; this file is the
+// orchestrator that reads/writes per-participant risk scores and finds gaps.
+//
+// Acronym glossary (full glossary in HccRiskScoringService.php):
+//   PACE   = Programs of All-Inclusive Care for the Elderly.
+//   CMS    = Centers for Medicare & Medicaid Services.
+//   ICD-10 = standard diagnosis code system (e.g. "I50.32" = chronic CHF).
+//   HCC    = Hierarchical Condition Category — CMS's grouping of diagnoses.
+//   RAF    = Risk Adjustment Factor — multiplier on CMS payment for member health.
+//   "Gap"  = a chart-documented diagnosis that hasn't been submitted to CMS
+//            in the current calendar year. CMS forgets diagnoses every Jan 1,
+//            so they must be re-submitted annually to keep counting.
+//
 // Responsibilities:
 //   1. getDiagnosesForRiskSubmission()  — returns active ICD-10 codes ready to be
 //      submitted in encounter data for CMS risk scoring

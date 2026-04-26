@@ -2,6 +2,7 @@
 
 // ─── FhirController ───────────────────────────────────────────────────────────
 // Serves FHIR R4 resources for external EHR/HIE integration.
+// FHIR = Fast Healthcare Interoperability Resources (the modern HL7 REST API standard for clinical data).
 //
 // Authentication: FhirAuthMiddleware (Bearer token + per-route scope check).
 // Tenant isolation: all queries are scoped to fhir_tenant_id from the token.

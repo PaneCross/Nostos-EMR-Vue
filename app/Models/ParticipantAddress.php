@@ -1,5 +1,19 @@
 <?php
 
+// ─── ParticipantAddress ───────────────────────────────────────────────────────
+// One physical address belonging to a participant (the enrolled elderly
+// person receiving PACE — Programs of All-Inclusive Care for the Elderly —
+// services). A participant can have multiple addresses (home, mailing,
+// temporary, caregiver) tracked over time via effective_date / end_date.
+//
+// `is_primary` marks the current canonical address shown on the chart header
+// and used for transportation pickup. Soft-deletes preserve historical rows.
+//
+// Notable rules:
+//  - Address is PHI (Protected Health Information) under HIPAA — tenant-scoped
+//    via the parent Participant; never query without that join.
+// ─────────────────────────────────────────────────────────────────────────────
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;

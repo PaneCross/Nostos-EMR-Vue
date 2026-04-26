@@ -1,5 +1,21 @@
 <?php
 
+// ─── InsuranceCoverage ────────────────────────────────────────────────────────
+// One payer coverage record for a participant. PACE participants are nearly
+// always dually-eligible (Medicare + Medicaid), so it is normal to see
+// multiple active rows per participant: Medicare Part A, Part B, Part D
+// (drugs), and state Medicaid.
+//
+// Drives claim submission (X12 837P), pharmacy routing (BIN/PCN), and the
+// Medicaid spend-down workflow (the participant's monthly share-of-cost
+// obligation that must be met before Medicaid pays).
+//
+// Notable rules:
+//  - 45 CFR §164.312(a)(2)(iv) HIPAA: `member_id` and `bin_pcn` are PHI and
+//    are encrypted at rest via Laravel's `encrypted` cast.
+//  - Tenant-scoped through the parent Participant.
+// ─────────────────────────────────────────────────────────────────────────────
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;

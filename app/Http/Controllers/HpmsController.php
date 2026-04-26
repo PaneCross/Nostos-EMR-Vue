@@ -2,6 +2,7 @@
 
 // ─── HpmsController ───────────────────────────────────────────────────────────
 // Manages HPMS (Health Plan Management System) file submissions for PACE.
+// HPMS = Health Plan Management System (CMS's contractor-facing portal where PACE orgs upload enrollment files).
 //
 // Route list:
 //   GET   /billing/hpms                          → index()         — Inertia page

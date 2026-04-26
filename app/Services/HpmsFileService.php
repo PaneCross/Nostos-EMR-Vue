@@ -3,6 +3,25 @@
 // ─── HpmsFileService ─────────────────────────────────────────────────────────
 // Generates CMS Health Plan Management System (HPMS) submission files for PACE.
 //
+// PLAIN-ENGLISH PURPOSE: Once a month CMS expects a list of who enrolled in
+// our PACE program and who left. That list is uploaded to HPMS — CMS's
+// contractor-facing portal — as pipe-delimited text files. This service
+// produces those files. Quarterly we also send aggregate quality data,
+// and annually a member-satisfaction survey roll-up.
+//
+// Acronym glossary used in this file:
+//   CMS      = Centers for Medicare & Medicaid Services (federal regulator/payer).
+//   PACE     = Programs of All-Inclusive Care for the Elderly.
+//   HPMS     = Health Plan Management System — CMS's contractor portal.
+//   H-Number = a PACE org's CMS Contract ID (e.g. "H1234"); think of it as
+//              the federal account number for our program.
+//   MBI      = Medicare Beneficiary Identifier — the patient's 11-character
+//              federal Medicare ID (replaced SSN-based HICN in 2018).
+//   ADT      = Admission/Discharge/Transfer — a class of HL7 messages tracking
+//              when a member is admitted to or discharged from a facility.
+//   HOS-M    = Health Outcomes Survey – Modified — the annual CMS-required
+//              member health-status survey for PACE.
+//
 // HPMS submission types:
 //   enrollment     — Monthly, pipe-delimited, one record per newly enrolled participant
 //   disenrollment  — Monthly, pipe-delimited, one record per disenrolled participant

@@ -1,5 +1,22 @@
 <?php
 
+// ─── StoreMedReconciliationRequest ───────────────────────────────────────────
+// Validates recording a Medication Reconciliation event — the clinical
+// process where a clinician compares the participant's current med list
+// against another source (hospital discharge summary, IDT visit, primary
+// care visit) and decides for each med whether to continue, discontinue,
+// modify, or add new. IDT = Interdisciplinary Team, the PACE clinical
+// team that meets to plan each member's care.
+//
+// Auth gate: Any authenticated user; finer-grained checks are in the
+//            controller (typically pharmacy or clinical staff).
+// Validates: reconciliation_type, reconciled_at timestamp, optional
+//            clinical_notes + has_discrepancies flag, plus a required
+//            array of reconciled_medications — each row needs an existing
+//            medication_id, a drug_name, an action enum (continue /
+//            discontinue / modify / new), and optional discrepancy_note.
+// ─────────────────────────────────────────────────────────────────────────────
+
 namespace App\Http\Requests;
 
 use App\Models\MedReconciliation;

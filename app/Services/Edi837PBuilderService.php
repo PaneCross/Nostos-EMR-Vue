@@ -4,6 +4,34 @@
 // Generates ANSI X12 5010A1 837P (Professional) EDI transaction files for
 // submission to CMS Encounter Data System (EDS) via CSSC Operations.
 //
+// PLAIN-ENGLISH PURPOSE: When a clinician sees a member, we owe CMS a record
+// of that encounter (diagnoses, procedures, charge). This file builds the
+// federally-mandated text format CMS requires. Think of it as a structured
+// pipe-delimited "I saw this patient and did this" message.
+//
+// Acronym glossary used in this file:
+//   EDI       = Electronic Data Interchange — the X12 family of healthcare
+//               messages (claims, eligibility, remittance). Pipe-delimited text.
+//   X12       = the umbrella standards body whose 5010 release governs current
+//               US healthcare EDI; "5010A1" is the specific addendum version.
+//   837P      = the X12 transaction set for **Professional** medical claims
+//               (clinician encounters). 837I is the institutional/hospital flavor.
+//   CMS       = Centers for Medicare & Medicaid Services (federal regulator/payer).
+//   EDS       = Encounter Data System — CMS's intake for encounter records.
+//   CSSC      = Customer Service & Support Center — the CMS contractor that
+//               receives EDS submissions on CMS's behalf.
+//   NPI       = National Provider Identifier — every clinician + organization
+//               has a 10-digit NPI assigned by CMS (think of it as a tax ID for healthcare).
+//   POS       = Place of Service — a 2-digit code where care happened
+//               (e.g. "11" = office, "12" = home, "32" = nursing facility).
+//   CLM       = Claim segment — the header row inside the 837P that identifies
+//               this specific claim (claim ID, charge, patient, dates).
+//   ICD-10    = International Classification of Diseases v10 — the diagnosis code system.
+//   CPT       = Current Procedural Terminology — the procedure code system.
+//   PXC       = Provider Taxonomy Code (in this file, "261QR0405X" = PACE).
+//
+// Read this for context: https://www.cms.gov/Medicare/Billing/ElectronicBillingEDITrans/837P
+//
 // X12 5010A1 837P segment structure (PACE EDR/CRR):
 //   ISA*00*...*00*...*ZZ*{submitter_npi}*ZZ*CMS...*{date}*{time}*^*00501...
 //   GS*HC*{sender_id}*CMSMEDICARED*{date}*{time}*1*X*005010X222A2

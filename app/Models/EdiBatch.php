@@ -1,17 +1,21 @@
 <?php
 
 // ─── EdiBatch ─────────────────────────────────────────────────────────────────
-// Represents one X12 5010A1 EDI batch file submitted (or being prepared for
-// submission) to CMS Encounter Data System (EDS) via CSSC Operations.
+// One EDI (Electronic Data Interchange) batch file destined for CMS
+// (Centers for Medicare & Medicaid Services). The EDI standard used is the
+// X12 5010A1 family — the federal format for healthcare claims and encounter
+// data. Each batch aggregates many EncounterLog rows into a single file.
 //
-// Each batch aggregates one or more EncounterLog records into a single EDI file.
 // batch_type:
-//   edr = Encounter Data Records (external services with existing claim)
-//   crr = Chart Review Records (PACE center services, no external claim)
-//   pde = Prescription Drug Event batch (Part D PDE submissions)
+//   edr = Encounter Data Records — external services where a claim exists.
+//   crr = Chart Review Records   — PACE day-center services, no outside claim.
+//   pde = Prescription Drug Event — Part D drug submissions.
+// Lifecycle: draft → submitted → acknowledged | partially_accepted | rejected.
 //
-// File content is stored in file_content — the full X12 text.
-// Downloads go through EdiBatchController::download() (never direct URL).
+// Notable rules:
+//  - Only `draft` batches are editable; once submitted they are locked.
+//  - file_content holds the raw X12 text; download is gated through
+//    EdiBatchController (no direct storage URLs) — PHI must stay tenant-scoped.
 // ─────────────────────────────────────────────────────────────────────────────
 
 namespace App\Models;

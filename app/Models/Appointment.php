@@ -25,6 +25,7 @@
 // Conflict detection:
 //   ConflictDetectionService prevents overlapping appointments for the same
 //   participant. Cancelled appointments are excluded from conflict checks.
+//   Conflict detection uses half-open intervals: [start, end). Two appointments at 10:00–11:00 and 11:00–12:00 do NOT conflict.
 //
 // transport_request_id references transport.transport_requests (NO FK constraint —
 // cross-app reference, transport tables are read-only in the EMR app).

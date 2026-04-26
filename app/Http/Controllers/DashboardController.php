@@ -1,5 +1,23 @@
 <?php
 
+// ─── DashboardController ──────────────────────────────────────────────────────
+// Renders the per-department landing page at /dashboard/{department}, plus a
+// `redirect()` action that sends "/" to the right dashboard for the user.
+//
+// Routing rules by user kind:
+//  - Nostos super-admin DEPARTMENT (platform staff): can view any dept's
+//    dashboard across tenants; lands on /dashboard/super_admin.
+//  - Executive department: locked to /dashboard/executive (cross-site read-only).
+//  - Role-level super-admin (impersonation enabled): if impersonating, redirected
+//    to the impersonated user's dept; otherwise uses a "View as" dept selector.
+//  - Regular user: must match own department or 403 (logged to AuditLog).
+//
+// Notable rules:
+//  - 42 CFR §460.91 PACE access controls — regular users cannot peek at other
+//    departments' dashboards; mismatch is recorded as an unauthorized_access
+//    AuditLog entry for compliance review.
+// ─────────────────────────────────────────────────────────────────────────────
+
 namespace App\Http\Controllers;
 
 use App\Models\AuditLog;

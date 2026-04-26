@@ -1,5 +1,21 @@
 <?php
 
+// ─── HandleInertiaRequests ────────────────────────────────────────────────────
+// Inertia.js bridge middleware (Laravel/Inertia plumbing).
+//
+// On every page request this builds a "shared props" payload that is injected
+// into the Vue frontend so client-side components can render without extra
+// API calls. Included: authenticated user, tenant, active site, permission
+// map, nav groups, impersonation banner state, flash success/error messages,
+// and Ziggy route table.
+//
+// Notable rules:
+//  - When a super-admin is impersonating, `auth.user` is the IMPERSONATED user
+//    (so the UI renders their department/role) while `auth.real_user` carries
+//    the super-admin identity for the header banner and audit context.
+//  - Theme preference always follows the real user, not the impersonated one.
+// ─────────────────────────────────────────────────────────────────────────────
+
 namespace App\Http\Middleware;
 
 use App\Models\Site;

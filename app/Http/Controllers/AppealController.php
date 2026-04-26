@@ -3,6 +3,21 @@
 // ─── AppealController ─────────────────────────────────────────────────────────
 // Index/show/file/decide/withdraw/close endpoints for §460.122 appeals.
 // Also exposes the denial-notice PDF download endpoint.
+//
+// PLAIN-ENGLISH PURPOSE: If we (the PACE plan) deny a service a member
+// requested — say, an out-of-network specialist visit — the member has the
+// right to appeal that denial. This controller manages the appeal lifecycle:
+// member files appeal → we acknowledge → we review → we decide (uphold or
+// overturn) → if upheld, member can escalate to external review.
+//
+// Regulatory clock (42 CFR §460.122):
+//   - "We said no, here's how members fight back" — the federal appeals process.
+//   - Standard appeal: we have 30 days to decide.
+//   - Expedited appeal: 72 hours (when delay would jeopardize member's health).
+//   - If we uphold, member can request CMS-level external review.
+//
+// Distinct from a Grievance (§460.120) which is "I'm unhappy" with no specific
+// service-denial event. Appeals = "you said no to a specific thing, change it."
 // ─────────────────────────────────────────────────────────────────────────────
 
 namespace App\Http\Controllers;

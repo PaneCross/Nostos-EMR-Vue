@@ -3,6 +3,21 @@
 // ─── CarePlanController ───────────────────────────────────────────────────────
 // Manages CMS-compliant care plans for PACE participants.
 //
+// PLAIN-ENGLISH PURPOSE: A "care plan" in PACE is a per-member written
+// document the IDT (Interdisciplinary Team) builds saying what the member's
+// goals are, who's responsible for each, and when to revisit. It must be
+// reviewed every 6 months and re-approved by an IDT or Primary Care admin.
+// Each version is immutable once approved — new edits create a new version
+// and archive the old one.
+//
+// Plan lifecycle: draft → under_review → active (one active per member) → archived.
+//
+// 42 CFR §460.104(d) — "Participation Offering": before approving a plan we
+// must record that we offered the member a chance to participate in building
+// it (and their response, even if "I trust the team, decide for me"). The
+// approve endpoint emits a warning if this is missing but does not block
+// approval — CMS survey guidance is "warn now, fix before next survey."
+//
 // Routes (nested under /participants/{participant}/careplan):
 //   GET    /careplan                              — active plan with goals
 //   POST   /careplan                              — create a new draft plan

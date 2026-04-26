@@ -3,6 +3,26 @@
 // ─── QaDashboardController ────────────────────────────────────────────────────
 // Powers the QA / Compliance Dashboard and compliance report endpoints.
 //
+// PLAIN-ENGLISH PURPOSE: This is the "is our PACE program staying on the rails?"
+// dashboard. It rolls up the metrics CMS or a state surveyor would ask about:
+// unsigned clinical notes, overdue 6-month reassessments, open grievances,
+// late incident reports, expiring staff credentials, BAAs (Business Associate
+// Agreements) due for renewal, etc. KPIs are pre-computed server-side; detail
+// lists lazy-load when a user drills in.
+//
+// Acronym glossary used in this file:
+//   QA   = Quality Assurance.
+//   QAPI = Quality Assurance / Performance Improvement — the formal PACE
+//          quality program. 42 CFR §460.136-140 require an organized QAPI
+//          program with annual self-evaluation per §460.200.
+//   BAA  = Business Associate Agreement — HIPAA-required contract with any
+//          vendor that touches PHI on our behalf (e.g. our cloud host).
+//   SRA  = Security Risk Analysis — annual HIPAA §164.308(a)(1)(ii)(A) audit
+//          of where PHI lives and how it's protected.
+//   PHI  = Protected Health Information (HIPAA-covered patient data).
+//   KPI  = Key Performance Indicator (a single tracked metric).
+//   CMS  = Centers for Medicare & Medicaid Services (federal regulator).
+//
 // Route list:
 //   GET /qa/dashboard                         → dashboard() (Inertia page)
 //   GET /qa/compliance/unsigned-notes         → unsignedNotes()   (JSON)

@@ -2,6 +2,7 @@
 
 // ─── CapitationController ─────────────────────────────────────────────────────
 // Manages capitation records with HCC risk adjustment fields.
+// HCC = Hierarchical Condition Category (CMS diagnostic groupings used to compute the RAF risk-adjustment multiplier).
 // Extends the existing FinanceController capitation endpoints with:
 //   - Inertia page render
 //   - JSON data endpoint for live widget refresh

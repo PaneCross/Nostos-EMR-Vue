@@ -3,6 +3,32 @@
 // ─── ProcessHl7AdtJob ─────────────────────────────────────────────────────────
 // Processes inbound HL7 ADT messages asynchronously.
 //
+// PLAIN-ENGLISH PURPOSE: Hospitals send us small structured text messages
+// when one of our members goes in or comes out — admit, discharge, transfer.
+// This job receives those messages from the queue, figures out which member
+// they refer to, and triggers the right downstream action: create an alert
+// for social work, queue a 72-hour discharge follow-up, freeze the care
+// plan for review, etc.
+//
+// Acronym glossary used in this file:
+//   HL7  = Health Level 7 — the industry messaging standard for clinical data.
+//          ADT messages are a class within HL7 v2.
+//   ADT  = Admission / Discharge / Transfer — the class of HL7 messages
+//          tracking patient location changes.
+//   A01, A03, A08 = the specific HL7 ADT event codes:
+//          A01 = patient admitted to a facility
+//          A03 = patient discharged from a facility
+//          A08 = update to demographic/encounter info (no location change)
+//   MRN  = Medical Record Number — our internal per-tenant patient ID.
+//   IDT  = Interdisciplinary Team (PACE clinical team).
+//   SDR  = Service Delivery Request (internal task hand-off).
+//   PACE = Programs of All-Inclusive Care for the Elderly.
+//
+// 42 CFR §460.104(b) (referenced below): when a member has a "significant
+// change" — a hospitalization counts — the IDT must reassess the care plan
+// within 30 days. This job creates the SignificantChangeEvent that drives
+// the 30-day clock.
+//
 // A01 (Admit):
 //   - Looks up participant by MRN
 //   - Creates EncounterLog (service_type='other', notes=facility name)

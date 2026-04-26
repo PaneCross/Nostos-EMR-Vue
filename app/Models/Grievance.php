@@ -2,6 +2,7 @@
 
 // ─── Grievance ─────────────────────────────────────────────────────────────────
 // Represents a participant, family, or staff grievance per 42 CFR §460.120–§460.121.
+// 42 CFR §460.120-121 — grievance + service-delivery-request rules. Grievance = "I'm unhappy with care." SDR = an internal service hand-off (e.g. PCP → pharmacy).
 //
 // CMS timelines (enforced by GrievanceOverdueJob and GrievanceService::checkOverdue):
 //   - Standard: resolve within 30 days

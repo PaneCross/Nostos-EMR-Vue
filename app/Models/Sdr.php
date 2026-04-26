@@ -2,6 +2,7 @@
 
 // ─── Sdr (Service Delivery Request) Model ────────────────────────────────────
 // Cross-department requests for services, referrals, orders, and care changes.
+// 42 CFR §460.121 — Service Delivery Requests must be acted on within 72 hours (24h if urgent).
 //
 // 72-Hour Rule (CMS/PACE operational requirement):
 //   - due_at is ALWAYS = submitted_at + 72 hours

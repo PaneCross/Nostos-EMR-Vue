@@ -1,5 +1,25 @@
 <?php
 
+// ─── User ─────────────────────────────────────────────────────────────────────
+// Staff account. Represents a clinician or administrator who logs in to the
+// EMR. (Participants — the elderly people receiving care — are NOT users;
+// they live in the Participant model. Optional participant portal logins are
+// a separate, narrower auth surface.)
+//
+// Each user belongs to one Tenant and one Site, with a `department` (drives
+// RBAC visibility) and a `role` (admin / member / super_admin). Login is
+// passwordless: OTP (One-Time Password) email codes or Google/Yahoo OAuth.
+// `designations` is an array of sub-roles (medical_director, compliance_officer,
+// nursing_director, ...) used to fan out alerts to the right accountable
+// person rather than the whole department.
+//
+// Notable rules:
+//  - 42 CFR §460.91 — RBAC is mandatory; `department` + `role` are the keys.
+//  - Account lockout after 5 failed attempts (30 min) — HIPAA §164.308 safeguard.
+//  - `is_super_admin` flips during impersonation: the IMPERSONATED user never
+//    appears as super-admin to the UI, only the real authenticated user does.
+// ─────────────────────────────────────────────────────────────────────────────
+
 namespace App\Models;
 
 use Illuminate\Contracts\Auth\MustVerifyEmail;

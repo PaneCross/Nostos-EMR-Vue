@@ -1,5 +1,21 @@
 <?php
 
+// ─── ParticipantFlag ──────────────────────────────────────────────────────────
+// Visual safety/clinical alert pinned to a participant chart. Examples:
+// wheelchair, oxygen, fall_risk, wandering_risk, DNR (do-not-resuscitate),
+// hospice, dietary_restriction, behavioral, isolation.
+//
+// Flags are surfaced to every staff member who opens the chart and on the
+// department dashboards. The TRANSPORT_FLAGS subset is also pushed to the
+// transportation system so drivers know to bring the right equipment.
+// Resolution is non-destructive: `is_active=false` + resolved_by + resolved_at.
+//
+// Notable rules:
+//  - PHI under HIPAA — tenant-scoped (tenant_id is required on every flag).
+//  - Real-time: a ParticipantFlagUpdated event fires on create/update so
+//    open chart sessions and dashboards refresh immediately.
+// ─────────────────────────────────────────────────────────────────────────────
+
 namespace App\Models;
 
 use App\Events\ParticipantFlagUpdated;

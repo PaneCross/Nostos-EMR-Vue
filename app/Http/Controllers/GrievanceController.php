@@ -3,6 +3,25 @@
 // ─── GrievanceController ──────────────────────────────────────────────────────
 // Manages the grievance workflow per 42 CFR §460.120–§460.121.
 //
+// PLAIN-ENGLISH PURPOSE: A "grievance" is a complaint a member (or someone
+// representing them) lodges about the PACE program — quality of care, staff
+// behavior, food, transportation, billing, anything. CMS requires us to log
+// every one, investigate, resolve within a deadline, and report to CMS if
+// it crosses certain reportable thresholds.
+//
+// Distinct from Appeals (§460.122): a grievance is "I'm unhappy in general."
+// An appeal contests a specific service-denial decision. Different clocks,
+// different rules, different forms.
+//
+// Regulatory clocks:
+//   - 42 CFR §460.120 — standard grievance: 30 days to resolve.
+//   - 42 CFR §460.121 — urgent / Service Delivery Request: 72 hours
+//                       (24 hours if the member's life or function is at risk).
+//
+// "CMS-reportable" flag: certain category × severity combinations must be
+// rolled up to CMS in the quarterly Level II report. Those are flagged at
+// store time so the report query can find them.
+//
 // Authorization:
 //   - Any authenticated user may file a grievance (POST store)
 //   - QA Admin (qa_compliance | it_admin) may update/resolve/escalate/notify

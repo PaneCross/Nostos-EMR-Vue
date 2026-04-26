@@ -5,6 +5,24 @@
 // ordered and documented. Handles the full clinical order lifecycle for a
 // single participant and provides a cross-participant worklist for departments.
 //
+// PLAIN-ENGLISH PURPOSE: When a clinician wants something done for a member —
+// a lab draw, a therapy referral, a transport pickup — that "ask" needs to
+// be recorded in writing, signed by an authorized prescriber, and tracked
+// from "ordered" to "completed." This controller is the asking side.
+//
+// Acronym glossary used in this file:
+//   CPOE = Computerized Provider Order Entry. The federal requirement that
+//          orders be entered electronically by the ordering clinician (not
+//          phoned in to a clerk). Reduces transcription errors and creates
+//          an auditable trail.
+//   PACE = Programs of All-Inclusive Care for the Elderly.
+//
+// 42 CFR §460.90 in plain English: "If you didn't write it down, you didn't
+// order it. If a PACE-covered service happened, there must be a corresponding
+// order in the chart." Orders flow: prescriber writes → target department
+// acknowledges → department completes (lab returns result, transport runs trip,
+// therapist documents session) → primary_care can mark final.
+//
 // Prescriber departments (who can CREATE orders):
 //   primary_care, therapies, social_work, idt, it_admin, super_admin (role)
 //

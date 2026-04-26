@@ -1,5 +1,20 @@
 <?php
 
+// ─── ParticipantFlagController ────────────────────────────────────────────────
+// JSON CRUD + resolve endpoints for ParticipantFlag rows — the safety/clinical
+// alerts pinned to the chart (wheelchair, fall_risk, DNR, hospice, etc.).
+//
+// Routes: index/store/update on /participants/{p}/flags, plus a `resolve`
+// action that closes a flag without deleting it. Used by the Vue Flags tab,
+// dashboards, and the transportation system (mobility flag subset).
+//
+// Notable rules:
+//  - Tenant isolation: authorizeForTenant() 403s on cross-tenant attempts.
+//  - Every write writes an AuditLog row (HIPAA non-repudiation) AND broadcasts
+//    a FlagAddedEvent so other open chart sessions and dashboards refresh
+//    in real time.
+// ─────────────────────────────────────────────────────────────────────────────
+
 namespace App\Http\Controllers;
 
 use App\Events\FlagAddedEvent;

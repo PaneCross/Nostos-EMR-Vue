@@ -1,5 +1,22 @@
 <?php
 
+// ─── SocialiteController ──────────────────────────────────────────────────────
+// Optional OAuth login via Google or Yahoo (Laravel Socialite). Alternative
+// sign-in path for users who have those accounts; OTP email login remains
+// the primary method.
+//
+// Flow: GET /auth/{provider}/redirect → provider consent →
+//       GET /auth/{provider}/callback → match an existing active User by
+//       email → sign in. There is NO auto-provisioning: an unrecognized
+//       email is rejected with a friendly error. IT Admin must create the
+//       user account first.
+//
+// Notable rules:
+//  - In local dev with no client_id configured, returns a friendly hint
+//    rather than crashing.
+//  - Successful + failed logins both write AuditLog rows (HIPAA access trail).
+// ─────────────────────────────────────────────────────────────────────────────
+
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;

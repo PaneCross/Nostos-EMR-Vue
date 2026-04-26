@@ -3,6 +3,7 @@
 // ─── BillingEncounterController ───────────────────────────────────────────────
 // REST API for the encounter submission queue — the billing-side view of
 // EncounterLog records, enhanced with 837P fields for CMS submission.
+// 837P = the X12 EDI format for professional medical claim submission.
 //
 // Route list:
 //   GET  /billing/encounters                → index()   — paginated list w/ filters

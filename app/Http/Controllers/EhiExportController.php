@@ -2,6 +2,7 @@
 
 // ─── EhiExportController ──────────────────────────────────────────────────────
 // 21st Century Cures Act — Electronic Health Information (EHI) export.
+// EHI = Electronic Health Information (the patient's full electronic record; 21st Century Cures Act gives them the right to export it).
 // Generates a ZIP of all FHIR R4 resources + non-FHIR clinical data for a participant.
 //
 // POST /participants/{id}/ehi-export                            → request()

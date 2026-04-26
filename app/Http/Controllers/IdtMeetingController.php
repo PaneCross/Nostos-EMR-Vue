@@ -2,6 +2,7 @@
 
 // ─── IdtMeetingController ─────────────────────────────────────────────────────
 // Manages IDT meeting records and participant review queues.
+// IDT = Interdisciplinary Team (the clinical group that meets weekly to plan each member's care; PACE's central care coordination forum).
 //
 // Routes (/idt/meetings):
 //   GET  /idt/meetings               — upcoming + recent meetings

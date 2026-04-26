@@ -1,5 +1,21 @@
 <?php
 
+// ─── DenySdrRequest ──────────────────────────────────────────────────────────
+// Validates the issuance of a formal denial on a Service Delivery Request
+// (SDR). An SDR is an internal hand-off where one PACE department asks
+// another to deliver a service for a participant (e.g. PCP asks pharmacy
+// to fill a prescription). Denying an SDR generates a participant-facing
+// Service Denial Notice that may then be appealed.
+//
+// Auth gate: Super-admin, or department in {qa_compliance, enrollment,
+//            it_admin}, or a user with the medical_director designation.
+// Validates: reason_code (≤80 chars), reason_narrative (≤4000 chars), and an
+//            optional delivery_method describing how the notice will reach
+//            the participant (mail, hand-delivered, etc.).
+// Notable rules: 42 CFR §460.121 — 72-hour CMS clock for standard SDRs;
+//                §460.122 governs the denial-notice + appeal pathway.
+// ─────────────────────────────────────────────────────────────────────────────
+
 namespace App\Http\Requests;
 
 use App\Models\ServiceDenialNotice;

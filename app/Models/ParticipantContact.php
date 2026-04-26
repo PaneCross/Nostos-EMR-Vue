@@ -1,5 +1,19 @@
 <?php
 
+// ─── ParticipantContact ───────────────────────────────────────────────────────
+// People associated with a participant: emergency contacts, legal
+// representatives (POA / guardian / healthcare proxy), family, neighbors.
+//
+// Used by clinicians at point of care, by Transportation when reaching the
+// home, and by Social Work for care coordination. `priority_order` controls
+// the call sequence; `is_legal_representative` gates who can sign consents
+// when the participant lacks capacity. Soft-deletes preserve history.
+//
+// Notable rules:
+//  - PHI under HIPAA — tenant-scoped through the parent Participant.
+//  - 42 CFR §460.156 (rights) — legal representative role drives consent flow.
+// ─────────────────────────────────────────────────────────────────────────────
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;

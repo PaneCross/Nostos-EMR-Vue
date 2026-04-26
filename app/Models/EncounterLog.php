@@ -9,6 +9,7 @@
 //
 // Service types map to CMS procedure codes for PACE encounter reporting.
 //
+// 837P = the X12 EDI format we generate when submitting a professional claim.
 // Phase 9B: 837P billing fields added (diagnosis_codes, NPI fields, POS, units,
 // charge, claim type, submission tracking). isSubmittable() validates required
 // fields before an encounter can be included in an EDI 837P batch.

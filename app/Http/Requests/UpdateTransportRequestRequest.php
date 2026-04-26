@@ -1,5 +1,18 @@
 <?php
 
+// ─── UpdateTransportRequestRequest ───────────────────────────────────────────
+// Validates dispatcher updates to an existing participant transport
+// request — primarily either scheduling a confirmed pickup time or
+// cancelling the trip.
+//
+// Auth gate: Any authenticated user; finer-grained checks are in the
+//            controller (typically transportation dispatch).
+// Validates: optional status (only "scheduled" or "cancelled" allowed
+//            here), optional scheduled_pickup_time (set when dispatcher
+//            commits to a slot), optional special_instructions update,
+//            and cancellation_reason — required when status = cancelled.
+// ─────────────────────────────────────────────────────────────────────────────
+
 namespace App\Http\Requests;
 
 use App\Models\TransportRequest;

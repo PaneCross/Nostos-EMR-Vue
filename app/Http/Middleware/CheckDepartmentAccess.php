@@ -1,5 +1,22 @@
 <?php
 
+// ─── CheckDepartmentAccess ────────────────────────────────────────────────────
+// Route middleware that enforces Role-Based Access Control (RBAC) for staff.
+//
+// Every protected route declares a `module` (e.g. 'clinical_notes'). This
+// middleware looks up the authenticated user's department + role in the
+// RolePermission matrix and either passes the request through or returns 403.
+// Unauthorized attempts are written to AuditLog for compliance review.
+//
+// Notable rules:
+//  - 42 CFR §460.91 requires PACE (Programs of All-Inclusive Care for the
+//    Elderly) staff access be limited by job function — this is the gate.
+//  - Nostos super-admin department bypasses all checks (platform staff).
+//  - When a role-level super-admin is impersonating a user, the impersonated
+//    user's department/role permissions are enforced (the audit row still
+//    records the real super-admin's user_id for non-repudiation).
+// ─────────────────────────────────────────────────────────────────────────────
+
 namespace App\Http\Middleware;
 
 use App\Models\AuditLog;

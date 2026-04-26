@@ -2,6 +2,7 @@
 
 // ─── EdiBatchController ───────────────────────────────────────────────────────
 // Manages EDI 837P batch files for CMS Encounter Data submission.
+// EDI = Electronic Data Interchange (the X12 family of healthcare claim/eligibility messages).
 //
 // Route list:
 //   GET  /billing/batches                        → index()       — paginated list

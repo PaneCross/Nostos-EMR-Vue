@@ -2,7 +2,27 @@
 
 // ─── ComplianceController ─────────────────────────────────────────────────────
 // Audit-pull endpoints. These are flat JSON universes CMS auditors (or state
-// surveyors) expect to produce on demand. Each endpoint:
+// surveyors) expect to produce on demand.
+//
+// PLAIN-ENGLISH PURPOSE: When CMS shows up to audit our PACE program, they
+// hand us a list and say "give me every grievance for the last 12 months in
+// this format." These endpoints are the canned exports that satisfy those
+// asks. The endpoints are intentionally flat (one row per record), unpaginated,
+// and tenant-scoped — auditors paste them into their workpapers.
+//
+// Acronym glossary used in this file:
+//   PACE   = Programs of All-Inclusive Care for the Elderly.
+//   CMS    = Centers for Medicare & Medicaid Services (federal regulator).
+//   NF-LOC = Nursing-Facility Level of Care — the state-administered clinical
+//            determination that someone is sick enough to qualify for a nursing
+//            home. PACE eligibility requires NF-LOC. Must be re-certified annually
+//            per 42 CFR §460.160(b)(2).
+//   SDR    = Service Delivery Request (an internal handoff between PACE depts).
+//   ROI    = Release of Information (HIPAA right-to-access requests).
+//   ADE    = Adverse Drug Event (a harmful medication reaction).
+//   QAPI   = Quality Assurance / Performance Improvement (the PACE quality program).
+//
+// Each endpoint:
 //   - requires auth + qa_compliance / enrollment / it_admin / super_admin
 //   - scopes to tenant_id
 //   - returns unpaginated flat rows (auditor imports into their workpapers)

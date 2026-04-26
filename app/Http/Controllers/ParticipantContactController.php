@@ -1,5 +1,19 @@
 <?php
 
+// ─── ParticipantContactController ─────────────────────────────────────────────
+// JSON CRUD endpoints for ParticipantContact rows (emergency contacts, legal
+// representatives, family) on a single participant chart.
+//
+// Routes: GET/POST /participants/{p}/contacts and PUT /contacts/{c}.
+// Used by the Vue Contacts tab on the chart and the intake/enrollment flow.
+//
+// Notable rules:
+//  - Tenant isolation: every action calls authorizeForTenant() which 403s
+//    if the participant's tenant_id != caller's tenant_id (HIPAA §164.312
+//    cross-tenant guard).
+//  - Every write produces an AuditLog row (HIPAA non-repudiation).
+// ─────────────────────────────────────────────────────────────────────────────
+
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreContactRequest;
