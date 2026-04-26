@@ -42,4 +42,20 @@ class FileAppealRequest extends FormRequest
             'continuation_of_benefits' => ['required', 'boolean'],
         ];
     }
+
+    /**
+     * Phase W3 — messages cite 42 CFR §460.122 (appeals workflow) so users see
+     * regulatory context, not generic Laravel defaults.
+     * (Restored in Z7 after Z2 header-pass clobbered it.)
+     */
+    public function messages(): array
+    {
+        return [
+            'service_denial_notice_id.required' => 'An appeal must reference the service denial notice it appeals (§460.122(a)).',
+            'service_denial_notice_id.exists'   => 'That service denial notice was not found.',
+            'type.required'                     => 'Select appeal type: standard (30-day) or expedited (72-hour) per §460.122.',
+            'filed_by.required'                 => 'Identify who filed the appeal (participant, representative, provider).',
+            'continuation_of_benefits.required' => 'Per §460.122(d), specify whether the participant elects continuation of benefits during the appeal.',
+        ];
+    }
 }
