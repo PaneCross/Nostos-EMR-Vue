@@ -1,5 +1,19 @@
 <?php
 
+// ─── Broadcast (WebSocket) authorization channels ─────────────────────────────
+// Defines who is allowed to subscribe to which Reverb / Echo broadcast channel.
+// Each closure returns true → user gets the events; false → they don't.
+//
+// Channels in use:
+//   App.Models.User.{id} — Laravel's default per-user notification channel.
+//   tenant.{tenantId}    — every Alert / global event broadcast within a tenant.
+//   chat.{channelId}     — private chat channel; gated by ChatMembership.
+//   user.{userId}        — per-user nav badge for "you have new chat activity."
+//
+// Without this file, the WebSocket layer (Reverb) would refuse all subscriptions
+// and the dashboard alert toasts + chat live-update would silently fail.
+// ─────────────────────────────────────────────────────────────────────────────
+
 use App\Models\ChatMembership;
 use Illuminate\Support\Facades\Broadcast;
 

@@ -1,5 +1,18 @@
 <?php
 
+// ─── Migration: shared_audit_logs ───────────────────────────────────────────
+// Tenant-shared, append-only HIPAA audit trail for every PHI access + write.
+//
+// Why: HIPAA §164.312(b) (technical safeguards — audit controls) requires
+// "hardware, software, and/or procedural mechanisms that record and examine
+// activity in information systems that contain or use ePHI." This is the
+// system of record for that. Rows are NEVER updated or deleted; the
+// AuditLogImmutability test guards against accidental UPDATE/DELETE paths.
+// Indexes are tuned for resource_type + resource_id lookups (right-of-access
+// + breach-investigation forensics) and for tenant_id + created_at scans.
+// CFR ref: 45 CFR §164.312(b) — audit controls.
+// ────────────────────────────────────────────────────────────────────────────
+
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;

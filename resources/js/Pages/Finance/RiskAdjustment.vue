@@ -90,6 +90,20 @@
 </template>
 
 <script setup lang="ts">
+// ─── Finance/RiskAdjustment ─────────────────────────────────────────────────
+// Risk Adjustment dashboard. Shows the per-tenant RAF score for the selected
+// payment year along with the HCC categories driving it and the diagnoses
+// mapped into each category. Highlights coding gaps (suspected HCCs not yet
+// documented this year) since each one represents lost CMS capitation.
+//
+// Data: KPI cards (RAF + member count + suspected gaps) + drill-down rows.
+// Audience: Finance + Coding leads. Key actions: open a participant from a
+// gap row to chart the missing diagnosis.
+//
+// Acronyms:
+//   HCC = Hierarchical Condition Category (CMS diagnosis grouping).
+//   RAF = Risk Adjustment Factor (per-member CMS payment multiplier).
+// ─────────────────────────────────────────────────────────────────────────────
 import { ref, computed } from 'vue'
 import { Head, router } from '@inertiajs/vue3'
 import AppShell from '@/Layouts/AppShell.vue'

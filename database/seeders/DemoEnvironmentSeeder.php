@@ -1,5 +1,17 @@
 <?php
 
+// ─── DemoEnvironmentSeeder ────────────────────────────────────────────────────
+// Top-level orchestrator for a complete demo tenant. Creates the demo Tenant +
+// Sites + a full department / role staff roster, then chains every downstream
+// demo + reference seeder (clinical, billing, day-center, compliance, etc.).
+//
+// When to run: dev / demo only. NEVER run against a production tenant — it
+// fabricates participants, staff users, and PHI.
+// Depends on: nothing (creates tenant + sites itself, then calls all others).
+// Acronyms used elsewhere in the chain: PACE, IDT (Interdisciplinary Team),
+// SDR (Service Delivery Request), CFR (Code of Federal Regulations).
+// ─────────────────────────────────────────────────────────────────────────────
+
 namespace Database\Seeders;
 
 use App\Models\Site;

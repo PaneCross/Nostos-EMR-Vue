@@ -1,6 +1,11 @@
 <?php
 
 // ─── Phase X6 — FreezesTime trait determinism + Q1 deadline tests still pass ─
+// Locks in: tests using the FreezesTime trait get a deterministic Carbon::now()
+// across the entire test method (HTTP request, job dispatch, model events).
+// Audit-12 X6 fixed flaky deadline tests where the clock would tick between
+// arrange and assert. This test verifies the trait is wired up correctly
+// AND that the previously flaky Q1 deadline-job tests still pass with it.
 namespace Tests\Feature;
 
 use Carbon\Carbon;

@@ -1,5 +1,17 @@
 <?php
 
+// ─── ParticipantSeeder ────────────────────────────────────────────────────────
+// Creates the core roster of demo Participants for the demo tenant — including
+// addresses, emergency contacts, insurance coverage rows, and participant flags
+// (mobility, fall risk, etc.). Alice Testpatient (MRN WEST-00001) is seeded
+// here as the canonical end-to-end test participant.
+//
+// When to run: demo only.
+// Depends on: DemoEnvironmentSeeder (needs tenant, sites, users).
+// Volume: ~30 enrolled participants across the demo sites with mixed
+// disenrollment / hospice / active states for realistic UI coverage.
+// ─────────────────────────────────────────────────────────────────────────────
+
 namespace Database\Seeders;
 
 use App\Models\InsuranceCoverage;

@@ -95,6 +95,19 @@
 </template>
 
 <script setup lang="ts">
+// ─── Finance/Remittance ─────────────────────────────────────────────────────
+// Remittance Advice list. Shows every 835 ERA file received from a payer,
+// with payer name, total paid, total adjustments, and a link into the
+// breakdown of the individual claim lines + denials inside.
+//
+// Data: paginated remittance batches with payer-search filter. Audience:
+// Finance / Billing dept. Key actions: filter by payer, click batch to view
+// per-claim adjustments + drill into Denials for any reduced lines.
+//
+// Acronyms:
+//   835 = X12 remittance / payment file (CMS pays us).
+//   ERA = Electronic Remittance Advice (the 835 message itself).
+// ─────────────────────────────────────────────────────────────────────────────
 import { ref, computed } from 'vue'
 import { Head, router } from '@inertiajs/vue3'
 import AppShell from '@/Layouts/AppShell.vue'

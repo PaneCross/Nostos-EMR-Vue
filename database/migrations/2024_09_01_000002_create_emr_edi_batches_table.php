@@ -1,5 +1,17 @@
 <?php
 
+// ─── Migration: emr_edi_batches ─────────────────────────────────────────────
+// One row per outbound X12 EDI batch (837P claims, 270 eligibility, etc.).
+// Stores the rendered EDI envelope, transmission status, ack/999/277CA
+// responses, and the clearinghouse vendor that handled the file.
+//
+// Why: HIPAA TCS rule mandates X12N for institutional billing transactions.
+// Keeping batches as first-class records (rather than transient files) gives
+// us a resubmission lane, audit trail per §164.312(b), and a hook for the
+// vendor-agnostic clearinghouse gateway (NullGateway / Availity / CHC / OA).
+// CFR ref: 45 CFR §162.1102 (HIPAA Transactions and Code Sets — X12N 837/270).
+// ────────────────────────────────────────────────────────────────────────────
+
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;

@@ -1,6 +1,11 @@
 <?php
 
 // ─── Phase V1 — Users.vue toggle-active surfaces errors instead of silently ─
+// Audit-10 found Users.vue called toggleActive() with .catch(() => {}) — the
+// row state would optimistically flip in the table but a server-side 4xx
+// would never reach the UI. Wave V1 added a per-row error pill + automatic
+// rollback. This test locks in that on a 422/500 the controller returns
+// the right error shape so the Vue handler can render it. Regression trap.
 namespace Tests\Feature;
 
 use Tests\TestCase;

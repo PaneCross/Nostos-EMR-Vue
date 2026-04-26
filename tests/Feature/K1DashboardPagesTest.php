@@ -1,6 +1,10 @@
 <?php
 
 // ─── Phase K1 — Inertia dashboard pages (Quality Measures + Care Gaps + High-Risk) ─
+// Locks in: the three Wave-K dashboards render under the right roles and
+// their data shape matches what the Vue components expect (HEDIS/Stars
+// numerator-denominator pairs, open care-gap list, predictive-risk top-N).
+// Regression trap if a controller-side refactor drops a dashboard prop.
 namespace Tests\Feature;
 
 use App\Models\Tenant;

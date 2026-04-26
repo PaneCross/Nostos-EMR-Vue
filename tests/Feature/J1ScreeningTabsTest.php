@@ -1,6 +1,11 @@
 <?php
 
 // ─── Phase J1 — Screening tabs (IADL + TB + Substance-Use) ──────────────────
+// Locks in: the three new participant-tab pages added by Wave J render with
+// their scoring panels, threshold colors, and CFR-citation footers. Covers
+// Lawton IADL (8 items), TB §460.71 annual cadence display, and AUDIT-C +
+// CAGE + DAST-10 substance-use scoring. Regression trap against tab routing
+// drift after any participant-shell refactor.
 namespace Tests\Feature;
 
 use App\Models\Participant;

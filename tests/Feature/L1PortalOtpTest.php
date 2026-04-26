@@ -1,6 +1,11 @@
 <?php
 
 // ─── Phase L1 — Portal OTP auth ─────────────────────────────────────────────
+// Locks in: participant-portal one-time-password (OTP) login flow — request,
+// 6-digit code generation via OtpService, code verification, single-use
+// invalidation, expiry window, and the rate-limit guard. The portal does NOT
+// share session storage with the staff app; this test guards against any
+// accidental cross-guard auth bleed.
 namespace Tests\Feature;
 
 use App\Models\OtpCode;

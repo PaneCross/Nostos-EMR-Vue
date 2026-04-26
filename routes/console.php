@@ -1,5 +1,35 @@
 <?php
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// NostosEMR — console + scheduled jobs
+// ═══════════════════════════════════════════════════════════════════════════════
+// This file does TWO things:
+//   1. Defines artisan commands that aren't standalone Command classes (only
+//      'inspire' here — most real commands live under app/Console/Commands/).
+//   2. Schedules the recurring jobs that drive the regulatory clocks of a
+//      PACE program (Programs of All-Inclusive Care for the Elderly).
+//
+// Each scheduled job below enforces a real CMS or HIPAA deadline. If a job
+// stops running, the corresponding compliance gap re-emerges. To verify the
+// schedule in production, run: `php artisan schedule:list`.
+//
+// Crontab requirement: ONE entry on the server pointing at this scheduler:
+//   * * * * * cd /var/www/html && php artisan schedule:run >> /dev/null 2>&1
+// Without that entry, NONE of the deadline jobs below run.
+//
+// Scheduled jobs at a glance (regulatory backstop for each):
+//   - SDR deadline enforcement       — 42 CFR §460.121 (72-hour clock)
+//   - IDT 6-month reassessment       — 42 CFR §460.104(c)
+//   - Significant-change reassessment — 42 CFR §460.104(b) (30-day after admit)
+//   - NF-LOC annual recert           — 42 CFR §460.160(b)(2)
+//   - Grievance + Appeal deadlines   — 42 CFR §460.120 / §460.122
+//   - Incident notification          — 42 CFR §460.104 (48-hour rule)
+//   - HIPAA breach + amendment       — 45 CFR §164.404 / §164.526
+//   - Critical-value acknowledgment  — Phase B6 (2h critical / 8h warning)
+//   - INR / anticoagulation overdue  — Phase B5
+//   - BCMA repeated-override alert   — Phase B4
+// ═══════════════════════════════════════════════════════════════════════════════
+
 use App\Jobs\DenialAppealDeadlineAlertJob;
 use App\Jobs\DigestNotificationJob;
 use App\Jobs\DocumentationComplianceJob;

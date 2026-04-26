@@ -1,6 +1,11 @@
 <?php
 
 // ─── Phase R1 — CapitationController gates Medicaid cap on spend-down ──────
+// Locks in: Medicaid capitation is NOT booked for a coverage-month if the
+// participant has not met spend-down for that month. Audit-6 found this
+// silently overpaid the EMR's expected-revenue dashboard. Regression trap
+// to prevent spend-down gating from being skipped on a controller refactor.
+// CFR ref: 42 CFR §435.831 (Medicaid spend-down for medically needy).
 namespace Tests\Feature;
 
 use App\Models\AuditLog;

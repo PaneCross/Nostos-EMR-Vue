@@ -1,6 +1,12 @@
 <?php
 
 // ─── Phase O1 — MOLST support + nursing dept dead-branch strip ─────────────
+// Locks in two unrelated Wave-O cleanup items in one suite:
+//   1. ConsentRecord supports consent_type='molst' (Medical Orders for Life-
+//      Sustaining Treatment) end-to-end through controller + audit log.
+//   2. The (long-dead) `'nursing'` department branches removed from
+//      MobileCompanionController + others stay removed — `nursing` is NOT a
+//      valid value in shared_users.department CHECK constraint.
 namespace Tests\Feature;
 
 use App\Models\Participant;

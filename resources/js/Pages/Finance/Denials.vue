@@ -106,6 +106,20 @@
 </template>
 
 <script setup lang="ts">
+// ─── Finance/Denials ────────────────────────────────────────────────────────
+// Claim denial work-queue. Lists every denied claim line that came back on
+// an 835 ERA, grouped by status (open / appealing / written-off) with the
+// CARC explaining why each was reduced.
+//
+// Data: paginated denial rows + status counts. Audience: Finance / Billing
+// dept. Key actions: filter by status, click row to open denial detail +
+// start an appeal or write-off.
+//
+// Acronyms:
+//   835 = X12 remittance / payment file (CMS pays us).
+//   ERA = Electronic Remittance Advice (the 835 message itself).
+//   CARC = Claim Adjustment Reason Code (why a claim was reduced/denied).
+// ─────────────────────────────────────────────────────────────────────────────
 import { ref, computed } from 'vue'
 import { Head, router } from '@inertiajs/vue3'
 import AppShell from '@/Layouts/AppShell.vue'

@@ -1,5 +1,16 @@
 <?php
 
+// ─── PermissionSeeder ─────────────────────────────────────────────────────────
+// Provisions the role × module permission matrix that every controller's
+// authorization checks rely on. Defines every module key in the system and the
+// default per-role access (view / edit / admin) for each one.
+//
+// When to run: always — production-required. Must run before any user can
+// log in; controllers throw 403 if a (role, module) row is missing.
+// Depends on: nothing.
+// Idempotent: upserts per (tenant_id, role, module).
+// ─────────────────────────────────────────────────────────────────────────────
+
 namespace Database\Seeders;
 
 use App\Models\RolePermission;

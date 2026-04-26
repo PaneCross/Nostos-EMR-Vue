@@ -1,5 +1,14 @@
 <?php
 
+// ─── AssessmentDemoSeeder ─────────────────────────────────────────────────────
+// Seeds a small set of demo Assessment records (clinical scoring instruments
+// like PHQ-9, Mini-Cog, Morse, Katz ADL) attached to enrolled participants so
+// the Assessments tab and trend views are not empty in a fresh demo tenant.
+//
+// When to run: demo only.
+// Depends on: DemoEnvironmentSeeder (needs tenant + participants + users).
+// ─────────────────────────────────────────────────────────────────────────────
+
 namespace Database\Seeders;
 
 use App\Models\Assessment;

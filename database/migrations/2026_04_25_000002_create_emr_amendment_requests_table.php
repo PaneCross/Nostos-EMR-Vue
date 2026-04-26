@@ -1,6 +1,19 @@
 <?php
 
 // ─── Phase P3 — HIPAA §164.526 Right to Amend ──────────────────────────────
+// Stores patient-initiated amendment requests against any record in the
+// designated record set (notes, problem list, allergies, etc.) plus the
+// staff queue that must accept/deny within the 60-day deadline.
+//
+// Why: §164.526 grants individuals the right to request amendments and
+// requires the covered entity to act within 60 days (with one 30-day
+// extension). Denials must include a written rationale + the patient's
+// right to file a statement of disagreement. share_with[] downstream
+// notification linkage feeds §164.526(c)(3) (notify those identified
+// who received the original info). AmendmentDeadlineJob runs daily.
+// CFR ref: 45 CFR §164.526 — right to amend PHI.
+// ────────────────────────────────────────────────────────────────────────────
+
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;

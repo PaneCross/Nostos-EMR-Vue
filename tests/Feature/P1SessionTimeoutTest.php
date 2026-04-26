@@ -1,6 +1,12 @@
 <?php
 
 // ─── Phase P1 — HIPAA-compliant session timeout ────────────────────────────
+// Locks in: idle-session timeout meets HIPAA §164.312(a)(2)(iii) "automatic
+// logoff" — session is killed after the configured idle window (default 15
+// minutes for staff, longer for portal), CSRF token is rotated, and the
+// next request redirects to login. Regression trap against accidental
+// session-lifetime regressions when middleware order changes.
+// CFR ref: 45 CFR §164.312(a)(2)(iii) — automatic logoff.
 namespace Tests\Feature;
 
 use App\Models\Tenant;

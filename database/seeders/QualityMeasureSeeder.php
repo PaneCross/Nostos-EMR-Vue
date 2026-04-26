@@ -1,5 +1,17 @@
 <?php
 
+// ─── QualityMeasureSeeder ─────────────────────────────────────────────────────
+// Seeds the catalog of quality-measure definitions used by the QAPI dashboard
+// and Level I/II reporting (HEDIS-style numerator/denominator definitions for
+// flu vaccination, pneumococcal vaccination, annual PCP visit, etc.).
+//
+// When to run: always (provisions reference data). Without this, the quality
+// dashboard is empty and exports have no measure metadata.
+// Depends on: nothing.
+// Acronyms: HEDIS = Healthcare Effectiveness Data and Information Set;
+// QAPI = Quality Assurance & Performance Improvement.
+// ─────────────────────────────────────────────────────────────────────────────
+
 namespace Database\Seeders;
 
 use App\Models\QualityMeasure;

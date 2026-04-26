@@ -1,5 +1,17 @@
 <?php
 
+// ─── ProSurveySeeder ──────────────────────────────────────────────────────────
+// Seeds the catalog of Patient-Reported Outcome (PRO) survey templates that
+// participants can be sent — e.g. weekly mood check, monthly pain check.
+// Defines the question shape; per-participant responses are captured at
+// runtime, not seeded here.
+//
+// When to run: always (provisions reference data) — needed for the PRO survey
+// feature to render any options.
+// Depends on: nothing.
+// Acronyms: PRO = Patient-Reported Outcome.
+// ─────────────────────────────────────────────────────────────────────────────
+
 namespace Database\Seeders;
 
 use App\Models\ProSurvey;

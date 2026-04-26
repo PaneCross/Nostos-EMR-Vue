@@ -1,6 +1,15 @@
 <?php
 
 // ─── Phase Q2 — PhiDisclosure wired into CCDA + FHIR R4 + Bulk Export ──────
+// Locks in: every external PHI release path writes a row to
+// emr_phi_disclosures so §164.528 accounting works. Covers the three
+// disclosure surfaces P2 didn't initially wire:
+//   - C-CDA Continuity-of-Care Document export
+//   - FHIR R4 Patient/$everything + per-resource reads
+//   - FHIR Bulk Data $export NDJSON downloads
+// Regression trap: if any new export endpoint is added later, mirror this
+// pattern or this audit-log gap will reopen.
+// CFR ref: 45 CFR §164.528 — accounting of disclosures.
 namespace Tests\Feature;
 
 use App\Models\ApiToken;

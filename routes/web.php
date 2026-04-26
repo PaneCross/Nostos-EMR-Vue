@@ -1,5 +1,60 @@
 <?php
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// NostosEMR — web routes
+// ═══════════════════════════════════════════════════════════════════════════════
+// All HTTP entry points to the application live in this file. Vue/Inertia pages
+// are routed here (not separately). Public-facing API surfaces are explicitly
+// marked. The file is organized into the following major sections:
+//
+//   Lines  ~96-108   — PUBLIC / GUEST: login, OTP request/verify, OAuth callbacks.
+//   Lines ~110-1462  — AUTHENTICATED: the bulk of the app. Inside this group:
+//                       • Department dashboards (one per PACE department)
+//                       • Participant CRUD + 27 detail tabs (clinical chart)
+//                       • Enrollment kanban + intake pipeline
+//                       • Compliance audit-pull universes (CMS surveyor exports)
+//                       • Clinical workflows: orders, notes, EMAR, BCMA, vitals
+//                       • Pharmacy: meds, prior auth, formulary
+//                       • Billing/Finance: capitation, encounters, EDI 837P/835
+//                       • Transport: requests, manifest, vendor bridge
+//                       • IT Admin: BAA/SRA, audit log, integrations, security
+//                       • QA / QAPI: dashboard, KPIs, reports
+//                       • Chat, Tasks, Reports, Profile, SuperAdmin (multi-tenant)
+//   Lines ~1463-1507 — PARTICIPANT PORTAL: member-facing read-only + amend/ROI
+//                       requests. Auth via X-Portal-User-Id header (Phase E1).
+//   Lines ~1509-1626 — FHIR R4 API: SMART-on-FHIR / OAuth2 / Bearer token,
+//                       used by external apps that consume our clinical data.
+//                       42 CFR §170 / 21st Century Cures Act compliance.
+//   Lines ~1628-1640 — INBOUND WEBHOOKS: transport status (HMAC-auth) +
+//                       integration endpoints (tenant-header auth). Public
+//                       per spec — vendor systems POST to these.
+//   Lines ~1642-1644 — Health check (public).
+//   Lines ~1645-end  — Test-only routes (Phase W2 — axios + Toaster behavioral
+//                       end-to-end test wiring; SHOULD NOT EXIST in prod build).
+//
+// Cross-cutting conventions:
+//   • Every authenticated route automatically tenant-scopes via SiteContext +
+//     LogAuditEvent middleware. Controllers can rely on auth()->user() being a
+//     real, active, dept-assigned user.
+//   • Department gates are enforced INSIDE controllers (search for
+//     CheckDepartmentAccess middleware or `requireXxx()` private methods).
+//   • Resource routes (Route::resource) and named routes (->name(...)) are
+//     used heavily; route names are referenced by the Vue side via Ziggy.
+//
+// Acronyms used in this file:
+//   PACE = Programs of All-Inclusive Care for the Elderly (Medicare program 55+)
+//   IDT  = Interdisciplinary Team (PACE clinical team)
+//   EMAR = Electronic Medication Administration Record (per-dose nurse log)
+//   BCMA = Bedside / Barcode Medication Administration
+//   EDI  = Electronic Data Interchange (X12 healthcare claim format)
+//   837P = the X12 transaction set for professional medical claims
+//   835  = the X12 remittance / payment file (ERA from CMS)
+//   FHIR = Fast Healthcare Interoperability Resources (modern HL7 REST API)
+//   ROI  = Release of Information (HIPAA right-to-access; not return-on-investment)
+//   BAA  = Business Associate Agreement (HIPAA vendor contract)
+//   SRA  = Security Risk Analysis (annual HIPAA self-audit)
+// ═══════════════════════════════════════════════════════════════════════════════
+
 use App\Http\Controllers\AdlController;
 use App\Http\Controllers\DisenrollmentController;
 use App\Http\Controllers\BillingEncounterController;

@@ -1,6 +1,11 @@
 <?php
 
 // ─── Phase S1 — POA / Healthcare Proxy / Spouse contact role designations ──
+// Locks in: ParticipantContact supports the legal-role flags
+// (durable_poa / healthcare_proxy / spouse / emergency_contact) the AD
+// wizard and consent flows rely on, with at-most-one-active enforced per
+// role per participant. Regression trap if a future migration drops the
+// per-role partial unique index.
 namespace Tests\Feature;
 
 use App\Models\Participant;

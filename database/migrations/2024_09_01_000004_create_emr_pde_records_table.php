@@ -1,5 +1,18 @@
 <?php
 
+// ─── Migration: emr_pde_records ─────────────────────────────────────────────
+// Prescription Drug Event (PDE) records — Medicare Part D claim-level data.
+// One row per dispensed prescription that PACE is liable for under the
+// integrated Part-D benefit.
+//
+// Why: CMS requires PACE organizations to submit PDEs to the Drug Data
+// Processing System (DDPS) within 30 days of dispense. PDEs feed Part-D
+// reconciliation, reinsurance, low-income cost-sharing, and CARA tracking.
+// Schema mirrors CMS PDE layout (NDC, fill date, days supply, plan paid,
+// LICS, gross-covered cost, prescriber NPI, pharmacy NPI, dispensing fee).
+// CFR ref: 42 CFR §423.329(b) and CMS PDE Layout v2.0+.
+// ────────────────────────────────────────────────────────────────────────────
+
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;

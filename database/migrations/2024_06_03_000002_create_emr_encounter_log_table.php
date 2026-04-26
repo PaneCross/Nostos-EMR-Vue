@@ -1,5 +1,18 @@
 <?php
 
+// ─── Migration: emr_encounter_log ───────────────────────────────────────────
+// Per-encounter clinical activity log. One row = one billable touchpoint
+// (PCP visit, day-center attendance, home-care visit, telehealth).
+//
+// Why: encounters drive CMS Encounter Data Submission (EDS), HEDIS measure
+// numerators, and downstream 837P billing. Storing them as a dedicated table
+// (rather than inferring from notes/orders) gives a single canonical timeline
+// for risk-adjustment lookback, audit pulls, and EDS resubmission.
+// Billing fields (CPT, modifiers, place-of-service) are added by a later
+// migration (add_billing_fields_to_emr_encounter_log).
+// CFR ref: 42 CFR §460.200(b) (data collection); 42 CFR §422.310 (EDS).
+// ────────────────────────────────────────────────────────────────────────────
+
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;

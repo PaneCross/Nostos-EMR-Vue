@@ -1,5 +1,17 @@
 <?php
 
+// ─── Migration: emr_capitation_records ──────────────────────────────────────
+// One row per participant per coverage-month per payer with the per-member-
+// per-month (PMPM) capitation payment expected from CMS / state Medicaid.
+//
+// Why: PACE is paid prospectively on a capitated basis (not fee-for-service).
+// CMS pays the Part-C/D capitation for Medicare; the state pays Medicaid
+// capitation. This table reconciles expected-vs-received and feeds the
+// IBNR + risk-adjustment + revenue-cycle dashboards. Later phases added
+// HCC/RAF score columns (see add_hcc_fields_to_emr_capitation_records).
+// CFR ref: 42 CFR §460.180–§460.186 (PACE payment + capitation rate setting).
+// ────────────────────────────────────────────────────────────────────────────
+
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;

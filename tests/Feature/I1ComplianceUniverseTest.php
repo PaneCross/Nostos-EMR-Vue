@@ -1,6 +1,10 @@
 <?php
 
 // ─── Phase I1 — ADE compliance universe + ROI/TB Inertia ────────────────────
+// Locks in: the /compliance/adverse-drug-events audit-pull universe page
+// renders with the right shape, and the ROI + TB-screening Inertia surfaces
+// added by Wave I are reachable by qa_compliance role. Regression trap if
+// any future refactor of the audit-universe controller drops ADE/ROI/TB.
 namespace Tests\Feature;
 
 use App\Models\AdverseDrugEvent;

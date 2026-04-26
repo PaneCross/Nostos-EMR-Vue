@@ -1,6 +1,12 @@
 <?php
 
 // ─── Phase X3 — revision column added to CarePlan + AmendmentRequest ──────
+// Locks in: optimistic-locking `revision` column is present on both models
+// and increments on every save. Audit-12 X3 found two write-heavy tables
+// without lost-update protection — when two clinicians editted the same
+// CarePlan in parallel, the last save would silently overwrite the first.
+// Regression trap to prevent the column being dropped by a future migration
+// or ignored by the controller's update path.
 namespace Tests\Feature;
 
 use App\Models\AmendmentRequest;

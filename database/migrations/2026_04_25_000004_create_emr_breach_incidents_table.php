@@ -1,6 +1,18 @@
 <?php
 
 // ─── Phase P4 — HIPAA §164.404 / §164.408 Breach Notification ──────────────
+// Tracks every confirmed (or suspected) breach of unsecured PHI from
+// discovery through HHS notification, individual letters, and (≥500
+// affected) media notice.
+//
+// Why: §164.404 requires notice to each affected individual within 60
+// calendar days of discovery. §164.408 requires notice to HHS — annually
+// by March 1 for breaches affecting <500, immediately for ≥500. This
+// table holds the regulatory deadlines that BreachDeadlineJob enforces.
+// affected_individuals_count gates the ≥500 media-notice path.
+// CFR ref: 45 CFR §164.400–§164.414 (Breach Notification Rule).
+// ────────────────────────────────────────────────────────────────────────────
+
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;

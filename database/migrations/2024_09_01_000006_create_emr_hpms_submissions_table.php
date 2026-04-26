@@ -1,5 +1,17 @@
 <?php
 
+// ─── Migration: emr_hpms_submissions ────────────────────────────────────────
+// Tracks every file submitted to the CMS Health Plan Management System (HPMS)
+// portal: enrollment/disenrollment transactions, monthly membership reports,
+// PACE quarterly reports, plan benefit packages, etc.
+//
+// Why: HPMS is the single front door to CMS for plan-data exchange. Each
+// upload has a submission_id, status (queued/sent/accepted/rejected), and
+// downstream ack file. This table is the audit trail when CMS challenges
+// an enrollment or asks for proof a quarterly file went out on time.
+// CFR ref: 42 CFR §460.196 (data submission to CMS).
+// ────────────────────────────────────────────────────────────────────────────
+
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;

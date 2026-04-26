@@ -1,6 +1,14 @@
 <?php
 
 // ─── Phase X5 — BreachIncident UTC + photo upload write-then-delete order ──
+// Locks in two tightly-coupled fixes:
+//   1. BreachIncident year-rollover deadline math is performed in UTC, not
+//      the app timezone, so a December 31 breach discovered late in the
+//      day doesn't slip into the next year's HHS roll-up by accident.
+//   2. The participant-photo upload writes the new file BEFORE deleting the
+//      old one, preventing an orphan window where the old photo is gone but
+//      the new one failed to land.
+// Both are §164.404/§164.408 + storage-orphan regression traps.
 namespace Tests\Feature;
 
 use App\Models\BreachIncident;

@@ -1,6 +1,11 @@
 <?php
 
 // ─── Phase M1 — Advance-directive wizard ────────────────────────────────────
+// Locks in: the multi-step AD-wizard collects all CMS-required elements
+// (DPOA-HC, living will, MOLST/POLST when applicable, code status, organ
+// donation), creates a ConsentRecord with consent_type='advance_directive',
+// and returns the user to the participant facesheet with the AD badge
+// flipped. Regression trap if wizard step order or required-field map drifts.
 namespace Tests\Feature;
 
 use App\Models\ConsentRecord;

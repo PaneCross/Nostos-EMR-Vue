@@ -69,6 +69,18 @@
 </template>
 
 <script setup lang="ts">
+// ─── Finance/ComplianceChecklist ────────────────────────────────────────────
+// Billing Compliance Checklist. Runs and displays results of automated
+// pre-submission billing-data integrity checks (missing diagnoses, unsigned
+// notes, encounters without provider, etc.) so Finance can fix issues before
+// the next 837P claim batch goes out.
+//
+// Data: pulls last check run + per-rule pass/fail rows. Audience: Finance /
+// Billing dept. Key actions: "Run Check" button POSTs to re-execute.
+//
+// Acronyms:
+//   837P = X12 EDI format for professional medical claim submission.
+// ─────────────────────────────────────────────────────────────────────────────
 import { ref, computed } from 'vue'
 import { Head, router } from '@inertiajs/vue3'
 import AppShell from '@/Layouts/AppShell.vue'

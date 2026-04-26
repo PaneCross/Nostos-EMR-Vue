@@ -1,6 +1,12 @@
 <?php
 
 // ─── Phase U1 — verify Audit-9 CRITICAL URL fixes resolve to real routes ───
+// Audit-9 found 6 buttons in the Vue UI that POSTed to URLs that returned
+// 404 (e.g. wrong pluralization, stale resource path, missing nested
+// segment). Wave U1 fixed each one. This test asserts every fixed URL now
+// resolves to an actual registered Route — pure router-table check, no DB.
+// Regression trap: if anyone deletes / renames a route without updating
+// the Vue side, this test will catch it before it ships.
 namespace Tests\Feature;
 
 use Illuminate\Support\Facades\Route;

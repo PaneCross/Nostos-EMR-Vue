@@ -144,6 +144,18 @@
 </template>
 
 <script setup lang="ts">
+// ─── Finance/Hpms ───────────────────────────────────────────────────────────
+// HPMS Submissions tracker. Lists every PACE submission generated for the
+// CMS HPMS portal (enrollment files, quality data) with status, period, and
+// generated-on timestamp. Generate button creates the next period's file.
+//
+// Data: paginated HPMS submission rows. Audience: Finance / Compliance dept.
+// Key actions: Generate new submission, download generated payload, mark as
+// submitted to CMS once uploaded to HPMS.
+//
+// Acronyms:
+//   HPMS = Health Plan Management System (CMS portal for PACE submissions).
+// ─────────────────────────────────────────────────────────────────────────────
 import { ref, computed } from 'vue'
 import { Head, router } from '@inertiajs/vue3'
 import AppShell from '@/Layouts/AppShell.vue'

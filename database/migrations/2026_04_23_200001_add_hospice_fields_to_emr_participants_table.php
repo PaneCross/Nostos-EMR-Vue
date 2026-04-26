@@ -6,6 +6,18 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 // ─── Phase C3 — Hospice workflow state on emr_participants ──────────────────
+// Adds hospice_status (none|referred|enrolled|graduated|deceased) plus
+// hospice_provider, hospice_start_date, last_hospice_idt_review_at, and
+// hospice_disenrollment_reason as a CHECK-constrained enum on the
+// participant row.
+//
+// Why: PACE participants who elect hospice keep PACE enrollment but receive
+// a comfort-care service bundle and require IDT review at least every 180
+// days. Storing status on the participant (rather than a side table) keeps
+// the dashboard banner + facesheet badge cheap and the active-hospice
+// cohort query a single index scan.
+// CFR ref: 42 CFR §460.86 (interdisciplinary team requirements).
+// ────────────────────────────────────────────────────────────────────────────
 return new class extends Migration {
     public function up(): void
     {

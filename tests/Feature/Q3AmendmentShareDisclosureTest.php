@@ -1,6 +1,12 @@
 <?php
 
 // ─── Phase Q3 — Amendment accept → §164.526(c)(3) downstream notification ──
+// Locks in: when an AmendmentRequest is accepted, every recipient listed in
+// share_with[] gets a PhiDisclosure row written so the patient's accounting
+// of disclosures truthfully shows that the corrected info was forwarded.
+// Without this wire-in, the EMR could silently drop §164.526(c)(3) notice.
+// CFR ref: 45 CFR §164.526(c)(3) — notify those identified as needing
+// amended PHI.
 namespace Tests\Feature;
 
 use App\Models\AmendmentRequest;
