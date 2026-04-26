@@ -54,6 +54,15 @@ class ProcessHl7AdtJob implements ShouldQueue
 
     public int $tries = 3;
 
+    /** Phase Y4 (Audit-13 M4): HL7 ADT parsing is fast but DB writes can stall under load. */
+    public int $timeout = 120;
+
+    /** Jittered exponential backoff: ~1m, ~3m, ~6m. */
+    public function backoff(): array
+    {
+        return [60, 180, 360];
+    }
+
     public function __construct(
         public readonly int    $integrationLogId,
         public readonly array  $payload,

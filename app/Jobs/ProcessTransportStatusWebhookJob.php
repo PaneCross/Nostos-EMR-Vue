@@ -34,6 +34,15 @@ class ProcessTransportStatusWebhookJob implements ShouldQueue
 
     public int $tries = 3;
 
+    /** Phase Y4 (Audit-13 M4): webhook payloads are tiny — short ceiling is fine. */
+    public int $timeout = 60;
+
+    /** Jittered exponential backoff: ~30s, ~2m, ~5m. */
+    public function backoff(): array
+    {
+        return [30, 120, 300];
+    }
+
     public function __construct(
         public readonly int    $transportTripId,
         public readonly string $newStatus,

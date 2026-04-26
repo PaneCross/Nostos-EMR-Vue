@@ -45,6 +45,22 @@ class Process835RemittanceJob implements ShouldQueue
     public int $tries = 3;
 
     /**
+     * Phase Y4 (Audit-13 M4): cap at 10 min — 835 files can be MB-scale and
+     * the parser runs inside a transaction (see line ~90). Without a timeout
+     * Laravel's worker default (60s) can kill mid-transaction on large files.
+     */
+    public int $timeout = 600;
+
+    /**
+     * Jittered exponential backoff so 3 retries don't hammer a flaky DB or
+     * remittance source in lock-step. Seconds: ~1m, ~3m, ~6m with jitter.
+     */
+    public function backoff(): array
+    {
+        return [60, 180, 360];
+    }
+
+    /**
      * @param int $remittanceBatchId ID of the RemittanceBatch to process
      */
     public function __construct(
