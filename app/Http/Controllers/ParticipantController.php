@@ -58,8 +58,13 @@ class ParticipantController extends Controller
         $user     = $request->user();
         $tenantId = $user->tenant_id;
 
+        // Phase Y7 (Audit-13 perf baseline): pre-compute the most-recent IDT
+        // review timestamp via a single subquery so idtReviewOverdue() doesn't
+        // fire a per-row query inside the through() map. Cuts /participants
+        // from 61 → ~10 queries at 200-enrolled scale.
         $query = Participant::forTenant($tenantId)
             ->with(['site', 'activeFlags'])
+            ->withMax('idtParticipantReviews as last_idt_reviewed_at_raw', 'reviewed_at')
             ->orderBy('last_name')
             ->orderBy('first_name');
 

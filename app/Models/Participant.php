@@ -319,6 +319,15 @@ class Participant extends Model
      */
     public function lastIdtReviewedAt(): ?\Illuminate\Support\Carbon
     {
+        // Phase Y7 (Audit-13 perf): if the controller pre-loaded the max
+        // reviewed_at via withMax(), use it instead of running a fresh query.
+        // Cuts the participant directory listing from 61 → 10 queries at 200
+        // enrolled. Falls back to live query for callers that don't pre-load.
+        if (array_key_exists('last_idt_reviewed_at_raw', $this->getAttributes())) {
+            $raw = $this->getAttribute('last_idt_reviewed_at_raw');
+            return $raw ? \Illuminate\Support\Carbon::parse($raw) : null;
+        }
+
         $latest = $this->idtParticipantReviews()
             ->whereNotNull('reviewed_at')
             ->orderByDesc('reviewed_at')
