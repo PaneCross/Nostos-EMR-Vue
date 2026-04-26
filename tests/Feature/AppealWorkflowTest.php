@@ -24,10 +24,12 @@ use App\Services\AppealService;
 use App\Services\ServiceDenialNoticeService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
+use Tests\Concerns\FreezesTime;
 use Tests\TestCase;
 
 class AppealWorkflowTest extends TestCase
 {
+    use FreezesTime;
     use RefreshDatabase;
 
     private Tenant $tenant;
@@ -38,6 +40,7 @@ class AppealWorkflowTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        $this->setUpFreezesTime();
         $this->tenant = Tenant::factory()->create();
         $this->site   = Site::factory()->create(['tenant_id' => $this->tenant->id, 'mrn_prefix' => 'APL']);
         $this->qaAdmin = User::factory()->create([

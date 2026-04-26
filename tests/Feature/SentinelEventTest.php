@@ -22,10 +22,12 @@ use App\Models\Participant;
 use App\Models\Tenant;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\FreezesTime;
 use Tests\TestCase;
 
 class SentinelEventTest extends TestCase
 {
+    use FreezesTime;
     use RefreshDatabase;
 
     private Tenant $tenant;
@@ -36,6 +38,7 @@ class SentinelEventTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        $this->setUpFreezesTime();
         $this->tenant = Tenant::factory()->create();
         $this->qa = User::factory()->create([
             'tenant_id' => $this->tenant->id, 'department' => 'qa_compliance',

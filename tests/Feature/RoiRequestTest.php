@@ -14,10 +14,12 @@ use App\Models\Site;
 use App\Models\Tenant;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\FreezesTime;
 use Tests\TestCase;
 
 class RoiRequestTest extends TestCase
 {
+    use FreezesTime;
     use RefreshDatabase;
 
     private Tenant $tenant;
@@ -28,6 +30,7 @@ class RoiRequestTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        $this->setUpFreezesTime();
         $this->tenant = Tenant::factory()->create();
         $this->site = Site::factory()->create(['tenant_id' => $this->tenant->id, 'mrn_prefix' => 'RO']);
         $this->qa = User::factory()->create([

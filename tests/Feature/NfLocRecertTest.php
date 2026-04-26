@@ -15,10 +15,12 @@ use App\Models\User;
 use App\Services\AlertService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
+use Tests\Concerns\FreezesTime;
 use Tests\TestCase;
 
 class NfLocRecertTest extends TestCase
 {
+    use FreezesTime;
     use RefreshDatabase;
 
     private Tenant $tenant;
@@ -28,6 +30,7 @@ class NfLocRecertTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        $this->setUpFreezesTime();
         $this->tenant = Tenant::factory()->create();
         $this->site = Site::factory()->create(['tenant_id' => $this->tenant->id, 'mrn_prefix' => 'NFT']);
         $this->enrollmentUser = User::factory()->create([
