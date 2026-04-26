@@ -379,7 +379,10 @@ class ParticipantController extends Controller
         $this->authorizeForTenant($participant, $user);
 
         $request->validate([
-            'photo' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
+            // Phase X2 — Audit-12 H2: mimetypes: validates by file content,
+            // not extension. The 'image' rule already does PHP getimagesize
+            // sniffing but mimetypes: belt-and-suspenders.
+            'photo' => ['required', 'image', 'mimetypes:image/jpeg,image/png,image/webp', 'max:4096'],
         ]);
 
         // Delete existing photo file if present

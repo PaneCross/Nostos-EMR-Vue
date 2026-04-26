@@ -34,7 +34,11 @@ class StoreDocumentRequest extends FormRequest
                 'required',
                 'file',
                 'max:20480',                            // 20 MB in kilobytes
-                'mimes:pdf,jpeg,jpg,png,docx',
+                // Phase X2 — Audit-12 H2: validate by real MIME content
+                // (mimetypes:) rather than client-supplied extension (mimes:).
+                // Prevents an attacker from renaming payload.html → payload.pdf
+                // and having it accepted.
+                'mimetypes:application/pdf,image/jpeg,image/png,application/vnd.openxmlformats-officedocument.wordprocessingml.document',
             ],
             'document_category' => [
                 'required',
@@ -53,7 +57,7 @@ class StoreDocumentRequest extends FormRequest
     {
         return [
             'file.max'           => 'Documents may not exceed 20 MB.',
-            'file.mimes'         => 'Accepted file types: PDF, JPEG, PNG, DOCX.',
+            'file.mimetypes'     => 'Accepted file types: PDF, JPEG, PNG, DOCX.',
             'document_category.in' => 'Invalid document category.',
         ];
     }
