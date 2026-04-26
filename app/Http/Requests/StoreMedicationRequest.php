@@ -35,4 +35,22 @@ class StoreMedicationRequest extends FormRequest
             'pharmacy_notes'               => ['nullable', 'string', 'max:2000'],
         ];
     }
+
+    /**
+     * Phase Y2 (Audit-13 polish): pharmacy-aware error text.
+     * Generic "in" rule errors don't tell the prescriber what set is allowed;
+     * these messages name the constraint set explicitly.
+     */
+    public function messages(): array
+    {
+        return [
+            'drug_name.required'                  => 'Drug name is required (use the search to pull an RxNorm-coded entry).',
+            'dose_unit.in'                        => 'Dose unit must be one of: ' . implode(', ', \App\Models\Medication::DOSE_UNITS) . '.',
+            'route.in'                            => 'Route must be one of: ' . implode(', ', \App\Models\Medication::ROUTES) . '.',
+            'frequency.in'                        => 'Frequency must be one of: ' . implode(', ', \App\Models\Medication::FREQUENCIES) . '.',
+            'prn_indication.required_if'          => 'PRN medications require a documented indication ("for what").',
+            'end_date.after_or_equal'             => 'End date cannot be earlier than start date.',
+            'controlled_schedule.in'              => 'Controlled schedule must be II, III, IV, or V (DEA classification).',
+        ];
+    }
 }

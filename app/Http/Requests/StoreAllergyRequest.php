@@ -30,4 +30,20 @@ class StoreAllergyRequest extends FormRequest
             'notes'               => ['nullable', 'string', 'max:2000'],
         ];
     }
+
+    /**
+     * Phase Y2 (Audit-13 polish): allergy-context messages so the user knows
+     * which allergen taxonomy and severity scale we're using.
+     */
+    public function messages(): array
+    {
+        return [
+            'allergy_type.required' => 'Allergy type is required.',
+            'allergy_type.in'       => 'Allergy type must be one of: ' . implode(', ', \App\Models\Allergy::ALLERGY_TYPES) . '.',
+            'allergen_name.required'=> 'Allergen name is required (free text or RxNorm/SNOMED-coded if available).',
+            'severity.required'     => 'Severity is required — life_threatening drives the banner alert.',
+            'severity.in'           => 'Severity must be one of: ' . implode(', ', \App\Models\Allergy::SEVERITIES) . '.',
+            'onset_date.before_or_equal' => 'Onset date cannot be in the future.',
+        ];
+    }
 }
