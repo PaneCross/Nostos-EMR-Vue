@@ -24,11 +24,15 @@ class AmendmentRequest extends Model
         'requested_change', 'justification',
         'status', 'reviewer_user_id', 'reviewer_decision_at', 'decision_rationale',
         'deadline_at', 'patient_disagreement_statement',
+        // Phase X3 — Audit-12 H3: optimistic-lock counter
+        'revision', 'last_edited_at', 'last_edited_by_user_id',
     ];
 
     protected $casts = [
         'reviewer_decision_at' => 'datetime',
         'deadline_at'          => 'datetime',
+        'revision'             => 'integer',
+        'last_edited_at'       => 'datetime',
     ];
 
     public function participant(): BelongsTo { return $this->belongsTo(Participant::class); }

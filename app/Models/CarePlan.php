@@ -53,6 +53,10 @@ class CarePlan extends Model
         'participant_response',
         'offered_at',
         'offered_by_user_id',
+        // Phase X3 — Audit-12 H3: optimistic-lock counter for concurrent edits.
+        'revision',
+        'last_edited_at',
+        'last_edited_by_user_id',
     ];
 
     protected $casts = [
@@ -62,6 +66,9 @@ class CarePlan extends Model
         // W4-5: participant acknowledgment casts
         'participant_offered_participation' => 'boolean',
         'offered_at'                        => 'datetime',
+        // Phase X3 — optimistic-lock casts
+        'revision'                          => 'integer',
+        'last_edited_at'                    => 'datetime',
     ];
 
     // ── Relationships ─────────────────────────────────────────────────────────
