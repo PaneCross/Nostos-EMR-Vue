@@ -15,11 +15,27 @@ use App\Models\Tenant;
 use App\Models\User;
 use App\Services\AlertService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\FreezesTime;
 use Tests\TestCase;
 
 class Q1DeadlineJobsAndBreachLetterTest extends TestCase
 {
+    use FreezesTime;
     use RefreshDatabase;
+
+    // Phase X6 — freeze "now" so deadline diffInDays math doesn't flake at
+    // midnight UTC or DST crossovers when paratest workers race.
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->setUpFreezesTime();
+    }
+
+    protected function tearDown(): void
+    {
+        $this->tearDownFreezesTime();
+        parent::tearDown();
+    }
 
     private function tenantUser(string $dept = 'it_admin'): array
     {
