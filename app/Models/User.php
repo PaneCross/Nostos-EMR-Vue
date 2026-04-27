@@ -76,15 +76,20 @@ class User extends Authenticatable
      * administrators making assignments know exactly what notifications +
      * approval workflows the user will pick up.
      *
-     * Honest split:
-     *   permissions   — special abilities the designation grants (approval gates).
-     *   notifications — events that route alerts to holders of this designation.
-     *   reserved      — feature areas the designation is RESERVED for but not
-     *                   yet wired in code. Listed so admins know intent vs.
-     *                   today's behavior. Wire up as those workflows are built.
+     * Structure:
+     *   permissions   — static list. Approval gates / abilities the designation
+     *                   grants regardless of Org Settings (RBAC-level).
+     *   notifications — list of {key, text}. Each entry is keyed to a
+     *                   preference in NotificationPreferenceService. The
+     *                   IT-admin Users modal filters this list at render time
+     *                   to show ONLY notifications currently enabled for the
+     *                   tenant + the user's site (cascade aware) — so admins
+     *                   see what THIS designation actually routes today, not
+     *                   what's theoretically possible.
      *
-     * Source of truth: any new alert routing or permission gate that uses a
-     * designation should also update its entry here so the UI stays accurate.
+     * MAINTENANCE: when wiring a new alert path that targets a designation, add
+     * its preference key + plain-English description to that designation's
+     * notifications list here. The UI auto-filters by enabled state.
      */
     public const DESIGNATION_DETAILS = [
         'medical_director' => [
@@ -96,10 +101,10 @@ class User extends Authenticatable
                 'Listed in the grievance-escalation assignee picker.',
             ],
             'notifications' => [
-                'Critical alert when a restraint episode goes >4 hours without an observation entry.',
-                'Critical alert when a restraint episode IDT review is >24 hours overdue.',
+                ['key' => 'designation.medical_director.restraint_observation_overdue', 'text' => 'Critical alert when a restraint episode goes >4 hours without an observation entry.'],
+                ['key' => 'designation.medical_director.restraint_idt_review_overdue', 'text' => 'Critical alert when a restraint episode IDT review is >24 hours overdue.'],
+                ['key' => 'designation.medical_director.appeal_decision_required', 'text' => 'Notified when a §460.122 appeal is filed and pending a decision.'],
             ],
-            'reserved' => [],
         ],
 
         'compliance_officer' => [
@@ -110,59 +115,60 @@ class User extends Authenticatable
                 'Listed in the grievance-escalation assignee picker.',
             ],
             'notifications' => [
-                'Named in alerts on every urgent grievance (72-hour CMS clock per §460.120(c)).',
-                'Auto-assigned as the escalation reviewer when a grievance is escalated without a specific reviewer.',
-                'Named as the fallback reviewer in overdue-grievance alerts (day 25 of the 30-day clock).',
+                ['key' => 'designation.compliance_officer.urgent_grievance_filed', 'text' => 'Named in alerts on every urgent grievance (72-hour CMS clock per §460.120(c)).'],
+                ['key' => 'designation.compliance_officer.grievance_escalated', 'text' => 'Auto-assigned as the escalation reviewer when a grievance is escalated without a specific reviewer.'],
+                ['key' => 'designation.compliance_officer.grievance_overdue', 'text' => 'Named as the fallback reviewer in overdue-grievance alerts (day 25 of the 30-day clock).'],
+                ['key' => 'designation.compliance_officer.cms_reportable_event', 'text' => 'Notified when an incident is flagged CMS-reportable at intake.'],
             ],
-            'reserved' => [],
         ],
 
         'program_director' => [
             'label'   => 'Program Director',
-            'summary' => 'Senior administrative role. Today only used as an option in escalation pickers.',
+            'summary' => 'Senior administrative role. Receives org-wide critical-incident alerts when configured.',
             'permissions' => [
                 'Listed in the grievance-escalation assignee picker.',
             ],
-            'notifications' => [],
-            'reserved' => [
-                'Future: organization-wide critical incident alerts (sentinel events, breach incidents). Not yet routed in code.',
+            'notifications' => [
+                ['key' => 'designation.program_director.sentinel_event', 'text' => 'Critical alert when an incident is classified as a sentinel event.'],
+                ['key' => 'designation.program_director.breach_incident_logged', 'text' => 'Critical alert when a HIPAA breach is logged (in addition to the IT Admin chain).'],
+                ['key' => 'designation.program_director.cms_reportable_grievance', 'text' => 'Critical alert when a CMS-reportable grievance is escalated.'],
             ],
         ],
 
         'nursing_director' => [
             'label'   => 'Nursing Director',
-            'summary' => 'Reserved for nursing-area QA + safety alert routing.',
+            'summary' => 'Nursing-area QA + safety alert routing. Threshold-tunable pattern detection runs nightly.',
             'permissions' => [],
-            'notifications' => [],
-            'reserved' => [
-                'Future: nursing-related QA alerts (fall-risk threshold breaches, pressure-injury staging changes, late EMAR/BCMA dose patterns).',
-                'Future: critical-value lab acknowledgment escalations when the ordering clinician does not acknowledge within policy.',
-                'No code paths route to this designation yet.',
+            'notifications' => [
+                ['key' => 'designation.nursing_director.fall_risk_threshold', 'text' => 'Alert when a participant\'s Morse fall scale crosses 45+ (high-risk threshold).'],
+                ['key' => 'designation.nursing_director.pressure_injury_staging', 'text' => 'Alert when a wound progresses to a higher NPUAP stage.'],
+                ['key' => 'designation.nursing_director.late_emar_pattern', 'text' => 'Alert when the same nurse triggers a configurable number of late doses within a recent window.'],
+                ['key' => 'designation.nursing_director.bcma_override_pattern', 'text' => 'Alert when the same nurse triggers a configurable number of BCMA mismatch overrides within a recent window.'],
+                ['key' => 'designation.nursing_director.critical_value_unacked', 'text' => 'Escalation alert when a critical lab value has not been acknowledged within the configured window.'],
+                ['key' => 'workflow.lab_abnormal.notify_nursing_director', 'text' => 'Copy on abnormal-flag lab results (in addition to ordering provider alert).'],
             ],
         ],
 
         'pharmacy_director' => [
             'label'   => 'Pharmacy Director',
-            'summary' => 'Reserved for pharmacy oversight (drug interactions, controlled-substance review).',
+            'summary' => 'Pharmacy oversight: drug interactions, controlled-substance review, prior-auth queue.',
             'permissions' => [],
-            'notifications' => [],
-            'reserved' => [
-                'Future: critical drug-interaction alerts on prescribe events.',
-                'Future: controlled-substance prescribing pattern alerts and BCMA repeated-override review.',
-                'Future: prior-authorization queue oversight notifications.',
-                'No code paths route to this designation yet.',
+            'notifications' => [
+                ['key' => 'designation.pharmacy_director.critical_drug_interaction', 'text' => 'Critical alert on major or contraindicated drug-drug interactions surfaced at prescribe.'],
+                ['key' => 'designation.pharmacy_director.bcma_override_review', 'text' => 'Critical alert when a BCMA override involves a Schedule II/III controlled substance.'],
+                ['key' => 'designation.pharmacy_director.controlled_substance_pattern', 'text' => 'Alert when a single prescriber issues a configurable number of controlled-substance Rx in a recent window.'],
+                ['key' => 'designation.pharmacy_director.prior_auth_queue_oversight', 'text' => 'Daily digest of prior-auth requests pending more than 3 days.'],
             ],
         ],
 
         'social_work_supervisor' => [
             'label'   => 'Social Work Supervisor',
-            'summary' => 'Reserved for social-work team oversight + escalations.',
+            'summary' => 'Social-work team oversight: SDOH escalations, bereavement workflow, advance directive completion.',
             'permissions' => [],
-            'notifications' => [],
-            'reserved' => [
-                'Future: social-determinants escalations (housing instability, food insecurity flagged on intake).',
-                'Future: bereavement workflow + family-contact escalations.',
-                'No code paths route to this designation yet.',
+            'notifications' => [
+                ['key' => 'designation.social_work_supervisor.sdoh_critical', 'text' => 'Alert when housing-instability or food-insecurity is flagged on intake.'],
+                ['key' => 'designation.social_work_supervisor.bereavement_followup_missed', 'text' => 'Alert when a bereavement family-contact follow-up is not made within 14 days.'],
+                ['key' => 'designation.social_work_supervisor.adv_directive_missing_at_admit', 'text' => 'Alert when a participant has been enrolled 30+ days with no DPOA / advance directive on file.'],
             ],
         ],
     ];

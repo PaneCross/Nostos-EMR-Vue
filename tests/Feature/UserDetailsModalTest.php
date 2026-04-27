@@ -146,16 +146,18 @@ class UserDetailsModalTest extends TestCase
         $this->assertEquals(3, $r->json('activity.count_90_days'));
     }
 
-    public function test_designation_details_const_covers_every_designation_with_full_shape(): void
+    public function test_designation_details_const_covers_every_designation_with_new_shape(): void
     {
-        // Every designation in DESIGNATIONS must have a corresponding DESIGNATION_DETAILS
-        // entry with the four required keys. If a new designation is added without an
-        // entry, the IT-admin Users modal would silently render no help text for it.
+        // Every designation in DESIGNATIONS must have a DESIGNATION_DETAILS entry
+        // with label/summary/permissions/notifications. The notifications list is
+        // an array of {key, text} entries — each `key` must exist in the
+        // NotificationPreferenceService catalog so the runtime filter works.
+        $catalog = \App\Services\NotificationPreferenceService::catalog();
         foreach (\App\Models\User::DESIGNATIONS as $key) {
             $this->assertArrayHasKey($key, \App\Models\User::DESIGNATION_DETAILS,
                 "DESIGNATION_DETAILS missing entry for '$key'");
             $entry = \App\Models\User::DESIGNATION_DETAILS[$key];
-            foreach (['label', 'summary', 'permissions', 'notifications', 'reserved'] as $field) {
+            foreach (['label', 'summary', 'permissions', 'notifications'] as $field) {
                 $this->assertArrayHasKey($field, $entry,
                     "DESIGNATION_DETAILS['$key'] missing required field '$field'");
             }
@@ -163,24 +165,53 @@ class UserDetailsModalTest extends TestCase
             $this->assertIsString($entry['summary']);
             $this->assertIsArray($entry['permissions']);
             $this->assertIsArray($entry['notifications']);
-            $this->assertIsArray($entry['reserved']);
+
+            // Each notification entry must be {key, text} and the key must
+            // resolve to a real catalog entry.
+            foreach ($entry['notifications'] as $n) {
+                $this->assertArrayHasKey('key', $n, "Notification in '$key' missing 'key'");
+                $this->assertArrayHasKey('text', $n, "Notification in '$key' missing 'text'");
+                $this->assertArrayHasKey($n['key'], $catalog,
+                    "DESIGNATION_DETAILS['$key'] notification references non-existent catalog key '{$n['key']}'");
+            }
         }
     }
 
-    public function test_users_index_inertia_includes_designation_details(): void
+    public function test_user_details_returns_filtered_designation_routing(): void
     {
-        [, , $itAdmin] = $this->tenantWithIt();
+        [$t, $s, $itAdmin] = $this->tenantWithIt();
+        $target = User::factory()->create([
+            'tenant_id' => $t->id, 'site_id' => $s->id,
+            'department' => 'pharmacy', 'role' => 'standard', 'is_active' => true,
+        ]);
 
-        $r = $this->actingAs($itAdmin)->get('/it-admin/users');
-        $r->assertOk();
+        // Default: optional prefs are off → notifications list filtered to
+        // Required-only entries (medical_director restraints, compliance_officer
+        // grievance keys). Pharmacy/Nursing director have zero active
+        // notifications until org enables their optional keys.
+        $r = $this->actingAs($itAdmin)->getJson("/it-admin/users/{$target->id}/details");
+        $r->assertOk()->assertJsonStructure([
+            'designation_routing' => [
+                'medical_director' => ['label', 'summary', 'permissions', 'notifications', 'total_notifications_in_catalog'],
+            ],
+        ]);
 
-        $r->assertInertia(fn ($page) => $page
-            ->component('ItAdmin/Users')
-            ->has('designationDetails')
-            ->has('designationDetails.medical_director.permissions')
-            ->has('designationDetails.medical_director.notifications')
-            ->has('designationDetails.medical_director.reserved')
-        );
+        // Medical Director should have its 2 required restraint notifications active by default
+        $mdNotifs = collect($r->json('designation_routing.medical_director.notifications'))->pluck('key')->all();
+        $this->assertContains('designation.medical_director.restraint_observation_overdue', $mdNotifs);
+        $this->assertContains('designation.medical_director.restraint_idt_review_overdue', $mdNotifs);
+
+        // Pharmacy Director starts with 0 active notifications (all optional, default off)
+        $this->assertEquals(0, count($r->json('designation_routing.pharmacy_director.notifications')));
+        $this->assertGreaterThan(0, $r->json('designation_routing.pharmacy_director.total_notifications_in_catalog'));
+
+        // Now flip a pharmacy_director optional pref on at the ORG level
+        $svc = app(\App\Services\NotificationPreferenceService::class);
+        $svc->set($t->id, 'designation.pharmacy_director.critical_drug_interaction', true, $itAdmin->id);
+
+        $r2 = $this->actingAs($itAdmin)->getJson("/it-admin/users/{$target->id}/details");
+        $pharmNotifs = collect($r2->json('designation_routing.pharmacy_director.notifications'))->pluck('key')->all();
+        $this->assertContains('designation.pharmacy_director.critical_drug_interaction', $pharmNotifs);
     }
 
     public function test_credentials_summary_shape_returns_zero_when_user_has_none(): void

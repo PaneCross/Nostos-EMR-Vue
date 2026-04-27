@@ -21,6 +21,7 @@ use App\Models\AuditLog;
 use App\Models\StaffCredential;
 use App\Models\StaffTrainingRecord;
 use App\Models\User;
+use App\Services\NotificationPreferenceService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -88,7 +89,9 @@ class UserProvisioningController extends Controller
         return Inertia::render('ItAdmin/Users', [
             'users'              => $users,
             'designationLabels'  => User::DESIGNATION_LABELS,
-            'designationDetails' => User::DESIGNATION_DETAILS,
+            // designation_routing (per-designation permissions + filtered
+            // notifications) is now lazy-loaded by the user-details modal so
+            // it can apply the per-tenant + per-site preference cascade.
             'deptLabels'         => self::DEPT_LABELS,
         ]);
     }
@@ -177,6 +180,33 @@ class UserProvisioningController extends Controller
                 'created_at'    => $row->created_at?->toIso8601String(),
             ]);
 
+        // ── Designation routing (filtered by current Org Settings prefs) ─────
+        // For each designation in the catalog: permissions are static (RBAC-level
+        // and don't depend on settings); notifications are filtered to ONLY the
+        // ones currently enabled for this tenant + the user's site (cascade).
+        // Required-status keys always show as enabled. Site-level overrides beat
+        // org-level beats catalog default.
+        /** @var NotificationPreferenceService $prefSvc */
+        $prefSvc = app(NotificationPreferenceService::class);
+        $designationRouting = [];
+        foreach (User::DESIGNATION_DETAILS as $key => $entry) {
+            $enabledNotifications = [];
+            foreach ($entry['notifications'] ?? [] as $notification) {
+                $prefKey = $notification['key'] ?? null;
+                if (! $prefKey) continue;
+                if ($prefSvc->shouldNotify($tenantId, $prefKey, $user->site_id)) {
+                    $enabledNotifications[] = $notification;
+                }
+            }
+            $designationRouting[$key] = [
+                'label'         => $entry['label'],
+                'summary'       => $entry['summary'],
+                'permissions'   => $entry['permissions'] ?? [],
+                'notifications' => $enabledNotifications,
+                'total_notifications_in_catalog' => count($entry['notifications'] ?? []),
+            ];
+        }
+
         return response()->json([
             'user' => [
                 'id'              => $user->id,
@@ -211,6 +241,7 @@ class UserProvisioningController extends Controller
                 'top_actions'   => $topActions,
                 'recent'        => $recent,
             ],
+            'designation_routing' => $designationRouting,
         ]);
     }
 

@@ -38,6 +38,8 @@ import {
     DocumentCheckIcon,
     ExclamationTriangleIcon,
     BoltIcon,
+    ChevronDownIcon,
+    ChevronUpIcon,
 } from '@heroicons/vue/24/outline'
 
 interface UserRow {
@@ -92,6 +94,16 @@ interface UserDetail {
             created_at: string | null
         }[]
     }
+    // Per-designation routing detail. The notifications list is filtered
+    // server-side to only the alerts currently enabled for this tenant +
+    // the user's site (cascade-aware). Permissions are static.
+    designation_routing: Record<string, {
+        label: string
+        summary: string
+        permissions: string[]
+        notifications: { key: string; text: string }[]
+        total_notifications_in_catalog: number
+    }>
 }
 
 interface ProvisionForm {
@@ -101,18 +113,11 @@ interface ProvisionForm {
     department: string
 }
 
-interface DesignationDetail {
-    label: string
-    summary: string
-    permissions: string[]
-    notifications: string[]
-    reserved: string[]
-}
-
 interface Props {
     users: UserRow[]
     designationLabels: Record<string, string>
-    designationDetails: Record<string, DesignationDetail>
+    // Per-designation permissions + filtered-notifications detail comes via
+    // userDetails modal endpoint (cascade-aware), not via this prop.
     deptLabels: Record<string, string>
 }
 
@@ -132,6 +137,23 @@ const detailError = ref<string | null>(null)
 const togglingActive = ref(false)
 const resettingAccess = ref(false)
 const savingDesignations = ref(false)
+
+// Per-designation expansion state. Each designation card collapses by default
+// when not assigned to the user; expands when assigned OR when manually
+// toggled via the chevron. Map: designation_key → boolean.
+const expandedDesignations = ref<Record<string, boolean>>({})
+
+function isDesignationExpanded(key: string): boolean {
+    if (key in expandedDesignations.value) {
+        return expandedDesignations.value[key]
+    }
+    // Default: expanded if user has the designation, collapsed otherwise.
+    return detail.value?.user.designations.includes(key) ?? false
+}
+
+function toggleDesignationExpand(key: string) {
+    expandedDesignations.value[key] = ! isDesignationExpanded(key)
+}
 
 // ── Provision-modal state (unchanged) ───────────────────────────────────────
 const showProvision = ref(false)
@@ -192,6 +214,7 @@ function closeDetail() {
     detailUserId.value = null
     detail.value = null
     detailError.value = null
+    expandedDesignations.value = {}  // reset card state on close
 }
 
 function onKeydown(e: KeyboardEvent) {
@@ -248,16 +271,18 @@ async function toggleDesignation(key: string) {
     if (!detail.value) return
     const u = detail.value.user
     const prev = [...u.designations]
-    const next = prev.includes(key) ? prev.filter(d => d !== key) : [...prev, key]
+    const willHave = ! prev.includes(key)
+    const next = willHave ? [...prev, key] : prev.filter(d => d !== key)
     detail.value.user.designations = next  // optimistic update
     savingDesignations.value = true
     detailError.value = null
+    // Auto-expand the card when the box is checked; auto-collapse when unchecked
+    // (unless the user already manually toggled it via the chevron).
+    expandedDesignations.value[key] = willHave
     try {
         await axios.patch(`/it-admin/users/${u.id}/designations`, { designations: next })
-        // Mirror onto the underlying table row so designation chips stay current
         users.value = users.value.map(row => row.id === u.id ? { ...row, designations: next } : row)
     } catch (e: unknown) {
-        // Roll back optimistic update + surface error
         if (detail.value) detail.value.user.designations = prev
         const err = e as { response?: { data?: { message?: string }, status?: number } }
         detailError.value = err.response?.data?.message
@@ -554,7 +579,7 @@ function humanizeAction(action: string): string {
                         </div>
                     </div>
 
-                    <!-- Designations — vertical list with detail per designation -->
+                    <!-- Designations — collapsible cards w/ dynamic notifications -->
                     <div class="p-6">
                         <h3 class="text-xs uppercase tracking-wide font-semibold text-gray-500 dark:text-slate-400 mb-3 flex items-center gap-1.5">
                             <ShieldCheckIcon class="w-3.5 h-3.5" />
@@ -563,72 +588,94 @@ function humanizeAction(action: string): string {
                         </h3>
                         <p class="text-xs text-gray-500 dark:text-slate-400 mb-3">
                             Designations control who is notified for specific events and who can approve specific workflows
-                            (they do <em>not</em> affect general department access). A user may hold multiple. Toggle any
-                            checkbox to add or remove the designation — saves immediately.
+                            (they do <em>not</em> affect general department access). A user may hold multiple. Click a card's
+                            arrow to preview its permissions + notifications before assigning. The notifications shown reflect
+                            your current Org Settings — toggling settings on
+                            <a href="/executive/org-settings" class="text-indigo-600 dark:text-indigo-400 hover:underline">Org Settings</a>
+                            updates this view.
                         </p>
 
-                        <ul class="space-y-3">
+                        <ul class="space-y-2">
                             <li
                                 v-for="(label, key) in props.designationLabels"
                                 :key="key"
-                                class="rounded-lg border border-gray-200 dark:border-slate-700 p-3 transition-colors"
+                                class="rounded-lg border transition-colors"
                                 :class="detail.user.designations.includes(key)
                                     ? 'bg-indigo-50/40 dark:bg-indigo-950/20 border-indigo-200 dark:border-indigo-900/50'
-                                    : 'bg-white dark:bg-slate-800/30'"
+                                    : 'bg-white dark:bg-slate-800/30 border-gray-200 dark:border-slate-700'"
                             >
-                                <label class="flex items-start gap-2.5 cursor-pointer">
-                                    <input
-                                        type="checkbox"
-                                        :checked="detail.user.designations.includes(key)"
-                                        @change="toggleDesignation(key)"
-                                        class="mt-0.5 rounded border-gray-300 dark:border-slate-600 shrink-0"
-                                        :aria-label="`Toggle ${label} designation`"
-                                    />
-                                    <div class="min-w-0 flex-1">
-                                        <div class="font-medium text-gray-900 dark:text-slate-100">{{ label }}</div>
-                                        <div
-                                            v-if="props.designationDetails?.[key]?.summary"
-                                            class="text-xs text-gray-600 dark:text-slate-400 mt-0.5"
-                                        >
-                                            {{ props.designationDetails[key].summary }}
+                                <!-- Card header: checkbox + label + summary + chevron -->
+                                <div class="flex items-start gap-2.5 p-3">
+                                    <label class="flex items-start gap-2.5 cursor-pointer flex-1 min-w-0">
+                                        <input
+                                            type="checkbox"
+                                            :checked="detail.user.designations.includes(key)"
+                                            @change="toggleDesignation(key)"
+                                            class="mt-0.5 rounded border-gray-300 dark:border-slate-600 shrink-0"
+                                            :aria-label="`Toggle ${label} designation`"
+                                        />
+                                        <div class="min-w-0 flex-1">
+                                            <div class="font-medium text-gray-900 dark:text-slate-100">{{ label }}</div>
+                                            <div
+                                                v-if="detail.designation_routing?.[key]?.summary"
+                                                class="text-xs text-gray-600 dark:text-slate-400 mt-0.5"
+                                            >
+                                                {{ detail.designation_routing[key].summary }}
+                                            </div>
                                         </div>
-                                    </div>
-                                </label>
+                                    </label>
+                                    <button
+                                        type="button"
+                                        @click="toggleDesignationExpand(key)"
+                                        class="shrink-0 text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-300 p-1"
+                                        :aria-label="isDesignationExpanded(key) ? `Collapse ${label} details` : `Expand ${label} details`"
+                                        :aria-expanded="isDesignationExpanded(key)"
+                                    >
+                                        <ChevronUpIcon v-if="isDesignationExpanded(key)" class="w-4 h-4" />
+                                        <ChevronDownIcon v-else class="w-4 h-4" />
+                                    </button>
+                                </div>
 
-                                <!-- Detail bullets — only render when we have content for this designation -->
+                                <!-- Collapsible body: permissions + notifications (filtered by org settings) -->
                                 <div
-                                    v-if="props.designationDetails?.[key]"
-                                    class="mt-2 ml-6 space-y-2 text-xs"
+                                    v-if="isDesignationExpanded(key) && detail.designation_routing?.[key]"
+                                    class="px-3 pb-3 ml-6 space-y-2 text-xs border-t border-gray-100 dark:border-slate-700/50 pt-2"
                                 >
-                                    <!-- Permissions / approval gates -->
-                                    <div v-if="props.designationDetails[key].permissions.length > 0">
+                                    <!-- Permissions (static — independent of Org Settings) -->
+                                    <div v-if="detail.designation_routing[key].permissions.length > 0">
                                         <div class="font-semibold text-emerald-700 dark:text-emerald-400 mb-1">
                                             Permissions
                                         </div>
                                         <ul class="list-disc list-outside ml-4 space-y-0.5 text-gray-700 dark:text-slate-300">
-                                            <li v-for="(p, i) in props.designationDetails[key].permissions" :key="`p-${i}`">{{ p }}</li>
+                                            <li v-for="(p, i) in detail.designation_routing[key].permissions" :key="`p-${i}`">{{ p }}</li>
                                         </ul>
                                     </div>
 
-                                    <!-- Notifications -->
-                                    <div v-if="props.designationDetails[key].notifications.length > 0">
-                                        <div class="font-semibold text-blue-700 dark:text-blue-400 mb-1">
+                                    <!-- Notifications (filtered server-side by current Org Settings) -->
+                                    <div v-if="detail.designation_routing[key].notifications.length > 0">
+                                        <div class="font-semibold text-blue-700 dark:text-blue-400 mb-1 flex items-center gap-1">
                                             Notifications
+                                            <span class="font-normal text-blue-700/70 dark:text-blue-400/70 italic normal-case">
+                                                — {{ detail.designation_routing[key].notifications.length }} of
+                                                {{ detail.designation_routing[key].total_notifications_in_catalog }} active
+                                            </span>
                                         </div>
                                         <ul class="list-disc list-outside ml-4 space-y-0.5 text-gray-700 dark:text-slate-300">
-                                            <li v-for="(n, i) in props.designationDetails[key].notifications" :key="`n-${i}`">{{ n }}</li>
+                                            <li v-for="(n, i) in detail.designation_routing[key].notifications" :key="`n-${i}`">{{ n.text }}</li>
                                         </ul>
                                     </div>
 
-                                    <!-- Reserved (planned but not yet wired) -->
-                                    <div v-if="props.designationDetails[key].reserved.length > 0">
-                                        <div class="font-semibold text-amber-700 dark:text-amber-400 mb-1 flex items-center gap-1">
-                                            Reserved
-                                            <span class="font-normal text-amber-700/70 dark:text-amber-500/80 italic normal-case">— intent, not yet wired</span>
-                                        </div>
-                                        <ul class="list-disc list-outside ml-4 space-y-0.5 text-gray-600 dark:text-slate-400">
-                                            <li v-for="(r, i) in props.designationDetails[key].reserved" :key="`r-${i}`">{{ r }}</li>
-                                        </ul>
+                                    <!-- No active notifications — show how to enable -->
+                                    <div v-else-if="detail.designation_routing[key].total_notifications_in_catalog > 0"
+                                        class="text-gray-500 dark:text-slate-400 italic">
+                                        No notifications active for this designation. Enable them on
+                                        <a href="/executive/org-settings" class="text-indigo-600 dark:text-indigo-400 hover:underline not-italic">Org Settings</a>
+                                        ({{ detail.designation_routing[key].total_notifications_in_catalog }} available).
+                                    </div>
+
+                                    <div v-if="detail.designation_routing[key].permissions.length === 0 && detail.designation_routing[key].notifications.length === 0 && detail.designation_routing[key].total_notifications_in_catalog === 0"
+                                        class="text-gray-500 dark:text-slate-400 italic">
+                                        No permissions or notifications configured for this designation.
                                     </div>
                                 </div>
                             </li>

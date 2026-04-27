@@ -380,7 +380,6 @@ function getBooleanState(entry: PreferenceEntry): boolean {
                     <ul class="list-disc list-outside ml-5 text-blue-800 dark:text-blue-200">
                         <li><strong class="text-rose-700 dark:text-rose-300">Required by CMS</strong> — locked on, fires regardless of toggle.</li>
                         <li><strong class="text-blue-700 dark:text-blue-300">Optional</strong> — toggle controls behavior. Your choice.</li>
-                        <li><strong class="text-amber-700 dark:text-amber-300">Reserved</strong> — preference saves; behavior activates when the alert detection is wired.</li>
                     </ul>
                 </div>
             </div>
@@ -578,11 +577,6 @@ function getBooleanState(entry: PreferenceEntry): boolean {
                                     <span class="font-medium text-gray-900 dark:text-slate-100">{{ entry.label }}</span>
                                     <span :class="statusBadge(entry.status).cls" class="text-[10px] uppercase tracking-wide font-semibold px-1.5 py-0.5 rounded">
                                         {{ statusBadge(entry.status).label }}
-                                    </span>
-                                    <span v-if="entry.status === 'reserved' && !entry.wired"
-                                        class="text-[10px] italic text-amber-700/80 dark:text-amber-400/80"
-                                        title="Detection logic still being built. Your preference is saved.">
-                                        — pending wiring
                                     </span>
                                     <span v-if="entry.status === 'required'" class="text-[10px] text-rose-700 dark:text-rose-400 inline-flex items-center gap-0.5" title="Locked by CMS regulation">
                                         <LockClosedIcon class="w-3 h-3" />
