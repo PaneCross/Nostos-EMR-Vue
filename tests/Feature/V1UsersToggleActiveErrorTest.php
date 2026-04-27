@@ -1,32 +1,38 @@
 <?php
 
-// ─── Phase V1 — Users.vue toggle-active surfaces errors instead of silently ─
+// ─── Phase V1 — Users.vue surfaces errors instead of silently swallowing ────
 // Audit-10 found Users.vue called toggleActive() with .catch(() => {}) — the
-// row state would optimistically flip in the table but a server-side 4xx
-// would never reach the UI. Wave V1 added a per-row error pill + automatic
-// rollback. This test locks in that on a 422/500 the controller returns
-// the right error shape so the Vue handler can render it. Regression trap.
+// row state would optimistically flip but a server-side 4xx would never reach
+// the UI. Wave V1 added per-row error surfacing.
+//
+// Surface mechanism MOVED in the row-click-modal refactor (commit 01b0398).
+// The V1 row-error pill was replaced with an in-modal error banner that
+// catches every modal-action failure (toggleActive, toggleDesignation,
+// resetAccess) and renders it inside the user-detail modal. This test now
+// asserts the new mechanism — same regression-trap intent (errors surfaced,
+// not swallowed) by a different implementation.
 namespace Tests\Feature;
 
 use Tests\TestCase;
 
 class V1UsersToggleActiveErrorTest extends TestCase
 {
-    public function test_users_vue_surfaces_row_error_on_failure(): void
+    public function test_users_vue_surfaces_errors_via_modal_detail_error_banner(): void
     {
         $vue = file_get_contents(resource_path('js/Pages/ItAdmin/Users.vue'));
 
-        // Empty silent-handle pattern is gone.
+        // No silent-swallow patterns left.
+        $this->assertStringNotContainsString('.catch(() => {})', $vue);
         $this->assertStringNotContainsString('// silently handle', $vue);
 
-        // New rowError ref + showRowError helper exist.
-        $this->assertStringContainsString('const rowError = ref<', $vue);
-        $this->assertStringContainsString('function showRowError', $vue);
+        // Modal carries a detailError ref that every action writes to on failure.
+        $this->assertStringContainsString('const detailError = ref<string | null>', $vue);
 
-        // showRowError defined + called from both toggleActive and toggleDesignation.
-        $this->assertGreaterThanOrEqual(3, substr_count($vue, 'showRowError'));
+        // toggleActive, toggleDesignation, and resetAccess all set detailError on catch.
+        $this->assertGreaterThanOrEqual(3, substr_count($vue, 'detailError.value ='));
 
-        // Template renders the error pill.
-        $this->assertStringContainsString('data-testid="users-row-error"', $vue);
+        // Template renders the error banner with role=alert (V5 axios pattern).
+        $this->assertStringContainsString('data-testid="user-detail-error"', $vue);
+        $this->assertStringContainsString("role=\"alert\"", $vue);
     }
 }
