@@ -278,6 +278,26 @@ class DayCenterController extends Controller
             newValues: ['status' => $validated['status'], 'reason' => $validated['absent_reason']],
         );
 
+        // Phase SS2 — workflow preference: notify Social Work on day-center no-shows.
+        // Default ON. Tenants can disable via Site Settings if their workflow uses
+        // a different recipient (e.g. an activities coordinator handles outreach).
+        $prefs = app(\App\Services\NotificationPreferenceService::class);
+        if ($prefs->shouldNotify($user->tenant_id, 'workflow.day_center_no_show.notify_social_work')) {
+            \App\Models\Alert::create([
+                'tenant_id'          => $user->tenant_id,
+                'participant_id'     => $validated['participant_id'],
+                'alert_type'         => 'day_center_absence',
+                'title'              => 'Day-center no-show',
+                'message'            => 'Participant marked absent from day center on ' . $validated['attendance_date'] . ($validated['absent_reason'] ? " — reason: {$validated['absent_reason']}" : ''),
+                'severity'           => 'info',
+                'source_module'      => 'day_center',
+                'target_departments' => ['social_work'],
+                'created_by_system'  => false,
+                'created_by_user_id' => $user->id,
+                'metadata'           => ['attendance_id' => $attendance->id],
+            ]);
+        }
+
         $this->recordCrossSiteAttendanceAuditIfApplicable($validated['participant_id'], $validated['site_id'], $validated['attendance_date'], $validated['status'], $user);
 
         return response()->json(['attendance' => $attendance]);

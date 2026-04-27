@@ -263,6 +263,34 @@ class TransportRequestController extends Controller
             newValues:    ['status' => 'cancelled', 'reason' => $reason],
         );
 
+        // Phase SS2 — workflow preference: copy assigned PCP on cancellations.
+        // Some PACE orgs want the participant's PCP looped in when transport is
+        // cancelled (especially for clinic visits). Default OFF; opt in via
+        // /executive/site-settings.
+        $prefs = app(\App\Services\NotificationPreferenceService::class);
+        if ($prefs->shouldNotify($user->tenant_id, 'workflow.transport_cancellation.notify_assigned_pcp')) {
+            $participant = \App\Models\Participant::find($transportRequest->participant_id);
+            $pcpId = $participant?->primary_provider_user_id ?? null;
+            if ($pcpId) {
+                \App\Models\Alert::create([
+                    'tenant_id'          => $user->tenant_id,
+                    'participant_id'     => $transportRequest->participant_id,
+                    'alert_type'         => 'transport_cancelled_pcp_copy',
+                    'title'              => 'Transport cancelled (PCP copy)',
+                    'message'            => 'Transport for ' . ($participant?->first_name ?? 'participant') . ' was cancelled — ' . $reason,
+                    'severity'           => 'info',
+                    'source_module'      => 'transport',
+                    'target_departments' => ['primary_care'],
+                    'created_by_system'  => false,
+                    'created_by_user_id' => $user->id,
+                    'metadata'           => [
+                        'transport_request_id' => $transportRequest->id,
+                        'pcp_user_id'          => $pcpId,
+                    ],
+                ]);
+            }
+        }
+
         return response()->json(['status' => 'cancelled']);
     }
 }

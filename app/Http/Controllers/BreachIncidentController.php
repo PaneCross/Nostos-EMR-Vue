@@ -3,9 +3,12 @@
 // ─── BreachIncidentController — Phase P4 ────────────────────────────────────
 namespace App\Http\Controllers;
 
+use App\Models\Alert;
 use App\Models\AuditLog;
 use App\Models\BreachIncident;
 use App\Models\Participant;
+use App\Models\User;
+use App\Services\NotificationPreferenceService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
@@ -70,6 +73,34 @@ class BreachIncidentController extends Controller
             resourceId: $row->id,
             description: "Breach incident logged: {$validated['breach_type']}, {$validated['affected_count']} affected.",
         );
+
+        // Phase SS2 — optional Program Director notification per Site Settings.
+        // Hardwired IT Admin / Compliance chain (45 CFR §164.404) is unaffected;
+        // this is an additional copy when the org has opted in.
+        $prefs = app(NotificationPreferenceService::class);
+        if ($prefs->shouldNotify($u->tenant_id, 'designation.program_director.breach_incident_logged')) {
+            $director = User::where('tenant_id', $u->tenant_id)
+                ->withDesignation('program_director')
+                ->where('is_active', true)
+                ->first();
+            if ($director) {
+                Alert::create([
+                    'tenant_id'          => $u->tenant_id,
+                    'alert_type'         => 'breach_incident_logged',
+                    'title'              => "HIPAA Breach Logged — Incident #{$row->id}",
+                    'message'            => "HIPAA breach incident logged: {$validated['breach_type']}, {$validated['affected_count']} affected. HHS deadline: " . $deadline?->toDateString() . '.',
+                    'severity'           => 'critical',
+                    'source_module'      => 'security_compliance',
+                    'target_departments' => ['executive'],
+                    'created_by_system'  => false,
+                    'created_by_user_id' => $u->id,
+                    'metadata'           => [
+                        'breach_incident_id'  => $row->id,
+                        'program_director_id' => $director->id,
+                    ],
+                ]);
+            }
+        }
 
         return response()->json(['incident' => $row], 201);
     }

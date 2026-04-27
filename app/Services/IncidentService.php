@@ -22,11 +22,13 @@
 
 namespace App\Services;
 
+use App\Models\Alert;
 use App\Models\AuditLog;
 use App\Models\Incident;
 use App\Models\Participant;
 use App\Models\SignificantChangeEvent;
 use App\Models\User;
+use App\Services\NotificationPreferenceService;
 use Illuminate\Support\Carbon;
 use LogicException;
 
@@ -188,6 +190,36 @@ class IncidentService
                 . $incident->sentinel_cms_5day_deadline->toDateTimeString()
                 . '; RCA deadline ' . $incident->sentinel_rca_30day_deadline->toDateTimeString() . '.',
         );
+
+        // Phase SS2 — optional notification routing per Site Settings preferences.
+        // Program Director gets a critical alert when a sentinel is classified, IF
+        // the org has the preference enabled. Default is OFF; tenants opt in via
+        // /executive/site-settings. The hardwired QA/audit chain remains in place
+        // regardless — this is an ADDITIONAL recipient layer, not a replacement.
+        $prefs = app(NotificationPreferenceService::class);
+        if ($prefs->shouldNotify($incident->tenant_id, 'designation.program_director.sentinel_event')) {
+            $director = User::where('tenant_id', $incident->tenant_id)
+                ->withDesignation('program_director')
+                ->where('is_active', true)
+                ->first();
+            if ($director) {
+                Alert::create([
+                    'tenant_id'          => $incident->tenant_id,
+                    'participant_id'     => $incident->participant_id,
+                    'alert_type'         => 'sentinel_event_classified',
+                    'title'              => "Sentinel Event — Incident #{$incident->id}",
+                    'message'            => "Sentinel event classified for Incident #{$incident->id}. CMS 5-day reporting clock has started.",
+                    'severity'           => 'critical',
+                    'source_module'      => 'qa',
+                    'target_departments' => ['executive'],   // array cast handles encoding
+                    'created_by_system'  => true,
+                    'metadata'           => [
+                        'incident_id'         => $incident->id,
+                        'program_director_id' => $director->id,
+                    ],
+                ]);
+            }
+        }
     }
 
     /**

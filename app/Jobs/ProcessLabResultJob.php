@@ -235,6 +235,35 @@ class ProcessLabResultJob implements ShouldQueue
                 'created_by_system'  => true,
                 'metadata'           => $labResult ? ['lab_result_id' => $labResult->id] : null,
             ]);
+
+            // Phase SS2 — workflow preference: copy Nursing Director on abnormal labs.
+            // The ordering provider (primary_care) always gets the alert above; this
+            // is an additional recipient for orgs that want nursing oversight on
+            // every abnormal flag. Default OFF.
+            $prefs = app(\App\Services\NotificationPreferenceService::class);
+            if ($prefs->shouldNotify($this->tenantId, 'workflow.lab_abnormal.notify_nursing_director')) {
+                $director = \App\Models\User::where('tenant_id', $this->tenantId)
+                    ->withDesignation('nursing_director')
+                    ->where('is_active', true)
+                    ->first();
+                if ($director) {
+                    $alertService->create([
+                        'tenant_id'          => $this->tenantId,
+                        'participant_id'     => $participant->id,
+                        'source_module'      => 'integration',
+                        'alert_type'         => 'abnormal_lab_nursing_copy',
+                        'title'              => "Abnormal lab — nursing review: {$participant->first_name} {$participant->last_name}",
+                        'message'            => "{$testName}: {$value} {$unit} flagged abnormal. Forwarded for nursing oversight.",
+                        'severity'           => 'warning',
+                        'target_departments' => ['home_care'],
+                        'created_by_system'  => true,
+                        'metadata'           => [
+                            'lab_result_id'       => $labResult?->id,
+                            'nursing_director_id' => $director->id,
+                        ],
+                    ]);
+                }
+            }
         }
 
         // ── 6. Audit log ──────────────────────────────────────────────────────

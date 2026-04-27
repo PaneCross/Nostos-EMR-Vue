@@ -19,9 +19,11 @@
 
 namespace App\Services;
 
+use App\Models\Alert;
 use App\Models\DrugInteractionAlert;
 use App\Models\Medication;
 use App\Models\Participant;
+use App\Models\User;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -95,6 +97,37 @@ class DrugInteractionService
                 'drug_2'         => $existingMed->drug_name,
                 'severity'       => $interaction->severity,
             ]);
+
+            // Phase SS2 — optional Pharmacy Director routing per Site Settings.
+            // Major/contraindicated severity → notify Pharmacy Director if the
+            // org has opted into this preference. Default OFF.
+            if (in_array($interaction->severity, ['major', 'contraindicated'], true)) {
+                $prefs = app(NotificationPreferenceService::class);
+                if ($prefs->shouldNotify($participant->tenant_id, 'designation.pharmacy_director.critical_drug_interaction')) {
+                    $director = User::where('tenant_id', $participant->tenant_id)
+                        ->withDesignation('pharmacy_director')
+                        ->where('is_active', true)
+                        ->first();
+                    if ($director) {
+                        Alert::create([
+                            'tenant_id'          => $participant->tenant_id,
+                            'participant_id'     => $participant->id,
+                            'alert_type'         => 'pharmacy_director_drug_interaction',
+                            'title'              => "Drug interaction ({$interaction->severity}) — pharmacy review",
+                            'message'            => "Major drug interaction surfaced for {$participant->first_name} {$participant->last_name}: {$newMed->drug_name} + {$existingMed->drug_name}.",
+                            'severity'           => 'critical',
+                            'source_module'      => 'pharmacy',
+                            'target_departments' => ['pharmacy'],
+                            'created_by_system'  => true,
+                            'metadata'           => [
+                                'medication_id_1'      => $newMed->id,
+                                'medication_id_2'      => $existingMed->id,
+                                'pharmacy_director_id' => $director->id,
+                            ],
+                        ]);
+                    }
+                }
+            }
         }
 
         return $newAlerts;
