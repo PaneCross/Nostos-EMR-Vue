@@ -520,11 +520,11 @@ class NotificationPreferenceService
             'designation.nursing_director.fall_risk_threshold' => [
                 'group'       => 'Nursing Director',
                 'label'       => 'Fall-risk threshold crossed',
-                'description' => 'Alert when a participant\'s Morse fall scale crosses 45+ (high-risk threshold). Detection logic still pending — preference is saved and will activate when the assessment-save hook is wired.',
+                'description' => 'Alert when a participant\'s Morse fall scale crosses 45+ (High Risk band) on a fall_risk_morse assessment. Routed in addition to the standard primary_care/idt alert.',
                 'status'      => self::STATUS_OPTIONAL,
                 'default'     => false,
                 'cms_ref'     => null,
-                'wired'       => false, // SS2 deferred — assessment trigger not yet hooked
+                'wired'       => true,  // W1 wired in AssessmentController::store via maybeNotifyNursingDirectorOnFallRisk
             ],
             'designation.nursing_director.pressure_injury_staging' => [
                 'group'       => 'Nursing Director',

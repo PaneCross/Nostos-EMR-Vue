@@ -81,7 +81,52 @@ class AssessmentController extends Controller
         // has a referral suggestion for this (instrument, band) combination.
         $this->maybeAutoReferral($assessment, $participant, $user);
 
+        // Phase W1 — optional Nursing Director routing per Org Settings preference.
+        // Morse fall scale >= 45 (High Risk band) → ping nursing_director if the
+        // org (or this site) has the preference enabled. Default OFF.
+        $this->maybeNotifyNursingDirectorOnFallRisk($assessment, $participant, $user);
+
         return response()->json($assessment->load('author:id,first_name,last_name'), 201);
+    }
+
+    /**
+     * Phase W1: nursing_director.fall_risk_threshold preference handling.
+     * The hardwired primary_care/idt alert (above) fires regardless; this is
+     * an additional routing layer the org opts into via /executive/org-settings.
+     * Cascade: site_id (from participant) → org default → catalog default OFF.
+     */
+    private function maybeNotifyNursingDirectorOnFallRisk(Assessment $assessment, Participant $participant, $user): void
+    {
+        if ($assessment->assessment_type !== 'fall_risk_morse') return;
+        if (($assessment->score ?? 0) < 45) return;  // High Risk band threshold
+
+        $prefs = app(\App\Services\NotificationPreferenceService::class);
+        $key = 'designation.nursing_director.fall_risk_threshold';
+        if (! $prefs->shouldNotify($user->tenant_id, $key, $participant->site_id)) return;
+
+        $director = \App\Models\User::where('tenant_id', $user->tenant_id)
+            ->withDesignation('nursing_director')
+            ->where('is_active', true)
+            ->first();
+        if (! $director) return;
+
+        $name = $participant->first_name . ' ' . $participant->last_name;
+        $this->alertService->create([
+            'tenant_id'          => $user->tenant_id,
+            'participant_id'     => $participant->id,
+            'alert_type'         => 'nursing_director_fall_risk',
+            'title'              => "Fall risk High — Nursing Director review",
+            'message'            => "Morse Fall Scale {$assessment->score} for {$name}: High Risk band. Forwarded for nursing oversight.",
+            'severity'           => 'warning',
+            'source_module'      => 'assessments',
+            'target_departments' => ['home_care'],
+            'created_by_system'  => true,
+            'metadata'           => [
+                'assessment_id'        => $assessment->id,
+                'morse_score'          => $assessment->score,
+                'nursing_director_id'  => $director->id,
+            ],
+        ]);
     }
 
     private function maybeAutoReferral(Assessment $assessment, Participant $participant, $user): void

@@ -162,4 +162,56 @@ class NotificationPreferenceWiringTest extends TestCase
         $this->assertEquals(0, Alert::where('tenant_id', $t->id)
             ->where('alert_type', 'day_center_absence')->count());
     }
+
+    // ── Phase W1 wirings ───────────────────────────────────────────────────────
+
+    public function test_fall_risk_morse_high_risk_routes_to_nursing_director_when_enabled(): void
+    {
+        [$t, $s, $director, $qa, $p] = $this->tenantWithDirector('nursing_director');
+        $svc = app(NotificationPreferenceService::class);
+
+        // Default OFF — no nursing_director alert created
+        $this->actingAs($qa)->postJson("/participants/{$p->id}/assessments", [
+            'assessment_type' => 'fall_risk_morse',
+            'score'           => 50,
+            'completed_at'    => now()->toDateTimeString(),
+            'responses'       => [],
+        ])->assertCreated();
+
+        $this->assertEquals(0, Alert::where('tenant_id', $t->id)
+            ->where('alert_type', 'nursing_director_fall_risk')->count());
+
+        // Enable + retrigger → alert created
+        $svc->set($t->id, 'designation.nursing_director.fall_risk_threshold', true, $qa->id);
+        $svc->clearCache($t->id);
+
+        $this->actingAs($qa)->postJson("/participants/{$p->id}/assessments", [
+            'assessment_type' => 'fall_risk_morse',
+            'score'           => 50,
+            'completed_at'    => now()->toDateTimeString(),
+            'responses'       => [],
+        ])->assertCreated();
+
+        $this->assertEquals(1, Alert::where('tenant_id', $t->id)
+            ->where('alert_type', 'nursing_director_fall_risk')->count());
+    }
+
+    public function test_fall_risk_morse_below_threshold_does_not_route_even_when_enabled(): void
+    {
+        [$t, $s, , $qa, $p] = $this->tenantWithDirector('nursing_director');
+        $svc = app(NotificationPreferenceService::class);
+        $svc->set($t->id, 'designation.nursing_director.fall_risk_threshold', true, $qa->id);
+        $svc->clearCache($t->id);
+
+        // Score 30 = Medium Risk band, below the 45 High Risk threshold
+        $this->actingAs($qa)->postJson("/participants/{$p->id}/assessments", [
+            'assessment_type' => 'fall_risk_morse',
+            'score'           => 30,
+            'completed_at'    => now()->toDateTimeString(),
+            'responses'       => [],
+        ])->assertCreated();
+
+        $this->assertEquals(0, Alert::where('tenant_id', $t->id)
+            ->where('alert_type', 'nursing_director_fall_risk')->count());
+    }
 }
