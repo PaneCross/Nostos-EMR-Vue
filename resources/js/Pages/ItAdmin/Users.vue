@@ -1,13 +1,15 @@
 <!-- ItAdmin/Users.vue -->
-<!-- IT Admin user management page. Displays all provisioned users for the tenant with search,
-     department filter, and active/inactive toggle. Admins can expand rows to manage user
-     designations and use the provision modal to create new user accounts. -->
+<!-- IT Admin user management page. Lists all provisioned users for the tenant
+     with search + department + status filters. Clicking a row opens the
+     UserDetailsModal — credentials summary, designations management, activity
+     feed (data-mutating actions only), and admin actions (deactivate / reset
+     access) all in one place. -->
 
 <script setup lang="ts">
 // ─── ItAdmin/Users ──────────────────────────────────────────────────────────
 // User provisioning + role/department/designation assignment for tenant
-// staff. Search, department filter, active toggle, expandable rows for
-// designation management, modal for new-user creation.
+// staff. Search, department filter, active-status toggle. Row click opens a
+// detail modal; the table itself is purely informational (no inline actions).
 //
 // Audience: IT Admin only.
 //
@@ -18,23 +20,25 @@
 //     no `nursing` enum value yet.
 //   - Active toggle is reversible; deletion is intentionally not exposed
 //     (audit trail integrity — flip to inactive instead).
+//   - The detail modal's activity feed filters out pure-read actions
+//     (page views, navigation, searches). Filter list lives server-side
+//     in UserProvisioningController::ACTIVITY_FEED_EXCLUDE_PATTERNS.
 // ────────────────────────────────────────────────────────────────────────────
-import { ref, computed } from 'vue'
-import { Head, usePage, router } from '@inertiajs/vue3'
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { Head } from '@inertiajs/vue3'
 import AppShell from '@/Layouts/AppShell.vue'
 import axios from 'axios'
 import {
     ShieldCheckIcon,
-    ChevronDownIcon,
-    ChevronUpIcon,
     PlusIcon,
     MagnifyingGlassIcon,
+    XMarkIcon,
+    ClockIcon,
+    KeyIcon,
+    DocumentCheckIcon,
+    ExclamationTriangleIcon,
+    BoltIcon,
 } from '@heroicons/vue/24/outline'
-
-interface UserDesignation {
-    key: string
-    label: string
-}
 
 interface UserRow {
     id: number
@@ -45,6 +49,49 @@ interface UserRow {
     is_active: boolean
     created_at: string
     designations: string[]
+}
+
+interface UserDetail {
+    user: {
+        id: number
+        first_name: string
+        last_name: string
+        email: string
+        department: string
+        role: string
+        is_active: boolean
+        designations: string[]
+        site: { id: number; name: string } | null
+        last_login_at: string | null
+        failed_login_attempts: number
+        locked_until: string | null
+        provisioned_at: string | null
+        provisioned_by: string | null
+        created_at: string | null
+    }
+    credentials: {
+        active_count: number
+        expiring_count: number
+        expired_count: number
+        total_count: number
+    }
+    training: {
+        total_hours_12mo: number
+        by_category: Record<string, number>
+    }
+    activity: {
+        count_30_days: number
+        count_90_days: number
+        top_actions: { action: string; count: number }[]
+        recent: {
+            id: number
+            action: string
+            resource_type: string | null
+            resource_id: number | null
+            description: string | null
+            created_at: string | null
+        }[]
+    }
 }
 
 interface ProvisionForm {
@@ -62,53 +109,49 @@ interface Props {
 
 const props = defineProps<Props>()
 
+// ── Table state ─────────────────────────────────────────────────────────────
 const users = ref<UserRow[]>(props.users)
 const search = ref('')
 const filterDept = ref('all')
 const filterStatus = ref<'all' | 'active' | 'inactive'>('all')
-const expandedRow = ref<number | null>(null)
-const togglingId = ref<number | null>(null)
-const savingDesignations = ref<number | null>(null)
-// Phase V1 — Audit-10 C1: per-user error surfacing instead of silent catch.
-const rowError = ref<{ id: number; message: string } | null>(null)
-function showRowError(id: number, message: string) {
-    rowError.value = { id, message }
-    setTimeout(() => {
-        if (rowError.value?.id === id) rowError.value = null
-    }, 6000)
-}
+
+// ── Detail-modal state ──────────────────────────────────────────────────────
+const detailUserId = ref<number | null>(null)
+const detail = ref<UserDetail | null>(null)
+const detailLoading = ref(false)
+const detailError = ref<string | null>(null)
+const togglingActive = ref(false)
+const resettingAccess = ref(false)
+const savingDesignations = ref(false)
+
+// ── Provision-modal state (unchanged) ───────────────────────────────────────
 const showProvision = ref(false)
 const provisioning = ref(false)
 const provisionError = ref('')
-
 const provisionForm = ref<ProvisionForm>({
-    first_name: '',
-    last_name: '',
-    email: '',
-    department: '',
+    first_name: '', last_name: '', email: '', department: '',
 })
 
 const DEPT_LABELS: Record<string, string> = props.deptLabels || {
-    primary_care: 'Primary Care',
-    therapies: 'Therapies',
-    social_work: 'Social Work',
-    behavioral_health: 'Behavioral Health',
-    dietary: 'Dietary',
-    activities: 'Activities',
-    home_care: 'Home Care',
-    transportation: 'Transportation',
-    pharmacy: 'Pharmacy',
-    idt: 'IDT',
-    enrollment: 'Enrollment',
-    finance: 'Finance',
-    qa_compliance: 'QA Compliance',
+    primary_care: 'Primary Care', therapies: 'Therapies', social_work: 'Social Work',
+    behavioral_health: 'Behavioral Health', dietary: 'Dietary', activities: 'Activities',
+    home_care: 'Home Care', transportation: 'Transportation', pharmacy: 'Pharmacy',
+    idt: 'IDT', enrollment: 'Enrollment', finance: 'Finance', qa_compliance: 'QA Compliance',
     it_admin: 'IT Admin',
+}
+
+const TRAINING_CATEGORY_LABELS: Record<string, string> = {
+    hipaa: 'HIPAA', infection_control: 'Infection Control', dementia: 'Dementia Care',
+    elder_abuse: 'Elder Abuse', cultural_competency: 'Cultural Competency',
+    cpr_first_aid: 'CPR / First Aid', other: 'Other',
 }
 
 const filtered = computed(() => {
     return users.value.filter(u => {
         const name = `${u.first_name} ${u.last_name}`.toLowerCase()
-        const matchSearch = !search.value || name.includes(search.value.toLowerCase()) || u.email.toLowerCase().includes(search.value.toLowerCase())
+        const matchSearch = !search.value
+            || name.includes(search.value.toLowerCase())
+            || u.email.toLowerCase().includes(search.value.toLowerCase())
         const matchDept = filterDept.value === 'all' || u.department === filterDept.value
         const matchStatus = filterStatus.value === 'all'
             || (filterStatus.value === 'active' && u.is_active)
@@ -117,52 +160,112 @@ const filtered = computed(() => {
     })
 })
 
-const toggleRow = (id: number) => {
-    expandedRow.value = expandedRow.value === id ? null : id
-}
+// ── Open / close detail modal ──────────────────────────────────────────────
 
-const toggleActive = async (user: UserRow) => {
-    togglingId.value = user.id
-    rowError.value = null
-    const action = user.is_active ? 'deactivate' : 'reactivate'
+async function openDetail(user: UserRow) {
+    detailUserId.value = user.id
+    detail.value = null
+    detailLoading.value = true
+    detailError.value = null
     try {
-        await axios.post(`/it-admin/users/${user.id}/${action}`)
-        users.value = users.value.map(u => u.id === user.id ? { ...u, is_active: !u.is_active } : u)
-    } catch (e: any) {
-        // Phase V1 — surface failure rather than silent (Audit-10 C1).
-        const msg = e?.response?.data?.message
-            ?? `Could not ${action} user (${e?.response?.status ?? 'network error'}).`
-        showRowError(user.id, msg)
+        const res = await axios.get<UserDetail>(`/it-admin/users/${user.id}/details`)
+        detail.value = res.data
+    } catch (e: unknown) {
+        const err = e as { response?: { data?: { message?: string }, status?: number } }
+        detailError.value = err.response?.data?.message
+            ?? `Could not load user details (${err.response?.status ?? 'network error'}).`
     } finally {
-        togglingId.value = null
+        detailLoading.value = false
     }
 }
 
-const toggleDesignation = async (user: UserRow, key: string) => {
-    const prev = [...user.designations]
+function closeDetail() {
+    detailUserId.value = null
+    detail.value = null
+    detailError.value = null
+}
+
+function onKeydown(e: KeyboardEvent) {
+    if (e.key === 'Escape') {
+        if (detailUserId.value !== null) closeDetail()
+        else if (showProvision.value) { showProvision.value = false; resetProvisionForm() }
+    }
+}
+
+onMounted(() => window.addEventListener('keydown', onKeydown))
+onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
+
+// ── Modal actions ──────────────────────────────────────────────────────────
+
+async function toggleActive() {
+    if (!detail.value) return
+    const u = detail.value.user
+    const action = u.is_active ? 'deactivate' : 'reactivate'
+    togglingActive.value = true
+    detailError.value = null
+    try {
+        await axios.post(`/it-admin/users/${u.id}/${action}`)
+        // Update modal copy + the underlying table row
+        detail.value.user.is_active = !u.is_active
+        users.value = users.value.map(row => row.id === u.id ? { ...row, is_active: !u.is_active } : row)
+    } catch (e: unknown) {
+        const err = e as { response?: { data?: { message?: string }, status?: number } }
+        detailError.value = err.response?.data?.message
+            ?? `Could not ${action} user (${err.response?.status ?? 'network error'}).`
+    } finally {
+        togglingActive.value = false
+    }
+}
+
+async function resetAccess() {
+    if (!detail.value) return
+    const u = detail.value.user
+    resettingAccess.value = true
+    detailError.value = null
+    try {
+        await axios.post(`/it-admin/users/${u.id}/reset-access`)
+        // Surface a brief success indicator inline; no field state to update.
+        detailError.value = '✓ Sessions invalidated. The user will be logged out on their next request.'
+    } catch (e: unknown) {
+        const err = e as { response?: { data?: { message?: string }, status?: number } }
+        detailError.value = err.response?.data?.message
+            ?? `Could not reset access (${err.response?.status ?? 'network error'}).`
+    } finally {
+        resettingAccess.value = false
+    }
+}
+
+async function toggleDesignation(key: string) {
+    if (!detail.value) return
+    const u = detail.value.user
+    const prev = [...u.designations]
     const next = prev.includes(key) ? prev.filter(d => d !== key) : [...prev, key]
-    users.value = users.value.map(u => u.id === user.id ? { ...u, designations: next } : u)
-    savingDesignations.value = user.id
-    rowError.value = null
+    detail.value.user.designations = next  // optimistic update
+    savingDesignations.value = true
+    detailError.value = null
     try {
-        await axios.patch(`/it-admin/users/${user.id}/designations`, { designations: next })
-    } catch (e: any) {
-        // Roll back optimistic update + surface error (Audit-10 C1 sibling fix).
-        users.value = users.value.map(u => u.id === user.id ? { ...u, designations: prev } : u)
-        const msg = e?.response?.data?.message
-            ?? `Could not save designation (${e?.response?.status ?? 'network error'}).`
-        showRowError(user.id, msg)
+        await axios.patch(`/it-admin/users/${u.id}/designations`, { designations: next })
+        // Mirror onto the underlying table row so designation chips stay current
+        users.value = users.value.map(row => row.id === u.id ? { ...row, designations: next } : row)
+    } catch (e: unknown) {
+        // Roll back optimistic update + surface error
+        if (detail.value) detail.value.user.designations = prev
+        const err = e as { response?: { data?: { message?: string }, status?: number } }
+        detailError.value = err.response?.data?.message
+            ?? `Could not save designation (${err.response?.status ?? 'network error'}).`
     } finally {
-        savingDesignations.value = null
+        savingDesignations.value = false
     }
 }
 
-const resetProvisionForm = () => {
+// ── Provision flow (unchanged) ──────────────────────────────────────────────
+
+function resetProvisionForm() {
     provisionForm.value = { first_name: '', last_name: '', email: '', department: '' }
     provisionError.value = ''
 }
 
-const submitProvision = async () => {
+async function submitProvision() {
     provisioning.value = true
     provisionError.value = ''
     try {
@@ -178,8 +281,32 @@ const submitProvision = async () => {
     }
 }
 
-const formatDate = (iso: string) =>
-    new Date(iso).toLocaleDateString(undefined, { dateStyle: 'short' })
+// ── Formatting helpers ──────────────────────────────────────────────────────
+
+const formatDate = (iso: string | null | undefined) =>
+    iso ? new Date(iso).toLocaleDateString(undefined, { dateStyle: 'short' }) : '—'
+
+const formatDateTime = (iso: string | null | undefined) =>
+    iso ? new Date(iso).toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' }) : '—'
+
+function relativeTime(iso: string | null | undefined): string {
+    if (!iso) return '—'
+    const t = new Date(iso).getTime()
+    if (isNaN(t)) return '—'
+    const diff = (Date.now() - t) / 1000  // seconds
+    if (diff < 60) return 'just now'
+    if (diff < 3600) return `${Math.floor(diff / 60)}m ago`
+    if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`
+    if (diff < 86400 * 30) return `${Math.floor(diff / 86400)}d ago`
+    if (diff < 86400 * 365) return `${Math.floor(diff / 86400 / 30)}mo ago`
+    return `${Math.floor(diff / 86400 / 365)}y ago`
+}
+
+// Humanize an action key like "participant.allergy.created" → "Allergy created"
+function humanizeAction(action: string): string {
+    const last = action.split('.').slice(-2).join(' · ').replace(/_/g, ' ')
+    return last.charAt(0).toUpperCase() + last.slice(1)
+}
 </script>
 
 <template>
@@ -191,7 +318,9 @@ const formatDate = (iso: string) =>
             <div class="flex items-center justify-between mb-6">
                 <div>
                     <h1 class="text-2xl font-bold text-gray-900 dark:text-slate-100">User Management</h1>
-                    <p class="text-sm text-gray-500 dark:text-slate-400 mt-1">Manage provisioned staff accounts</p>
+                    <p class="text-sm text-gray-500 dark:text-slate-400 mt-1">
+                        Click any user row to view credentials, activity, and admin actions.
+                    </p>
                 </div>
                 <button
                     @click="showProvision = true"
@@ -215,16 +344,14 @@ const formatDate = (iso: string) =>
                         aria-label="Search users"
                     />
                 </div>
-                <select name="filterDept"
-                    v-model="filterDept"
+                <select name="filterDept" v-model="filterDept"
                     class="px-3 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm text-gray-700 dark:text-slate-300"
                     aria-label="Filter by department"
                 >
                     <option value="all">All Departments</option>
                     <option v-for="(label, key) in DEPT_LABELS" :key="key" :value="key">{{ label }}</option>
                 </select>
-                <select name="filterStatus"
-                    v-model="filterStatus"
+                <select name="filterStatus" v-model="filterStatus"
                     class="px-3 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm text-gray-700 dark:text-slate-300"
                     aria-label="Filter by status"
                 >
@@ -234,7 +361,7 @@ const formatDate = (iso: string) =>
                 </select>
             </div>
 
-            <!-- Table -->
+            <!-- Table — Actions column removed; whole row is clickable -->
             <div class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 overflow-hidden shadow-sm">
                 <table class="w-full text-sm">
                     <thead class="bg-gray-50 dark:bg-slate-700/50">
@@ -243,113 +370,301 @@ const formatDate = (iso: string) =>
                             <th class="text-left px-4 py-3 font-semibold text-gray-700 dark:text-slate-300">Department</th>
                             <th class="text-left px-4 py-3 font-semibold text-gray-700 dark:text-slate-300">Status</th>
                             <th class="text-left px-4 py-3 font-semibold text-gray-700 dark:text-slate-300">Joined</th>
-                            <th class="text-left px-4 py-3 font-semibold text-gray-700 dark:text-slate-300">Actions</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100 dark:divide-slate-700">
-                        <template v-for="user in filtered" :key="user.id">
-                            <tr class="hover:bg-gray-50 dark:hover:bg-slate-700/50">
-                                <td class="px-4 py-3">
-                                    <div class="font-medium text-gray-900 dark:text-slate-100">
-                                        {{ user.first_name }} {{ user.last_name }}
-                                    </div>
-                                    <div class="text-xs text-gray-500 dark:text-slate-400">{{ user.email }}</div>
-                                    <!-- Designation chips -->
-                                    <div v-if="user.designations.length > 0" class="flex flex-wrap gap-1 mt-1">
-                                        <span
-                                            v-for="d in user.designations"
-                                            :key="d"
-                                            class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300"
-                                        >
-                                            <ShieldCheckIcon class="w-3 h-3" />
-                                            {{ props.designationLabels?.[d] ?? d }}
-                                        </span>
-                                    </div>
-                                </td>
-                                <td class="px-4 py-3 text-gray-600 dark:text-slate-400 capitalize">
-                                    {{ DEPT_LABELS[user.department] ?? user.department.replace('_', ' ') }}
-                                </td>
-                                <td class="px-4 py-3">
-                                    <span :class="user.is_active
-                                        ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
-                                        : 'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-400'"
-                                        class="inline-block px-2 py-0.5 rounded-full text-xs font-medium"
+                        <tr
+                            v-for="user in filtered"
+                            :key="user.id"
+                            class="cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors"
+                            @click="openDetail(user)"
+                            tabindex="0"
+                            @keydown.enter="openDetail(user)"
+                            :aria-label="`Open details for ${user.first_name} ${user.last_name}`"
+                        >
+                            <td class="px-4 py-3">
+                                <div class="font-medium text-gray-900 dark:text-slate-100">
+                                    {{ user.first_name }} {{ user.last_name }}
+                                </div>
+                                <div class="text-xs text-gray-500 dark:text-slate-400">{{ user.email }}</div>
+                                <div v-if="user.designations.length > 0" class="flex flex-wrap gap-1 mt-1">
+                                    <span
+                                        v-for="d in user.designations"
+                                        :key="d"
+                                        class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300"
                                     >
-                                        {{ user.is_active ? 'Active' : 'Inactive' }}
+                                        <ShieldCheckIcon class="w-3 h-3" />
+                                        {{ props.designationLabels?.[d] ?? d }}
                                     </span>
-                                </td>
-                                <td class="px-4 py-3 text-gray-600 dark:text-slate-400">{{ formatDate(user.created_at) }}</td>
-                                <td class="px-4 py-3">
-                                    <div class="flex items-center gap-2">
-                                        <!-- Phase 4 (MVP roadmap): Staff credentials link (§460.64-71) -->
-                                        <a
-                                            :href="`/it-admin/users/${user.id}/credentials`"
-                                            class="text-xs px-2 py-1 rounded border border-indigo-300 dark:border-indigo-700 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition-colors"
-                                            title="Manage licenses, TB clearance, training hours"
-                                        >
-                                            Credentials
-                                        </a>
-                                        <button
-                                            @click="toggleActive(user)"
-                                            :disabled="togglingId === user.id"
-                                            class="text-xs px-2 py-1 rounded border border-gray-300 dark:border-slate-600 text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700 disabled:opacity-50 transition-colors"
-                                            :aria-label="user.is_active ? 'Deactivate user' : 'Reactivate user'"
-                                        >
-                                            {{ togglingId === user.id ? '...' : (user.is_active ? 'Deactivate' : 'Reactivate') }}
-                                        </button>
-                                        <span v-if="rowError && rowError.id === user.id"
-                                              role="alert"
-                                              class="text-xs text-red-600 dark:text-red-400 ml-2"
-                                              data-testid="users-row-error">
-                                            {{ rowError.message }}
-                                        </span>
-                                        <button
-                                            @click="toggleRow(user.id)"
-                                            class="text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-300"
-                                            :aria-label="expandedRow === user.id ? 'Collapse designations' : 'Expand designations'"
-                                        >
-                                            <ChevronUpIcon v-if="expandedRow === user.id" class="w-4 h-4" />
-                                            <ChevronDownIcon v-else class="w-4 h-4" />
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                            <!-- Designation panel -->
-                            <tr v-if="expandedRow === user.id" :key="`${user.id}-designations`">
-                                <td colspan="5" class="px-4 py-3 bg-indigo-50 dark:bg-indigo-950/20 border-t border-indigo-100 dark:border-indigo-900/30">
-                                    <p class="text-xs font-semibold text-indigo-700 dark:text-indigo-400 mb-2 flex items-center gap-1">
-                                        <ShieldCheckIcon class="w-3.5 h-3.5" />
-                                        Accountability Designations
-                                        <span v-if="savingDesignations === user.id" class="ml-1 text-indigo-400">(saving...)</span>
-                                    </p>
-                                    <div class="flex flex-wrap gap-2">
-                                        <label
-                                            v-for="(label, key) in props.designationLabels"
-                                            :key="key"
-                                            class="flex items-center gap-1.5 cursor-pointer"
-                                        >
-                                            <input
-                                                type="checkbox"
-                                                :checked="user.designations.includes(key)"
-                                                @change="toggleDesignation(user, key)"
-                                                class="rounded border-gray-300 dark:border-slate-600"
-                                                :aria-label="label"
-                                            />
-                                            <span class="text-sm text-gray-700 dark:text-slate-300">{{ label }}</span>
-                                        </label>
-                                    </div>
-                                </td>
-                            </tr>
-                        </template>
+                                </div>
+                            </td>
+                            <td class="px-4 py-3 text-gray-600 dark:text-slate-400 capitalize">
+                                {{ DEPT_LABELS[user.department] ?? user.department.replace('_', ' ') }}
+                            </td>
+                            <td class="px-4 py-3">
+                                <span :class="user.is_active
+                                    ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
+                                    : 'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-400'"
+                                    class="inline-block px-2 py-0.5 rounded-full text-xs font-medium"
+                                >
+                                    {{ user.is_active ? 'Active' : 'Inactive' }}
+                                </span>
+                            </td>
+                            <td class="px-4 py-3 text-gray-600 dark:text-slate-400">{{ formatDate(user.created_at) }}</td>
+                        </tr>
                         <tr v-if="filtered.length === 0">
-                            <td colspan="5" class="text-center py-12 text-gray-500 dark:text-slate-400">No users found.</td>
+                            <td colspan="4" class="text-center py-12 text-gray-500 dark:text-slate-400">No users found.</td>
                         </tr>
                     </tbody>
                 </table>
             </div>
         </div>
 
-        <!-- Provision Modal -->
+        <!-- ─── Detail modal ────────────────────────────────────────────── -->
+        <div
+            v-if="detailUserId !== null"
+            class="fixed inset-0 z-50 flex items-start justify-center bg-black/50 overflow-y-auto py-8"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="user-detail-heading"
+            @click.self="closeDetail"
+        >
+            <div class="bg-white dark:bg-slate-800 rounded-xl shadow-xl w-full max-w-3xl mx-4 my-4">
+
+                <!-- Loading -->
+                <div v-if="detailLoading" class="p-12 text-center text-gray-500 dark:text-slate-400">
+                    Loading user details…
+                </div>
+
+                <!-- Error fetching -->
+                <div v-else-if="!detail" class="p-8">
+                    <div class="flex items-start justify-between mb-4">
+                        <h2 id="user-detail-heading" class="text-lg font-bold text-gray-900 dark:text-slate-100">User detail</h2>
+                        <button @click="closeDetail" aria-label="Close" class="text-gray-400 hover:text-gray-600 dark:hover:text-slate-200">
+                            <XMarkIcon class="w-5 h-5" />
+                        </button>
+                    </div>
+                    <p v-if="detailError" role="alert" class="text-sm text-red-600 dark:text-red-400">{{ detailError }}</p>
+                </div>
+
+                <!-- Loaded -->
+                <div v-else class="divide-y divide-gray-100 dark:divide-slate-700">
+
+                    <!-- Header -->
+                    <div class="p-6 flex items-start justify-between gap-4">
+                        <div class="min-w-0">
+                            <h2 id="user-detail-heading" class="text-xl font-bold text-gray-900 dark:text-slate-100 truncate">
+                                {{ detail.user.first_name }} {{ detail.user.last_name }}
+                            </h2>
+                            <div class="text-sm text-gray-500 dark:text-slate-400 mt-1 truncate">{{ detail.user.email }}</div>
+                            <div class="flex items-center flex-wrap gap-2 mt-2">
+                                <span class="text-xs px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 capitalize">
+                                    {{ DEPT_LABELS[detail.user.department] ?? detail.user.department.replace('_', ' ') }}
+                                </span>
+                                <span class="text-xs px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 capitalize">
+                                    {{ detail.user.role }}
+                                </span>
+                                <span :class="detail.user.is_active
+                                    ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
+                                    : 'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-400'"
+                                    class="text-xs px-2 py-0.5 rounded-full font-medium"
+                                >
+                                    {{ detail.user.is_active ? 'Active' : 'Inactive' }}
+                                </span>
+                                <span v-if="detail.user.locked_until && new Date(detail.user.locked_until) > new Date()"
+                                    class="text-xs px-2 py-0.5 rounded-full font-medium bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300"
+                                    :title="`Locked until ${formatDateTime(detail.user.locked_until)}`"
+                                >
+                                    Locked
+                                </span>
+                            </div>
+                        </div>
+                        <button @click="closeDetail" aria-label="Close" class="text-gray-400 hover:text-gray-600 dark:hover:text-slate-200 shrink-0">
+                            <XMarkIcon class="w-5 h-5" />
+                        </button>
+                    </div>
+
+                    <!-- Inline error / status banner -->
+                    <div v-if="detailError" class="px-6 py-3 bg-red-50 dark:bg-red-950/40 text-sm text-red-700 dark:text-red-300" role="alert" data-testid="user-detail-error">
+                        {{ detailError }}
+                    </div>
+
+                    <!-- Account section -->
+                    <div class="p-6">
+                        <h3 class="text-xs uppercase tracking-wide font-semibold text-gray-500 dark:text-slate-400 mb-3 flex items-center gap-1.5">
+                            <KeyIcon class="w-3.5 h-3.5" /> Account
+                        </h3>
+                        <dl class="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
+                            <div><dt class="text-gray-500 dark:text-slate-400">Last login</dt><dd class="text-gray-900 dark:text-slate-100">{{ formatDateTime(detail.user.last_login_at) }}<span v-if="detail.user.last_login_at" class="text-xs text-gray-500 dark:text-slate-400 ml-1">({{ relativeTime(detail.user.last_login_at) }})</span></dd></div>
+                            <div><dt class="text-gray-500 dark:text-slate-400">Joined</dt><dd class="text-gray-900 dark:text-slate-100">{{ formatDate(detail.user.created_at) }}</dd></div>
+                            <div><dt class="text-gray-500 dark:text-slate-400">Provisioned by</dt><dd class="text-gray-900 dark:text-slate-100">{{ detail.user.provisioned_by ?? '—' }}</dd></div>
+                            <div><dt class="text-gray-500 dark:text-slate-400">Site</dt><dd class="text-gray-900 dark:text-slate-100">{{ detail.user.site?.name ?? '—' }}</dd></div>
+                            <div><dt class="text-gray-500 dark:text-slate-400">Failed login attempts</dt><dd :class="detail.user.failed_login_attempts > 0 ? 'text-amber-700 dark:text-amber-300 font-medium' : 'text-gray-900 dark:text-slate-100'">{{ detail.user.failed_login_attempts }}</dd></div>
+                            <div v-if="detail.user.locked_until && new Date(detail.user.locked_until) > new Date()">
+                                <dt class="text-gray-500 dark:text-slate-400">Locked until</dt>
+                                <dd class="text-amber-700 dark:text-amber-300 font-medium">{{ formatDateTime(detail.user.locked_until) }}</dd>
+                            </div>
+                        </dl>
+                    </div>
+
+                    <!-- Credentials & training -->
+                    <div class="p-6">
+                        <div class="flex items-center justify-between mb-3">
+                            <h3 class="text-xs uppercase tracking-wide font-semibold text-gray-500 dark:text-slate-400 flex items-center gap-1.5">
+                                <DocumentCheckIcon class="w-3.5 h-3.5" /> Credentials &amp; Training
+                            </h3>
+                            <a
+                                :href="`/it-admin/users/${detail.user.id}/credentials`"
+                                class="text-xs text-indigo-600 dark:text-indigo-400 hover:underline"
+                            >
+                                Manage credentials →
+                            </a>
+                        </div>
+                        <div class="grid grid-cols-3 gap-3 mb-3">
+                            <div class="rounded-lg border border-green-200 dark:border-green-900/50 bg-green-50 dark:bg-green-950/30 px-3 py-2">
+                                <div class="text-xs text-green-700 dark:text-green-400">Active</div>
+                                <div class="text-2xl font-bold text-green-700 dark:text-green-300">{{ detail.credentials.active_count }}</div>
+                            </div>
+                            <div class="rounded-lg border border-amber-200 dark:border-amber-900/50 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
+                                <div class="text-xs text-amber-700 dark:text-amber-400">Expiring (≤60d)</div>
+                                <div class="text-2xl font-bold text-amber-700 dark:text-amber-300">{{ detail.credentials.expiring_count }}</div>
+                            </div>
+                            <div class="rounded-lg border border-rose-200 dark:border-rose-900/50 bg-rose-50 dark:bg-rose-950/30 px-3 py-2">
+                                <div class="text-xs text-rose-700 dark:text-rose-400">Expired</div>
+                                <div class="text-2xl font-bold text-rose-700 dark:text-rose-300">{{ detail.credentials.expired_count }}</div>
+                            </div>
+                        </div>
+                        <div class="text-sm text-gray-700 dark:text-slate-300">
+                            <span class="font-medium">{{ detail.training.total_hours_12mo }}h</span> training in last 12 months
+                            <span v-if="Object.keys(detail.training.by_category).length > 0" class="text-gray-500 dark:text-slate-400">
+                                ·
+                                <span v-for="(hrs, cat, idx) in detail.training.by_category" :key="cat">
+                                    {{ idx > 0 ? ', ' : '' }}{{ TRAINING_CATEGORY_LABELS[cat] ?? cat }}: {{ hrs }}h
+                                </span>
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Designations -->
+                    <div class="p-6">
+                        <h3 class="text-xs uppercase tracking-wide font-semibold text-gray-500 dark:text-slate-400 mb-3 flex items-center gap-1.5">
+                            <ShieldCheckIcon class="w-3.5 h-3.5" />
+                            Accountability Designations
+                            <span v-if="savingDesignations" class="ml-1 text-indigo-400 dark:text-indigo-300 normal-case">(saving…)</span>
+                        </h3>
+                        <p class="text-xs text-gray-500 dark:text-slate-400 mb-2">
+                            Designations control who is notified for specific events (they do not affect access). A user may hold multiple.
+                        </p>
+                        <div class="flex flex-wrap gap-2">
+                            <label
+                                v-for="(label, key) in props.designationLabels"
+                                :key="key"
+                                class="flex items-center gap-1.5 cursor-pointer text-sm"
+                            >
+                                <input
+                                    type="checkbox"
+                                    :checked="detail.user.designations.includes(key)"
+                                    @change="toggleDesignation(key)"
+                                    class="rounded border-gray-300 dark:border-slate-600"
+                                    :aria-label="label"
+                                />
+                                <span class="text-gray-700 dark:text-slate-300">{{ label }}</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Activity stats + audit log -->
+                    <div class="p-6">
+                        <h3 class="text-xs uppercase tracking-wide font-semibold text-gray-500 dark:text-slate-400 mb-3 flex items-center gap-1.5">
+                            <BoltIcon class="w-3.5 h-3.5" /> Activity
+                        </h3>
+                        <p class="text-xs text-gray-500 dark:text-slate-400 mb-3">
+                            Data-mutating actions only — page views, navigation, and searches are excluded.
+                        </p>
+
+                        <!-- Stats -->
+                        <div class="grid grid-cols-2 gap-3 mb-4">
+                            <div class="rounded-lg border border-gray-200 dark:border-slate-700 px-3 py-2">
+                                <div class="text-xs text-gray-500 dark:text-slate-400">Last 30 days</div>
+                                <div class="text-2xl font-bold text-gray-900 dark:text-slate-100">{{ detail.activity.count_30_days }}</div>
+                            </div>
+                            <div class="rounded-lg border border-gray-200 dark:border-slate-700 px-3 py-2">
+                                <div class="text-xs text-gray-500 dark:text-slate-400">Last 90 days</div>
+                                <div class="text-2xl font-bold text-gray-900 dark:text-slate-100">{{ detail.activity.count_90_days }}</div>
+                            </div>
+                        </div>
+
+                        <!-- Top actions -->
+                        <div v-if="detail.activity.top_actions.length > 0" class="mb-4">
+                            <div class="text-xs font-semibold text-gray-500 dark:text-slate-400 mb-2">Top actions (last 90 days)</div>
+                            <div class="space-y-1">
+                                <div v-for="t in detail.activity.top_actions" :key="t.action" class="flex items-center justify-between text-sm">
+                                    <span class="text-gray-700 dark:text-slate-300">{{ humanizeAction(t.action) }}</span>
+                                    <span class="text-xs text-gray-500 dark:text-slate-400 font-mono">{{ t.count }}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Recent feed -->
+                        <div>
+                            <div class="text-xs font-semibold text-gray-500 dark:text-slate-400 mb-2">Recent activity (last 50)</div>
+                            <div v-if="detail.activity.recent.length === 0" class="text-sm text-gray-500 dark:text-slate-400 italic">
+                                No data-mutating actions on record yet.
+                            </div>
+                            <ol v-else class="max-h-64 overflow-y-auto border border-gray-200 dark:border-slate-700 rounded-lg divide-y divide-gray-100 dark:divide-slate-700">
+                                <li v-for="row in detail.activity.recent" :key="row.id" class="px-3 py-2 text-sm">
+                                    <div class="flex items-start justify-between gap-3">
+                                        <div class="min-w-0">
+                                            <div class="font-medium text-gray-900 dark:text-slate-100 truncate">{{ humanizeAction(row.action) }}</div>
+                                            <div v-if="row.description" class="text-xs text-gray-600 dark:text-slate-400 mt-0.5 line-clamp-2">{{ row.description }}</div>
+                                            <div v-if="row.resource_type" class="text-xs text-gray-500 dark:text-slate-500 mt-0.5">
+                                                {{ row.resource_type }}<span v-if="row.resource_id"> #{{ row.resource_id }}</span>
+                                            </div>
+                                        </div>
+                                        <span class="text-xs text-gray-500 dark:text-slate-400 whitespace-nowrap shrink-0" :title="formatDateTime(row.created_at)">
+                                            {{ relativeTime(row.created_at) }}
+                                        </span>
+                                    </div>
+                                </li>
+                            </ol>
+                        </div>
+                    </div>
+
+                    <!-- Admin actions footer -->
+                    <div class="p-6 bg-gray-50 dark:bg-slate-900/40 flex flex-wrap items-center justify-end gap-3">
+                        <button
+                            @click="resetAccess"
+                            :disabled="resettingAccess"
+                            class="text-sm px-3 py-2 rounded-lg border border-amber-300 dark:border-amber-700 text-amber-700 dark:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-950/30 disabled:opacity-50 transition-colors inline-flex items-center gap-1.5"
+                            title="Invalidate all sessions; user is logged out on next request. Account remains active."
+                        >
+                            <ClockIcon class="w-4 h-4" />
+                            {{ resettingAccess ? 'Resetting…' : 'Reset Access' }}
+                        </button>
+                        <button
+                            @click="toggleActive"
+                            :disabled="togglingActive"
+                            :class="detail.user.is_active
+                                ? 'border-rose-300 dark:border-rose-700 text-rose-700 dark:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-950/30'
+                                : 'border-green-300 dark:border-green-700 text-green-700 dark:text-green-300 hover:bg-green-50 dark:hover:bg-green-950/30'"
+                            class="text-sm px-3 py-2 rounded-lg border disabled:opacity-50 transition-colors inline-flex items-center gap-1.5"
+                            :title="detail.user.is_active ? 'Set is_active=false; logs them out and blocks new logins.' : 'Set is_active=true; allow OTP requests again.'"
+                        >
+                            <ExclamationTriangleIcon class="w-4 h-4" />
+                            {{ togglingActive ? '…' : (detail.user.is_active ? 'Deactivate' : 'Reactivate') }}
+                        </button>
+                        <button
+                            @click="closeDetail"
+                            class="text-sm px-3 py-2 rounded-lg text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-200 transition-colors"
+                        >
+                            Close
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ─── Provision modal (unchanged) ─────────────────────────────── -->
         <div v-if="showProvision" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
             <div class="bg-white dark:bg-slate-800 rounded-xl shadow-xl w-full max-w-md mx-4 p-6">
                 <h2 class="text-lg font-bold text-gray-900 dark:text-slate-100 mb-4">Provision New User</h2>

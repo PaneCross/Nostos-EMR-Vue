@@ -1438,6 +1438,7 @@ Route::middleware('auth')->group(function () {
         // User management
         Route::get('/users',                        [UserProvisioningController::class, 'users'])->name('it-admin.users');
         Route::post('/users',                       [UserProvisioningController::class, 'provisionUser'])->name('it-admin.users.provision');
+        Route::get('/users/{user}/details',         [UserProvisioningController::class, 'userDetails'])->name('it-admin.users.details');
         Route::post('/users/{user}/deactivate',     [UserProvisioningController::class, 'deactivateUser'])->name('it-admin.users.deactivate');
         Route::post('/users/{user}/reactivate',     [UserProvisioningController::class, 'reactivateUser'])->name('it-admin.users.reactivate');
         Route::post('/users/{user}/reset-access',   [UserProvisioningController::class, 'resetAccess'])->name('it-admin.users.reset-access');
