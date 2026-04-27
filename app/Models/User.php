@@ -70,6 +70,103 @@ class User extends Authenticatable
         'social_work_supervisor' => 'Social Work Supervisor',
     ];
 
+    /**
+     * Designation behavior detail — what each designation actually triggers in
+     * the codebase today. Surfaced in the IT Admin → Users detail modal so
+     * administrators making assignments know exactly what notifications +
+     * approval workflows the user will pick up.
+     *
+     * Honest split:
+     *   permissions   — special abilities the designation grants (approval gates).
+     *   notifications — events that route alerts to holders of this designation.
+     *   reserved      — feature areas the designation is RESERVED for but not
+     *                   yet wired in code. Listed so admins know intent vs.
+     *                   today's behavior. Wire up as those workflows are built.
+     *
+     * Source of truth: any new alert routing or permission gate that uses a
+     * designation should also update its entry here so the UI stays accurate.
+     */
+    public const DESIGNATION_DETAILS = [
+        'medical_director' => [
+            'label'   => 'Medical Director',
+            'summary' => 'Top clinical authority. Approves service denials and appeals; receives critical clinical-safety alerts.',
+            'permissions' => [
+                'Can issue a Service Delivery Request denial (§460.122 denial notice generated for the participant).',
+                'Can decide a §460.122 appeal — uphold or overturn the original denial.',
+                'Listed in the grievance-escalation assignee picker.',
+            ],
+            'notifications' => [
+                'Critical alert when a restraint episode goes >4 hours without an observation entry.',
+                'Critical alert when a restraint episode IDT review is >24 hours overdue.',
+            ],
+            'reserved' => [],
+        ],
+
+        'compliance_officer' => [
+            'label'   => 'Compliance Officer',
+            'summary' => 'Owns the grievance + appeals workflow. Auto-named in escalations and overdue alerts.',
+            'permissions' => [
+                'Can decide a §460.122 appeal — uphold or overturn.',
+                'Listed in the grievance-escalation assignee picker.',
+            ],
+            'notifications' => [
+                'Named in alerts on every urgent grievance (72-hour CMS clock per §460.120(c)).',
+                'Auto-assigned as the escalation reviewer when a grievance is escalated without a specific reviewer.',
+                'Named as the fallback reviewer in overdue-grievance alerts (day 25 of the 30-day clock).',
+            ],
+            'reserved' => [],
+        ],
+
+        'program_director' => [
+            'label'   => 'Program Director',
+            'summary' => 'Senior administrative role. Today only used as an option in escalation pickers.',
+            'permissions' => [
+                'Listed in the grievance-escalation assignee picker.',
+            ],
+            'notifications' => [],
+            'reserved' => [
+                'Future: organization-wide critical incident alerts (sentinel events, breach incidents). Not yet routed in code.',
+            ],
+        ],
+
+        'nursing_director' => [
+            'label'   => 'Nursing Director',
+            'summary' => 'Reserved for nursing-area QA + safety alert routing.',
+            'permissions' => [],
+            'notifications' => [],
+            'reserved' => [
+                'Future: nursing-related QA alerts (fall-risk threshold breaches, pressure-injury staging changes, late EMAR/BCMA dose patterns).',
+                'Future: critical-value lab acknowledgment escalations when the ordering clinician does not acknowledge within policy.',
+                'No code paths route to this designation yet.',
+            ],
+        ],
+
+        'pharmacy_director' => [
+            'label'   => 'Pharmacy Director',
+            'summary' => 'Reserved for pharmacy oversight (drug interactions, controlled-substance review).',
+            'permissions' => [],
+            'notifications' => [],
+            'reserved' => [
+                'Future: critical drug-interaction alerts on prescribe events.',
+                'Future: controlled-substance prescribing pattern alerts and BCMA repeated-override review.',
+                'Future: prior-authorization queue oversight notifications.',
+                'No code paths route to this designation yet.',
+            ],
+        ],
+
+        'social_work_supervisor' => [
+            'label'   => 'Social Work Supervisor',
+            'summary' => 'Reserved for social-work team oversight + escalations.',
+            'permissions' => [],
+            'notifications' => [],
+            'reserved' => [
+                'Future: social-determinants escalations (housing instability, food insecurity flagged on intake).',
+                'Future: bereavement workflow + family-contact escalations.',
+                'No code paths route to this designation yet.',
+            ],
+        ],
+    ];
+
     protected $fillable = [
         'tenant_id',
         'site_id',

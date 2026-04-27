@@ -146,6 +146,43 @@ class UserDetailsModalTest extends TestCase
         $this->assertEquals(3, $r->json('activity.count_90_days'));
     }
 
+    public function test_designation_details_const_covers_every_designation_with_full_shape(): void
+    {
+        // Every designation in DESIGNATIONS must have a corresponding DESIGNATION_DETAILS
+        // entry with the four required keys. If a new designation is added without an
+        // entry, the IT-admin Users modal would silently render no help text for it.
+        foreach (\App\Models\User::DESIGNATIONS as $key) {
+            $this->assertArrayHasKey($key, \App\Models\User::DESIGNATION_DETAILS,
+                "DESIGNATION_DETAILS missing entry for '$key'");
+            $entry = \App\Models\User::DESIGNATION_DETAILS[$key];
+            foreach (['label', 'summary', 'permissions', 'notifications', 'reserved'] as $field) {
+                $this->assertArrayHasKey($field, $entry,
+                    "DESIGNATION_DETAILS['$key'] missing required field '$field'");
+            }
+            $this->assertIsString($entry['label']);
+            $this->assertIsString($entry['summary']);
+            $this->assertIsArray($entry['permissions']);
+            $this->assertIsArray($entry['notifications']);
+            $this->assertIsArray($entry['reserved']);
+        }
+    }
+
+    public function test_users_index_inertia_includes_designation_details(): void
+    {
+        [, , $itAdmin] = $this->tenantWithIt();
+
+        $r = $this->actingAs($itAdmin)->get('/it-admin/users');
+        $r->assertOk();
+
+        $r->assertInertia(fn ($page) => $page
+            ->component('ItAdmin/Users')
+            ->has('designationDetails')
+            ->has('designationDetails.medical_director.permissions')
+            ->has('designationDetails.medical_director.notifications')
+            ->has('designationDetails.medical_director.reserved')
+        );
+    }
+
     public function test_credentials_summary_shape_returns_zero_when_user_has_none(): void
     {
         [$t, $s, $itAdmin] = $this->tenantWithIt();

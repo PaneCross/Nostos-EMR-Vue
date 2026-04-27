@@ -101,9 +101,18 @@ interface ProvisionForm {
     department: string
 }
 
+interface DesignationDetail {
+    label: string
+    summary: string
+    permissions: string[]
+    notifications: string[]
+    reserved: string[]
+}
+
 interface Props {
     users: UserRow[]
     designationLabels: Record<string, string>
+    designationDetails: Record<string, DesignationDetail>
     deptLabels: Record<string, string>
 }
 
@@ -545,32 +554,85 @@ function humanizeAction(action: string): string {
                         </div>
                     </div>
 
-                    <!-- Designations -->
+                    <!-- Designations — vertical list with detail per designation -->
                     <div class="p-6">
                         <h3 class="text-xs uppercase tracking-wide font-semibold text-gray-500 dark:text-slate-400 mb-3 flex items-center gap-1.5">
                             <ShieldCheckIcon class="w-3.5 h-3.5" />
                             Accountability Designations
                             <span v-if="savingDesignations" class="ml-1 text-indigo-400 dark:text-indigo-300 normal-case">(saving…)</span>
                         </h3>
-                        <p class="text-xs text-gray-500 dark:text-slate-400 mb-2">
-                            Designations control who is notified for specific events (they do not affect access). A user may hold multiple.
+                        <p class="text-xs text-gray-500 dark:text-slate-400 mb-3">
+                            Designations control who is notified for specific events and who can approve specific workflows
+                            (they do <em>not</em> affect general department access). A user may hold multiple. Toggle any
+                            checkbox to add or remove the designation — saves immediately.
                         </p>
-                        <div class="flex flex-wrap gap-2">
-                            <label
+
+                        <ul class="space-y-3">
+                            <li
                                 v-for="(label, key) in props.designationLabels"
                                 :key="key"
-                                class="flex items-center gap-1.5 cursor-pointer text-sm"
+                                class="rounded-lg border border-gray-200 dark:border-slate-700 p-3 transition-colors"
+                                :class="detail.user.designations.includes(key)
+                                    ? 'bg-indigo-50/40 dark:bg-indigo-950/20 border-indigo-200 dark:border-indigo-900/50'
+                                    : 'bg-white dark:bg-slate-800/30'"
                             >
-                                <input
-                                    type="checkbox"
-                                    :checked="detail.user.designations.includes(key)"
-                                    @change="toggleDesignation(key)"
-                                    class="rounded border-gray-300 dark:border-slate-600"
-                                    :aria-label="label"
-                                />
-                                <span class="text-gray-700 dark:text-slate-300">{{ label }}</span>
-                            </label>
-                        </div>
+                                <label class="flex items-start gap-2.5 cursor-pointer">
+                                    <input
+                                        type="checkbox"
+                                        :checked="detail.user.designations.includes(key)"
+                                        @change="toggleDesignation(key)"
+                                        class="mt-0.5 rounded border-gray-300 dark:border-slate-600 shrink-0"
+                                        :aria-label="`Toggle ${label} designation`"
+                                    />
+                                    <div class="min-w-0 flex-1">
+                                        <div class="font-medium text-gray-900 dark:text-slate-100">{{ label }}</div>
+                                        <div
+                                            v-if="props.designationDetails?.[key]?.summary"
+                                            class="text-xs text-gray-600 dark:text-slate-400 mt-0.5"
+                                        >
+                                            {{ props.designationDetails[key].summary }}
+                                        </div>
+                                    </div>
+                                </label>
+
+                                <!-- Detail bullets — only render when we have content for this designation -->
+                                <div
+                                    v-if="props.designationDetails?.[key]"
+                                    class="mt-2 ml-6 space-y-2 text-xs"
+                                >
+                                    <!-- Permissions / approval gates -->
+                                    <div v-if="props.designationDetails[key].permissions.length > 0">
+                                        <div class="font-semibold text-emerald-700 dark:text-emerald-400 mb-1">
+                                            Permissions
+                                        </div>
+                                        <ul class="list-disc list-outside ml-4 space-y-0.5 text-gray-700 dark:text-slate-300">
+                                            <li v-for="(p, i) in props.designationDetails[key].permissions" :key="`p-${i}`">{{ p }}</li>
+                                        </ul>
+                                    </div>
+
+                                    <!-- Notifications -->
+                                    <div v-if="props.designationDetails[key].notifications.length > 0">
+                                        <div class="font-semibold text-blue-700 dark:text-blue-400 mb-1">
+                                            Notifications
+                                        </div>
+                                        <ul class="list-disc list-outside ml-4 space-y-0.5 text-gray-700 dark:text-slate-300">
+                                            <li v-for="(n, i) in props.designationDetails[key].notifications" :key="`n-${i}`">{{ n }}</li>
+                                        </ul>
+                                    </div>
+
+                                    <!-- Reserved (planned but not yet wired) -->
+                                    <div v-if="props.designationDetails[key].reserved.length > 0">
+                                        <div class="font-semibold text-amber-700 dark:text-amber-400 mb-1 flex items-center gap-1">
+                                            Reserved
+                                            <span class="font-normal text-amber-700/70 dark:text-amber-500/80 italic normal-case">— intent, not yet wired</span>
+                                        </div>
+                                        <ul class="list-disc list-outside ml-4 space-y-0.5 text-gray-600 dark:text-slate-400">
+                                            <li v-for="(r, i) in props.designationDetails[key].reserved" :key="`r-${i}`">{{ r }}</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </li>
+                        </ul>
                     </div>
 
                     <!-- Activity stats + audit log -->

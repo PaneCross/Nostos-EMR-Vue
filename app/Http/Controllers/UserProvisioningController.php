@@ -86,9 +86,10 @@ class UserProvisioningController extends Controller
             ->get(['id', 'first_name', 'last_name', 'email', 'department', 'is_active', 'created_at', 'designations']);
 
         return Inertia::render('ItAdmin/Users', [
-            'users'             => $users,
-            'designationLabels' => User::DESIGNATION_LABELS,
-            'deptLabels'        => self::DEPT_LABELS,
+            'users'              => $users,
+            'designationLabels'  => User::DESIGNATION_LABELS,
+            'designationDetails' => User::DESIGNATION_DETAILS,
+            'deptLabels'         => self::DEPT_LABELS,
         ]);
     }
 
