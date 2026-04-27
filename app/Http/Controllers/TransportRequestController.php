@@ -266,7 +266,7 @@ class TransportRequestController extends Controller
         // Phase SS2 — workflow preference: copy assigned PCP on cancellations.
         // Some PACE orgs want the participant's PCP looped in when transport is
         // cancelled (especially for clinic visits). Default OFF; opt in via
-        // /executive/site-settings.
+        // /executive/org-settings.
         $prefs = app(\App\Services\NotificationPreferenceService::class);
         if ($prefs->shouldNotify($user->tenant_id, 'workflow.transport_cancellation.notify_assigned_pcp')) {
             $participant = \App\Models\Participant::find($transportRequest->participant_id);

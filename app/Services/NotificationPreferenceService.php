@@ -2,7 +2,7 @@
 
 // ─── NotificationPreferenceService ────────────────────────────────────────────
 // The single source of truth for "should this OPTIONAL notification fire for
-// this tenant?". Drives the Site Settings page (/executive/site-settings) and
+// this tenant?". Drives the Org Settings page (/executive/org-settings) and
 // is consumed by alert-dispatching jobs/services across the EMR.
 //
 // PLAIN-ENGLISH PURPOSE: Different PACE organizations want different people
@@ -11,7 +11,7 @@
 // in-request, returns sensible defaults when no row exists, and short-circuits
 // to TRUE for hardwired Required keys regardless of stored state.
 //
-// Design + full preference catalog: docs/internal/site-settings-design.md
+// Design + full preference catalog: docs/internal/org-settings-design.md
 //
 // Hot path: shouldNotify() is called from every alert dispatch site that
 //   deals with an optional preference. Cache is per-tenant, in-request only.
@@ -103,7 +103,7 @@ class NotificationPreferenceService
 
         if ($previous !== $enabled) {
             AuditLog::record(
-                action:       'site_settings.preference_changed',
+                action:       'org_settings.preference_changed',
                 tenantId:     $tenantId,
                 userId:       $byUserId,
                 resourceType: 'NotificationPreference',
@@ -144,7 +144,7 @@ class NotificationPreferenceService
                 );
 
                 AuditLog::record(
-                    action:       'site_settings.preference_changed',
+                    action:       'org_settings.preference_changed',
                     tenantId:     $tenantId,
                     userId:       $byUserId,
                     resourceType: 'NotificationPreference',
@@ -199,7 +199,7 @@ class NotificationPreferenceService
 
     /**
      * Effective state for every catalog key for a given tenant. Drives the
-     * Site Settings page render.
+     * Org Settings page render.
      *
      * @return array<string, array{status:string, group:string, label:string, description:string, cms_ref:?string, default:bool, enabled:bool}>
      */

@@ -4,7 +4,7 @@
 // Per-tenant on/off control for OPTIONAL notification + workflow routing.
 // One row per (tenant_id, preference_key). CMS-required notification paths
 // stay hardwired in code; this table governs the optional + reserved keys
-// surfaced on the Site Settings page (/executive/site-settings).
+// surfaced on the Org Settings page (/executive/org-settings).
 //
 // Why row-per-key vs JSON blob: queryable + indexable + new keys ship without
 // schema migrations + the IT-admin audit log can record per-key flips.

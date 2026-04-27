@@ -98,7 +98,7 @@ class DrugInteractionService
                 'severity'       => $interaction->severity,
             ]);
 
-            // Phase SS2 — optional Pharmacy Director routing per Site Settings.
+            // Phase SS2 — optional Pharmacy Director routing per Org Settings.
             // Major/contraindicated severity → notify Pharmacy Director if the
             // org has opted into this preference. Default OFF.
             if (in_array($interaction->severity, ['major', 'contraindicated'], true)) {

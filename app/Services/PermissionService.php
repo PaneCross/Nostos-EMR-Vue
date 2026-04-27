@@ -298,7 +298,7 @@ class PermissionService
                 'items' => [
                     ['label' => 'Executive Overview', 'module' => 'executive_overview', 'href' => '/dashboard/executive'],
                     // Phase SS — org-wide notification + workflow preferences
-                    ['label' => 'Site Settings',      'module' => 'site_settings',      'href' => '/executive/site-settings'],
+                    ['label' => 'Org Settings',      'module' => 'org_settings',      'href' => '/executive/org-settings'],
                 ],
             ],
             // ── Phase 10B: Nostos Super Admin ──────────────────────────────────

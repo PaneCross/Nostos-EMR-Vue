@@ -191,10 +191,10 @@ class IncidentService
                 . '; RCA deadline ' . $incident->sentinel_rca_30day_deadline->toDateTimeString() . '.',
         );
 
-        // Phase SS2 — optional notification routing per Site Settings preferences.
+        // Phase SS2 — optional notification routing per Org Settings preferences.
         // Program Director gets a critical alert when a sentinel is classified, IF
         // the org has the preference enabled. Default is OFF; tenants opt in via
-        // /executive/site-settings. The hardwired QA/audit chain remains in place
+        // /executive/org-settings. The hardwired QA/audit chain remains in place
         // regardless — this is an ADDITIONAL recipient layer, not a replacement.
         $prefs = app(NotificationPreferenceService::class);
         if ($prefs->shouldNotify($incident->tenant_id, 'designation.program_director.sentinel_event')) {

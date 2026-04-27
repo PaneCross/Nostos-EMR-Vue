@@ -74,7 +74,7 @@ class BreachIncidentController extends Controller
             description: "Breach incident logged: {$validated['breach_type']}, {$validated['affected_count']} affected.",
         );
 
-        // Phase SS2 — optional Program Director notification per Site Settings.
+        // Phase SS2 — optional Program Director notification per Org Settings.
         // Hardwired IT Admin / Compliance chain (45 CFR §164.404) is unaffected;
         // this is an additional copy when the org has opted in.
         $prefs = app(NotificationPreferenceService::class);

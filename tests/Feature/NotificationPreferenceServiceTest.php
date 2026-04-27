@@ -91,15 +91,15 @@ class NotificationPreferenceServiceTest extends TestCase
 
         // First flip → audit log row
         $svc->set($t->id, $key, true, $u->id);
-        $this->assertEquals(1, AuditLog::where('action', 'site_settings.preference_changed')->count());
+        $this->assertEquals(1, AuditLog::where('action', 'org_settings.preference_changed')->count());
 
         // Same-value set → no new audit log
         $svc->set($t->id, $key, true, $u->id);
-        $this->assertEquals(1, AuditLog::where('action', 'site_settings.preference_changed')->count());
+        $this->assertEquals(1, AuditLog::where('action', 'org_settings.preference_changed')->count());
 
         // Real change → another row
         $svc->set($t->id, $key, false, $u->id);
-        $this->assertEquals(2, AuditLog::where('action', 'site_settings.preference_changed')->count());
+        $this->assertEquals(2, AuditLog::where('action', 'org_settings.preference_changed')->count());
     }
 
     public function test_bulk_set_writes_one_audit_per_changed_key(): void
@@ -115,7 +115,7 @@ class NotificationPreferenceServiceTest extends TestCase
         ], $u->id);
 
         $this->assertEquals(2, $changed);
-        $this->assertEquals(2, AuditLog::where('action', 'site_settings.preference_changed')->count());
+        $this->assertEquals(2, AuditLog::where('action', 'org_settings.preference_changed')->count());
     }
 
     public function test_seed_defaults_is_idempotent(): void

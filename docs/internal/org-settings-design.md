@@ -1,4 +1,4 @@
-# Site Settings — Notification Preferences (design)
+# Org Settings — Notification Preferences (design)
 
 **Status:** Active build (Phase SS1-SS4)
 **Audience:** Brian (dev team lead) + future contributors
@@ -126,7 +126,7 @@ Everything currently wired in code (Required + already-firing optional alerts) d
 
 ## UI
 
-Settings page at `/executive/site-settings`:
+Settings page at `/executive/org-settings`:
 - Grouped by designation + workflow area
 - Each toggle shows: label, 1-line description, status badge (Required/Optional/Reserved), CFR ref tooltip if applicable
 - Save commits a single bulk-update transaction; AuditLog row per changed key (so the IT Admin audit log shows "Compliance Officer urgent_grievance_filed: enabled by Brian")
@@ -147,5 +147,5 @@ Existing alert services that already route to medical_director and compliance_of
 
 - **SS1** — this doc + migration + model + service + defaults (one commit)
 - **SS2** — wire all listed Reserved + Workflow keys through the service (one commit; multiple files)
-- **SS3** — Inertia Site Settings page, controller, nav item, permission seed (one commit)
+- **SS3** — Inertia Org Settings page, controller, nav item, permission seed (one commit)
 - **SS4** — full test sweep + verification (folded into SS3 or split if scope demands)

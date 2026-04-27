@@ -89,7 +89,7 @@ use App\Http\Controllers\TransferAdminController;
 use App\Http\Controllers\SiteContextController;
 use App\Http\Controllers\SuperAdminPanelController;
 use App\Http\Controllers\Dashboards\ExecutiveDashboardController;
-use App\Http\Controllers\SiteSettingsController;
+use App\Http\Controllers\OrgSettingsController;
 use App\Http\Controllers\IntegrationController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ThemePreferenceController;
@@ -364,9 +364,9 @@ Route::middleware('auth')->group(function () {
         });
     });
 
-    // ─── Phase SS — Site Settings (executive-level notification preferences) ──
-    Route::get ('/executive/site-settings', [SiteSettingsController::class, 'index'])->name('executive.site-settings.index');
-    Route::post('/executive/site-settings', [SiteSettingsController::class, 'update'])->name('executive.site-settings.update');
+    // ─── Phase SS — Org Settings (executive-level notification preferences) ──
+    Route::get ('/executive/org-settings', [OrgSettingsController::class, 'index'])->name('executive.org-settings.index');
+    Route::post('/executive/org-settings', [OrgSettingsController::class, 'update'])->name('executive.org-settings.update');
 
     // ─── Participant Module ───────────────────────────────────────────────────
 

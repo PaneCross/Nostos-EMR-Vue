@@ -279,7 +279,7 @@ class DayCenterController extends Controller
         );
 
         // Phase SS2 — workflow preference: notify Social Work on day-center no-shows.
-        // Default ON. Tenants can disable via Site Settings if their workflow uses
+        // Default ON. Tenants can disable via Org Settings if their workflow uses
         // a different recipient (e.g. an activities coordinator handles outreach).
         $prefs = app(\App\Services\NotificationPreferenceService::class);
         if ($prefs->shouldNotify($user->tenant_id, 'workflow.day_center_no_show.notify_social_work')) {

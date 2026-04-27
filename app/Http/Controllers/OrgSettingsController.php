@@ -1,18 +1,18 @@
 <?php
 
-// ─── SiteSettingsController ───────────────────────────────────────────────────
-// Renders + saves the executive-level Site Settings page where PACE
+// ─── OrgSettingsController ───────────────────────────────────────────────────
+// Renders + saves the executive-level Org Settings page where PACE
 // organizations toggle OPTIONAL notification + workflow preferences. The full
 // preference catalog and routing model is documented in
-// docs/internal/site-settings-design.md and the
+// docs/internal/org-settings-design.md and the
 // NotificationPreferenceService class.
 //
 // Auth gate: super_admin role OR department=executive AND role=admin.
 // Tenant-scoped: every request reads/writes only the calling user's tenant.
 //
 // Routes (defined under the auth middleware group in routes/web.php):
-//   GET  /executive/site-settings   → index() — Inertia render
-//   POST /executive/site-settings   → update() — bulk save
+//   GET  /executive/org-settings   → index() — Inertia render
+//   POST /executive/org-settings   → update() — bulk save
 // ─────────────────────────────────────────────────────────────────────────────
 
 namespace App\Http\Controllers;
@@ -23,7 +23,7 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response as InertiaResponse;
 
-class SiteSettingsController extends Controller
+class OrgSettingsController extends Controller
 {
     /** Auth gate. */
     private function requireExecutiveAccess(Request $request): void
@@ -32,7 +32,7 @@ class SiteSettingsController extends Controller
         abort_if(! $u, 401);
         $allowed = $u->isSuperAdmin()
             || ($u->department === 'executive' && $u->role === 'admin');
-        abort_unless($allowed, 403, 'Site Settings is restricted to executive leadership.');
+        abort_unless($allowed, 403, 'Org Settings is restricted to executive leadership.');
     }
 
     public function index(Request $request): InertiaResponse
@@ -54,7 +54,7 @@ class SiteSettingsController extends Controller
             $grouped[$g][] = array_merge(['key' => $key], $entry);
         }
 
-        return Inertia::render('Executive/SiteSettings', [
+        return Inertia::render('Executive/OrgSettings', [
             'grouped'    => $grouped,
             'tenantName' => $request->user()->tenant?->name,
             'updatedAt'  => now()->toIso8601String(),

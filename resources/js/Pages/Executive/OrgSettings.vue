@@ -1,9 +1,9 @@
 <script setup lang="ts">
-// ─── Executive / Site Settings ────────────────────────────────────────────────
+// ─── Executive / Org Settings ────────────────────────────────────────────────
 // Executive-level page where org leadership controls OPTIONAL notification +
 // workflow routing. Required-by-CMS items are shown but locked-on; tenant
 // preferences toggle on/off and save in bulk. Full design + catalog:
-// docs/internal/site-settings-design.md
+// docs/internal/org-settings-design.md
 //
 // Audience: super_admin OR (department=executive AND role=admin).
 //
@@ -103,7 +103,7 @@ async function save() {
     dirtyKeys.value.forEach(k => { payload[k] = state.value[k] })
 
     try {
-        const res = await axios.post('/executive/site-settings', { preferences: payload })
+        const res = await axios.post('/executive/org-settings', { preferences: payload })
         successMessage.value = res.data.message ?? 'Saved.'
         // Re-baseline initialState so the dirty check zeros out
         dirtyKeys.value.forEach(k => { initialState[k] = state.value[k] })
@@ -142,7 +142,7 @@ const groupIcon = (group: string) => {
 
 <template>
     <AppShell>
-        <Head title="Site Settings" />
+        <Head title="Org Settings" />
 
         <div class="max-w-5xl mx-auto px-6 py-8">
             <!-- Header -->
@@ -150,7 +150,7 @@ const groupIcon = (group: string) => {
                 <div>
                     <h1 class="text-2xl font-bold text-gray-900 dark:text-slate-100 flex items-center gap-2">
                         <AdjustmentsHorizontalIcon class="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
-                        Site Settings
+                        Org Settings
                     </h1>
                     <p class="text-sm text-gray-500 dark:text-slate-400 mt-1">
                         <span v-if="tenantName" class="font-medium">{{ tenantName }} — </span>

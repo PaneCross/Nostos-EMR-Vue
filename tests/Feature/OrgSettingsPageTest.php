@@ -1,12 +1,12 @@
 <?php
 
-// ─── SiteSettingsPageTest ─────────────────────────────────────────────────────
-// Phase SS3 — covers the executive Site Settings Inertia page + bulk-save endpoint.
+// ─── OrgSettingsPageTest ─────────────────────────────────────────────────────
+// Phase OS3 — covers the executive Org Settings Inertia page + bulk-save endpoint.
 //
 // Locks in:
 //   - Route gating: super_admin role OR (department=executive + role=admin) only
 //   - Other depts (it_admin, primary_care, etc.) get 403
-//   - Page renders the Executive/SiteSettings Vue component with grouped prefs
+//   - Page renders the Executive/OrgSettings Vue component with grouped prefs
 //   - Bulk save persists changes through the service + writes one AuditLog per change
 //   - Required keys cannot be flipped via the endpoint (silently skipped)
 // ─────────────────────────────────────────────────────────────────────────────
@@ -21,7 +21,7 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
-class SiteSettingsPageTest extends TestCase
+class OrgSettingsPageTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -44,29 +44,29 @@ class SiteSettingsPageTest extends TestCase
         $pcp = User::factory()->create([
             'tenant_id' => $t->id, 'department' => 'primary_care', 'role' => 'admin', 'is_active' => true,
         ]);
-        $this->actingAs($pcp)->get('/executive/site-settings')->assertStatus(403);
+        $this->actingAs($pcp)->get('/executive/org-settings')->assertStatus(403);
 
-        // IT admin — also denied (Site Settings is executive-only)
+        // IT admin — also denied (Org Settings is executive-only)
         $itAdmin = User::factory()->create([
             'tenant_id' => $t->id, 'department' => 'it_admin', 'role' => 'admin', 'is_active' => true,
         ]);
-        $this->actingAs($itAdmin)->get('/executive/site-settings')->assertStatus(403);
+        $this->actingAs($itAdmin)->get('/executive/org-settings')->assertStatus(403);
 
         // Executive standard (non-admin) — denied
         $execStandard = User::factory()->create([
             'tenant_id' => $t->id, 'department' => 'executive', 'role' => 'standard', 'is_active' => true,
         ]);
-        $this->actingAs($execStandard)->get('/executive/site-settings')->assertStatus(403);
+        $this->actingAs($execStandard)->get('/executive/org-settings')->assertStatus(403);
     }
 
     public function test_index_renders_for_executive_admin(): void
     {
         [, $exec] = $this->executiveAdmin();
 
-        $r = $this->actingAs($exec)->get('/executive/site-settings');
+        $r = $this->actingAs($exec)->get('/executive/org-settings');
         $r->assertOk();
         $r->assertInertia(fn ($page) => $page
-            ->component('Executive/SiteSettings')
+            ->component('Executive/OrgSettings')
             ->has('grouped')
             ->has('grouped.Medical Director')
             ->has('grouped.Compliance Officer')
@@ -81,7 +81,7 @@ class SiteSettingsPageTest extends TestCase
         $sa = User::factory()->create([
             'tenant_id' => $t->id, 'department' => 'super_admin', 'role' => 'super_admin', 'is_active' => true,
         ]);
-        $this->actingAs($sa)->get('/executive/site-settings')->assertOk();
+        $this->actingAs($sa)->get('/executive/org-settings')->assertOk();
     }
 
     public function test_bulk_save_persists_optional_changes_and_audits(): void
@@ -93,7 +93,7 @@ class SiteSettingsPageTest extends TestCase
             'designation.pharmacy_director.critical_drug_interaction' => true,
         ]];
 
-        $r = $this->actingAs($exec)->postJson('/executive/site-settings', $payload);
+        $r = $this->actingAs($exec)->postJson('/executive/org-settings', $payload);
         $r->assertOk()->assertJson(['changed' => 2]);
 
         // Both rows persisted with enabled=true
@@ -103,7 +103,7 @@ class SiteSettingsPageTest extends TestCase
             ->count());
 
         // AuditLog: one row per actually-changed pref
-        $this->assertEquals(2, AuditLog::where('action', 'site_settings.preference_changed')->count());
+        $this->assertEquals(2, AuditLog::where('action', 'org_settings.preference_changed')->count());
     }
 
     public function test_bulk_save_silently_skips_required_keys(): void
@@ -116,7 +116,7 @@ class SiteSettingsPageTest extends TestCase
             'designation.nursing_director.fall_risk_threshold'           => true,  // OK
         ]];
 
-        $r = $this->actingAs($exec)->postJson('/executive/site-settings', $payload);
+        $r = $this->actingAs($exec)->postJson('/executive/org-settings', $payload);
         $r->assertOk()->assertJson(['changed' => 1]); // only the optional one counted
 
         // No row was written for the required key
@@ -132,7 +132,7 @@ class SiteSettingsPageTest extends TestCase
             'tenant_id' => $t->id, 'department' => 'primary_care', 'role' => 'admin', 'is_active' => true,
         ]);
         $this->actingAs($pcp)
-            ->postJson('/executive/site-settings', ['preferences' => ['designation.nursing_director.fall_risk_threshold' => true]])
+            ->postJson('/executive/org-settings', ['preferences' => ['designation.nursing_director.fall_risk_threshold' => true]])
             ->assertStatus(403);
     }
 }
