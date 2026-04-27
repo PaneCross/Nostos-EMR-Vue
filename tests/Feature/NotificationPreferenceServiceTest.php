@@ -171,4 +171,94 @@ class NotificationPreferenceServiceTest extends TestCase
             ]);
         }
     }
+
+    // ── OS2 cascade + numeric tests ────────────────────────────────────────────
+
+    public function test_site_override_beats_org_default(): void
+    {
+        [$t, $u] = $this->tenantWithUser();
+        $svc = app(NotificationPreferenceService::class);
+        $key = 'designation.nursing_director.fall_risk_threshold';
+
+        // Org-level: ON
+        $svc->set($t->id, $key, true, $u->id);
+        $this->assertTrue($svc->shouldNotify($t->id, $key));
+
+        // Site override: OFF (matches the org-level ON, but for this site only)
+        $site = Site::factory()->create(['tenant_id' => $t->id, 'mrn_prefix' => 'OVR']);
+        $svc->set($t->id, $key, false, $u->id, $site->id);
+        $svc->clearCache($t->id);
+
+        // Org-level still ON
+        $this->assertTrue($svc->shouldNotify($t->id, $key));
+        // Site-level: OFF (override wins)
+        $this->assertFalse($svc->shouldNotify($t->id, $key, $site->id));
+
+        // Other site without override: inherits ON
+        $otherSite = Site::factory()->create(['tenant_id' => $t->id, 'mrn_prefix' => 'INH']);
+        $this->assertTrue($svc->shouldNotify($t->id, $key, $otherSite->id));
+    }
+
+    public function test_clear_site_override_falls_back_to_org_default(): void
+    {
+        [$t, $u] = $this->tenantWithUser();
+        $svc = app(NotificationPreferenceService::class);
+        $key = 'designation.nursing_director.fall_risk_threshold';
+        $site = Site::factory()->create(['tenant_id' => $t->id, 'mrn_prefix' => 'CLR']);
+
+        $svc->set($t->id, $key, true, $u->id);                          // org ON
+        $svc->set($t->id, $key, false, $u->id, $site->id);              // site OFF
+        $svc->clearCache($t->id);
+        $this->assertFalse($svc->shouldNotify($t->id, $key, $site->id));
+
+        $cleared = $svc->clearSiteOverride($t->id, $site->id, $key, $u->id);
+        $this->assertTrue($cleared);
+
+        $svc->clearCache($t->id);
+        $this->assertTrue($svc->shouldNotify($t->id, $key, $site->id)); // now inherits org
+    }
+
+    public function test_numeric_value_returns_catalog_default_when_no_row(): void
+    {
+        [$t] = $this->tenantWithUser();
+        $svc = app(NotificationPreferenceService::class);
+
+        // catalog default for advance_directive renewal warning is 60 days
+        $this->assertEquals(60, $svc->numericValue($t->id, 'workflow.advance_directive.renewal_warning_days'));
+        $this->assertEquals(30, $svc->numericValue($t->id, 'workflow.insurance_card.expiry_warning'));
+    }
+
+    public function test_numeric_value_persists_and_caters_to_site_cascade(): void
+    {
+        [$t, $u] = $this->tenantWithUser();
+        $svc = app(NotificationPreferenceService::class);
+        $key = 'workflow.advance_directive.renewal_warning_days';
+        $site = Site::factory()->create(['tenant_id' => $t->id, 'mrn_prefix' => 'NUM']);
+
+        // Org override the default 60 → 90
+        $svc->set($t->id, $key, true, $u->id, null, ['days' => 90]);
+        $this->assertEquals(90, $svc->numericValue($t->id, $key));
+
+        // Site override 90 → 45
+        $svc->set($t->id, $key, true, $u->id, $site->id, ['days' => 45]);
+        $svc->clearCache($t->id);
+        $this->assertEquals(45, $svc->numericValue($t->id, $key, $site->id));
+        // Org-level still 90
+        $this->assertEquals(90, $svc->numericValue($t->id, $key));
+    }
+
+    public function test_numeric_value_returns_null_when_disabled(): void
+    {
+        [$t, $u] = $this->tenantWithUser();
+        $svc = app(NotificationPreferenceService::class);
+        $key = 'workflow.advance_directive.renewal_warning_days';
+
+        // Disable the warning at org level
+        $svc->set($t->id, $key, false, $u->id);
+        $svc->clearCache($t->id);
+
+        // shouldNotify is false → numericValue returns null
+        $this->assertFalse($svc->shouldNotify($t->id, $key));
+        $this->assertNull($svc->numericValue($t->id, $key));
+    }
 }

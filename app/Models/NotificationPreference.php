@@ -21,6 +21,7 @@ class NotificationPreference extends Model
 
     protected $fillable = [
         'tenant_id',
+        'site_id',                // null = org-level row; non-null = per-site override
         'preference_key',
         'enabled',
         'value',

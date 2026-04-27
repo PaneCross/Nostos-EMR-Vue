@@ -26,7 +26,11 @@ use Illuminate\Support\Facades\DB;
 class NotificationPreferenceService
 {
     /**
-     * Per-tenant in-request cache: tenant_id => [key => bool].
+     * Per-tenant in-request cache. Shape:
+     *   tenant_id => [
+     *       site_id_or_zero => [ preference_key => ['enabled' => bool, 'value' => array|null] ]
+     *   ]
+     * Site_id_or_zero = the site_id, or 0 for the org-level row (NULL site_id).
      * Cleared by clearCache() when settings are mutated.
      */
     private array $cache = [];
@@ -36,80 +40,174 @@ class NotificationPreferenceService
     public const STATUS_OPTIONAL = 'optional'; // tenant choice; toggle works
     public const STATUS_RESERVED = 'reserved'; // planned; setting saves but no code wired yet
 
+    // ── Preference kinds ──────────────────────────────────────────────────────
+    public const KIND_BOOLEAN = 'boolean'; // simple on/off toggle (default)
+    public const KIND_NUMERIC = 'numeric'; // boolean enable + numeric `value.days`
+
+    /** Internal sentinel for the org-level row (since SQL NULL can't be an array key). */
+    private const ORG_LEVEL = 0;
+
     // ── Hot-path query ────────────────────────────────────────────────────────
 
     /**
-     * Should this preference fire for this tenant?
+     * Should this preference fire for this tenant + (optional) site?
      *
-     * Returns true unconditionally for Required keys (hardwired by CMS).
-     * For Optional/Reserved keys, returns the stored value or the catalog
-     * default if no row exists.
+     * Cascade order — first hit wins:
+     *   1. Required keys → always true (regulatory floor).
+     *   2. Per-site override (if $siteId != null and a row exists for it).
+     *   3. Org-level row (site_id NULL).
+     *   4. Catalog default.
+     *
+     * The site cascade lets a site Director override an org-wide default
+     * without affecting other sites.
      */
-    public function shouldNotify(int $tenantId, string $key): bool
+    public function shouldNotify(int $tenantId, string $key, ?int $siteId = null): bool
     {
         $catalog = self::catalog();
         $entry = $catalog[$key] ?? null;
 
-        // Required keys always fire — this is the regulatory floor.
         if ($entry && $entry['status'] === self::STATUS_REQUIRED) {
             return true;
         }
 
-        // Look up tenant-cached value (one query per tenant per request).
-        if (! isset($this->cache[$tenantId])) {
-            $this->cache[$tenantId] = NotificationPreference::query()
-                ->where('tenant_id', $tenantId)
-                ->pluck('enabled', 'preference_key')
-                ->map(fn ($v) => (bool) $v)
-                ->all();
+        $this->primeCache($tenantId);
+
+        // Site-level override beats org-level.
+        if ($siteId !== null) {
+            $siteRow = $this->cache[$tenantId][$siteId][$key] ?? null;
+            if ($siteRow !== null) {
+                return (bool) $siteRow['enabled'];
+            }
         }
 
-        if (array_key_exists($key, $this->cache[$tenantId])) {
-            return $this->cache[$tenantId][$key];
+        // Fall back to org-level row.
+        $orgRow = $this->cache[$tenantId][self::ORG_LEVEL][$key] ?? null;
+        if ($orgRow !== null) {
+            return (bool) $orgRow['enabled'];
         }
 
-        // No row → fall back to catalog default.
+        // Final fallback: catalog default.
         return (bool) ($entry['default'] ?? false);
+    }
+
+    /**
+     * For numeric preferences (KIND_NUMERIC) — return the stored day-count
+     * for this tenant + (optional) site. Same cascade as shouldNotify().
+     * Returns the catalog `numeric_default` if no row exists.
+     *
+     * If the preference is NOT numeric, returns null. If the preference is
+     * numeric but disabled (enabled=false), returns null too — callers should
+     * gate on shouldNotify() first.
+     */
+    public function numericValue(int $tenantId, string $key, ?int $siteId = null): ?int
+    {
+        $catalog = self::catalog();
+        $entry = $catalog[$key] ?? null;
+        if (! $entry || ($entry['kind'] ?? self::KIND_BOOLEAN) !== self::KIND_NUMERIC) {
+            return null;
+        }
+        if (! $this->shouldNotify($tenantId, $key, $siteId)) {
+            return null; // disabled — no value
+        }
+
+        $this->primeCache($tenantId);
+
+        // Site-level override
+        if ($siteId !== null) {
+            $siteRow = $this->cache[$tenantId][$siteId][$key] ?? null;
+            if ($siteRow !== null && isset($siteRow['value']['days'])) {
+                return (int) $siteRow['value']['days'];
+            }
+        }
+        // Org-level
+        $orgRow = $this->cache[$tenantId][self::ORG_LEVEL][$key] ?? null;
+        if ($orgRow !== null && isset($orgRow['value']['days'])) {
+            return (int) $orgRow['value']['days'];
+        }
+        // Catalog default
+        return (int) ($entry['numeric_default'] ?? 0);
+    }
+
+    /** Load every row for a tenant into the in-request cache. */
+    private function primeCache(int $tenantId): void
+    {
+        if (isset($this->cache[$tenantId])) return;
+
+        $rows = NotificationPreference::query()
+            ->where('tenant_id', $tenantId)
+            ->get(['site_id', 'preference_key', 'enabled', 'value']);
+
+        $cache = [];
+        foreach ($rows as $r) {
+            $bucket = $r->site_id ?? self::ORG_LEVEL;
+            $cache[$bucket][$r->preference_key] = [
+                'enabled' => (bool) $r->enabled,
+                'value'   => $r->value,
+            ];
+        }
+        $this->cache[$tenantId] = $cache;
     }
 
     // ── Mutation ──────────────────────────────────────────────────────────────
 
     /**
-     * Set a single preference. Records an AuditLog entry on every flip so the
-     * IT Admin audit page shows "{key}: enabled by Brian" history.
+     * Set a single preference at the org level (site_id NULL) or at a specific
+     * site. Records an AuditLog entry on actual flips. For numeric prefs,
+     * pass `$value = ['days' => N]` alongside the boolean.
+     *
+     * @param int        $tenantId
+     * @param string     $key
+     * @param bool       $enabled
+     * @param int        $byUserId
+     * @param int|null   $siteId  NULL = org-level row; non-null = per-site override
+     * @param array|null $value   for numeric prefs: ['days' => int]
      */
-    public function set(int $tenantId, string $key, bool $enabled, int $byUserId): void
-    {
-        // Required keys cannot be flipped off — silently no-op the attempt.
+    public function set(
+        int $tenantId,
+        string $key,
+        bool $enabled,
+        int $byUserId,
+        ?int $siteId = null,
+        ?array $value = null,
+    ): void {
         $entry = self::catalog()[$key] ?? null;
-        if ($entry && $entry['status'] === self::STATUS_REQUIRED) {
-            return;
-        }
+        if ($entry && $entry['status'] === self::STATUS_REQUIRED) return;
 
         $existing = NotificationPreference::query()
             ->where('tenant_id', $tenantId)
+            ->where('site_id', $siteId)   // matches NULL via PHP null
             ->where('preference_key', $key)
             ->first();
 
-        $previous = $existing?->enabled;
+        $previousEnabled = $existing?->enabled;
+        $previousValue   = $existing?->value;
 
         NotificationPreference::updateOrCreate(
-            ['tenant_id' => $tenantId, 'preference_key' => $key],
+            ['tenant_id' => $tenantId, 'site_id' => $siteId, 'preference_key' => $key],
             [
-                'enabled'             => $enabled,
-                'updated_by_user_id'  => $byUserId,
+                'enabled'            => $enabled,
+                'value'              => $value,
+                'updated_by_user_id' => $byUserId,
             ],
         );
 
-        if ($previous !== $enabled) {
+        $changedEnabled = $previousEnabled !== $enabled;
+        $changedValue   = $value !== null && $previousValue !== $value;
+        if ($changedEnabled || $changedValue) {
             AuditLog::record(
                 action:       'org_settings.preference_changed',
                 tenantId:     $tenantId,
                 userId:       $byUserId,
                 resourceType: 'NotificationPreference',
-                description:  sprintf('%s → %s', $key, $enabled ? 'enabled' : 'disabled'),
-                oldValues:    $previous === null ? null : ['enabled' => $previous],
-                newValues:    ['enabled' => $enabled],
+                description:  sprintf(
+                    '%s%s → %s%s',
+                    $key,
+                    $siteId ? " (site #{$siteId})" : '',
+                    $enabled ? 'enabled' : 'disabled',
+                    $value !== null ? ' value=' . json_encode($value) : '',
+                ),
+                oldValues:    $previousEnabled === null ? null : ['enabled' => $previousEnabled, 'value' => $previousValue],
+                newValues:    ['enabled' => $enabled, 'value' => $value],
             );
         }
 
@@ -117,30 +215,49 @@ class NotificationPreferenceService
     }
 
     /**
-     * Bulk-update many preferences in a single transaction. Used by the Site
+     * Bulk-update many preferences in a single transaction. Used by the Org
      * Settings page save button. Records one AuditLog row per actually-changed
      * preference so the audit trail is precise.
+     *
+     * Each $changes entry can be:
+     *   - bool             → simple toggle (boolean kind)
+     *   - ['enabled' => bool, 'value' => array]   → numeric kind
+     *
+     * @param int|null $siteId  NULL = saving org-level; non-null = per-site override tab
      */
-    public function bulkSet(int $tenantId, array $changes, int $byUserId): int
+    public function bulkSet(int $tenantId, array $changes, int $byUserId, ?int $siteId = null): int
     {
         $changed = 0;
-        DB::transaction(function () use ($tenantId, $changes, $byUserId, &$changed) {
-            foreach ($changes as $key => $enabled) {
+        DB::transaction(function () use ($tenantId, $changes, $byUserId, $siteId, &$changed) {
+            foreach ($changes as $key => $payload) {
                 $entry = self::catalog()[$key] ?? null;
-                if (! $entry) continue;                                 // unknown key — ignore
-                if ($entry['status'] === self::STATUS_REQUIRED) continue; // locked, never write
+                if (! $entry) continue;
+                if ($entry['status'] === self::STATUS_REQUIRED) continue;
+
+                // Normalize payload shape — bool or {enabled, value}
+                if (is_array($payload)) {
+                    $newEnabled = (bool) ($payload['enabled'] ?? false);
+                    $newValue   = $payload['value'] ?? null;
+                } else {
+                    $newEnabled = (bool) $payload;
+                    $newValue   = null;
+                }
 
                 $existing = NotificationPreference::query()
                     ->where('tenant_id', $tenantId)
+                    ->where('site_id', $siteId)
                     ->where('preference_key', $key)
                     ->first();
-                $previous = $existing?->enabled;
+                $previousEnabled = $existing?->enabled;
+                $previousValue   = $existing?->value;
 
-                if ($previous === (bool) $enabled) continue;            // no-op
+                $changedEnabled = $previousEnabled !== $newEnabled;
+                $changedValue   = $newValue !== null && $previousValue !== $newValue;
+                if (! $changedEnabled && ! $changedValue) continue;
 
                 NotificationPreference::updateOrCreate(
-                    ['tenant_id' => $tenantId, 'preference_key' => $key],
-                    ['enabled' => (bool) $enabled, 'updated_by_user_id' => $byUserId],
+                    ['tenant_id' => $tenantId, 'site_id' => $siteId, 'preference_key' => $key],
+                    ['enabled' => $newEnabled, 'value' => $newValue, 'updated_by_user_id' => $byUserId],
                 );
 
                 AuditLog::record(
@@ -148,9 +265,14 @@ class NotificationPreferenceService
                     tenantId:     $tenantId,
                     userId:       $byUserId,
                     resourceType: 'NotificationPreference',
-                    description:  sprintf('%s → %s', $key, $enabled ? 'enabled' : 'disabled'),
-                    oldValues:    $previous === null ? null : ['enabled' => $previous],
-                    newValues:    ['enabled' => (bool) $enabled],
+                    description:  sprintf(
+                        '%s%s → %s',
+                        $key,
+                        $siteId ? " (site #{$siteId})" : '',
+                        $newEnabled ? 'enabled' : 'disabled',
+                    ),
+                    oldValues:    $previousEnabled === null ? null : ['enabled' => $previousEnabled, 'value' => $previousValue],
+                    newValues:    ['enabled' => $newEnabled, 'value' => $newValue],
                 );
                 $changed++;
             }
@@ -161,25 +283,62 @@ class NotificationPreferenceService
     }
 
     /**
-     * Seed default rows for a freshly-onboarded tenant. Idempotent — only
-     * inserts rows that don't already exist. Safe to call repeatedly.
+     * Remove a per-site override row. Site falls back to inheriting the
+     * org-level default. No-op if no override row exists.
+     */
+    public function clearSiteOverride(int $tenantId, int $siteId, string $key, int $byUserId): bool
+    {
+        $existing = NotificationPreference::query()
+            ->where('tenant_id', $tenantId)
+            ->where('site_id', $siteId)
+            ->where('preference_key', $key)
+            ->first();
+        if (! $existing) return false;
+
+        $existing->delete();
+
+        AuditLog::record(
+            action:       'org_settings.preference_changed',
+            tenantId:     $tenantId,
+            userId:       $byUserId,
+            resourceType: 'NotificationPreference',
+            description:  sprintf('%s (site #%d) override cleared (now inherits org default)', $key, $siteId),
+            oldValues:    ['enabled' => $existing->enabled, 'value' => $existing->value],
+            newValues:    null,
+        );
+
+        $this->clearCache($tenantId);
+        return true;
+    }
+
+    /**
+     * Seed default rows at the ORG level (site_id NULL) for a fresh tenant.
+     * Idempotent — skips keys with an existing org-level row. Required keys
+     * are never stored.
      */
     public function seedDefaults(int $tenantId): int
     {
         $created = 0;
         foreach (self::catalog() as $key => $entry) {
-            if ($entry['status'] === self::STATUS_REQUIRED) continue;  // never store required
+            if ($entry['status'] === self::STATUS_REQUIRED) continue;
             $exists = NotificationPreference::query()
                 ->where('tenant_id', $tenantId)
+                ->whereNull('site_id')
                 ->where('preference_key', $key)
                 ->exists();
             if ($exists) continue;
 
-            NotificationPreference::create([
+            $row = [
                 'tenant_id'      => $tenantId,
+                'site_id'        => null,
                 'preference_key' => $key,
                 'enabled'        => (bool) ($entry['default'] ?? false),
-            ]);
+            ];
+            // Numeric prefs: seed the catalog default day-count
+            if (($entry['kind'] ?? self::KIND_BOOLEAN) === self::KIND_NUMERIC) {
+                $row['value'] = ['days' => (int) ($entry['numeric_default'] ?? 0)];
+            }
+            NotificationPreference::create($row);
             $created++;
         }
         $this->clearCache($tenantId);
@@ -198,26 +357,70 @@ class NotificationPreferenceService
     // ── Read API for the Settings page ────────────────────────────────────────
 
     /**
-     * Effective state for every catalog key for a given tenant. Drives the
-     * Org Settings page render.
+     * Effective state for every catalog key. Drives the Org Settings page render.
      *
-     * @return array<string, array{status:string, group:string, label:string, description:string, cms_ref:?string, default:bool, enabled:bool}>
+     * If $siteId is null, returns ORG-level effective state (no override layer).
+     *
+     * If $siteId is non-null, returns the site's effective state via cascade:
+     * site_row → org_row → catalog_default. The result also includes per-key
+     * `inherits_from_org` (true when the site has no override row of its own)
+     * so the UI can show "Inherits" vs "Site override" badges.
      */
-    public function effectiveSettingsForTenant(int $tenantId): array
+    public function effectiveSettingsForTenant(int $tenantId, ?int $siteId = null): array
     {
-        $stored = NotificationPreference::query()
+        // Pull the rows once
+        $rows = NotificationPreference::query()
             ->where('tenant_id', $tenantId)
-            ->pluck('enabled', 'preference_key')
-            ->map(fn ($v) => (bool) $v)
-            ->all();
+            ->where(function ($q) use ($siteId) {
+                $q->whereNull('site_id');
+                if ($siteId !== null) {
+                    $q->orWhere('site_id', $siteId);
+                }
+            })
+            ->get();
+
+        $orgByKey  = [];
+        $siteByKey = [];
+        foreach ($rows as $r) {
+            if ($r->site_id === null) {
+                $orgByKey[$r->preference_key] = ['enabled' => (bool) $r->enabled, 'value' => $r->value];
+            } else {
+                $siteByKey[$r->preference_key] = ['enabled' => (bool) $r->enabled, 'value' => $r->value];
+            }
+        }
 
         $out = [];
         foreach (self::catalog() as $key => $entry) {
-            $enabled = $entry['status'] === self::STATUS_REQUIRED
-                ? true
-                : ($stored[$key] ?? (bool) ($entry['default'] ?? false));
+            $kind = $entry['kind'] ?? self::KIND_BOOLEAN;
 
-            $out[$key] = array_merge($entry, ['enabled' => $enabled]);
+            // Determine effective values per cascade
+            $inheritsFromOrg = true;
+            $value = null;
+
+            if ($entry['status'] === self::STATUS_REQUIRED) {
+                $enabled = true;
+                if ($kind === self::KIND_NUMERIC) {
+                    $value = ['days' => (int) ($entry['numeric_default'] ?? 0)];
+                }
+            } elseif ($siteId !== null && isset($siteByKey[$key])) {
+                $enabled = $siteByKey[$key]['enabled'];
+                $value   = $siteByKey[$key]['value'];
+                $inheritsFromOrg = false;
+            } elseif (isset($orgByKey[$key])) {
+                $enabled = $orgByKey[$key]['enabled'];
+                $value   = $orgByKey[$key]['value'];
+            } else {
+                $enabled = (bool) ($entry['default'] ?? false);
+                if ($kind === self::KIND_NUMERIC) {
+                    $value = ['days' => (int) ($entry['numeric_default'] ?? 0)];
+                }
+            }
+
+            $out[$key] = array_merge($entry, [
+                'enabled'           => $enabled,
+                'value'             => $value,
+                'inherits_from_org' => $inheritsFromOrg,
+            ]);
         }
         return $out;
     }
@@ -496,20 +699,30 @@ class NotificationPreferenceService
             'workflow.advance_directive.renewal_warning_days' => [
                 'group'       => 'Workflow',
                 'label'       => 'Advance directive renewal warning',
-                'description' => 'Days before the annual advance-directive renewal to start surfacing reminders.',
-                'status'      => self::STATUS_OPTIONAL,
-                'default'     => true, // simple boolean reminder; the day-count lives in `value` later
-                'cms_ref'     => null,
-                'wired'       => false,
-            ],
-            'workflow.insurance_card.expiry_warning' => [
-                'group'       => 'Workflow',
-                'label'       => 'Insurance card expiry reminders',
-                'description' => 'Surface a reminder when a participant\'s insurance card is approaching expiration.',
+                'description' => 'Surface reminders ahead of a participant\'s annual advance-directive renewal. Choose how many days in advance the reminder fires.',
                 'status'      => self::STATUS_OPTIONAL,
                 'default'     => true,
                 'cms_ref'     => null,
                 'wired'       => false,
+                'kind'           => self::KIND_NUMERIC,
+                'numeric_default'=> 60,
+                'numeric_min'    => 7,
+                'numeric_max'    => 365,
+                'numeric_unit'   => 'days before renewal',
+            ],
+            'workflow.insurance_card.expiry_warning' => [
+                'group'       => 'Workflow',
+                'label'       => 'Insurance card expiry reminders',
+                'description' => 'Surface reminders ahead of insurance-card expiration. Choose how many days in advance the reminder fires.',
+                'status'      => self::STATUS_OPTIONAL,
+                'default'     => true,
+                'cms_ref'     => null,
+                'wired'       => false,
+                'kind'           => self::KIND_NUMERIC,
+                'numeric_default'=> 30,
+                'numeric_min'    => 7,
+                'numeric_max'    => 180,
+                'numeric_unit'   => 'days before expiry',
             ],
         ];
     }
