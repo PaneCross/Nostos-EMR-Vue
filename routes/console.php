@@ -291,3 +291,35 @@ Schedule::job(\App\Jobs\AmendmentDeadlineJob::class, 'compliance')->dailyAt('06:
 Schedule::job(\App\Jobs\BreachDeadlineJob::class, 'compliance')->dailyAt('07:00')
     ->name('breach-hhs-deadline')
     ->withoutOverlapping();
+
+// ─── Phase W2 — Org-Settings-driven optional alert sweeps ────────────────────
+// All gated by NotificationPreferenceService::shouldNotify(); no-op for any
+// tenant that hasn't enabled the corresponding Org Settings preference.
+//
+// Pattern detectors (Tier 2) — group events by actor and alert when a
+// tenant-tunable threshold is crossed. Run early-morning to digest yesterday.
+Schedule::job(\App\Jobs\DetectLateEmarPatternJob::class)->dailyAt('06:30')
+    ->name('detect-late-emar-pattern')->withoutOverlapping();
+Schedule::job(\App\Jobs\DetectBcmaOverridePatternJob::class)->dailyAt('06:35')
+    ->name('detect-bcma-override-pattern')->withoutOverlapping();
+Schedule::job(\App\Jobs\DetectControlledSubstancePatternJob::class)->dailyAt('06:40')
+    ->name('detect-controlled-substance-pattern')->withoutOverlapping();
+
+// Critical-value escalation runs hourly (uses an HOUR window, not days).
+Schedule::job(\App\Jobs\DetectUnackedCriticalValueJob::class)->hourly()
+    ->name('detect-unacked-critical-value')->withoutOverlapping();
+
+// Daily-check jobs (Tier 3) — fire at-most one alert per matching candidate
+// per cycle (the jobs dedupe internally).
+Schedule::job(\App\Jobs\PriorAuthQueueDigestJob::class)->dailyAt('06:50')
+    ->name('prior-auth-queue-digest')->withoutOverlapping();
+Schedule::job(\App\Jobs\BereavementFollowupOverdueJob::class)->dailyAt('06:55')
+    ->name('bereavement-followup-overdue')->withoutOverlapping();
+Schedule::job(\App\Jobs\AdvDirectiveMissingJob::class)->dailyAt('07:05')
+    ->name('adv-directive-missing')->withoutOverlapping();
+
+// Numeric-pref daily jobs (Tier 4) — read the per-org day-count via numericValue().
+Schedule::job(\App\Jobs\AdvDirectiveRenewalWarningJob::class)->dailyAt('07:10')
+    ->name('adv-directive-renewal-warning')->withoutOverlapping();
+Schedule::job(\App\Jobs\InsuranceCardExpiryWarningJob::class)->dailyAt('07:15')
+    ->name('insurance-card-expiry-warning')->withoutOverlapping();

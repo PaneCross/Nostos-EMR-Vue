@@ -610,7 +610,7 @@ class NotificationPreferenceService
                 'status'      => self::STATUS_OPTIONAL,
                 'default'     => false,
                 'cms_ref'     => null,
-                'wired'       => false,
+                'wired'       => true,
                 'kind'                       => self::KIND_NUMERIC_THRESHOLD,
                 'threshold_default_count'    => 3,
                 'threshold_default_window'   => 7,
@@ -627,7 +627,7 @@ class NotificationPreferenceService
                 'status'      => self::STATUS_OPTIONAL,
                 'default'     => false,
                 'cms_ref'     => null,
-                'wired'       => false,
+                'wired'       => true,
                 'kind'                       => self::KIND_NUMERIC_THRESHOLD,
                 'threshold_default_count'    => 3,
                 'threshold_default_window'   => 7,
@@ -644,7 +644,7 @@ class NotificationPreferenceService
                 'status'      => self::STATUS_OPTIONAL,
                 'default'     => false,
                 'cms_ref'     => null,
-                'wired'       => false,
+                'wired'       => true,
                 'kind'                       => self::KIND_NUMERIC_THRESHOLD,
                 // For this one, "events_count" is unused (always 1 event = one
                 // unacked lab); window_days is repurposed as window_hours via
@@ -675,7 +675,7 @@ class NotificationPreferenceService
                 'status'      => self::STATUS_OPTIONAL,
                 'default'     => false,
                 'cms_ref'     => null,
-                'wired'       => false,
+                'wired'       => true,
                 'kind'                       => self::KIND_NUMERIC_THRESHOLD,
                 'threshold_default_count'    => 5,
                 'threshold_default_window'   => 14,
@@ -701,7 +701,7 @@ class NotificationPreferenceService
                 'status'      => self::STATUS_OPTIONAL,
                 'default'     => false,
                 'cms_ref'     => null,
-                'wired'       => false,
+                'wired'       => true,
             ],
 
             // ── Social Work Supervisor ────────────────────────────────────
@@ -721,7 +721,7 @@ class NotificationPreferenceService
                 'status'      => self::STATUS_OPTIONAL,
                 'default'     => false,
                 'cms_ref'     => null,
-                'wired'       => false,
+                'wired'       => true,
             ],
             'designation.social_work_supervisor.adv_directive_missing_at_admit' => [
                 'group'       => 'Social Work Supervisor',
@@ -730,7 +730,7 @@ class NotificationPreferenceService
                 'status'      => self::STATUS_OPTIONAL,
                 'default'     => false,
                 'cms_ref'     => null,
-                'wired'       => false,
+                'wired'       => true,
             ],
 
             // ── Program Director ──────────────────────────────────────────
@@ -806,7 +806,7 @@ class NotificationPreferenceService
                 'status'      => self::STATUS_OPTIONAL,
                 'default'     => true,
                 'cms_ref'     => null,
-                'wired'       => false,
+                'wired'       => true,
                 'kind'           => self::KIND_NUMERIC,
                 'numeric_default'=> 60,
                 'numeric_min'    => 7,
@@ -820,7 +820,7 @@ class NotificationPreferenceService
                 'status'      => self::STATUS_OPTIONAL,
                 'default'     => true,
                 'cms_ref'     => null,
-                'wired'       => false,
+                'wired'       => true,
                 'kind'           => self::KIND_NUMERIC,
                 'numeric_default'=> 30,
                 'numeric_min'    => 7,

@@ -1,117 +1,86 @@
 # Org Settings — wiring backlog
 
-**Status:** Active follow-up after Phase OS3.
+**Status:** **CLEARED.** All 27 catalog keys are wired as of W2-tier4.
 **Audience:** Brian / dev team.
 **Last updated:** 2026-04-26
 
-The Org Settings page (`/executive/org-settings`) ships with a catalog of ~27 preferences. As of OS3 + W1, **8 keys are wired** end-to-end (the alert dispatch consults `NotificationPreferenceService::shouldNotify()`); **17 remain reserved** with their UI toggle saving but no alert behavior.
+## Summary
 
-The pattern for wiring is established. This doc lists every remaining key, its target file, and the insertion shape, so the team can chip away at them as customers ask.
+The Org Settings catalog has 27 preferences. **All 27 are wired** as of W2-tier4. The page at `/executive/org-settings` is fully feature-complete: every toggle drives real alert behavior; every threshold input drives real pattern-detection logic.
 
-## The canonical wiring pattern (already in code)
+Use this doc as a *reference* of what each key does and where to find the wiring code, not as a backlog anymore.
 
-`AssessmentController::maybeNotifyNursingDirectorOnFallRisk()` is the cleanest example. The shape is always:
+## Wired keys map
 
-```php
-private function maybeNotifyXOnY(...): void
-{
-    // 1. Early return if the trigger condition isn't met
-    if (! triggerConditionMet) return;
+| Key | Where | Phase |
+|---|---|---|
+| `designation.medical_director.restraint_observation_overdue` | `RestraintMonitoringOverdueJob` | (existing, REQUIRED) |
+| `designation.medical_director.restraint_idt_review_overdue` | `RestraintMonitoringOverdueJob` | (existing, REQUIRED) |
+| `designation.medical_director.appeal_decision_required` | `AppealService::file` | W2-tier1 |
+| `designation.compliance_officer.urgent_grievance_filed` | `GrievanceService::store` | (existing, REQUIRED) |
+| `designation.compliance_officer.grievance_escalated` | `GrievanceService::transitionStatus` | (existing, REQUIRED) |
+| `designation.compliance_officer.grievance_overdue` | `GrievanceService::checkOverdue` | (existing, REQUIRED) |
+| `designation.compliance_officer.cms_reportable_event` | `IncidentService::createIncident` | W2-tier1 |
+| `designation.nursing_director.fall_risk_threshold` | `AssessmentController::maybeNotifyNursingDirectorOnFallRisk` | W1 |
+| `designation.nursing_director.pressure_injury_staging` | `WoundService::addAssessment` | W2-tier1 |
+| `designation.nursing_director.late_emar_pattern` | `DetectLateEmarPatternJob` (cron 06:30) | W2-tier2 |
+| `designation.nursing_director.bcma_override_pattern` | `DetectBcmaOverridePatternJob` (cron 06:35) | W2-tier2 |
+| `designation.nursing_director.critical_value_unacked` | `DetectUnackedCriticalValueJob` (cron hourly) | W2-tier2 |
+| `designation.pharmacy_director.critical_drug_interaction` | `DrugInteractionService::checkInteractions` | SS2 |
+| `designation.pharmacy_director.bcma_override_review` | `BcmaService` scan-override path | W2-tier1 |
+| `designation.pharmacy_director.controlled_substance_pattern` | `DetectControlledSubstancePatternJob` (cron 06:40) | W2-tier2 |
+| `designation.pharmacy_director.prior_auth_queue_oversight` | `PriorAuthQueueDigestJob` (cron 06:50) | W2-tier3 |
+| `designation.social_work_supervisor.sdoh_critical` | `SocialDeterminantController::store` | W2-tier1 |
+| `designation.social_work_supervisor.bereavement_followup_missed` | `BereavementFollowupOverdueJob` (cron 06:55) | W2-tier3 |
+| `designation.social_work_supervisor.adv_directive_missing_at_admit` | `AdvDirectiveMissingJob` (cron 07:05) | W2-tier3 |
+| `designation.program_director.sentinel_event` | `IncidentService::classifyAsSentinel` | SS2 |
+| `designation.program_director.breach_incident_logged` | `BreachIncidentController::store` | SS2 |
+| `designation.program_director.cms_reportable_grievance` | `GrievanceService::transitionStatus` (escalated) | W2-tier1 |
+| `workflow.day_center_no_show.notify_social_work` | `DayCenterController::markAbsent` | SS2 |
+| `workflow.transport_cancellation.notify_assigned_pcp` | `TransportRequestController::cancel` | SS2 |
+| `workflow.lab_abnormal.notify_nursing_director` | `ProcessLabResultJob::handle` | SS2 |
+| `workflow.appointment_no_show.notify_pcp` | `AppointmentController::noShow` | W2-tier1 |
+| `workflow.advance_directive.renewal_warning_days` | `AdvDirectiveRenewalWarningJob` (cron 07:10) | W2-tier4 |
+| `workflow.insurance_card.expiry_warning` | `InsuranceCardExpiryWarningJob` (cron 07:15) | W2-tier4 |
 
-    // 2. Consult the service (with site_id cascade if event has a site context)
-    $prefs = app(\App\Services\NotificationPreferenceService::class);
-    $key = 'designation.X.Y'; // matches catalog
-    if (! $prefs->shouldNotify($tenantId, $key, $siteId)) return;
+## Cron schedule (added in W2)
 
-    // 3. Find the named recipient
-    $director = \App\Models\User::where('tenant_id', $tenantId)
-        ->withDesignation('X')
-        ->where('is_active', true)
-        ->first();
-    if (! $director) return;
-
-    // 4. Dispatch the additional alert
-    Alert::create([...]);
-}
+```
+06:30  DetectLateEmarPatternJob
+06:35  DetectBcmaOverridePatternJob
+06:40  DetectControlledSubstancePatternJob
+06:50  PriorAuthQueueDigestJob
+06:55  BereavementFollowupOverdueJob
+07:05  AdvDirectiveMissingJob
+07:10  AdvDirectiveRenewalWarningJob
+07:15  InsuranceCardExpiryWarningJob
+hourly DetectUnackedCriticalValueJob
 ```
 
-After wiring, flip the catalog entry's `wired: false` → `wired: true`. The Site Settings UI auto-updates.
+All scheduled jobs are gated by `NotificationPreferenceService::shouldNotify()` per tenant — a tenant that hasn't enabled a given preference is a no-op for that job.
 
-For preferences that need pattern detection across time windows (e.g. "≥3 events in 7 days"), the recommended shape is a daily artisan command + a Job that uses the same service-consultation pattern. Same for daily-digest jobs.
+## Maintenance contract (still applies)
 
----
+When adding a NEW preference key:
 
-## Wiring backlog (17 keys)
+1. Add catalog entry in `NotificationPreferenceService::catalog()`
+2. Add the wiring (event-trigger check OR new daily/hourly job)
+3. Flip `wired: false` → `wired: true` in the catalog entry
+4. Add a wiring test (toggle off → no alert, toggle on → alert)
+5. Update this doc
 
-### Tier 1 — simple event-trigger checks (≈30 min each)
+When changing a threshold default in code: bump `threshold_default_count` / `threshold_default_window` in the catalog. Existing tenants keep their stored values; new tenants pick up the new default.
 
-| Key | File / method to edit | Trigger | Recipient | Alert type |
-|---|---|---|---|---|
-| `designation.nursing_director.pressure_injury_staging` | `WoundController::storeAssessment` | new WoundAssessment with `stage > previous stage` for same participant | `nursing_director` | `nursing_director_wound_progression` |
-| `designation.pharmacy_director.bcma_override_review` | `BcmaController::recordScan` (or wherever `emar_records.bcma_override` is set) | scan_override = true AND associated medication.is_controlled = true AND controlled_schedule in {II, III} | `pharmacy_director` | `pharmacy_director_bcma_override` |
-| `designation.social_work_supervisor.sdoh_critical` | `SocialDeterminantController::store` | severity = 'high' AND category in {housing, food} | `social_work_supervisor` | `social_work_supervisor_sdoh_critical` |
-| `designation.program_director.cms_reportable_grievance` | `GrievanceService::transitionStatus` (escalation path) | new status = 'escalated' AND grievance.cms_reportable = true | `program_director` | `program_director_cms_reportable_grievance` |
-| `designation.medical_director.appeal_decision_required` | `AppealService::file` | always after appeal create | `medical_director` | `medical_director_appeal_pending` |
-| `designation.compliance_officer.cms_reportable_event` | `IncidentService::createIncident` | incident.cms_reportable = true | `compliance_officer` | `compliance_officer_cms_reportable_event` |
-| `workflow.appointment_no_show.notify_pcp` | `AppointmentController::updateStatus` (or model observer) | status transition to `no_show`; participant has `primary_provider_user_id` | participant's PCP user | `appointment_no_show_pcp_copy` |
+## Architecture notes
 
-Each test pattern: trigger event with the preference OFF, assert no alert. Toggle ON, retrigger, assert alert exists.
+`PatternDetectionService` (Tier 2) is the canonical shared helper for "actor X did N events in M days" patterns. New pattern-detection prefs should reuse it via the `runForKey()` method. Only adapt the `countQuery` callback for your event source.
 
-### Tier 2 — pattern-detection jobs (≈3 hours each, plus a shared helper)
+Daily-check jobs (Tier 3) follow a simpler shape — see `BereavementFollowupOverdueJob` for the canonical example. Each job:
+- Iterates active tenants
+- Skips if `shouldNotify()` is false for that tenant
+- Queries for matching candidates
+- Dedupes against today's existing alerts
+- Looks up the recipient via `withDesignation()`
+- Creates the alert
 
-These need a daily artisan command sweeping a time window for "actor X did N events in M days." Recommend a shared `Concerns\\DetectsPatternAlerts` trait or `PatternDetectionService` that takes (eventQuery, windowDays, threshold, recipientDesignation, alertShape). Then four small commands:
-
-| Key | Time window | Threshold | Source table | Job class to create |
-|---|---|---|---|---|
-| `designation.nursing_director.late_emar_pattern` | 7 days | ≥3 late doses by same nurse | `emar_records` | `DetectLateEmarPatternJob` |
-| `designation.nursing_director.bcma_override_pattern` | 7 days | ≥3 overrides by same nurse | `emar_records` | `DetectBcmaOverridePatternJob` |
-| `designation.pharmacy_director.controlled_substance_pattern` | 14 days | ≥5 Schedule II/III Rx by same prescriber | `emr_medications` (joined to user) | `DetectControlledSubstancePatternJob` |
-| `designation.nursing_director.critical_value_unacked` | per-event escalation, not a sweep | unacknowledged > policy_hours | `critical_value_acknowledgments` | `EscalateUnackedCriticalValuesJob` |
-
-Schedule each daily at 06:30 in `routes/console.php`.
-
-### Tier 3 — daily-check / daily-digest jobs (≈1 hour each)
-
-Same shape as Tier 2 but simpler — one query per day per tenant.
-
-| Key | What to query | Recipient | Job class |
-|---|---|---|---|
-| `designation.pharmacy_director.prior_auth_queue_oversight` | `emr_prior_auth_requests` where pending > 3 days | `pharmacy_director` | `PriorAuthQueueDigestJob` |
-| `designation.social_work_supervisor.bereavement_followup_missed` | `bereavement_followups` where contacted_at IS NULL AND opened_at < now()-14d | `social_work_supervisor` | `BereavementFollowupOverdueJob` |
-| `designation.social_work_supervisor.adv_directive_missing_at_admit` | `emr_participants` where enrollment_date < now()-30d AND no advance_directive | `social_work_supervisor` | `AdvDirectiveMissingJob` |
-
-### Tier 4 — numeric-pref daily jobs (≈1 hour each)
-
-For numeric preferences, use `numericValue($tenantId, $key, $siteId)` to read the day-count.
-
-| Key | Logic | Recipient | Job class |
-|---|---|---|---|
-| `workflow.advance_directive.renewal_warning_days` | each day, find participants whose advance directive expires within `numericValue()` days; alert their PCP + assigned social worker | participant team | `AdvDirectiveRenewalWarningJob` |
-| `workflow.insurance_card.expiry_warning` | same pattern; insurance card expiry within `numericValue()` days; alert finance | finance dept | `InsuranceCardExpiryWarningJob` |
-
----
-
-## Maintenance contract
-
-When you wire a key:
-1. Add the dispatch site (controller / service / job) consulting `shouldNotify()` per the canonical pattern
-2. Flip `wired: false` → `wired: true` in `NotificationPreferenceService::catalog()`
-3. Add a wiring test to `tests/Feature/NotificationPreferenceWiringTest.php` (toggle off → no alert, toggle on → alert)
-4. Update this doc by removing the key from its tier and adding it to "Wired to date"
-
-## Wired to date
-
-| Key | Phase | Where |
-|---|---|---|
-| `designation.medical_director.restraint_observation_overdue` | (existing, Required) | `RestraintMonitoringOverdueJob` |
-| `designation.medical_director.restraint_idt_review_overdue` | (existing, Required) | `RestraintMonitoringOverdueJob` |
-| `designation.compliance_officer.urgent_grievance_filed` | (existing, Required) | `GrievanceService::store` |
-| `designation.compliance_officer.grievance_escalated` | (existing, Required) | `GrievanceService::transitionStatus` |
-| `designation.compliance_officer.grievance_overdue` | (existing, Required) | `GrievanceService::checkOverdue` |
-| `designation.program_director.sentinel_event` | SS2 | `IncidentService::classifyAsSentinel` |
-| `designation.program_director.breach_incident_logged` | SS2 | `BreachIncidentController::store` |
-| `designation.pharmacy_director.critical_drug_interaction` | SS2 | `DrugInteractionService::checkInteractions` |
-| `workflow.day_center_no_show.notify_social_work` | SS2 | `DayCenterController::markAbsent` |
-| `workflow.transport_cancellation.notify_assigned_pcp` | SS2 | `TransportRequestController::cancel` |
-| `workflow.lab_abnormal.notify_nursing_director` | SS2 | `ProcessLabResultJob::handle` |
-| `designation.nursing_director.fall_risk_threshold` | W1 | `AssessmentController::maybeNotifyNursingDirectorOnFallRisk` |
+Numeric daily jobs (Tier 4) use `numericValue()` to read the per-org day count and apply it as a `now()->addDays($n)` cutoff.
