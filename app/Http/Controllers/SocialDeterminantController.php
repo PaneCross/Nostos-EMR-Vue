@@ -84,6 +84,41 @@ class SocialDeterminantController extends Controller
             ],
         );
 
+        // Phase W2-tier1: optional Social Work Supervisor routing per Org Settings.
+        // Triggers on housing-instability or food-insecurity high-severity flags.
+        $criticalHousing = in_array($validated['housing_stability'], ['unstable', 'homeless'], true);
+        $criticalFood    = in_array($validated['food_security'],     ['food_insecure'], true);
+        if ($criticalHousing || $criticalFood) {
+            $prefs = app(\App\Services\NotificationPreferenceService::class);
+            if ($prefs->shouldNotify($user->tenant_id, 'designation.social_work_supervisor.sdoh_critical', $participant->site_id)) {
+                $supervisor = \App\Models\User::where('tenant_id', $user->tenant_id)
+                    ->withDesignation('social_work_supervisor')->where('is_active', true)->first();
+                if ($supervisor) {
+                    \App\Models\Alert::create([
+                        'tenant_id'          => $user->tenant_id,
+                        'participant_id'     => $participant->id,
+                        'source_module'      => 'sdoh',
+                        'alert_type'         => 'social_work_supervisor_sdoh_critical',
+                        'severity'           => 'warning',
+                        'title'              => 'Critical SDOH flag at intake',
+                        'message'            => "{$participant->first_name} {$participant->last_name} flagged "
+                            . ($criticalHousing ? 'housing-instability' : '')
+                            . ($criticalHousing && $criticalFood ? ' + ' : '')
+                            . ($criticalFood ? 'food-insecurity' : '')
+                            . ' on intake. Outreach recommended.',
+                        'target_departments' => ['social_work'],
+                        'created_by_system'  => true,
+                        'metadata'           => [
+                            'sdoh_record_id'              => $record->id,
+                            'social_work_supervisor_id'   => $supervisor->id,
+                            'housing_stability'           => $validated['housing_stability'],
+                            'food_security'               => $validated['food_security'],
+                        ],
+                    ]);
+                }
+            }
+        }
+
         return response()->json(
             $record->load('assessedBy:id,first_name,last_name'),
             201

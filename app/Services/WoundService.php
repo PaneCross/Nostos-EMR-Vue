@@ -106,6 +106,29 @@ class WoundService
                 'created_by_system'  => true,
                 'metadata'           => ['wound_record_id' => $wound->id],
             ]);
+
+            // Phase W2-tier1: optional nursing_director routing per Org Settings.
+            // Triggered alongside the primary_care alert when a wound deteriorates
+            // (closest existing analog to stage progression in current schema).
+            $prefs = app(\App\Services\NotificationPreferenceService::class);
+            if ($prefs->shouldNotify($wound->tenant_id, 'designation.nursing_director.pressure_injury_staging', $participant->site_id)) {
+                $director = \App\Models\User::where('tenant_id', $wound->tenant_id)
+                    ->withDesignation('nursing_director')->where('is_active', true)->first();
+                if ($director) {
+                    $this->alerts->create([
+                        'tenant_id'          => $wound->tenant_id,
+                        'participant_id'     => $wound->participant_id,
+                        'source_module'      => 'wound_care',
+                        'alert_type'         => 'nursing_director_wound_progression',
+                        'title'              => 'Wound progression — nursing review',
+                        'message'            => "{$name} — {$wound->woundTypeLabel()} at {$wound->location} deteriorated. Forwarded for nursing oversight.",
+                        'severity'           => 'warning',
+                        'target_departments' => ['home_care'],
+                        'created_by_system'  => true,
+                        'metadata'           => ['wound_record_id' => $wound->id, 'nursing_director_id' => $director->id],
+                    ]);
+                }
+            }
         }
 
         return $assessment;

@@ -89,6 +89,33 @@ class IncidentService
             $this->createSignificantChangeEventFromIncident($incident, $participant, $user);
         }
 
+        // Phase W2-tier1: optional Compliance Officer routing on cms_reportable
+        // incidents at create-time. Hardwired QA chain unaffected.
+        if (($data['cms_reportable'] ?? false) === true) {
+            $prefs = app(NotificationPreferenceService::class);
+            if ($prefs->shouldNotify($incident->tenant_id, 'designation.compliance_officer.cms_reportable_event', $participant->site_id)) {
+                $officer = User::where('tenant_id', $incident->tenant_id)
+                    ->withDesignation('compliance_officer')->where('is_active', true)->first();
+                if ($officer) {
+                    Alert::create([
+                        'tenant_id'          => $incident->tenant_id,
+                        'participant_id'     => $participant->id,
+                        'source_module'      => 'qa',
+                        'alert_type'         => 'compliance_officer_cms_reportable',
+                        'title'              => "CMS-reportable incident — #{$incident->id}",
+                        'message'            => "Incident #{$incident->id} ({$incident->typeLabel()}) flagged CMS-reportable at intake.",
+                        'severity'           => 'warning',
+                        'target_departments' => ['qa_compliance'],
+                        'created_by_system'  => true,
+                        'metadata'           => [
+                            'incident_id'           => $incident->id,
+                            'compliance_officer_id' => $officer->id,
+                        ],
+                    ]);
+                }
+            }
+        }
+
         return $incident;
     }
 

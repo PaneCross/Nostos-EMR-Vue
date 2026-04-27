@@ -112,6 +112,34 @@ class AppealService
                 description:  "Appeal filed (type={$type}, continuation={$this->boolLabel($continuationOfBenefits)}) against denial notice {$notice->id}",
             );
 
+            // Phase W2-tier1: optional Medical Director routing on appeal filing.
+            // The QA Compliance dept-broadcast happens through the existing
+            // §460.122 chain; this is an additional named-recipient layer.
+            $prefs = app(\App\Services\NotificationPreferenceService::class);
+            if ($prefs->shouldNotify($appeal->tenant_id, 'designation.medical_director.appeal_decision_required')) {
+                $director = User::where('tenant_id', $appeal->tenant_id)
+                    ->withDesignation('medical_director')->where('is_active', true)->first();
+                if ($director) {
+                    \App\Models\Alert::create([
+                        'tenant_id'          => $appeal->tenant_id,
+                        'participant_id'     => $appeal->participant_id,
+                        'source_module'      => 'appeals',
+                        'alert_type'         => 'medical_director_appeal_pending',
+                        'title'              => "Appeal awaiting decision (#{$appeal->id})",
+                        'message'            => "§460.122 appeal filed (type={$type}). "
+                            . ($type === Appeal::TYPE_EXPEDITED ? '72-hour' : '30-day')
+                            . " decision clock running.",
+                        'severity'           => $type === Appeal::TYPE_EXPEDITED ? 'critical' : 'warning',
+                        'target_departments' => ['primary_care'],
+                        'created_by_system'  => true,
+                        'metadata'           => [
+                            'appeal_id'           => $appeal->id,
+                            'medical_director_id' => $director->id,
+                        ],
+                    ]);
+                }
+            }
+
             return $appeal->fresh();
         });
     }

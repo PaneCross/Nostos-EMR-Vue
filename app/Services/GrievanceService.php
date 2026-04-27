@@ -187,6 +187,32 @@ class GrievanceService
         // CMS surveys require a named reviewer in the escalation chain.
         if ($newStatus === 'escalated') {
             $this->createEscalationAlert($grievance, $data, $actor);
+
+            // Phase W2-tier1: optional Program Director routing on cms_reportable
+            // grievance escalations. Hardwired compliance chain unaffected.
+            if ($grievance->cms_reportable) {
+                $prefs = app(\App\Services\NotificationPreferenceService::class);
+                if ($prefs->shouldNotify($grievance->tenant_id, 'designation.program_director.cms_reportable_grievance')) {
+                    $director = User::where('tenant_id', $grievance->tenant_id)
+                        ->withDesignation('program_director')->where('is_active', true)->first();
+                    if ($director) {
+                        Alert::create([
+                            'tenant_id'          => $grievance->tenant_id,
+                            'alert_type'         => 'program_director_cms_reportable_escalation',
+                            'title'              => "CMS-reportable grievance escalated — {$grievance->referenceNumber()}",
+                            'message'            => "Grievance {$grievance->referenceNumber()} (category: {$grievance->categoryLabel()}) was escalated and is flagged CMS-reportable.",
+                            'severity'           => 'critical',
+                            'source_module'      => 'grievances',
+                            'target_departments' => ['executive'],
+                            'created_by_system'  => true,
+                            'metadata'           => [
+                                'grievance_id'        => $grievance->id,
+                                'program_director_id' => $director->id,
+                            ],
+                        ]);
+                    }
+                }
+            }
         }
 
         // Accountability net: when resolving a high-risk-category grievance without

@@ -130,6 +130,36 @@ class BcmaService
                     'med_match'         => $medMatch,
                 ],
             ]);
+
+            // Phase W2-tier1: optional Pharmacy Director routing on Schedule II/III
+            // controlled-substance overrides. Hardwired qa+pharmacy alert above is
+            // unaffected; this is a NAMED-recipient layer for orgs that want it.
+            $med = \App\Models\Medication::find($record->medication_id);
+            if ($med && ($med->is_controlled ?? false) && in_array($med->controlled_schedule, ['II', 'III'], true)) {
+                $prefs = app(\App\Services\NotificationPreferenceService::class);
+                if ($prefs->shouldNotify($record->tenant_id, 'designation.pharmacy_director.bcma_override_review', $record->participant?->site_id)) {
+                    $director = \App\Models\User::where('tenant_id', $record->tenant_id)
+                        ->withDesignation('pharmacy_director')->where('is_active', true)->first();
+                    if ($director) {
+                        $this->alerts->create([
+                            'tenant_id'          => $record->tenant_id,
+                            'participant_id'     => $record->participant_id,
+                            'source_module'      => 'emar',
+                            'alert_type'         => 'pharmacy_director_bcma_override_controlled',
+                            'severity'           => 'critical',
+                            'title'              => 'BCMA override on controlled substance',
+                            'message'            => "BCMA mismatch override on Schedule {$med->controlled_schedule} medication ({$med->drug_name}) by {$user->first_name} {$user->last_name}. Pharmacy review.",
+                            'target_departments' => ['pharmacy'],
+                            'metadata'           => [
+                                'emar_record_id'        => $record->id,
+                                'medication_id'         => $med->id,
+                                'controlled_schedule'   => $med->controlled_schedule,
+                                'pharmacy_director_id'  => $director->id,
+                            ],
+                        ]);
+                    }
+                }
+            }
             return [
                 'status'   => self::OVERRIDE,
                 'expected' => [

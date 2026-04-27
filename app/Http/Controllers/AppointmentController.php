@@ -450,6 +450,28 @@ class AppointmentController extends Controller
             'created_by_system'  => true,
         ]);
 
+        // Phase W2-tier1: optional PCP copy per Org Settings preference. The
+        // transportation/enrollment alert above fires regardless; this is an
+        // additional named-recipient layer when the org has opted in.
+        $prefs = app(\App\Services\NotificationPreferenceService::class);
+        if ($prefs->shouldNotify($user->tenant_id, 'workflow.appointment_no_show.notify_pcp', $participant->site_id)) {
+            $pcpId = $participant->primary_provider_user_id ?? null;
+            if ($pcpId) {
+                app(AlertService::class)->create([
+                    'tenant_id'          => $user->tenant_id,
+                    'participant_id'     => $participant->id,
+                    'alert_type'         => 'appointment_no_show_pcp_copy',
+                    'severity'           => 'info',
+                    'title'              => 'Appointment no-show (PCP copy)',
+                    'message'            => "{$participant->first_name} {$participant->last_name} missed their {$appointment->appointment_type} appointment on " . $appointment->scheduled_start->format('M j, Y g:i A') . '.',
+                    'target_departments' => ['primary_care'],
+                    'source_module'      => 'scheduling',
+                    'metadata'           => ['appointment_id' => $appointment->id, 'pcp_user_id' => $pcpId],
+                    'created_by_system'  => true,
+                ]);
+            }
+        }
+
         return response()->json($appointment->fresh());
     }
 

@@ -539,11 +539,11 @@ class NotificationPreferenceService
             'designation.medical_director.appeal_decision_required' => [
                 'group'       => 'Medical Director',
                 'label'       => 'Appeal awaiting decision',
-                'description' => 'Notify when a §460.122 appeal is filed and pending a decide() call. In addition to the QA Compliance dept-broadcast.',
+                'description' => 'Notify the Medical Director when a §460.122 appeal is filed (in addition to the standard QA Compliance dept-broadcast).',
                 'status'      => self::STATUS_OPTIONAL,
                 'default'     => false,
                 'cms_ref'     => null,
-                'wired'       => false,
+                'wired'       => true, // W2-tier1: AppealService::file
             ],
 
             // ── Compliance Officer ────────────────────────────────────────
@@ -577,11 +577,11 @@ class NotificationPreferenceService
             'designation.compliance_officer.cms_reportable_event' => [
                 'group'       => 'Compliance Officer',
                 'label'       => 'CMS-reportable incident logged',
-                'description' => 'Notify when an incident is flagged cms_reportable=true. Broader than the regulatory minimum.',
+                'description' => 'Notify the Compliance Officer the moment an incident is flagged cms_reportable=true at intake. Broader than the regulatory minimum.',
                 'status'      => self::STATUS_OPTIONAL,
                 'default'     => false,
                 'cms_ref'     => null,
-                'wired'       => false,
+                'wired'       => true, // W2-tier1: IncidentService::createIncident
             ],
 
             // ── Nursing Director ──────────────────────────────────────────
@@ -597,11 +597,11 @@ class NotificationPreferenceService
             'designation.nursing_director.pressure_injury_staging' => [
                 'group'       => 'Nursing Director',
                 'label'       => 'Pressure-injury stage progression',
-                'description' => 'Alert when a wound progresses to a higher NPUAP stage. Detection logic pending.',
+                'description' => 'Alert when a wound deteriorates (closest analog to NPUAP stage progression today). Routed alongside the existing primary_care alert.',
                 'status'      => self::STATUS_OPTIONAL,
                 'default'     => false,
                 'cms_ref'     => null,
-                'wired'       => false,
+                'wired'       => true, // W2-tier1: WoundService::addAssessment
             ],
             'designation.nursing_director.late_emar_pattern' => [
                 'group'       => 'Nursing Director',
@@ -688,11 +688,11 @@ class NotificationPreferenceService
             'designation.pharmacy_director.bcma_override_review' => [
                 'group'       => 'Pharmacy Director',
                 'label'       => 'BCMA override on controlled substance',
-                'description' => 'Pharmacy review alert when a BCMA override involves a Schedule II/III controlled substance. Hook pending in BCMA scan flow.',
+                'description' => 'Pharmacy review alert when a BCMA override involves a Schedule II/III controlled substance. Routed alongside the existing qa_compliance + pharmacy alert.',
                 'status'      => self::STATUS_OPTIONAL,
                 'default'     => false,
                 'cms_ref'     => null,
-                'wired'       => false,
+                'wired'       => true, // W2-tier1: BcmaService scan-override path
             ],
             'designation.pharmacy_director.prior_auth_queue_oversight' => [
                 'group'       => 'Pharmacy Director',
@@ -708,11 +708,11 @@ class NotificationPreferenceService
             'designation.social_work_supervisor.sdoh_critical' => [
                 'group'       => 'Social Work Supervisor',
                 'label'       => 'Critical SDOH flag at intake',
-                'description' => 'Alert when housing instability or food insecurity is flagged high-severity on intake. SDOH-store hook pending.',
+                'description' => 'Alert when housing-instability (unstable/homeless) or food-insecurity is flagged on a SDOH intake screening.',
                 'status'      => self::STATUS_OPTIONAL,
                 'default'     => false,
                 'cms_ref'     => null,
-                'wired'       => false,
+                'wired'       => true, // W2-tier1: SocialDeterminantController::store
             ],
             'designation.social_work_supervisor.bereavement_followup_missed' => [
                 'group'       => 'Social Work Supervisor',
@@ -755,11 +755,11 @@ class NotificationPreferenceService
             'designation.program_director.cms_reportable_grievance' => [
                 'group'       => 'Program Director',
                 'label'       => 'CMS-reportable grievance escalated',
-                'description' => 'Additional copy on grievance escalations flagged cms_reportable=true. Hook pending in escalation path.',
+                'description' => 'Additional named-recipient on grievance escalations flagged cms_reportable=true. Hardwired Compliance chain still fires.',
                 'status'      => self::STATUS_OPTIONAL,
                 'default'     => false,
                 'cms_ref'     => null,
-                'wired'       => false,
+                'wired'       => true, // W2-tier1: GrievanceService::transitionStatus escalation path
             ],
 
             // ── Workflow preferences (not designation-tied) ───────────────
@@ -775,11 +775,11 @@ class NotificationPreferenceService
             'workflow.appointment_no_show.notify_pcp' => [
                 'group'       => 'Workflow',
                 'label'       => 'Appointment no-show notifies the PCP',
-                'description' => 'When a participant misses an appointment, alert their assigned PCP (in addition to the scheduling dept). Hook pending in appointment status update.',
+                'description' => 'When a participant misses an appointment, alert their assigned PCP (in addition to the existing transportation+enrollment alert).',
                 'status'      => self::STATUS_OPTIONAL,
                 'default'     => false,
                 'cms_ref'     => null,
-                'wired'       => false,
+                'wired'       => true, // W2-tier1: AppointmentController::noShow
             ],
             'workflow.day_center_no_show.notify_social_work' => [
                 'group'       => 'Workflow',
