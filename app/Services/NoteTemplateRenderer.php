@@ -11,16 +11,16 @@
 // DB templates (Phase B7) for free-form body Markdown.
 //
 // Supported placeholders:
-//   {{participant.name}}          — "Last, First"
-//   {{participant.preferred}}     — preferred_name || first_name
+//   {{participant.name}}          : "Last, First"
+//   {{participant.preferred}}     : preferred_name || first_name
 //   {{participant.mrn}}
-//   {{participant.dob}}           — MM/DD/YYYY
+//   {{participant.dob}}           : MM/DD/YYYY
 //   {{participant.age}}
-//   {{today}}                     — YYYY-MM-DD
-//   {{provider.name}}             — logged-in user's "First Last"
-//   {{active_meds_list}}          — bullet list of active Medication.drug_name (max 10)
-//   {{latest_vitals}}             — "BP xxx/xx, HR xx, Temp xx, SpO2 xx%, recorded …"
-//   {{problem_list}}              — bullet list of active Problem.icd10_description (max 10)
+//   {{today}}                     : YYYY-MM-DD
+//   {{provider.name}}             : logged-in user's "First Last"
+//   {{active_meds_list}}          : bullet list of active Medication.drug_name (max 10)
+//   {{latest_vitals}}             : "BP xxx/xx, HR xx, Temp xx, SpO2 xx%, recorded …"
+//   {{problem_list}}              : bullet list of active Problem.icd10_description (max 10)
 // ─────────────────────────────────────────────────────────────────────────────
 
 namespace App\Services;
@@ -69,25 +69,25 @@ class NoteTemplateRenderer
         $latestVitals = $latest
             ? sprintf(
                 'BP %s/%s, HR %s, Temp %s°F, SpO2 %s%% (recorded %s)',
-                $latest->bp_systolic ?? '—',
-                $latest->bp_diastolic ?? '—',
-                $latest->pulse ?? '—',
-                $latest->temperature_f ?? '—',
-                $latest->o2_saturation ?? '—',
-                $latest->recorded_at?->format('Y-m-d H:i') ?? '—',
+                $latest->bp_systolic ?? ':',
+                $latest->bp_diastolic ?? ':',
+                $latest->pulse ?? ':',
+                $latest->temperature_f ?? ':',
+                $latest->o2_saturation ?? ':',
+                $latest->recorded_at?->format('Y-m-d H:i') ?? ':',
             )
-            : '—';
+            : ':';
 
-        $age = $participant->dob ? (int) $participant->dob->diffInYears(now()) : '—';
+        $age = $participant->dob ? (int) $participant->dob->diffInYears(now()) : ':';
 
         return [
             'participant.name'      => $name,
-            'participant.preferred' => $preferred ?: '—',
-            'participant.mrn'       => $participant->mrn ?? '—',
-            'participant.dob'       => $participant->dob?->format('m/d/Y') ?? '—',
+            'participant.preferred' => $preferred ?: ':',
+            'participant.mrn'       => $participant->mrn ?? ':',
+            'participant.dob'       => $participant->dob?->format('m/d/Y') ?? ':',
             'participant.age'       => (string) $age,
             'today'                 => now()->toDateString(),
-            'provider.name'         => $user ? trim("{$user->first_name} {$user->last_name}") : '—',
+            'provider.name'         => $user ? trim("{$user->first_name} {$user->last_name}") : ':',
             'active_meds_list'      => $meds ?: '- None documented',
             'latest_vitals'         => $latestVitals,
             'problem_list'          => $problems ?: '- None documented',

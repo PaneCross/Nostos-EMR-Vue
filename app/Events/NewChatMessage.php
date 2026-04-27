@@ -5,7 +5,7 @@
 // Frontend: Chat/Index.tsx subscribes to `private-chat.{channelId}` via Echo
 // and appends the message in real-time without a page refresh.
 //
-// Channel: private — only users who are members of the channel can subscribe.
+// Channel: private : only users who are members of the channel can subscribe.
 // Authorization is handled in routes/channels.php via ChatMembership lookup.
 //
 // NO PHI in broadcastWith(): the message_text itself is chat content (not

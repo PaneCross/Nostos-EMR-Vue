@@ -3,7 +3,7 @@
 // Layout shell for all Participant Portal pages. Provides the portal-only
 // header + nav (Overview / Medications / Allergies / Problems / Appointments
 // / Messages / Requests) and a logout action. Distinct from the staff
-// AppShell — portal users never see staff navigation or PHI for other people.
+// AppShell: portal users never see staff navigation or PHI for other people.
 // ─────────────────────────────────────────────────────────────────────────────
 import { Link, Head, router } from '@inertiajs/vue3'
 import axios from 'axios'

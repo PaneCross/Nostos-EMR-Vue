@@ -100,7 +100,7 @@ class ConsentTemplateController extends Controller
     }
 
     /**
-     * GET /consent-templates/reprompt-queue — participants whose most recent
+     * GET /consent-templates/reprompt-queue : participants whose most recent
      * acknowledged ConsentRecord for any type is on an older template than the
      * currently-approved one.
      */

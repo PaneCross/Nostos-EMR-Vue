@@ -41,7 +41,7 @@ class ParticipantPortalController extends Controller
         if ($sid) {
             $u = ParticipantPortalUser::where('id', $sid)->where('is_active', true)->first();
             if ($u) return $u;
-            // Session stale — clear.
+            // Session stale : clear.
             $request->session()->forget('portal_user_id');
         }
         // Header back-compat.
@@ -62,7 +62,7 @@ class ParticipantPortalController extends Controller
     }
 
     /**
-     * Phase O3 — resolve auth and prefer redirect to the login page for HTML
+     * Phase O3 : resolve auth and prefer redirect to the login page for HTML
      * browser requests (Inertia navigations). For JSON/axios, keep the 401.
      */
     private function requireAuthOrRedirect(Request $request): ParticipantPortalUser|\Symfony\Component\HttpFoundation\RedirectResponse
@@ -73,7 +73,7 @@ class ParticipantPortalController extends Controller
         return redirect('/portal/login');
     }
 
-    /** POST /portal/login — session-backed, rate-limited. */
+    /** POST /portal/login : session-backed, rate-limited. */
     public function login(Request $request): JsonResponse
     {
         $validated = $request->validate([
@@ -95,7 +95,7 @@ class ParticipantPortalController extends Controller
             ->where('is_active', true)->first();
         if (! $user || ! $user->password || ! Hash::check($validated['password'], $user->password)) {
             \Illuminate\Support\Facades\RateLimiter::hit($rlKey, 900);
-            // Audit the failure even when user lookup failed — security signal.
+            // Audit the failure even when user lookup failed : security signal.
             AuditLog::record(
                 action: 'portal.login_failed',
                 tenantId: $user?->tenant_id ?? 0,
@@ -126,7 +126,7 @@ class ParticipantPortalController extends Controller
     }
 
     /**
-     * Phase L1 — POST /portal/otp/send: request an OTP for email login.
+     * Phase L1 : POST /portal/otp/send: request an OTP for email login.
      * Rate-limited identical to password login (5 per 15 min per email).
      */
     public function otpSend(Request $request, \App\Services\PortalOtpService $otp): JsonResponse
@@ -145,7 +145,7 @@ class ParticipantPortalController extends Controller
         return response()->json(['ok' => true]);
     }
 
-    /** Phase L1 — POST /portal/otp/verify: establish session with OTP. */
+    /** Phase L1 : POST /portal/otp/verify: establish session with OTP. */
     public function otpVerify(Request $request, \App\Services\PortalOtpService $otp): JsonResponse
     {
         $validated = $request->validate([
@@ -167,7 +167,7 @@ class ParticipantPortalController extends Controller
         return response()->json(['user' => $user, 'portal_user_id' => $user->id]);
     }
 
-    /** POST /portal/logout — clears session. */
+    /** POST /portal/logout : clears session. */
     public function logout(Request $request): JsonResponse
     {
         $u = $this->portalUser($request);
@@ -186,15 +186,15 @@ class ParticipantPortalController extends Controller
         return response()->json(['ok' => true]);
     }
 
-    /** GET /portal/login — Inertia login page. */
+    /** GET /portal/login : Inertia login page. */
     public function loginPage(): \Inertia\Response
     {
         return \Inertia\Inertia::render('Portal/Login');
     }
 
     /**
-     * GET /portal/overview — participant basics.
-     * Phase O3: dual-serve — JSON for axios; Inertia for browser navigation.
+     * GET /portal/overview : participant basics.
+     * Phase O3: dual-serve : JSON for axios; Inertia for browser navigation.
      */
     public function overview(Request $request): JsonResponse|\Inertia\Response|\Symfony\Component\HttpFoundation\RedirectResponse
     {
@@ -228,7 +228,7 @@ class ParticipantPortalController extends Controller
         ]);
     }
 
-    /** GET /portal/medications — current active only. */
+    /** GET /portal/medications : current active only. */
     public function medications(Request $request): JsonResponse|\Inertia\Response|\Symfony\Component\HttpFoundation\RedirectResponse
     {
         $u = $this->requireAuthOrRedirect($request);
@@ -295,7 +295,7 @@ class ParticipantPortalController extends Controller
         return response()->json(['messages' => $rows]);
     }
 
-    /** GET /portal/requests — Inertia render of the portal request form. */
+    /** GET /portal/requests : Inertia render of the portal request form. */
     public function requestsIndex(Request $request): \Inertia\Response|\Symfony\Component\HttpFoundation\RedirectResponse
     {
         $u = $this->requireAuthOrRedirect($request);
@@ -333,7 +333,7 @@ class ParticipantPortalController extends Controller
         return response()->json(['message' => $msg], 201);
     }
 
-    /** POST /portal/requests — records | appointment | contact_update */
+    /** POST /portal/requests : records | appointment | contact_update */
     public function requestsStore(Request $request): JsonResponse
     {
         $u = $this->requireAuth($request);
@@ -366,7 +366,7 @@ class ParticipantPortalController extends Controller
             ]);
         }
 
-        // Phase P3 — Amendment requests also create an AmendmentRequest row
+        // Phase P3 : Amendment requests also create an AmendmentRequest row
         // with the §164.526(b)(2) 60-day deadline.
         if ($validated['request_type'] === 'amendment') {
             \App\Models\AmendmentRequest::create([

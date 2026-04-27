@@ -169,7 +169,7 @@ class FhirBulkExportController extends Controller
 
         $fullPath = Storage::disk(FhirBulkExportService::DISK)->path($path);
 
-        // Phase Q2 — HIPAA §164.528 Accounting of Disclosures. Record one
+        // Phase Q2 : HIPAA §164.528 Accounting of Disclosures. Record one
         // disclosure per distinct participant referenced by this file.
         $this->recordBulkDisclosures($fullPath, $type, $token, $request, $job->id);
 
@@ -209,7 +209,7 @@ class FhirBulkExportController extends Controller
     }
 
     /**
-     * Phase Q2 — extract distinct participant IDs from an NDJSON file and
+     * Phase Q2 : extract distinct participant IDs from an NDJSON file and
      * record one PhiDisclosure per (participant, file) pair.
      */
     private function recordBulkDisclosures(string $fullPath, string $resourceType, ApiToken $token, Request $request, int $jobId): void

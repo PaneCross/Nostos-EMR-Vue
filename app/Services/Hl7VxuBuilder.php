@@ -43,7 +43,7 @@ class Hl7VxuBuilder
 
         $segments = [];
 
-        // MSH — Message Header
+        // MSH : Message Header
         $segments[] = $this->segment('MSH', [
             '^~\\&',
             $sendApp,
@@ -58,7 +58,7 @@ class Hl7VxuBuilder
             $version,
         ], prependSeparator: true);
 
-        // PID — Patient Identification
+        // PID : Patient Identification
         $segments[] = $this->segment('PID', [
             '1',                                                             // Set ID
             '',
@@ -75,17 +75,17 @@ class Hl7VxuBuilder
             $participant->phone_primary ?? '',                               // PID-13
         ]);
 
-        // PD1 — Patient Additional Demographics (minimal; required by many IIS profiles)
+        // PD1 : Patient Additional Demographics (minimal; required by many IIS profiles)
         $segments[] = $this->segment('PD1', [
             '', '', '', '', '', '', '', '', '', '', '', '',
             '02',  // 12th field: Protection Indicator (02 = no special protection)
             $ts,
         ]);
 
-        // NK1 — Next of Kin (omit contents; segment is often required by profile)
+        // NK1 : Next of Kin (omit contents; segment is often required by profile)
         $segments[] = $this->segment('NK1', ['1']);
 
-        // ORC — Common Order
+        // ORC : Common Order
         $segments[] = $this->segment('ORC', [
             'RE',                                        // Order control
             'EMR-' . $immunization->id,                  // Placer order #
@@ -98,7 +98,7 @@ class Hl7VxuBuilder
         $refusedFlag   = $immunization->refused ? 'Y' : 'N';
         $completionSt  = $immunization->refused ? 'RE' : 'CP'; // RE=refused CP=complete
 
-        // RXA — Pharmacy/Treatment Administration
+        // RXA : Pharmacy/Treatment Administration
         $segments[] = $this->segment('RXA', [
             '0',
             '1',
@@ -126,14 +126,14 @@ class Hl7VxuBuilder
             $completionSt,
         ]);
 
-        // RXR — Route (optional; emitted if "route" field exists on model)
+        // RXR : Route (optional; emitted if "route" field exists on model)
         if (!empty($immunization->route)) {
             $segments[] = $this->segment('RXR', [
                 $immunization->route,
             ]);
         }
 
-        // OBX — VIS documentation (when vis_given=true)
+        // OBX : VIS documentation (when vis_given=true)
         if ($immunization->vis_given) {
             $segments[] = $this->segment('OBX', [
                 '1',
@@ -154,7 +154,7 @@ class Hl7VxuBuilder
 
     private function segment(string $name, array $fields, bool $prependSeparator = false): string
     {
-        // MSH's MSH-1 is the field separator itself — pass '^~\&' as first field
+        // MSH's MSH-1 is the field separator itself : pass '^~\&' as first field
         // and let it ride in position 2. Real HL7: MSH|^~\&|field3|...
         $prefix = $name;
         if ($prependSeparator) {

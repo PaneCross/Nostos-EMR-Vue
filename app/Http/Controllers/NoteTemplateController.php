@@ -10,7 +10,7 @@
 //   POST   /note-templates                        store()
 //   PUT    /note-templates/{template}             update()
 //   DELETE /note-templates/{template}             destroy()
-//   GET    /note-templates/{template}/render/{p}  render()  — returns filled body
+//   GET    /note-templates/{template}/render/{p}  render()  : returns filled body
 // ─────────────────────────────────────────────────────────────────────────────
 
 namespace App\Http\Controllers;

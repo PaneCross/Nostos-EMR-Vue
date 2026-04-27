@@ -1,7 +1,7 @@
 <?php
 
 // ─── StaffTrainingRecord ──────────────────────────────────────────────────────
-// 42 CFR §460.71 — PACE staff training hours tracked as discrete events.
+// 42 CFR §460.71 : PACE staff training hours tracked as discrete events.
 // Used to compute annual training-hour totals by category.
 // ─────────────────────────────────────────────────────────────────────────────
 

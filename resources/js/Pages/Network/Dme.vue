@@ -7,7 +7,7 @@
 // Audience: Network Management, Therapy, Home Care, Center Manager.
 //
 // Notable rules:
-//   - DME items are assets — issuance/return events are append-only for
+//   - DME items are assets: issuance/return events are append-only for
 //     financial accounting + CMS audit traceability.
 //   - Inline return form prevents losing track of high-value equipment when
 //     a participant is discharged or expires.
@@ -61,7 +61,7 @@ async function submitAddItem() {
     }
     router.reload()
   } catch (e: any) {
-    // Phase V4 — extract per-field 422 errors when present, else fall back to message.
+    // Phase V4: extract per-field 422 errors when present, else fall back to message.
     const errs = e?.response?.data?.errors ?? null
     addItemError.value = (errs && Object.keys(errs).length)
       ? Object.values(errs).flat().join('; ')
@@ -111,7 +111,7 @@ async function submitIssue() {
   }
 }
 
-// ── Return action — Phase V7 inline panel instead of window.prompt ─────────
+// ── Return action: Phase V7 inline panel instead of window.prompt ─────────
 const returnIssuanceId = ref<number | null>(null)
 const returnForm = ref<{ returned_at: string; return_condition: 'good' | 'damaged' | 'lost' }>({
   returned_at: new Date().toISOString().slice(0, 10),
@@ -204,7 +204,7 @@ async function submitReturn() {
         <li v-if="open_issuances.length === 0" class="text-sm text-gray-500 dark:text-slate-400">No items currently issued.</li>
       </ul>
 
-      <!-- Phase V7 — return form (replaces window.prompt) -->
+      <!-- Phase V7: return form (replaces window.prompt) -->
       <div v-if="returnIssuanceId !== null"
            class="mt-3 bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800 rounded-lg p-3"
            data-testid="dme-return-form">
@@ -278,8 +278,8 @@ async function submitReturn() {
             <tr v-for="i in items" :key="i.id" class="border-t border-gray-100 dark:border-slate-700">
               <td class="px-3 py-2 text-sm text-gray-900 dark:text-slate-100">{{ i.item_type }}</td>
               <td class="px-3 py-2 text-sm text-gray-700 dark:text-slate-300">{{ i.manufacturer }} {{ i.model }}</td>
-              <td class="px-3 py-2 text-sm text-gray-700 dark:text-slate-300">{{ i.serial_number || '—' }}</td>
-              <td class="px-3 py-2 text-sm text-gray-700 dark:text-slate-300">{{ i.hcpcs_code || '—' }}</td>
+              <td class="px-3 py-2 text-sm text-gray-700 dark:text-slate-300">{{ i.serial_number || '-' }}</td>
+              <td class="px-3 py-2 text-sm text-gray-700 dark:text-slate-300">{{ i.hcpcs_code || '-' }}</td>
               <td class="px-3 py-2 text-sm">
                 <span :class="[
                   'px-2 py-0.5 rounded-full text-xs',

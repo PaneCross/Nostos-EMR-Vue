@@ -366,7 +366,7 @@ function getBooleanState(entry: PreferenceEntry): boolean {
                         Org Settings
                     </h1>
                     <p class="text-sm text-gray-500 dark:text-slate-400 mt-1">
-                        <span v-if="tenantName" class="font-medium">{{ tenantName }} — </span>
+                        <span v-if="tenantName" class="font-medium">{{ tenantName }}: </span>
                         Org-wide preferences. Sites can override defaults individually via the tabs below.
                     </p>
                 </div>
@@ -378,8 +378,8 @@ function getBooleanState(entry: PreferenceEntry): boolean {
                 <div class="text-blue-900 dark:text-blue-100 space-y-1">
                     <p><strong>How this works:</strong> the <em>Org Defaults</em> tab edits org-wide preferences. Use <em>Add site override</em> to create a per-site tab where Site Directors can deviate from the org default for their location only.</p>
                     <ul class="list-disc list-outside ml-5 text-blue-800 dark:text-blue-200">
-                        <li><strong class="text-rose-700 dark:text-rose-300">Required by CMS</strong> — locked on, fires regardless of toggle.</li>
-                        <li><strong class="text-blue-700 dark:text-blue-300">Optional</strong> — toggle controls behavior. Your choice.</li>
+                        <li><strong class="text-rose-700 dark:text-rose-300">Required by CMS</strong>: locked on, fires regardless of toggle.</li>
+                        <li><strong class="text-blue-700 dark:text-blue-300">Optional</strong>: toggle controls behavior. Your choice.</li>
                     </ul>
                 </div>
             </div>
@@ -442,7 +442,7 @@ function getBooleanState(entry: PreferenceEntry): boolean {
                 </div>
             </div>
 
-            <!-- Site picker MODAL — replaces the cramped dropdown so multi-site
+            <!-- Site picker MODAL: replaces the cramped dropdown so multi-site
                  orgs can scan + filter sites comfortably. -->
             <div
                 v-if="showSitePicker"
@@ -482,11 +482,11 @@ function getBooleanState(entry: PreferenceEntry): boolean {
                         />
                     </div>
 
-                    <!-- Site card grid — 1 col mobile, 2 col tablet, 3 col desktop -->
+                    <!-- Site card grid: 1 col mobile, 2 col tablet, 3 col desktop -->
                     <div class="p-6 max-h-[60vh] overflow-y-auto">
                         <div v-if="sitePickerFiltered.length === 0" class="text-center py-12 text-gray-500 dark:text-slate-400 text-sm">
                             <span v-if="sitePickerSearch">No sites match "{{ sitePickerSearch }}".</span>
-                            <span v-else>No sites available — every active site already has an open override tab.</span>
+                            <span v-else>No sites available: every active site already has an open override tab.</span>
                         </div>
 
                         <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -583,7 +583,7 @@ function getBooleanState(entry: PreferenceEntry): boolean {
                                     </span>
                                     <span v-if="activeTab !== null && entry.inherits_from_org && entry.status !== 'required'"
                                         class="text-[10px] uppercase tracking-wide font-semibold px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400"
-                                        title="Inherits from org default — not yet overridden at this site">
+                                        title="Inherits from org default: not yet overridden at this site">
                                         Inherits
                                     </span>
                                     <span v-else-if="activeTab !== null && !entry.inherits_from_org && entry.status !== 'required'"

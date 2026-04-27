@@ -137,7 +137,7 @@ function checkBadgeClass(status: string): string {
 }
 
 async function runCheck() {
-  // Phase U1 — checklist data is computed live by the GET /billing/compliance-checklist/data
+  // Phase U1: checklist data is computed live by the GET /billing/compliance-checklist/data
   // endpoint; there is no separate POST. "Run Check" simply refreshes the data.
   running.value = true
   try {

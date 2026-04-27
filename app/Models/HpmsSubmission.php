@@ -4,13 +4,13 @@
 // Tracks a CMS HPMS (Health Plan Management System) file submission.
 //
 // PACE organizations submit the following files to HPMS:
-//   enrollment     — monthly, pipe-delimited, one record per newly enrolled participant
-//   disenrollment  — monthly, pipe-delimited, one record per disenrolled participant
-//   quality_data   — quarterly, fixed-width, hospitalization/immunization/fall rates
-//   hos_m          — annual, HOS-M survey aggregate results
+//   enrollment     : monthly, pipe-delimited, one record per newly enrolled participant
+//   disenrollment  : monthly, pipe-delimited, one record per disenrolled participant
+//   quality_data   : quarterly, fixed-width, hospitalization/immunization/fall rates
+//   hos_m          : annual, HOS-M survey aggregate results
 //
 // file_content stores the generated flat-file content (newline-delimited records).
-// File path never exposed in API — download goes through HpmsController.
+// File path never exposed in API : download goes through HpmsController.
 // ─────────────────────────────────────────────────────────────────────────────
 
 namespace App\Models;

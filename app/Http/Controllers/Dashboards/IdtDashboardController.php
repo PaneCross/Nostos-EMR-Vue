@@ -6,12 +6,12 @@
 // IDT has cross-department visibility into SDRs and alerts.
 //
 // Routes (GET, all under /dashboards/idt/):
-//   meetings               — today's IDT meetings with Start Meeting links
-//   overdue-sdrs           — escalated SDRs grouped by originating department
-//   care-plans             — care plans with review_due_date within 30 days
-//   alerts                 — last 24h alerts across all departments, all severities
-//   idt-review-overdue     — participants overdue for 6-month IDT reassessment (W4-5)
-//   significant-changes    — open significant change events with IDT review deadlines (W4-6)
+//   meetings               : today's IDT meetings with Start Meeting links
+//   overdue-sdrs           : escalated SDRs grouped by originating department
+//   care-plans             : care plans with review_due_date within 30 days
+//   alerts                 : last 24h alerts across all departments, all severities
+//   idt-review-overdue     : participants overdue for 6-month IDT reassessment (W4-5)
+//   significant-changes    : open significant change events with IDT review deadlines (W4-6)
 // ─────────────────────────────────────────────────────────────────────────────
 
 namespace App\Http\Controllers\Dashboards;
@@ -66,7 +66,7 @@ class IdtDashboardController extends Controller
                     ? $m->facilitator->first_name . ' ' . $m->facilitator->last_name
                     : null,
                 'site'          => $m->site?->name,
-                // Route used by 'Start Meeting' button — matches existing GET /idt/meetings/{id}
+                // Route used by 'Start Meeting' button : matches existing GET /idt/meetings/{id}
                 'run_url'       => "/idt/meetings/{$m->id}",
                 'href'          => "/idt/meetings/{$m->id}",
             ]);

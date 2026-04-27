@@ -2,7 +2,7 @@
 
 // ─── ClinicalOrder ────────────────────────────────────────────────────────────
 // W4-7: Lightweight CPOE (Computerized Provider Order Entry) model.
-// 42 CFR §460.90 — all PACE services must be ordered and documented.
+// 42 CFR §460.90 : all PACE services must be ordered and documented.
 //
 // Order lifecycle: pending → acknowledged → in_progress → resulted/completed
 //                  (any non-terminal) → cancelled
@@ -53,7 +53,7 @@ class ClinicalOrder extends Model
 
     public const STATUSES = ['pending', 'acknowledged', 'in_progress', 'resulted', 'completed', 'cancelled'];
 
-    // Terminal statuses — no further transitions allowed
+    // Terminal statuses : no further transitions allowed
     public const TERMINAL_STATUSES = ['completed', 'cancelled'];
 
     // ── Auto-routing: order_type → fulfilling department ─────────────────────

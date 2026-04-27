@@ -96,8 +96,8 @@ const nfLocRecertWidgetItems = computed<ActionItem[]>(() =>
             days <= 30     ? 'bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300'   :
                              'bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300'
         return {
-            label: p.name ?? '—',
-            sublabel: `MRN ${p.mrn} · expires ${p.expires_at ?? '—'}`,
+            label: p.name ?? '-',
+            sublabel: `MRN ${p.mrn} · expires ${p.expires_at ?? '-'}`,
             badge,
             badgeColor,
             href: p.href ?? `/participants/${p.id}`,
@@ -108,7 +108,7 @@ const nfLocRecertWidgetItems = computed<ActionItem[]>(() =>
 
 <template>
     <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 grid-flow-dense gap-6">
-        <!-- Pipeline Summary — KPI stat grid, not a list of clickable items -->
+        <!-- Pipeline Summary: KPI stat grid, not a list of clickable items -->
         <div class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 shadow-sm p-5">
             <h3 class="text-sm font-semibold text-gray-900 dark:text-slate-100 mb-3">Referral Pipeline</h3>
             <template v-if="loading">
@@ -170,7 +170,7 @@ const nfLocRecertWidgetItems = computed<ActionItem[]>(() =>
             :loading="loading"
         />
 
-        <!-- Phase 2 (MVP roadmap): NF-LOC recertification tracker — §460.160(b)(2) -->
+        <!-- Phase 2 (MVP roadmap): NF-LOC recertification tracker: §460.160(b)(2) -->
         <ActionWidget
             title="NF-LOC Recert Due"
             description="Annual NF level-of-care recertification due in the next 60 days (or overdue). 42 CFR §460.160(b)(2)."

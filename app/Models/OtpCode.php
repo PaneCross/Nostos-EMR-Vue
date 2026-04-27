@@ -9,7 +9,7 @@
 // reuse. `attempts` tracks failed verifications against this row.
 //
 // Notable rules:
-//  - Codes expire (default 10 min) and are single-use — `isValid()` enforces both.
+//  - Codes expire (default 10 min) and are single-use : `isValid()` enforces both.
 //  - Plaintext code never persists; only the hash is stored. HIPAA §164.312
 //    technical safeguard for authenticator secrets.
 // ─────────────────────────────────────────────────────────────────────────────

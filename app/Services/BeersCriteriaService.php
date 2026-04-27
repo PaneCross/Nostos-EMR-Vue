@@ -14,7 +14,7 @@ use App\Models\PolypharmacyReview;
 
 class BeersCriteriaService
 {
-    /** Cached criterion table — loaded once per service instance. */
+    /** Cached criterion table : loaded once per service instance. */
     private ?\Illuminate\Support\Collection $criterionCache = null;
 
     /**
@@ -30,7 +30,7 @@ class BeersCriteriaService
     }
 
     /**
-     * Phase P8 — batch path for tenant-wide rollups (PharmacyDashboard.beersRollup).
+     * Phase P8 : batch path for tenant-wide rollups (PharmacyDashboard.beersRollup).
      * One query for all active meds + one query for all criteria, then
      * everything else runs in PHP. Was N×(2-query) per participant; now O(1).
      *

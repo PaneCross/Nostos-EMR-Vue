@@ -5,11 +5,11 @@
 // regulations at care transitions (enrollment, post-hospital, IDT review, routine).
 //
 // Workflow summary:
-//   Step 1  → startReconciliation() — creates a new 'in_progress' record
-//   Step 2  → addPriorMedications() — populates prior_medications JSONB
-//   Step 3  → generateComparison()  — diffs prior list vs current active meds
-//   Step 4  → applyDecisions()      — executes keep/add/discontinue/modify
-//   Step 5  → providerApproval()    — locks the record (status → 'approved')
+//   Step 1  → startReconciliation() : creates a new 'in_progress' record
+//   Step 2  → addPriorMedications() : populates prior_medications JSONB
+//   Step 3  → generateComparison()  : diffs prior list vs current active meds
+//   Step 4  → applyDecisions()      : executes keep/add/discontinue/modify
+//   Step 5  → providerApproval()    : locks the record (status → 'approved')
 //
 // Idempotency rule: only one active reconciliation (in_progress or decisions_made)
 // is allowed per participant at a time. startReconciliation() returns the existing
@@ -36,7 +36,7 @@ class MedReconciliationService
     /**
      * Create a new in_progress reconciliation record for the given participant.
      * If an active (in_progress or decisions_made) record already exists, it is
-     * returned instead of creating a duplicate (idempotent — safe to call again).
+     * returned instead of creating a duplicate (idempotent : safe to call again).
      *
      * @param  Participant  $participant
      * @param  string       $priorSource  One of MedReconciliation::SOURCES

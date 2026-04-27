@@ -1,6 +1,6 @@
 <script setup lang="ts">
 // ─── Finance/RevenueIntegrity.vue ────────────────────────────────────────────
-// Revenue Integrity Dashboard — CMS encounter data quality, HCC risk capture,
+// Revenue Integrity Dashboard: CMS encounter data quality, HCC risk capture,
 // and capitation reconciliation. Matches React layout.
 // Route: GET /billing/revenue-integrity → Inertia
 // ─────────────────────────────────────────────────────────────────────────────
@@ -130,7 +130,7 @@ const STATUS_VALUE: Record<string, string> = {
                 </div>
             </div>
 
-            <!-- Revenue KPI Cards — 2 rows of 3 -->
+            <!-- Revenue KPI Cards: 2 rows of 3 -->
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 <!-- Capitation Total -->
                 <div class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-5 space-y-1">

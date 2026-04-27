@@ -2,7 +2,7 @@
 // ─── TbScreeningTab.vue ────────────────────────────────────────────────────
 // TB (Tuberculosis) screening. PACE regulation 42 CFR §460.71 requires
 // annual screening for every participant. Supported test types: PPD
-// (Mantoux skin test — induration_mm required), QuantiFERON, T-SPOT,
+// (Mantoux skin test: induration_mm required), QuantiFERON, T-SPOT,
 // chest X-ray, symptom-only. Backend job warns at 60/30/today and
 // flags overdue.
 //
@@ -94,7 +94,7 @@ function resultColor(r: string): string {
       <div class="flex items-center gap-3">
         <h2 class="text-lg font-semibold text-gray-900 dark:text-slate-100">TB Screening</h2>
         <span v-if="latest" class="inline-block rounded px-2 py-0.5 text-xs" :class="dueChipColor">
-          <template v-if="daysUntilDue == null">—</template>
+          <template v-if="daysUntilDue == null">-</template>
           <template v-else-if="daysUntilDue < 0">{{ Math.abs(daysUntilDue) }}d overdue</template>
           <template v-else-if="daysUntilDue === 0">Due today</template>
           <template v-else>Due in {{ daysUntilDue }}d</template>
@@ -180,8 +180,8 @@ function resultColor(r: string): string {
                 {{ r.result }}
               </span>
             </td>
-            <td class="px-3 py-2">{{ r.induration_mm ?? '—' }}</td>
-            <td class="px-3 py-2">{{ r.next_due_date ?? '—' }}</td>
+            <td class="px-3 py-2">{{ r.induration_mm ?? '-' }}</td>
+            <td class="px-3 py-2">{{ r.next_due_date ?? '-' }}</td>
           </tr>
           <tr v-if="!loading && records.length === 0">
             <td colspan="5" class="px-3 py-4 text-center text-gray-500 dark:text-slate-400">

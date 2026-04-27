@@ -3,7 +3,7 @@
 // ─── ReferralNote Model ───────────────────────────────────────────────────────
 // Append-only note on an enrollment Referral. Used to track context, follow-up,
 // and blockers through the 9-status enrollment state machine. Notes are never
-// edited or deleted — once written, they stand.
+// edited or deleted : once written, they stand.
 // ─────────────────────────────────────────────────────────────────────────────
 
 namespace App\Models;
@@ -19,7 +19,7 @@ class ReferralNote extends Model
 
     protected $table = 'emr_referral_notes';
 
-    /** Immutable after create — no updated_at column. */
+    /** Immutable after create : no updated_at column. */
     public const UPDATED_AT = null;
 
     protected $fillable = [

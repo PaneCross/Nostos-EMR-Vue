@@ -1,7 +1,7 @@
 <?php
 
 // ─── DetectControlledSubstancePatternJob ─────────────────────────────────────
-// Daily sweep — flags prescribers writing concerning numbers of controlled-
+// Daily sweep : flags prescribers writing concerning numbers of controlled-
 // substance prescriptions within the org-tunable window.
 // Threshold + window tunable via Org Settings:
 //   designation.pharmacy_director.controlled_substance_pattern.

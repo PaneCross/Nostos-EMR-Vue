@@ -10,7 +10,7 @@
 //
 // Notable rules:
 //  - 42 CFR §460.91 requires PACE (Programs of All-Inclusive Care for the
-//    Elderly) staff access be limited by job function — this is the gate.
+//    Elderly) staff access be limited by job function : this is the gate.
 //  - Nostos super-admin department bypasses all checks (platform staff).
 //  - When a role-level super-admin is impersonating a user, the impersonated
 //    user's department/role permissions are enforced (the audit row still
@@ -51,7 +51,7 @@ class CheckDepartmentAccess
 
         $impersonation = app(ImpersonationService::class);
 
-        // Nostos SA dept (department='super_admin') always bypasses RBAC — no impersonation system.
+        // Nostos SA dept (department='super_admin') always bypasses RBAC : no impersonation system.
         // This is distinct from role='super_admin' which has the impersonation UI.
         if ($user->isDeptSuperAdmin()) {
             return $next($request);

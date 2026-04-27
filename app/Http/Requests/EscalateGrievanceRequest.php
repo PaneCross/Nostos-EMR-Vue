@@ -2,7 +2,7 @@
 
 // ─── EscalateGrievanceRequest ────────────────────────────────────────────────
 // Validates escalating an existing Grievance (a formal participant
-// complaint) to a higher level of review — typically from a front-line
+// complaint) to a higher level of review : typically from a front-line
 // reviewer up to QA / Compliance leadership when the issue is
 // CMS-reportable, urgent, or has stalled.
 //

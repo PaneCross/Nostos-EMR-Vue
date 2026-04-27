@@ -36,22 +36,22 @@ class HospiceService
         [
             'order_type'          => 'medication_change',
             'instructions'        => 'PRN pain management per palliative-care protocol (morphine PO/SL PRN pain).',
-            'clinical_indication' => 'Comfort-care transition — pain',
+            'clinical_indication' => 'Comfort-care transition : pain',
         ],
         [
             'order_type'          => 'consult',
             'instructions'        => 'Confirm DNR / DNI status and document in advance-directive record. Scan signed POLST/MOLST into consents.',
-            'clinical_indication' => 'Comfort-care transition — code status',
+            'clinical_indication' => 'Comfort-care transition : code status',
         ],
         [
             'order_type'          => 'consult',
             'instructions'        => 'Spiritual-care referral. Offer participant + family chaplain visit per preference.',
-            'clinical_indication' => 'Comfort-care transition — spiritual',
+            'clinical_indication' => 'Comfort-care transition : spiritual',
         ],
         [
             'order_type'          => 'consult',
             'instructions'        => 'Schedule family meeting within 7 days to review goals of care and answer questions.',
-            'clinical_indication' => 'Comfort-care transition — family',
+            'clinical_indication' => 'Comfort-care transition : family',
         ],
     ];
 

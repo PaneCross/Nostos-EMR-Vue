@@ -12,9 +12,9 @@
 // Audience: IT Admin only.
 //
 // Notable rules:
-//   - HIPAA §164.312(b) — covered entities must record + examine activity
+//   - HIPAA §164.312(b): covered entities must record + examine activity
 //     in systems that contain ePHI. This is the human review surface.
-//   - Append-only — entries are immutable. UI cannot edit / delete; the
+//   - Append-only: entries are immutable. UI cannot edit / delete; the
 //     CSV export is the surveyor-handoff format.
 // ────────────────────────────────────────────────────────────────────────────
 import { ref, onMounted } from 'vue'
@@ -97,7 +97,7 @@ const formatDate = (iso: string) =>
 
 onMounted(() => load())
 
-// Phase O5 — detail modal
+// Phase O5: detail modal
 const detailOpen = ref(false)
 const detailLoading = ref(false)
 const detail = ref<any | null>(null)
@@ -269,7 +269,7 @@ function diffRows(oldVals: any, newVals: any): Array<{ key: string; old: any; ne
             </div>
         </div>
 
-        <!-- Phase O5 — audit detail modal -->
+        <!-- Phase O5: audit detail modal -->
         <Teleport to="body">
             <div
                 v-if="detailOpen"
@@ -291,14 +291,14 @@ function diffRows(oldVals: any, newVals: any): Array<{ key: string; old: any; ne
                                 <dt class="text-gray-500 dark:text-slate-400">Action</dt>
                                 <dd class="font-mono text-gray-900 dark:text-slate-100">{{ detail.action }}</dd>
                                 <dt class="text-gray-500 dark:text-slate-400">Resource</dt>
-                                <dd class="text-gray-900 dark:text-slate-100">{{ detail.resource_type ?? '—' }} #{{ detail.resource_id ?? '—' }}</dd>
+                                <dd class="text-gray-900 dark:text-slate-100">{{ detail.resource_type ?? '-' }} #{{ detail.resource_id ?? '-' }}</dd>
                                 <dt class="text-gray-500 dark:text-slate-400">User</dt>
                                 <dd class="text-gray-900 dark:text-slate-100">
-                                    {{ detail.user ? `${detail.user.first_name} ${detail.user.last_name}` : '—' }}
+                                    {{ detail.user ? `${detail.user.first_name} ${detail.user.last_name}` : '-' }}
                                     <span v-if="detail.user?.department" class="text-xs text-gray-500 dark:text-slate-400"> · {{ detail.user.department }}</span>
                                 </dd>
                                 <dt class="text-gray-500 dark:text-slate-400">IP / UA</dt>
-                                <dd class="font-mono text-xs text-gray-700 dark:text-slate-300 truncate">{{ detail.ip_address ?? '—' }} · {{ detail.user_agent ?? '—' }}</dd>
+                                <dd class="font-mono text-xs text-gray-700 dark:text-slate-300 truncate">{{ detail.ip_address ?? '-' }} · {{ detail.user_agent ?? '-' }}</dd>
                                 <dt class="text-gray-500 dark:text-slate-400">When</dt>
                                 <dd class="text-gray-900 dark:text-slate-100">{{ formatDate(detail.created_at) }}</dd>
                             </dl>
@@ -322,8 +322,8 @@ function diffRows(oldVals: any, newVals: any): Array<{ key: string; old: any; ne
                                             :class="row.changed ? 'bg-amber-50 dark:bg-amber-950/20' : ''"
                                         >
                                             <td class="py-1 pr-4 font-mono text-gray-700 dark:text-slate-300">{{ row.key }}</td>
-                                            <td class="py-1 pr-4 font-mono text-gray-600 dark:text-slate-400">{{ row.old ?? '—' }}</td>
-                                            <td class="py-1 font-mono text-gray-900 dark:text-slate-100">{{ row.new ?? '—' }}</td>
+                                            <td class="py-1 pr-4 font-mono text-gray-600 dark:text-slate-400">{{ row.old ?? '-' }}</td>
+                                            <td class="py-1 font-mono text-gray-900 dark:text-slate-100">{{ row.new ?? '-' }}</td>
                                         </tr>
                                     </tbody>
                                 </table>

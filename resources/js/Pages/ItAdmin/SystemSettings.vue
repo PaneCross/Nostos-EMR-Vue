@@ -14,7 +14,7 @@
 // Notable rules:
 //   - PACE contract number is the tenant's CMS identifier; changing it
 //     mid-year is highly unusual and should be coordinated with Finance.
-//   - Timezone change affects every cron / deadline job — be deliberate.
+//   - Timezone change affects every cron / deadline job: be deliberate.
 //   - Form uses preserveScroll so admins don't lose place after save.
 // ────────────────────────────────────────────────────────────────────────────
 import { ref } from 'vue'
@@ -93,7 +93,7 @@ const form = useForm({
 })
 
 const submit = () => {
-    // Phase W4 — Audit-11 M2: preserveScroll keeps the user near the field
+    // Phase W4: Audit-11 M2: preserveScroll keeps the user near the field
     // they were editing instead of jumping to the page top on a 422.
     // preserveState keeps form input visible after the validation roundtrip.
     form.put('/admin/settings', {

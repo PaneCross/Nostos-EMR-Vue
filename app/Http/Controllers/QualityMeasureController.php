@@ -17,14 +17,14 @@ class QualityMeasureController extends Controller
         abort_if(!$u, 401);
     }
 
-    /** GET /quality-measures — list seeded measures. */
+    /** GET /quality-measures : list seeded measures. */
     public function index(): JsonResponse
     {
         $this->gate();
         return response()->json(['measures' => QualityMeasure::orderBy('measure_id')->get()]);
     }
 
-    /** GET /quality-measures/snapshots?days=90 — trend per measure. */
+    /** GET /quality-measures/snapshots?days=90 : trend per measure. */
     public function snapshots(Request $request): JsonResponse
     {
         $this->gate();
@@ -36,7 +36,7 @@ class QualityMeasureController extends Controller
         return response()->json(['rows' => $rows->groupBy('measure_id')]);
     }
 
-    /** POST /quality-measures/compute — on-demand. */
+    /** POST /quality-measures/compute : on-demand. */
     public function compute(Request $request, QualityMeasureService $svc): JsonResponse
     {
         $this->gate();

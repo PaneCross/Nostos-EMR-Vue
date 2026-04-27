@@ -160,12 +160,12 @@ async function loadSpendDown() {
         spendDown.value = res.data
     } catch (err: unknown) {
         // Phase Y5 (Audit-13 H3): the previous silent catch produced no UX
-        // signal — user couldn't tell empty-vs-failed. Now logs + sets a
+        // signal: user couldn't tell empty-vs-failed. Now logs + sets a
         // visible inline error string. The V5 axios interceptor already
         // dispatched a toast for 5xx, so this is the secondary inline cue.
         const e = err as { response?: { status?: number } }
         spendDownLoadError.value = e.response?.status === 404
-            ? null  // no spend-down for this participant — expected, no error
+            ? null  // no spend-down for this participant: expected, no error
             : 'Could not load spend-down data. Reload to retry.'
         // eslint-disable-next-line no-console
         console.warn('[InsuranceTab] spend-down load failed', err)
@@ -241,7 +241,7 @@ function openCoverageForm() {
 
 async function submitCoverage() {
     if (!coverageForm.value.coverage_id) {
-        alert('No active Medicaid coverage on file — add one first.')
+        alert('No active Medicaid coverage on file: add one first.')
         return
     }
     savingCoverage.value = true
@@ -266,7 +266,7 @@ function money(n: number): string {
     return '$' + (n ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
-// Phase RS3 — RAF / HCC V28 snapshot
+// Phase RS3: RAF / HCC V28 snapshot
 interface RafSnapshot {
     model_label: string
     current_year: number
@@ -292,7 +292,7 @@ onMounted(loadRaf)
 <template>
   <div class="p-6">
 
-    <!-- Phase RS3 — Per-participant RAF / HCC V28 snapshot -->
+    <!-- Phase RS3: Per-participant RAF / HCC V28 snapshot -->
     <section v-if="raf" class="mb-6 rounded-xl border bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-700 p-5 shadow-sm" data-testid="raf-card">
       <div class="flex items-start justify-between mb-3">
         <div>
@@ -328,7 +328,7 @@ onMounted(loadRaf)
       <ul v-if="raf.hcc_gaps.length" class="mt-3 space-y-1">
         <li v-for="g in raf.hcc_gaps.slice(0, 5)" :key="g.icd10_code"
             class="flex justify-between text-sm px-3 py-1.5 bg-amber-50/60 dark:bg-amber-900/20 rounded">
-          <span class="text-slate-800 dark:text-slate-200">{{ g.icd10_code }} — {{ g.hcc_label }}</span>
+          <span class="text-slate-800 dark:text-slate-200">{{ g.icd10_code }}: {{ g.hcc_label }}</span>
           <span class="text-amber-800 dark:text-amber-300 font-medium">RAF {{ g.raf_value }}</span>
         </li>
       </ul>
@@ -358,7 +358,7 @@ onMounted(loadRaf)
               </span>
             </h3>
             <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              Period {{ spendDown.current_status?.period ?? '—' }} ·
+              Period {{ spendDown.current_status?.period ?? '-' }} ·
               <template v-if="spendDown.current_status?.met">
                 <span class="text-emerald-700 dark:text-emerald-300 inline-flex items-center gap-1 font-semibold">
                   <CheckBadgeIcon class="w-3.5 h-3.5" /> Obligation Met
@@ -462,10 +462,10 @@ onMounted(loadRaf)
           <tbody class="divide-y divide-slate-100 dark:divide-slate-700">
             <tr v-for="p in spendDown.payments" :key="p.id">
               <td class="px-2 py-1 font-semibold">{{ p.period }}</td>
-              <td class="px-2 py-1 text-slate-500">{{ p.paid_at ?? '—' }}</td>
+              <td class="px-2 py-1 text-slate-500">{{ p.paid_at ?? '-' }}</td>
               <td class="px-2 py-1 text-right tabular-nums">{{ money(p.amount) }}</td>
               <td class="px-2 py-1 text-slate-600 dark:text-slate-300">{{ p.method_label }}</td>
-              <td class="px-2 py-1 text-slate-500 dark:text-slate-400 truncate">{{ p.reference_number ?? '—' }}</td>
+              <td class="px-2 py-1 text-slate-500 dark:text-slate-400 truncate">{{ p.reference_number ?? '-' }}</td>
               <td class="px-2 py-1 text-right">
                 <button @click="deletePayment(p.id)" class="text-slate-400 hover:text-red-600 text-xs">Delete</button>
               </td>

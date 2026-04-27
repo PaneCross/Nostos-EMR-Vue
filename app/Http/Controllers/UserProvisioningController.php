@@ -2,7 +2,7 @@
 
 // ─── UserProvisioningController ───────────────────────────────────────────────
 // IT Admin panel: user account lifecycle management.
-// IT Admin is the only role that can create, deactivate, or modify user accounts —
+// IT Admin is the only role that can create, deactivate, or modify user accounts :
 // there is no self-registration. All changes are written to the audit log.
 //
 // Routes (all require department='it_admin'):
@@ -37,7 +37,7 @@ class UserProvisioningController extends Controller
      *
      * The user-details modal shows "actions this user performed" and we filter
      * out pure-read events (page views, navigation, searches, FHIR API reads)
-     * because they bury the signal — what we want is creates / updates /
+     * because they bury the signal : what we want is creates / updates /
      * deletes / completions / acknowledgments. SQL LIKE patterns; '%' wildcard.
      *
      * Anything matching one of these is hidden from the modal's activity feed
@@ -121,7 +121,7 @@ class UserProvisioningController extends Controller
             : null;
 
         // ── Credentials summary ──────────────────────────────────────────────
-        // Numbers only here — full editing UI lives at /it-admin/users/{user}/credentials.
+        // Numbers only here : full editing UI lives at /it-admin/users/{user}/credentials.
         $credentials = StaffCredential::forTenant($tenantId)
             ->where('user_id', $user->id)
             ->get(['id', 'credential_type', 'title', 'expires_at', 'verified_at']);
@@ -147,7 +147,7 @@ class UserProvisioningController extends Controller
         $excluded = self::ACTIVITY_FEED_EXCLUDE_PATTERNS;
         $activityBase = AuditLog::where('tenant_id', $tenantId)
             ->where('user_id', $user->id);
-        // Apply each LIKE pattern as a NOT LIKE — wrapped in a closure so the
+        // Apply each LIKE pattern as a NOT LIKE : wrapped in a closure so the
         // chained `where` calls form a single AND group.
         $activityBase->where(function ($q) use ($excluded) {
             foreach ($excluded as $pattern) {
@@ -362,7 +362,7 @@ class UserProvisioningController extends Controller
     /**
      * Update the functional accountability designations for a user.
      * Designations (e.g. 'medical_director', 'charge_nurse') are used for targeted
-     * alerting only — they do not affect RBAC access or navigation.
+     * alerting only : they do not affect RBAC access or navigation.
      */
     public function updateDesignations(Request $request, User $user): JsonResponse
     {

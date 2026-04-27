@@ -20,7 +20,7 @@ const props = withDefaults(
         title?: string
         height?: number
         colorScheme?: ColorScheme
-        /** Thickness of the doughnut ring — 0 to 1, where 1 fills to a pie chart */
+        /** Thickness of the doughnut ring: 0 to 1, where 1 fills to a pie chart */
         cutout?: string
     }>(),
     {

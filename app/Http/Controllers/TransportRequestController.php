@@ -171,7 +171,7 @@ class TransportRequestController extends Controller
                 'participant_id'     => $participant->id,
                 'source_module'      => 'transport',
                 'alert_type'         => 'info',
-                'title'              => "Add-On Transport Request — {$name}",
+                'title'              => "Add-On Transport Request : {$name}",
                 'message'            => "{$user->first_name} {$user->last_name} ({$user->department}) submitted "
                                       . "an add-on transport request for {$name}.",
                 'severity'           => 'info',
@@ -263,7 +263,7 @@ class TransportRequestController extends Controller
             newValues:    ['status' => 'cancelled', 'reason' => $reason],
         );
 
-        // Phase SS2 — workflow preference: copy assigned PCP on cancellations.
+        // Phase SS2 : workflow preference: copy assigned PCP on cancellations.
         // Some PACE orgs want the participant's PCP looped in when transport is
         // cancelled (especially for clinic visits). Default OFF; opt in via
         // /executive/org-settings.
@@ -277,7 +277,7 @@ class TransportRequestController extends Controller
                     'participant_id'     => $transportRequest->participant_id,
                     'alert_type'         => 'transport_cancelled_pcp_copy',
                     'title'              => 'Transport cancelled (PCP copy)',
-                    'message'            => 'Transport for ' . ($participant?->first_name ?? 'participant') . ' was cancelled — ' . $reason,
+                    'message'            => 'Transport for ' . ($participant?->first_name ?? 'participant') . ' was cancelled - ' . $reason,
                     'severity'           => 'info',
                     'source_module'      => 'transport',
                     'target_departments' => ['primary_care'],

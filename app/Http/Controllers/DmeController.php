@@ -1,6 +1,6 @@
 <?php
 
-// ─── DmeController — Phase S3 ───────────────────────────────────────────────
+// ─── DmeController : Phase S3 ───────────────────────────────────────────────
 namespace App\Http\Controllers;
 
 use App\Models\AuditLog;

@@ -39,7 +39,7 @@ class AdeMedwatchReminderJob implements ShouldQueue
                 'severity'           => $overdue ? 'critical' : 'warning',
                 'title'              => $overdue ? 'MedWatch report OVERDUE' : 'MedWatch report due',
                 'message'            => $overdue
-                    ? "ADE #{$ade->id} ({$ade->severity}) — MedWatch 15-day deadline passed. FDA reporting required."
+                    ? "ADE #{$ade->id} ({$ade->severity}) : MedWatch 15-day deadline passed. FDA reporting required."
                     : "ADE #{$ade->id} ({$ade->severity}) requires MedWatch report. Deadline in {$daysRemaining} days.",
                 'target_departments' => $overdue
                     ? ['qa_compliance', 'pharmacy', 'executive']

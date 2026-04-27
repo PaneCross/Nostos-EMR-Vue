@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-// Phase 15.3 — User-built custom report definition.
+// Phase 15.3 : User-built custom report definition.
 class ReportDefinition extends Model
 {
     protected $table = 'emr_report_definitions';

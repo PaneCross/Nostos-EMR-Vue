@@ -1,6 +1,6 @@
 <script setup lang="ts">
 // ─── Billing/EncounterDataSubmission ────────────────────────────────────────
-// EDS (Encounter Data System) submission tracker — for PACE plans, all
+// EDS (Encounter Data System) submission tracker: for PACE plans, all
 // participant encounters must be reported to CMS as encounter data so CMS
 // can risk-adjust capitation. This page lists generated batches + status.
 //
@@ -73,9 +73,9 @@ defineProps<{
             <tr v-for="b in recent_batches" :key="b.id" class="border-t border-gray-100 dark:border-slate-700">
               <td class="px-3 py-2 text-sm text-gray-900 dark:text-slate-100">{{ b.file_name }}</td>
               <td class="px-3 py-2 text-sm text-right text-gray-700 dark:text-slate-300">{{ b.record_count }}</td>
-              <td class="px-3 py-2 text-sm text-right text-gray-700 dark:text-slate-300">{{ b.total_charge_amount ?? '—' }}</td>
+              <td class="px-3 py-2 text-sm text-right text-gray-700 dark:text-slate-300">{{ b.total_charge_amount ?? '-' }}</td>
               <td class="px-3 py-2 text-sm text-gray-700 dark:text-slate-300">{{ b.status }}</td>
-              <td class="px-3 py-2 text-sm text-gray-700 dark:text-slate-300">{{ b.submitted_at ?? '—' }}</td>
+              <td class="px-3 py-2 text-sm text-gray-700 dark:text-slate-300">{{ b.submitted_at ?? '-' }}</td>
             </tr>
             <tr v-if="recent_batches.length === 0">
               <td colspan="5" class="px-3 py-4 text-center text-sm text-gray-500 dark:text-slate-400">No EDR batches yet.</td>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// ─── WoundPhotoGallery.vue — Phase J5 ────────────────────────────────────────
+// ─── WoundPhotoGallery.vue: Phase J5 ────────────────────────────────────────
 // Per-wound photo gallery. GET /wounds/{wound}/photos, POST to attach.
 // ─────────────────────────────────────────────────────────────────────────────
 import { ref, onMounted } from 'vue'
@@ -75,7 +75,7 @@ async function submit() {
 
     <ul v-if="photos.length" class="mt-2 space-y-0.5 text-gray-600 dark:text-slate-400">
       <li v-for="p in photos" :key="p.id">
-        · {{ p.taken_at }} — document #{{ p.document_id ?? '—' }}
+        · {{ p.taken_at }}: document #{{ p.document_id ?? '-' }}
         <span v-if="p.notes">· {{ p.notes }}</span>
       </li>
     </ul>

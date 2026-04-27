@@ -22,7 +22,7 @@
 //   pharmacy          → PharmD (Doctor of Pharmacy)
 //   idt               → OT   (Interdisciplinary Team)
 //
-// W4-9 — GAP-13: FHIR R4 Practitioner resource.
+// W4-9 : GAP-13: FHIR R4 Practitioner resource.
 // ─────────────────────────────────────────────────────────────────────────────
 
 namespace App\Fhir\Mappers;
@@ -64,7 +64,7 @@ class PractitionerMapper
             'resourceType' => 'Practitioner',
             'id'           => (string) $user->id,
 
-            // NPI stub — individual NPI not yet stored in NostosEMR.
+            // NPI stub : individual NPI not yet stored in NostosEMR.
             // Add npi column to shared_users at go-live and populate here.
             'identifier' => [],
 

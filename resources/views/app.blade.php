@@ -4,7 +4,7 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
-        {{-- Phase O2 — PWA manifest + theme color for "Add to Home Screen" --}}
+        {{-- Phase O2: PWA manifest + theme color for "Add to Home Screen" --}}
         <link rel="manifest" href="/manifest.webmanifest">
         <meta name="theme-color" content="#1e40af">
         <meta name="apple-mobile-web-app-capable" content="yes">

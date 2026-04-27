@@ -9,10 +9,10 @@
 // ClearinghouseConfigController, SecurityComplianceController).
 //
 // Routes (GET, all under /dashboards/it-admin/):
-//   users        — recently provisioned + deactivated users
-//   integrations — per connector health: last message, status, error count
-//   audit        — last 20 audit log entries (filterable by action)
-//   config       — tenant configuration: transport_mode, auto_logout, sites
+//   users        : recently provisioned + deactivated users
+//   integrations : per connector health: last message, status, error count
+//   audit        : last 20 audit log entries (filterable by action)
+//   config       : tenant configuration: transport_mode, auto_logout, sites
 // ─────────────────────────────────────────────────────────────────────────────
 
 namespace App\Http\Controllers\Dashboards;
@@ -121,7 +121,7 @@ class ItAdminDashboardController extends Controller
                 ->where('status', 'failed')
                 ->count();
 
-            // IntegrationLog has $timestamps=false; created_at is a raw string — parse to Carbon
+            // IntegrationLog has $timestamps=false; created_at is a raw string : parse to Carbon
             $lastMessageAt = $last?->created_at ? Carbon::parse($last->created_at) : null;
             $isStale = $lastMessageAt
                 ? $lastMessageAt->diffInHours(now()) > 24
@@ -258,7 +258,7 @@ class ItAdminDashboardController extends Controller
     }
 
     /**
-     * Phase 4 (MVP roadmap) §460.71 — staff credentials expiring within 60 days or overdue.
+     * Phase 4 (MVP roadmap) §460.71 : staff credentials expiring within 60 days or overdue.
      */
     public function expiringCredentials(): JsonResponse
     {

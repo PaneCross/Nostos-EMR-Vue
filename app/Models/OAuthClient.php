@@ -2,7 +2,7 @@
 
 // ─── OAuthClient ──────────────────────────────────────────────────────────────
 // Phase 11. Registered OAuth2 / SMART App Launch 2.0 client.
-// Secret is stored SHA-256 hashed (like ApiToken) — plaintext shown once.
+// Secret is stored SHA-256 hashed (like ApiToken) : plaintext shown once.
 // Public clients (no secret) MUST use PKCE S256 at the /authorize endpoint.
 // ─────────────────────────────────────────────────────────────────────────────
 

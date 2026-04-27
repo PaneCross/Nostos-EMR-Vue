@@ -6,11 +6,11 @@
 // Audience: QA Compliance, Executive leadership.
 //
 // Notable rules:
-//   - 42 CFR §460.136 — sentinel events require CMS reporting + RCA
+//   - 42 CFR §460.136: sentinel events require CMS reporting + RCA
 //     (Root Cause Analysis).
 //   - Dual deadlines: 5-day CMS notification + 30-day RCA completion.
 //     Daily job warns at T-2 and escalates after a missed deadline.
-//   - Append-only — historical events are immutable (audit trail).
+//   - Append-only: historical events are immutable (audit trail).
 // ────────────────────────────────────────────────────────────────────────────
 import { ref, computed } from 'vue'
 import { Head, Link } from '@inertiajs/vue3'
@@ -60,17 +60,17 @@ const filtered = computed(() => {
 })
 
 function fmt(ts: string | null): string {
-    if (!ts) return '—'
+    if (!ts) return '-'
     return new Date(ts).toLocaleString(undefined, { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })
 }
 </script>
 
 <template>
     <AppShell title="Sentinel Events">
-        <Head title="Sentinel Events — Compliance" />
+        <Head title="Sentinel Events: Compliance" />
         <div class="max-w-7xl mx-auto p-6 space-y-6">
             <div>
-                <h1 class="text-xl font-semibold text-slate-900 dark:text-slate-100">Sentinel Events — 12-Month Universe</h1>
+                <h1 class="text-xl font-semibold text-slate-900 dark:text-slate-100">Sentinel Events: 12-Month Universe</h1>
                 <p class="text-sm text-slate-500 dark:text-slate-400">
                     42 CFR §460.136. Window:
                     {{ fmt(summary.window_start) }} → {{ fmt(summary.window_end) }}.
@@ -134,7 +134,7 @@ function fmt(ts: string | null): string {
                                 <Link v-if="r.participant.id" :href="`/participants/${r.participant.id}`" class="text-blue-600 dark:text-blue-400 hover:underline">
                                     {{ r.participant.name }}
                                 </Link>
-                                <span v-else>—</span>
+                                <span v-else>-</span>
                                 <div class="text-xs text-slate-500">{{ r.participant.mrn }}</div>
                             </td>
                             <td class="px-3 py-2 text-slate-700 dark:text-slate-200">{{ r.incident_type_label }}</td>

@@ -4,7 +4,7 @@
 // Sent immediately when a user has 'email_immediate' preference for an alert type.
 //
 // HIPAA COMPLIANCE: Zero PHI in subject or body.
-// Subject: "You have a new notification — NostosEMR"
+// Subject: "You have a new notification : NostosEMR"
 // Body:    Generic prompt to log in. No alert type, patient name, or clinical data.
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -27,7 +27,7 @@ class NotificationMail extends Mailable
 
     public function envelope(): Envelope
     {
-        return new Envelope(subject: 'You have a new notification — NostosEMR');
+        return new Envelope(subject: 'You have a new notification : NostosEMR');
     }
 
     public function content(): Content

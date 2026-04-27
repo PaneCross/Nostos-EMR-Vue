@@ -2,9 +2,9 @@
 
 // ─── PolicyController ─────────────────────────────────────────────────────────
 // Static policy pages required for modern PACE EMR posture:
-//   - /policies/info-blocking  — 21st Century Cures Act / ONC HTI-1 policy
-//   - /policies/npp            — HIPAA Notice of Privacy Practices
-//   - /policies/acceptable-use — Staff acceptable-use of the EMR
+//   - /policies/info-blocking  : 21st Century Cures Act / ONC HTI-1 policy
+//   - /policies/npp            : HIPAA Notice of Privacy Practices
+//   - /policies/acceptable-use : Staff acceptable-use of the EMR
 //
 // Pages are Inertia renders of static content in Policies/*.vue.
 // Auth-required so only logged-in users see them (matches how NPP etc. is

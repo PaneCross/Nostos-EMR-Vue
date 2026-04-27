@@ -1,6 +1,6 @@
 <script setup lang="ts">
 // ─── Billing/Ibnr ───────────────────────────────────────────────────────────
-// IBNR (Incurred But Not Reported) estimator — claims for services already
+// IBNR (Incurred But Not Reported) estimator: claims for services already
 // delivered but not yet billed/processed. Critical for accurate monthly
 // financial close because PACE programs bear full medical risk under cap.
 //

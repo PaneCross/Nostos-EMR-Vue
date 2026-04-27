@@ -1,14 +1,14 @@
 <?php
 
 // ─── RestraintController ─────────────────────────────────────────────────────
-// Phase B1 — physical + chemical restraint episode management.
+// Phase B1 : physical + chemical restraint episode management.
 //
 // Routes (all nested under /participants/{participant}):
 //   GET    /restraints                                    index()
-//   POST   /restraints                                    store()          — initiate episode
-//   POST   /restraints/{episode}/observations             storeObservation() — record a monitoring check
-//   POST   /restraints/{episode}/discontinue              discontinue()    — end the episode
-//   POST   /restraints/{episode}/idt-review               recordIdtReview()— IDT review + outcome
+//   POST   /restraints                                    store()          : initiate episode
+//   POST   /restraints/{episode}/observations             storeObservation() : record a monitoring check
+//   POST   /restraints/{episode}/discontinue              discontinue()    : end the episode
+//   POST   /restraints/{episode}/idt-review               recordIdtReview(): IDT review + outcome
 //
 // Tenant isolation: abort_if($participant->tenant_id !== $user->tenant_id, 403).
 // Cross-tenant access to an episode returns 404 per FHIR convention.

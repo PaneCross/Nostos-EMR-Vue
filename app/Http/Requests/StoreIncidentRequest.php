@@ -3,7 +3,7 @@
 // ─── StoreIncidentRequest ──────────────────────────────────────────────────────
 // Validates a new incident report.
 // Any authenticated user may report an incident (no dept restriction on creation).
-// rca_required is NOT in the rules — it is auto-set by IncidentService.
+// rca_required is NOT in the rules : it is auto-set by IncidentService.
 // ─────────────────────────────────────────────────────────────────────────────
 
 namespace App\Http\Requests;

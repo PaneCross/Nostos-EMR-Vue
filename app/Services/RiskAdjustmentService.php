@@ -12,18 +12,18 @@
 //   PACE   = Programs of All-Inclusive Care for the Elderly.
 //   CMS    = Centers for Medicare & Medicaid Services.
 //   ICD-10 = standard diagnosis code system (e.g. "I50.32" = chronic CHF).
-//   HCC    = Hierarchical Condition Category — CMS's grouping of diagnoses.
-//   RAF    = Risk Adjustment Factor — multiplier on CMS payment for member health.
+//   HCC    = Hierarchical Condition Category : CMS's grouping of diagnoses.
+//   RAF    = Risk Adjustment Factor : multiplier on CMS payment for member health.
 //   "Gap"  = a chart-documented diagnosis that hasn't been submitted to CMS
 //            in the current calendar year. CMS forgets diagnoses every Jan 1,
 //            so they must be re-submitted annually to keep counting.
 //
 // Responsibilities:
-//   1. getDiagnosesForRiskSubmission()  — returns active ICD-10 codes ready to be
+//   1. getDiagnosesForRiskSubmission()  : returns active ICD-10 codes ready to be
 //      submitted in encounter data for CMS risk scoring
-//   2. getRiskAdjustmentGaps()          — tenant-wide HCC gap summary (delegates
+//   2. getRiskAdjustmentGaps()          : tenant-wide HCC gap summary (delegates
 //      per-participant scoring to HccRiskScoringService)
-//   3. updateParticipantRiskScore()     — upserts emr_participant_risk_scores after
+//   3. updateParticipantRiskScore()     : upserts emr_participant_risk_scores after
 //      calculating RAF from emr_problems or importing from CMS file
 //
 // Note: the heavy ICD-10→HCC mapping and gap-finding logic lives in
@@ -33,7 +33,7 @@
 // (~10 participants missing one HCC each) can represent $35,000/month in lost
 // capitation. This service drives the Revenue Integrity dashboard alerts.
 //
-// Phase 9C — Part A (Risk Adjustment Tracking)
+// Phase 9C : Part A (Risk Adjustment Tracking)
 // ─────────────────────────────────────────────────────────────────────────────
 
 namespace App\Services;
@@ -60,7 +60,7 @@ class RiskAdjustmentService
      *   - Are active (resolved_date IS NULL)
      *   - Have a corresponding HCC mapping (only HCC-bearing codes affect RAF)
      *   - Have NOT already been submitted in at least one accepted encounter
-     *     this year (reduces redundancy — CMS only needs one submission per year
+     *     this year (reduces redundancy : CMS only needs one submission per year
      *     to credit the HCC)
      *
      * @param  int  $participantId  Participant whose diagnoses to retrieve

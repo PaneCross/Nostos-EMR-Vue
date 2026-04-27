@@ -18,7 +18,7 @@ class RoiRequest extends Model
     public const STATUSES        = ['pending', 'in_progress', 'fulfilled', 'denied', 'withdrawn'];
     public const OPEN_STATUSES   = ['pending', 'in_progress'];
 
-    /** HIPAA §164.524(b)(2) — response window. */
+    /** HIPAA §164.524(b)(2) : response window. */
     public const RESPONSE_DEADLINE_DAYS = 30;
 
     protected $fillable = [

@@ -8,15 +8,15 @@
 // sicker members and less for healthy ones. The risk score is built from each
 // member's documented diagnoses. If a diagnosis exists in the chart but never
 // makes it onto a submitted encounter, CMS doesn't see it and we don't get
-// paid for it. This service finds those "gaps" — known diagnoses that haven't
-// been billed yet this calendar year — so finance can fix them.
+// paid for it. This service finds those "gaps" : known diagnoses that haven't
+// been billed yet this calendar year : so finance can fix them.
 //
 // Acronym glossary used in this file:
-//   ICD-10 = International Classification of Diseases v10 — the standard
+//   ICD-10 = International Classification of Diseases v10 : the standard
 //            diagnosis code system (e.g. "I50.32" = chronic systolic heart failure).
-//   HCC    = Hierarchical Condition Category — CMS's grouping of diagnoses.
+//   HCC    = Hierarchical Condition Category : CMS's grouping of diagnoses.
 //            Many ICD-10 codes map to the same HCC. Each HCC has a RAF weight.
-//   RAF    = Risk Adjustment Factor — the per-member multiplier on the CMS
+//   RAF    = Risk Adjustment Factor : the per-member multiplier on the CMS
 //            capitation rate. RAF 1.0 = average; >1.0 = sicker; <1.0 = healthier.
 //   CMS    = Centers for Medicare & Medicaid Services (federal regulator/payer).
 //   PACE   = Programs of All-Inclusive Care for the Elderly.
@@ -52,7 +52,7 @@ class HccRiskScoringService
      * documented problems (ICD-10 codes in emr_problems).
      *
      * Only uses diagnoses that have corresponding HCC mappings in emr_hcc_mappings.
-     * RAF value is a simplified calculation — production implementation requires
+     * RAF value is a simplified calculation : production implementation requires
      * CMS demographic coefficient tables (age/sex/disability adjustments).
      *
      * @param  int  $participantId  Participant to score
@@ -76,7 +76,7 @@ class HccRiskScoringService
             ->whereNotNull('hcc_category')
             ->get();
 
-        // HCC model uses hierarchy — only the highest RAF value per HCC category
+        // HCC model uses hierarchy : only the highest RAF value per HCC category
         $byCategory = [];
         foreach ($mappings as $m) {
             $cat = $m->hcc_category;
@@ -100,7 +100,7 @@ class HccRiskScoringService
     }
 
     /**
-     * Identify HCC gaps for a participant — diagnoses in emr_problems that
+     * Identify HCC gaps for a participant : diagnoses in emr_problems that
      * have NOT been submitted in encounter data this calendar year.
      *
      * A gap = the diagnosis exists in emr_problems but has never appeared
@@ -139,13 +139,13 @@ class HccRiskScoringService
         foreach ($problems as $problem) {
             $normalizedCode = strtoupper(str_replace('.', '', $problem->icd10_code));
             if (in_array($normalizedCode, $submittedCodes)) {
-                continue; // already submitted this year — not a gap
+                continue; // already submitted this year : not a gap
             }
 
             // Check if this code maps to an HCC
             $mapping = HccMapping::forCode($problem->icd10_code)->forYear($year)->first();
             if (!$mapping || !$mapping->hcc_category) {
-                continue; // no HCC value — not a revenue gap
+                continue; // no HCC value : not a revenue gap
             }
 
             // Estimate monthly revenue impact: RAF value × avg county base rate (~$2,800/month)

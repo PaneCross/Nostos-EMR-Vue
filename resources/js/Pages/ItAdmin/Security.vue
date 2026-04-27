@@ -5,7 +5,7 @@
 
 <script setup lang="ts">
 // ─── ItAdmin/Security ───────────────────────────────────────────────────────
-// HIPAA security posture dashboard — three tabs:
+// HIPAA security posture dashboard: three tabs:
 //   - BAA (Business Associate Agreement) records: signed contracts with
 //     vendors that touch PHI on the org's behalf.
 //   - SRA (Security Risk Analysis) records: annual self-audit per HIPAA.
@@ -14,8 +14,8 @@
 // Audience: IT Admin / Privacy Officer.
 //
 // Notable rules:
-//   - HIPAA §164.308(a)(1)(ii)(A) — periodic risk analysis required.
-//   - HIPAA §164.308(b) — written BAA required before any PHI sharing.
+//   - HIPAA §164.308(a)(1)(ii)(A): periodic risk analysis required.
+//   - HIPAA §164.308(b): written BAA required before any PHI sharing.
 //   - Per-row append-only history; superseded BAAs/SRAs are retained.
 // ────────────────────────────────────────────────────────────────────────────
 import { ref } from 'vue'

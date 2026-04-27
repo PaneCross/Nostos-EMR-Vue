@@ -23,7 +23,7 @@
     </style>
 </head>
 <body>
-    <h2>Center wristband batch — {{ count($items) }} participants — {{ now()->format('Y-m-d H:i') }}</h2>
+    <h2>Center wristband batch: {{ count($items) }} participants: {{ now()->format('Y-m-d H:i') }}</h2>
     @foreach ($items as $it)
         <div class="wb">
             <div class="qr">{!! $it['qr_svg'] !!}</div>

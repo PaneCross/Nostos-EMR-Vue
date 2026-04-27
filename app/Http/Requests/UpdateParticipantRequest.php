@@ -42,11 +42,11 @@ class UpdateParticipantRequest extends FormRequest
             'primary_language'    => ['nullable', 'string', 'max:50'],
             'interpreter_needed'  => ['boolean'],
             'interpreter_language'=> ['nullable', 'string', 'max:50'],
-            // Advance directive fields (42 CFR 460.96 — writable by clinical depts)
+            // Advance directive fields (42 CFR 460.96 : writable by clinical depts)
             'advance_directive_status' => ['nullable', 'in:has_directive,declined_directive,incapacitated_no_directive,unknown'],
             'advance_directive_type'   => ['nullable', 'in:dnr,polst,living_will,healthcare_proxy,combined'],
             'advance_directive_reviewed_at' => ['nullable', 'date'],
-            // W4-3: Demographics — all depts may update (SDOH, enrollment, clinical use)
+            // W4-3: Demographics : all depts may update (SDOH, enrollment, clinical use)
             'race'             => ['nullable', 'in:white,black_african_american,asian,american_indian_alaska_native,native_hawaiian_pacific_islander,multiracial,other,unknown,declined'],
             'ethnicity'        => ['nullable', 'in:hispanic_latino,not_hispanic_latino,unknown,declined'],
             'race_detail'      => ['nullable', 'string', 'max:255'],

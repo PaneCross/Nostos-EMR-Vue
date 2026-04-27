@@ -1,7 +1,7 @@
 <?php
 
 // ─── StateMedicaidSubmissionController ──────────────────────────────────────
-// Phase 15.9 — Scaffold controller for per-state Medicaid encounter
+// Phase 15.9 : Scaffold controller for per-state Medicaid encounter
 // submission. Default adapter stages the payload and records the submission
 // as status='staged_manual' for the operator to upload to the state portal.
 // Real transmission per state is a future activation.
@@ -41,7 +41,7 @@ class StateMedicaidSubmissionController extends Controller
             ->where('state_code', $state)
             ->active()->first();
 
-        // Phase M6 — if a per-state adapter exists, transform the payload.
+        // Phase M6 : if a per-state adapter exists, transform the payload.
         $rawPayload = $batch->file_content ?? $batch->edi_content ?? '';
         $adapter = \App\Services\StateMedicaid\StateAdapterFactory::for($state);
         $payload = $adapter
@@ -59,7 +59,7 @@ class StateMedicaidSubmissionController extends Controller
             'payload_text'     => $payload,
             'response_notes'   => $adapter
                 ? "Transformed via {$format} adapter. Awaiting manual portal upload."
-                : 'Scaffold — no per-state adapter for this state. Payload staged for manual portal upload.',
+                : 'Scaffold : no per-state adapter for this state. Payload staged for manual portal upload.',
             'prepared_by_user_id' => $u->id,
         ]);
 
@@ -73,7 +73,7 @@ class StateMedicaidSubmissionController extends Controller
 
         return response()->json([
             'submission'   => $submission,
-            'honest_label' => 'State Medicaid encounter transmission is scaffold-only. The payload is staged here for manual portal upload; activation requires a per-state adapter (CA MEDS, NY eMedNY, FL MMIS, etc.) and credentials — all gated on vendor/state contracts.',
+            'honest_label' => 'State Medicaid encounter transmission is scaffold-only. The payload is staged here for manual portal upload; activation requires a per-state adapter (CA MEDS, NY eMedNY, FL MMIS, etc.) and credentials : all gated on vendor/state contracts.',
         ], 201);
     }
 
@@ -86,7 +86,7 @@ class StateMedicaidSubmissionController extends Controller
         $submissions = StateMedicaidSubmission::forTenant($u->tenant_id)
             ->orderByDesc('created_at')->limit(100)->get();
 
-        // Phase O11 — dual-serve so the banner is actually visible on the
+        // Phase O11 : dual-serve so the banner is actually visible on the
         // existing /state-medicaid/submissions URL when navigated to in a browser.
         if (! $request->wantsJson()) {
             return \Inertia\Inertia::render('Operations/StateMedicaidSubmissions', [

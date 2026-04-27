@@ -5,13 +5,13 @@
 // HPMS = Health Plan Management System (CMS's contractor-facing portal where PACE orgs upload enrollment files).
 //
 // Route list:
-//   GET   /billing/hpms                          → index()         — Inertia page
-//   POST  /billing/hpms/generate                 → generate()      — generate file
-//   GET   /billing/hpms/{submission}/download    → download()      — stream file
-//   PATCH /billing/hpms/{submission}/submit      → markSubmitted() — mark as submitted
+//   GET   /billing/hpms                          → index()         : Inertia page
+//   POST  /billing/hpms/generate                 → generate()      : generate file
+//   GET   /billing/hpms/{submission}/download    → download()      : stream file
+//   PATCH /billing/hpms/{submission}/submit      → markSubmitted() : mark as submitted
 //
 // Department access: finance only (+ super_admin, it_admin).
-// file_content NEVER returned in API responses — only through download().
+// file_content NEVER returned in API responses : only through download().
 // ─────────────────────────────────────────────────────────────────────────────
 
 namespace App\Http\Controllers;

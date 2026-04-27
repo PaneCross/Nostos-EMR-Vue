@@ -1,6 +1,6 @@
 <?php
 
-// ─── TaskAssignedEvent — Phase M2 ────────────────────────────────────────────
+// ─── TaskAssignedEvent : Phase M2 ────────────────────────────────────────────
 // Broadcast when a StaffTask is created or re-assigned. Frontend task inboxes
 // subscribe to tenant/department channels and live-update.
 // ─────────────────────────────────────────────────────────────────────────────

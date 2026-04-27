@@ -55,7 +55,7 @@ const loading = ref(true)
 const chartingId = ref<number | null>(null)
 const chartForm  = ref<Record<string, string>>({})
 
-// Phase I2 — BCMA scan modal state
+// Phase I2: BCMA scan modal state
 const bcmaOpen = ref(false)
 const bcmaRecord = ref<EmarRow | null>(null)
 const bcmaParticipantBarcode = ref('')
@@ -307,13 +307,13 @@ async function submitCharting(e: Event) {
       </table>
     </div>
 
-    <!-- Phase I2 — BCMA scan modal -->
+    <!-- Phase I2: BCMA scan modal -->
     <Teleport to="body">
       <div v-if="bcmaOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" @click.self="closeBcmaModal">
         <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-md p-6">
           <div class="flex items-start justify-between mb-4">
             <div>
-              <h2 class="text-base font-semibold text-gray-900 dark:text-slate-100">BCMA — Scan to administer</h2>
+              <h2 class="text-base font-semibold text-gray-900 dark:text-slate-100">BCMA: Scan to administer</h2>
               <p class="text-xs text-gray-500 dark:text-slate-400 mt-0.5">
                 {{ bcmaRecord?.medication?.drug_name }} · {{ formatTime(bcmaRecord?.scheduled_time ?? null) }}
               </p>

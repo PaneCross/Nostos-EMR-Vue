@@ -9,7 +9,7 @@ class ReferralStatusHistory extends Model
 {
     protected $table = 'emr_referral_status_history';
 
-    // Append-only — no updated_at
+    // Append-only : no updated_at
     public $timestamps = false;
 
     protected $fillable = [

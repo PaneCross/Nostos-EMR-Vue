@@ -49,7 +49,7 @@ class EncounterLog extends Model
     /** Valid claim types for 837P submission routing. */
     public const CLAIM_TYPES = [
         'internal_capitated', // PACE center all-inclusive service
-        'external_claim',     // External provider — generates EDR
+        'external_claim',     // External provider : generates EDR
         'chart_review_crr',   // Chart review record (CRR)
     ];
 
@@ -58,7 +58,7 @@ class EncounterLog extends Model
         'pending',   // Not yet included in any EDI batch
         'submitted', // Included in an EDI batch, awaiting 277CA
         'accepted',  // CMS accepted the encounter record
-        'rejected',  // CMS rejected — see rejection_reason
+        'rejected',  // CMS rejected : see rejection_reason
         'void',      // Voided after submission
     ];
 

@@ -10,8 +10,8 @@
                 {{ $address->street ?? '' }}@if($address->unit), {{ $address->unit }}@endif<br>
                 {{ $address->city ?? '' }} {{ $address->state ?? '' }} {{ $address->zip ?? '' }}
             </td></tr>
-            <tr><td class="k">Phone</td><td>{{ $participant->phone_primary ?? '—' }}</td>
-                <td class="k">Alt phone</td><td>{{ $participant->phone_secondary ?? '—' }}</td></tr>
+            <tr><td class="k">Phone</td><td>{{ $participant->phone_primary ?? '-' }}</td>
+                <td class="k">Alt phone</td><td>{{ $participant->phone_secondary ?? '-' }}</td></tr>
         </table>
     @else
         <p class="empty">No primary address on file.</p>
@@ -42,8 +42,8 @@
     <h2>Advance Directive</h2>
     <table class="demographics">
         <tr><td class="k">Status</td><td>{{ $participant->advanceDirectiveLabel() ?? 'Not documented' }}</td></tr>
-        <tr><td class="k">Type</td><td>{{ $participant->advance_directive_type ?? '—' }}</td></tr>
-        <tr><td class="k">Reviewed</td><td>{{ optional($participant->advance_directive_reviewed_at)->format('Y-m-d') ?: '—' }}</td></tr>
+        <tr><td class="k">Type</td><td>{{ $participant->advance_directive_type ?? '-' }}</td></tr>
+        <tr><td class="k">Reviewed</td><td>{{ optional($participant->advance_directive_reviewed_at)->format('Y-m-d') ?: '-' }}</td></tr>
     </table>
 
     <h2>Problem List (top 10)</h2>

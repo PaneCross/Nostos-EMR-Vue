@@ -55,7 +55,7 @@ class WoundService
                 'source_module'      => 'wound_care',
                 'alert_type'         => 'wound_critical_stage',
                 'title'              => "Critical Pressure Injury: {$stageLabel}",
-                'message'            => "{$name} — {$stageLabel} pressure injury documented at {$wound->location}. Immediate review required.",
+                'message'            => "{$name} : {$stageLabel} pressure injury documented at {$wound->location}. Immediate review required.",
                 'severity'           => 'critical',
                 'target_departments' => ['primary_care', 'qa_compliance'],
                 'created_by_system'  => true,
@@ -100,7 +100,7 @@ class WoundService
                 'source_module'      => 'wound_care',
                 'alert_type'         => 'wound_deteriorated',
                 'title'              => 'Wound Deteriorating',
-                'message'            => "{$name} — {$wound->woundTypeLabel()} at {$wound->location} is deteriorating. Review treatment plan.",
+                'message'            => "{$name} : {$wound->woundTypeLabel()} at {$wound->location} is deteriorating. Review treatment plan.",
                 'severity'           => 'warning',
                 'target_departments' => ['primary_care'],
                 'created_by_system'  => true,
@@ -120,8 +120,8 @@ class WoundService
                         'participant_id'     => $wound->participant_id,
                         'source_module'      => 'wound_care',
                         'alert_type'         => 'nursing_director_wound_progression',
-                        'title'              => 'Wound progression — nursing review',
-                        'message'            => "{$name} — {$wound->woundTypeLabel()} at {$wound->location} deteriorated. Forwarded for nursing oversight.",
+                        'title'              => 'Wound progression : nursing review',
+                        'message'            => "{$name} : {$wound->woundTypeLabel()} at {$wound->location} deteriorated. Forwarded for nursing oversight.",
                         'severity'           => 'warning',
                         'target_departments' => ['home_care'],
                         'created_by_system'  => true,
@@ -146,7 +146,7 @@ class WoundService
             ->get();
     }
 
-    /** All active (non-healed) wound records across a tenant — for QA/nursing dashboards. */
+    /** All active (non-healed) wound records across a tenant : for QA/nursing dashboards. */
     public function getActiveWoundsByTenant(int $tenantId): Collection
     {
         return WoundRecord::forTenant($tenantId)

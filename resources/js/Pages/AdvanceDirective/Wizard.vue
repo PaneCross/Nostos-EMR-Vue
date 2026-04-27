@@ -7,10 +7,10 @@
 // Audience: Social Work primary; clinicians can review.
 //
 // Notable rules:
-//   - Patient Self-Determination Act + 42 CFR §460.156 — programs must
+//   - Patient Self-Determination Act + 42 CFR §460.156: programs must
 //     ask + document advance-directive status at enrollment and on change.
 //   - Documents are e-signed (ESIGN/UETA-compliant capture); historical
-//     versions are retained (append-only — supersession, not deletion).
+//     versions are retained (append-only: supersession, not deletion).
 //   - Periodic AD review job nudges clinicians when a directive ages out.
 // ────────────────────────────────────────────────────────────────────────────
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
@@ -25,7 +25,7 @@ const saving = ref(false)
 const error = ref<string | null>(null)
 
 const AD_TYPES = [
-  { value: 'dnr', label: 'DNR — Do Not Resuscitate' },
+  { value: 'dnr', label: 'DNR: Do Not Resuscitate' },
   { value: 'polst', label: 'POLST' },
   { value: 'molst', label: 'MOLST' },
   { value: 'healthcare_proxy', label: 'Healthcare Proxy' },
@@ -150,7 +150,7 @@ async function submit() {
       <div>
         <h1 class="text-xl font-semibold text-gray-900 dark:text-slate-100">Advance Directive Wizard</h1>
         <p class="text-sm text-gray-500 dark:text-slate-400">
-          {{ participant?.first_name }} {{ participant?.last_name }} — MRN {{ participant?.mrn }}
+          {{ participant?.first_name }} {{ participant?.last_name }}: MRN {{ participant?.mrn }}
         </p>
       </div>
 

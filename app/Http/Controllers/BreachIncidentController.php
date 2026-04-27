@@ -1,6 +1,6 @@
 <?php
 
-// ─── BreachIncidentController — Phase P4 ────────────────────────────────────
+// ─── BreachIncidentController : Phase P4 ────────────────────────────────────
 namespace App\Http\Controllers;
 
 use App\Models\Alert;
@@ -74,7 +74,7 @@ class BreachIncidentController extends Controller
             description: "Breach incident logged: {$validated['breach_type']}, {$validated['affected_count']} affected.",
         );
 
-        // Phase SS2 — optional Program Director notification per Org Settings.
+        // Phase SS2 : optional Program Director notification per Org Settings.
         // Hardwired IT Admin / Compliance chain (45 CFR §164.404) is unaffected;
         // this is an additional copy when the org has opted in.
         $prefs = app(NotificationPreferenceService::class);
@@ -87,7 +87,7 @@ class BreachIncidentController extends Controller
                 Alert::create([
                     'tenant_id'          => $u->tenant_id,
                     'alert_type'         => 'breach_incident_logged',
-                    'title'              => "HIPAA Breach Logged — Incident #{$row->id}",
+                    'title'              => "HIPAA Breach Logged : Incident #{$row->id}",
                     'message'            => "HIPAA breach incident logged: {$validated['breach_type']}, {$validated['affected_count']} affected. HHS deadline: " . $deadline?->toDateString() . '.',
                     'severity'           => 'critical',
                     'source_module'      => 'security_compliance',
@@ -141,7 +141,7 @@ class BreachIncidentController extends Controller
         return response()->json(['incident' => $breachIncident->fresh()]);
     }
 
-    // Phase Q1 — generate HIPAA §164.404 individual notification letter PDF
+    // Phase Q1 : generate HIPAA §164.404 individual notification letter PDF
     public function generateLetter(Request $request, BreachIncident $breachIncident, Participant $participant): Response
     {
         $this->gate();

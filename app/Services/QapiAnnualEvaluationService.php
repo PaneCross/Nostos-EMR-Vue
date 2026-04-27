@@ -6,7 +6,7 @@
 //
 // Idempotent per (tenant_id, year): regenerating replaces the PDF reference.
 // The governing body review stamp (reviewer + date + notes) is preserved
-// across regenerations — we only regenerate the PDF + summary snapshot.
+// across regenerations : we only regenerate the PDF + summary snapshot.
 // ─────────────────────────────────────────────────────────────────────────────
 
 namespace App\Services;
@@ -36,7 +36,7 @@ class QapiAnnualEvaluationService
             $summary  = $this->compileSummary($tenant, $year);
             $projects = $this->compileProjects($tenant, $year);
 
-            // Upsert the evaluation row — preserve governing body review if already set.
+            // Upsert the evaluation row : preserve governing body review if already set.
             $evaluation = QapiAnnualEvaluation::firstOrNew([
                 'tenant_id' => $tenant->id,
                 'year'      => $year,
@@ -122,7 +122,7 @@ class QapiAnnualEvaluationService
             ->whereBetween('disenrollment_date', [$start->toDateString(), $end->toDateString()])
             ->count();
 
-        // Avg grievance resolution time (days) — rough indicator, uses updated_at as resolution proxy.
+        // Avg grievance resolution time (days) : rough indicator, uses updated_at as resolution proxy.
         $grievanceAvg = Grievance::where('tenant_id', $tenant->id)
             ->whereBetween('created_at', [$start, $end])
             ->whereNotNull('updated_at')
@@ -150,7 +150,7 @@ class QapiAnnualEvaluationService
             'mortality_count'                 => $mortality,
             'incident_types_summary'          => $incidentTypes
                 ? implode(', ', array_map(fn ($k, $v) => "{$k}: {$v}", array_keys($incidentTypes), $incidentTypes))
-                : '—',
+                : ':',
         ];
     }
 

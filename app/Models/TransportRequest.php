@@ -7,11 +7,11 @@
 //   transport_trips → transport_trip_id is stored back here for cross-reference.
 //
 // Trip types:
-//   to_center     — participant coming to PACE center
-//   from_center   — participant going home after day at center
-//   external_appt — trip to specialist/dialysis/etc.
-//   will_call     — return trip, participant will call when ready
-//   add_on        — unscheduled same-day request (routes through Add-On queue)
+//   to_center     : participant coming to PACE center
+//   from_center   : participant going home after day at center
+//   external_appt : trip to specialist/dialysis/etc.
+//   will_call     : return trip, participant will call when ready
+//   add_on        : unscheduled same-day request (routes through Add-On queue)
 //
 // mobility_flags_snapshot (JSONB): active transport flags at time of request.
 //   Preserved independently so run sheets are historically accurate even if
@@ -22,7 +22,7 @@
 //   any active status → cancelled
 //   en_route / arrived → no_show
 //
-// No SoftDeletes — transport records are append-only for audit purposes.
+// No SoftDeletes : transport records are append-only for audit purposes.
 // ──────────────────────────────────────────────────────────────────────────────
 
 namespace App\Models;

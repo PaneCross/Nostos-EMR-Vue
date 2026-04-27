@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // ─── Policies / Information Blocking ──────────────────────────────────────────
 // 21st Century Cures Act § 4004 + ONC HTI-1 (45 CFR Part 171).
-// Static policy page — accessible to authenticated users; participant-facing
+// Static policy page: accessible to authenticated users; participant-facing
 // distribution happens via the standard Notice of Privacy Practices and EHI
 // export workflows.
 // ─────────────────────────────────────────────────────────────────────────────
@@ -61,10 +61,10 @@ import { DocumentTextIcon } from '@heroicons/vue/24/outline'
                 <h2>4. Export Format</h2>
                 <p>Every EHI export includes:</p>
                 <ul>
-                    <li><code>fhir/Bundle.json</code> — FHIR R4 Bundle (<code>type=collection</code>) with Patient, Conditions, Allergies, Medications, Immunizations, Procedures, Observations, CarePlans, and Appointments.</li>
+                    <li><code>fhir/Bundle.json</code>: FHIR R4 Bundle (<code>type=collection</code>) with Patient, Conditions, Allergies, Medications, Immunizations, Procedures, Observations, CarePlans, and Appointments.</li>
                     <li>Individual FHIR resource files under <code>fhir/</code> for legacy consumers.</li>
-                    <li><code>clinical/</code> — Clinical notes, assessments, ADL records, SDRs, and incidents in JSON.</li>
-                    <li><code>manifest.json</code> — Export metadata, record counts, timestamps, and exporter identity.</li>
+                    <li><code>clinical/</code>: Clinical notes, assessments, ADL records, SDRs, and incidents in JSON.</li>
+                    <li><code>manifest.json</code>: Export metadata, record counts, timestamps, and exporter identity.</li>
                 </ul>
 
                 <h2>5. Audit Trail</h2>

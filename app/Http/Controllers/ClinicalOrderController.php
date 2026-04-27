@@ -1,12 +1,12 @@
 <?php
 
 // ─── ClinicalOrderController ──────────────────────────────────────────────────
-// W4-7: Lightweight CPOE endpoints. 42 CFR §460.90 — PACE services must be
+// W4-7: Lightweight CPOE endpoints. 42 CFR §460.90 : PACE services must be
 // ordered and documented. Handles the full clinical order lifecycle for a
 // single participant and provides a cross-participant worklist for departments.
 //
-// PLAIN-ENGLISH PURPOSE: When a clinician wants something done for a member —
-// a lab draw, a therapy referral, a transport pickup — that "ask" needs to
+// PLAIN-ENGLISH PURPOSE: When a clinician wants something done for a member :
+// a lab draw, a therapy referral, a transport pickup : that "ask" needs to
 // be recorded in writing, signed by an authorized prescriber, and tracked
 // from "ordered" to "completed." This controller is the asking side.
 //
@@ -293,7 +293,7 @@ class ClinicalOrderController extends Controller
         $this->authorizeOrderBelongsToParticipant($order, $participant);
 
         if ($order->isTerminal()) {
-            // 409 Conflict — cannot cancel an order that has already been completed or cancelled
+            // 409 Conflict : cannot cancel an order that has already been completed or cancelled
             return response()->json(['error' => 'Order is already in a terminal state.'], 409);
         }
 

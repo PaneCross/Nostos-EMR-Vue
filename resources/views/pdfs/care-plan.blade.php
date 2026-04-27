@@ -12,16 +12,16 @@
                 <td class="k">Status</td><td>{{ ucfirst(str_replace('_', ' ', (string) $carePlan->status)) }}</td>
             </tr>
             <tr>
-                <td class="k">Effective</td><td>{{ optional($carePlan->effective_date)->format('Y-m-d') ?: '—' }}</td>
-                <td class="k">Review due</td><td>{{ optional($carePlan->review_due_date)->format('Y-m-d') ?: '—' }}</td>
+                <td class="k">Effective</td><td>{{ optional($carePlan->effective_date)->format('Y-m-d') ?: '-' }}</td>
+                <td class="k">Review due</td><td>{{ optional($carePlan->review_due_date)->format('Y-m-d') ?: '-' }}</td>
             </tr>
             <tr>
                 <td class="k">Approved by</td>
                 <td>
-                    {{ $carePlan->approvedBy ? $carePlan->approvedBy->first_name . ' ' . $carePlan->approvedBy->last_name : '—' }}
+                    {{ $carePlan->approvedBy ? $carePlan->approvedBy->first_name . ' ' . $carePlan->approvedBy->last_name : '-' }}
                 </td>
                 <td class="k">Approved at</td>
-                <td>{{ optional($carePlan->approved_at)->format('Y-m-d H:i') ?: '—' }}</td>
+                <td>{{ optional($carePlan->approved_at)->format('Y-m-d H:i') ?: '-' }}</td>
             </tr>
         </table>
 

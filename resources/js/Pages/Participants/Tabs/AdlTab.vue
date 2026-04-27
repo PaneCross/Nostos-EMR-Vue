@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // ─── AdlTab.vue ────────────────────────────────────────────────────────────
-// ADL — Activities of Daily Living (bathing, dressing, eating,
-// toileting, transferring, continence — 6 core items, plus 4 PACE-
+// ADL: Activities of Daily Living (bathing, dressing, eating,
+// toileting, transferring, continence: 6 core items, plus 4 PACE-
 // specific extensions for 10 total). Each record is a point-in-time
 // independence-level rating per category. Color-coded badges show
 // current status across all 10 categories.

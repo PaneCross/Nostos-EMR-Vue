@@ -3,12 +3,12 @@
 // ─── AnticoagulationService ──────────────────────────────────────────────────
 // Phase B5. Anticoagulation plan + INR workflow:
 //
-//   recordInr()     — persists a new INR, pre-computes in_range, emits alert
+//   recordInr()     : persists a new INR, pre-computes in_range, emits alert
 //                     if out-of-range against the participant's active warfarin
 //                     plan. Critical ranges escalate to the critical severity
 //                     + additional target department (pharmacy).
 //
-//   activePlan()    — returns the currently-active plan for a participant, or
+//   activePlan()    : returns the currently-active plan for a participant, or
 //                     null. If multiple exist, the most-recently-started wins
 //                     (shouldn't happen with well-formed data).
 // ─────────────────────────────────────────────────────────────────────────────

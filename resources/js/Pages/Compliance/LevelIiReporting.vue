@@ -8,7 +8,7 @@
 //
 // Notable rules:
 //   - Per-indicator aggregators feed CSV output; "Mark CMS Submitted" only
-//     records the upload timestamp — no automated HPMS (Health Plan
+//     records the upload timestamp: no automated HPMS (Health Plan
 //     Management System) transmission is wired pre-go-live.
 //   - Quarterly cadence; missed quarters surface as red banners.
 // ────────────────────────────────────────────────────────────────────────────
@@ -111,7 +111,7 @@ async function submitMark() {
 }
 
 function fmt(d: string | null): string {
-    return d ? new Date(d).toLocaleString() : '—'
+    return d ? new Date(d).toLocaleString() : '-'
 }
 
 function toggle(id: number) {
@@ -151,7 +151,7 @@ const INDICATOR_ROWS: Array<{ key: keyof IndicatorSnapshot; label: string }> = [
                 <div>
                     <h1 class="text-xl font-semibold text-slate-900 dark:text-slate-100">CMS Level I / Level II Reporting</h1>
                     <p class="text-sm text-slate-500 dark:text-slate-400">
-                        Quarterly PACE quality indicators — CMS Reporting &amp; Monitoring Requirements
+                        Quarterly PACE quality indicators: CMS Reporting &amp; Monitoring Requirements
                     </p>
                 </div>
             </div>
@@ -195,7 +195,7 @@ const INDICATOR_ROWS: Array<{ key: keyof IndicatorSnapshot; label: string }> = [
                         {{ generating ? 'Generating...' : 'Generate / Regenerate' }}
                     </button>
                     <p class="text-xs text-slate-500 dark:text-slate-400 flex-1">
-                        Regeneration refreshes indicators + CSV — submission timestamp is preserved.
+                        Regeneration refreshes indicators + CSV: submission timestamp is preserved.
                     </p>
                 </div>
             </div>
@@ -273,13 +273,13 @@ const INDICATOR_ROWS: Array<{ key: keyof IndicatorSnapshot; label: string }> = [
                                             class="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2">
                                             <p class="text-slate-500 dark:text-slate-400">{{ r.label }}</p>
                                             <p class="text-sm font-semibold text-slate-800 dark:text-slate-200 tabular-nums">
-                                                {{ s.indicators_snapshot?.[r.key] ?? '—' }}
+                                                {{ s.indicators_snapshot?.[r.key] ?? '-' }}
                                             </p>
                                         </div>
                                     </div>
                                     <p class="text-xs text-slate-400 dark:text-slate-500 mt-3">
-                                        Period: {{ s.indicators_snapshot?.period_start ?? '—' }} → {{ s.indicators_snapshot?.period_end ?? '—' }}
-                                        · Avg daily enrolled census: {{ s.indicators_snapshot?.avg_daily_enrolled_census ?? '—' }}
+                                        Period: {{ s.indicators_snapshot?.period_start ?? '-' }} → {{ s.indicators_snapshot?.period_end ?? '-' }}
+                                        · Avg daily enrolled census: {{ s.indicators_snapshot?.avg_daily_enrolled_census ?? '-' }}
                                     </p>
                                 </td>
                             </tr>
@@ -302,7 +302,7 @@ const INDICATOR_ROWS: Array<{ key: keyof IndicatorSnapshot; label: string }> = [
                     </div>
                     <div class="px-6 py-5 space-y-3">
                         <label class="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
-                            Notes (optional — e.g. HPMS confirmation number, upload date)
+                            Notes (optional: e.g. HPMS confirmation number, upload date)
                         </label>
                         <textarea v-model="markNotes" rows="4"
                             placeholder="HPMS confirmation #, uploaded by..."

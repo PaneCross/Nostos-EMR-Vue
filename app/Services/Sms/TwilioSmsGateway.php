@@ -1,7 +1,7 @@
 <?php
 
 // ─── TwilioSmsGateway ────────────────────────────────────────────────────────
-// Phase G7 — stub. Will throw on use until credentials are configured AND a
+// Phase G7 : stub. Will throw on use until credentials are configured AND a
 // Twilio SDK dependency is added. Pattern match Phase 12's ClearinghouseGateway
 // stubs: compile-safe, throws at call time to prevent silent failure.
 // ─────────────────────────────────────────────────────────────────────────────
@@ -21,6 +21,6 @@ class TwilioSmsGateway implements SmsGateway
         }
         // Deliberate: we do NOT call Twilio here until SDK is added.
         // Adding twilio/sdk is a paywall decision (Twilio is paid per SMS).
-        throw new RuntimeException('TwilioSmsGateway stub — composer require twilio/sdk and wire before use.');
+        throw new RuntimeException('TwilioSmsGateway stub : composer require twilio/sdk and wire before use.');
     }
 }

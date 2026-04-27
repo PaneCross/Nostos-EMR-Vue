@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-// Phase 15.10 — Per-tenant formulary entry (PACE capitated drug list).
+// Phase 15.10 : Per-tenant formulary entry (PACE capitated drug list).
 class FormularyEntry extends Model
 {
     protected $table = 'emr_formulary_entries';

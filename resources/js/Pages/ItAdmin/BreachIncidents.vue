@@ -7,8 +7,8 @@
 // Audience: IT Admin + Privacy Officer.
 //
 // Notable rules:
-//   - HIPAA §164.404 — individual notification within 60 days of discovery.
-//   - HIPAA §164.408 — HHS notification: within 60 days for ≥500 affected;
+//   - HIPAA §164.404: individual notification within 60 days of discovery.
+//   - HIPAA §164.408: HHS notification: within 60 days for ≥500 affected;
 //     by March 1 of the following year for under-500 incidents.
 //   - Year boundaries are computed in UTC to keep deadlines deterministic.
 // ────────────────────────────────────────────────────────────────────────────
@@ -50,7 +50,7 @@ async function submit() {
     showForm.value = false
     router.reload({ only: ['incidents'] })
   } catch (e: any) {
-    // Phase V4 — extract per-field 422 errors when present.
+    // Phase V4: extract per-field 422 errors when present.
     const errs = e?.response?.data?.errors ?? null
     error.value = (errs && Object.keys(errs).length)
       ? Object.values(errs).flat().join('; ')
@@ -77,7 +77,7 @@ function statusColor(s: string) {
 }
 
 function deadline(d: any): string {
-  if (!d.hhs_deadline_at) return '—'
+  if (!d.hhs_deadline_at) return '-'
   const ms = new Date(d.hhs_deadline_at).getTime() - Date.now()
   const days = Math.floor(ms / 86400000)
   if (days < 0) return `${Math.abs(days)}d OVERDUE`
@@ -99,11 +99,11 @@ function deadline(d: any): string {
         </button>
       </div>
       <p class="text-sm text-gray-500 dark:text-slate-400">
-        HIPAA §164.404 / §164.408 — log breaches affecting PHI. Notify affected individuals + HHS within deadline.
+        HIPAA §164.404 / §164.408: log breaches affecting PHI. Notify affected individuals + HHS within deadline.
         500+ affected: 60d from discovery. &lt;500: by March 1 of following year.
         HHS portal:
         <a href="https://ocrportal.hhs.gov/ocr/breach/" class="text-blue-600 dark:text-blue-400 underline" target="_blank" rel="noopener">ocrportal.hhs.gov/ocr/breach/</a>
-        (manual submission — no automated API).
+        (manual submission: no automated API).
       </p>
 
       <div v-if="showForm" class="rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-4 space-y-3">

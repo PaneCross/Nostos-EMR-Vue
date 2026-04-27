@@ -1,7 +1,7 @@
 <?php
 
 // ─── AdvDirectiveMissingJob ──────────────────────────────────────────────────
-// Daily — flags participants enrolled 30+ days without a DPOA or advance
+// Daily : flags participants enrolled 30+ days without a DPOA or advance
 // directive on file. Routes to Social Work Supervisor.
 //
 // Preference: designation.social_work_supervisor.adv_directive_missing_at_admit
@@ -50,7 +50,7 @@ class AdvDirectiveMissingJob implements ShouldQueue
                 ->get(['id', 'first_name', 'last_name', 'mrn']);
 
             foreach ($candidates as $p) {
-                // Dedupe — at most one alert per participant per week
+                // Dedupe : at most one alert per participant per week
                 $exists = Alert::where('tenant_id', $tenantId)
                     ->where('participant_id', $p->id)
                     ->where('alert_type', 'adv_directive_missing')

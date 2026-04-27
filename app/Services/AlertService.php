@@ -69,7 +69,7 @@ class AlertService
         );
 
         if ($alert->acknowledged_at !== null) {
-            return $alert;  // Already acknowledged — idempotent
+            return $alert;  // Already acknowledged : idempotent
         }
 
         $alert->update([
@@ -104,7 +104,7 @@ class AlertService
         );
 
         if (! $alert->is_active) {
-            return $alert;  // Already resolved — idempotent
+            return $alert;  // Already resolved : idempotent
         }
 
         $alert->update([

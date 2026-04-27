@@ -389,7 +389,7 @@ function handleArchive(loc: Location) {
             </div>
           </div>
 
-          <!-- PACE Site link (optional) — enables cross-site detection and Day Center roster routing -->
+          <!-- PACE Site link (optional): enables cross-site detection and Day Center roster routing -->
           <div>
             <label class="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
               PACE Site <span class="text-slate-400 dark:text-slate-500 font-normal">(optional)</span>

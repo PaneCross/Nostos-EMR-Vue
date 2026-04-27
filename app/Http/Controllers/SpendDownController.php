@@ -4,10 +4,10 @@
 // Medicaid spend-down / share-of-cost workflow endpoints. Phase 7 (MVP roadmap).
 //
 // Routes:
-//   GET  /participants/{p}/spend-down                — JSON status + payment history
-//   POST /participants/{p}/spend-down/coverage       — update coverage spend-down fields
-//   POST /participants/{p}/spend-down/payments      — record a payment
-//   DELETE /spend-down/payments/{payment}            — soft-delete a payment
+//   GET  /participants/{p}/spend-down                : JSON status + payment history
+//   POST /participants/{p}/spend-down/coverage       : update coverage spend-down fields
+//   POST /participants/{p}/spend-down/payments      : record a payment
+//   DELETE /spend-down/payments/{payment}            : soft-delete a payment
 // ─────────────────────────────────────────────────────────────────────────────
 
 namespace App\Http\Controllers;

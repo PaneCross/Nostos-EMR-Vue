@@ -3,7 +3,7 @@
 // ─── OAuthAuthorizationCode ──────────────────────────────────────────────────
 // Phase 11. Short-lived (60s) authorization code issued by /authorize, to be
 // exchanged by the client at /token for an ApiToken row (the Bearer).
-// Used-once — `used_at` is stamped on exchange and the row becomes dead.
+// Used-once : `used_at` is stamped on exchange and the row becomes dead.
 // ─────────────────────────────────────────────────────────────────────────────
 
 namespace App\Models;

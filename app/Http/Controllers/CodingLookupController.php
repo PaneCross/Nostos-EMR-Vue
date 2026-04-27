@@ -19,7 +19,7 @@ class CodingLookupController extends Controller
         $term = trim((string) $request->query('q', ''));
         if (strlen($term) < 2) return response()->json(['results' => []]);
 
-        // Phase M2 — minimal SNOMED ECL support: `<<CODE` returns concept
+        // Phase M2 : minimal SNOMED ECL support: `<<CODE` returns concept
         // descendants. Our local seed table has no hierarchy column, so we
         // approximate via the category of the parent code.
         if (str_starts_with($term, '<<')) {

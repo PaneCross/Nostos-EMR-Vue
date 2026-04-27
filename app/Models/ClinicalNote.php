@@ -2,7 +2,7 @@
 
 // ─── ClinicalNote Model ──────────────────────────────────────────────────────────
 // Represents a clinical documentation entry (SOAP, nursing progress, therapy, etc.).
-// Signed notes are immutable — any correction requires an addendum (new note with
+// Signed notes are immutable : any correction requires an addendum (new note with
 // parent_note_id pointing here). Amendments set status = 'amended' on this note.
 // ──────────────────────────────────────────────────────────────────────────────
 
@@ -96,7 +96,7 @@ class ClinicalNote extends Model
         return $this->hasMany(ClinicalNote::class, 'parent_note_id')->latest();
     }
 
-    /** Phase B7 — Linked problems (primary + secondaries). */
+    /** Phase B7 : Linked problems (primary + secondaries). */
     public function linkedProblems(): BelongsToMany
     {
         return $this->belongsToMany(Problem::class, 'emr_clinical_note_problems', 'clinical_note_id', 'problem_id')
@@ -153,7 +153,7 @@ class ClinicalNote extends Model
 
     /**
      * Sign this note. Sets status, timestamps, and signing user.
-     * After signing, the note is immutable — use addendum() to annotate.
+     * After signing, the note is immutable : use addendum() to annotate.
      */
     public function sign(User $user): void
     {

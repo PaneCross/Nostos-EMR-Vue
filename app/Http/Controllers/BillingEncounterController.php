@@ -1,15 +1,15 @@
 <?php
 
 // ─── BillingEncounterController ───────────────────────────────────────────────
-// REST API for the encounter submission queue — the billing-side view of
+// REST API for the encounter submission queue : the billing-side view of
 // EncounterLog records, enhanced with 837P fields for CMS submission.
 // 837P = the X12 EDI format for professional medical claim submission.
 //
 // Route list:
-//   GET  /billing/encounters                → index()   — paginated list w/ filters
-//   POST /billing/encounters                → store()   — create encounter with 837P fields
-//   PUT  /billing/encounters/{encounter}    → update()  — update (pending only)
-//   POST /billing/encounters/batch          → batch()   — create EDI 837P batch
+//   GET  /billing/encounters                → index()   : paginated list w/ filters
+//   POST /billing/encounters                → store()   : create encounter with 837P fields
+//   PUT  /billing/encounters/{encounter}    → update()  : update (pending only)
+//   POST /billing/encounters/batch          → batch()   : create EDI 837P batch
 //
 // Department access: finance only (+ super_admin, it_admin).
 // AuditLog::record() called on every mutation.
@@ -165,7 +165,7 @@ class BillingEncounterController extends Controller
     // ── Encounter Update ──────────────────────────────────────────────────────
 
     /**
-     * Update an encounter — only allowed when submission_status = 'pending'.
+     * Update an encounter : only allowed when submission_status = 'pending'.
      * Submitted or accepted encounters are immutable.
      *
      * PUT /billing/encounters/{encounter}

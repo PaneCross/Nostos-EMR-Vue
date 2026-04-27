@@ -10,7 +10,7 @@
 //     (completed/cancelled/no_show are set via dedicated actions in controller)
 //
 // Conflict detection (participant overlap, transport window) is handled in
-// AppointmentController, not here — it requires DB queries and returns a
+// AppointmentController, not here : it requires DB queries and returns a
 // structured 409 response rather than a validation error.
 // ──────────────────────────────────────────────────────────────────────────────
 
@@ -38,10 +38,10 @@ class StoreAppointmentRequest extends FormRequest
             'location_id'       => ['nullable', 'integer', 'exists:emr_locations,id'],
             'transport_required'=> ['boolean'],
             'notes'             => ['nullable', 'string', 'max:2000'],
-            // Phase P7 — telehealth meeting URL + provider tag
+            // Phase P7 : telehealth meeting URL + provider tag
             'meeting_url'       => ['nullable', 'url', 'max:500'],
             'meeting_provider'  => ['nullable', 'string', 'max:30'],
-            // Cross-site confirmation flag — required from the client when the
+            // Cross-site confirmation flag : required from the client when the
             // chosen location's site_id differs from the participant's site_id.
             'cross_site_confirmed' => ['sometimes', 'boolean'],
         ];

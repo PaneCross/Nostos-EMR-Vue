@@ -73,7 +73,7 @@ const infectionItems = computed<ActionItem[]>(() =>
 
 const highRiskItems = computed<ActionItem[]>(() =>
     highRisk.value.map(s => ({
-        label: `${s.participant?.name ?? '-'} — ${s.risk_type}`,
+        label: `${s.participant?.name ?? '-'}: ${s.risk_type}`,
         sublabel: `Score ${s.score} · Band ${s.band}`,
         badge: s.band?.toUpperCase(),
         badgeColor: 'bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300',

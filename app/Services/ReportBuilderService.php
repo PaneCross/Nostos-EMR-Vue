@@ -76,7 +76,7 @@ class ReportBuilderService
         $rows = $query->get();
 
         return [
-            'labels'   => $rows->pluck('label')->map(fn ($v) => (string) ($v ?? '—'))->all(),
+            'labels'   => $rows->pluck('label')->map(fn ($v) => (string) ($v ?? ':'))->all(),
             'datasets' => [[
                 'label' => "{$entity} · {$measure} by {$dimension}",
                 'data'  => $rows->pluck('value')->map(fn ($v) => (int) $v)->all(),

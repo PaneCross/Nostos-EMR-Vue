@@ -6,7 +6,7 @@
 // storage/app/fhir-exports/{job_id}/{ResourceType}.ndjson.
 //
 // Complies with HL7 FHIR Bulk Data Access IG v2.0.0 (System / Group level
-// $export). Output files are `application/fhir+ndjson` — one resource per
+// $export). Output files are `application/fhir+ndjson` : one resource per
 // line, no array wrapper.
 //
 // Cadence: this is intended to run inside a queue job. For small tenants

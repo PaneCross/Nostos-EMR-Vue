@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-// Phase 15.2 — Per-tenant SAML 2.0 IdP configuration.
+// Phase 15.2 : Per-tenant SAML 2.0 IdP configuration.
 class SamlIdentityProvider extends Model
 {
     protected $table = 'emr_saml_identity_providers';

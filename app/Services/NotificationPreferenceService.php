@@ -55,7 +55,7 @@ class NotificationPreferenceService
     /**
      * Should this preference fire for this tenant + (optional) site?
      *
-     * Cascade order — first hit wins:
+     * Cascade order : first hit wins:
      *   1. Required keys → always true (regulatory floor).
      *   2. Per-site override (if $siteId != null and a row exists for it).
      *   3. Org-level row (site_id NULL).
@@ -94,12 +94,12 @@ class NotificationPreferenceService
     }
 
     /**
-     * For numeric preferences (KIND_NUMERIC) — return the stored day-count
+     * For numeric preferences (KIND_NUMERIC) : return the stored day-count
      * for this tenant + (optional) site. Same cascade as shouldNotify().
      * Returns the catalog `numeric_default` if no row exists.
      *
      * If the preference is NOT numeric, returns null. If the preference is
-     * numeric but disabled (enabled=false), returns null too — callers should
+     * numeric but disabled (enabled=false), returns null too : callers should
      * gate on shouldNotify() first.
      */
     public function numericValue(int $tenantId, string $key, ?int $siteId = null): ?int
@@ -110,7 +110,7 @@ class NotificationPreferenceService
             return null;
         }
         if (! $this->shouldNotify($tenantId, $key, $siteId)) {
-            return null; // disabled — no value
+            return null; // disabled : no value
         }
 
         $this->primeCache($tenantId);
@@ -132,7 +132,7 @@ class NotificationPreferenceService
     }
 
     /**
-     * For KIND_NUMERIC_THRESHOLD prefs — return the tuned (events_count,
+     * For KIND_NUMERIC_THRESHOLD prefs : return the tuned (events_count,
      * window_days) for this tenant + (optional) site. Same cascade as
      * shouldNotify(). Returns null when the pref is disabled or not the
      * threshold kind.
@@ -286,7 +286,7 @@ class NotificationPreferenceService
                 if (! $entry) continue;
                 if ($entry['status'] === self::STATUS_REQUIRED) continue;
 
-                // Normalize payload shape — bool or {enabled, value}
+                // Normalize payload shape : bool or {enabled, value}
                 if (is_array($payload)) {
                     $newEnabled = (bool) ($payload['enabled'] ?? false);
                     $newValue   = $payload['value'] ?? null;
@@ -365,7 +365,7 @@ class NotificationPreferenceService
 
     /**
      * Seed default rows at the ORG level (site_id NULL) for a fresh tenant.
-     * Idempotent — skips keys with an existing org-level row. Required keys
+     * Idempotent : skips keys with an existing org-level row. Required keys
      * are never stored.
      */
     public function seedDefaults(int $tenantId): int
@@ -402,7 +402,7 @@ class NotificationPreferenceService
         return $created;
     }
 
-    /** Catalog-default value payload by kind — used by effectiveSettingsForTenant. */
+    /** Catalog-default value payload by kind : used by effectiveSettingsForTenant. */
     private function catalogDefaultValue(array $entry, string $kind): ?array
     {
         if ($kind === self::KIND_NUMERIC) {
@@ -606,7 +606,7 @@ class NotificationPreferenceService
             'designation.nursing_director.late_emar_pattern' => [
                 'group'       => 'Nursing Director',
                 'label'       => 'Late EMAR-pass pattern',
-                'description' => 'Alert when the same nurse triggers a concerning number of late medication doses within a recent window. You set "concerning" — see threshold controls.',
+                'description' => 'Alert when the same nurse triggers a concerning number of late medication doses within a recent window. You set "concerning" : see threshold controls.',
                 'status'      => self::STATUS_OPTIONAL,
                 'default'     => false,
                 'cms_ref'     => null,

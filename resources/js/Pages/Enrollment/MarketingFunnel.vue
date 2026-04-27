@@ -7,7 +7,7 @@
 // Audience: Marketing + Enrollment leadership.
 //
 // Notable rules:
-//   - PACE marketing must follow CMS PACE marketing guidelines — no
+//   - PACE marketing must follow CMS PACE marketing guidelines: no
 //     misleading benefit claims, must distinguish PACE from Medicare
 //     Advantage. (Compliance text owned by Marketing.)
 //   - Read-only view; marketing source is captured at referral creation.

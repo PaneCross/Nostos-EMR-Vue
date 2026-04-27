@@ -3,7 +3,7 @@
 // PACE Facesheet. Full-width document layout: dark header, IDs strip, 3-col
 // body (Address+Contacts+Demographics / Allergies+Diagnoses / Vitals+Insurance+
 // Directive), HIPAA footer. Print uses visibility isolation so only the
-// facesheet renders — nav, header, and tab bar are all suppressed.
+// facesheet renders: nav, header, and tab bar are all suppressed.
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { computed, onMounted, onUnmounted, ref } from 'vue'
@@ -77,7 +77,7 @@ const photoError = ref(false)
 
 // ── Print isolation ────────────────────────────────────────────────────────────
 // Portrait letter. Blanket CSS reset strips ALL background colors and forces
-// monochrome text — no dark-mode colors bleed through. Specific class selectors
+// monochrome text: no dark-mode colors bleed through. Specific class selectors
 // (.facesheet-*) restore structural borders and muted text where needed.
 // overflow: hidden hard-clips at the page boundary for one-page guarantee.
 let printStyle: HTMLStyleElement | null = null
@@ -269,7 +269,7 @@ const lifeThreateningAllergies = computed(() =>
   ) as Array<{ id: number; allergen_name: string; reaction_description: string | null }>
 )
 
-// Phase 2 (MVP roadmap): NF-LOC recert banner — §460.160(b)(2)
+// Phase 2 (MVP roadmap): NF-LOC recert banner: §460.160(b)(2)
 const nfLocDays = computed<number | null>(() => {
   const p = props.participant
   if (p.nf_recert_waived) return null
@@ -375,7 +375,7 @@ const DIRECTIVE_TYPE_LABELS: Record<string, string> = {
 <template>
   <div id="facesheet-print-root" class="w-full min-h-full">
 
-    <!-- Phase 2 (MVP roadmap): NF-LOC recert alert banner — §460.160(b)(2) -->
+    <!-- Phase 2 (MVP roadmap): NF-LOC recert alert banner: §460.160(b)(2) -->
     <div
       v-if="nfLocBannerShow"
       :class="[

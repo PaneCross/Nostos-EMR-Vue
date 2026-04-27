@@ -5,8 +5,8 @@
 // parameters, and site management.  Read-only for all; write requires it_admin.
 //
 // Routes:
-//   GET   /admin/settings      — Inertia settings page
-//   PUT   /admin/settings      — Save tenant settings (it_admin only)
+//   GET   /admin/settings      : Inertia settings page
+//   PUT   /admin/settings      : Save tenant settings (it_admin only)
 // ─────────────────────────────────────────────────────────────────────────────
 
 namespace App\Http\Controllers;
@@ -74,7 +74,7 @@ class SystemSettingsController extends Controller
             'timezone'      => ['nullable', 'string', 'max:50'],
         ]);
 
-        // Persist to tenant record — only fields that exist on the model
+        // Persist to tenant record : only fields that exist on the model
         $tenant = Tenant::find($user->tenant_id);
         if ($tenant) {
             $fillable = array_intersect_key($validated, array_flip($tenant->getFillable()));

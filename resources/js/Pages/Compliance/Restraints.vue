@@ -7,10 +7,10 @@
 // episodes are recorded inside the participant chart.
 //
 // Notable rules:
-//   - 42 CFR §460 — physical/chemical restraints require monitoring
+//   - 42 CFR §460: physical/chemical restraints require monitoring
 //     observations + IDT (Interdisciplinary Team) review.
 //   - CMS PACE Audit Protocol 2.0 universe-pull format.
-//   - Append-only — historical episodes cannot be edited (audit trail).
+//   - Append-only: historical episodes cannot be edited (audit trail).
 // ────────────────────────────────────────────────────────────────────────────
 import { ref, computed } from 'vue'
 import { Head, Link } from '@inertiajs/vue3'
@@ -64,7 +64,7 @@ const filtered = computed(() => {
 })
 
 function fmt(ts: string | null): string {
-    if (!ts) return '—'
+    if (!ts) return '-'
     return new Date(ts).toLocaleString(undefined, { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })
 }
 function hours(m: number): string {
@@ -87,10 +87,10 @@ const STATUS_CLASS: Record<string, string> = {
 
 <template>
     <AppShell title="Restraints Universe">
-        <Head title="Restraints — Compliance" />
+        <Head title="Restraints: Compliance" />
         <div class="max-w-7xl mx-auto p-6 space-y-6">
             <div>
-                <h1 class="text-xl font-semibold text-slate-900 dark:text-slate-100">Restraint Episodes — 12-Month Universe</h1>
+                <h1 class="text-xl font-semibold text-slate-900 dark:text-slate-100">Restraint Episodes: 12-Month Universe</h1>
                 <p class="text-sm text-slate-500 dark:text-slate-400">
                     42 CFR §460 + CMS PACE Audit Protocol. Window:
                     {{ fmt(summary.window_start) }} → {{ fmt(summary.window_end) }}.
@@ -157,7 +157,7 @@ const STATUS_CLASS: Record<string, string> = {
                                 <Link v-if="r.participant.id" :href="`/participants/${r.participant.id}`" class="text-blue-600 dark:text-blue-400 hover:underline">
                                     {{ r.participant.name }}
                                 </Link>
-                                <span v-else>—</span>
+                                <span v-else>-</span>
                                 <div class="text-xs text-slate-500">{{ r.participant.mrn }}</div>
                             </td>
                             <td class="px-3 py-2">
@@ -165,8 +165,8 @@ const STATUS_CLASS: Record<string, string> = {
                             </td>
                             <td class="px-3 py-2 text-slate-600 dark:text-slate-300">{{ fmt(r.initiated_at) }}</td>
                             <td class="px-3 py-2 text-slate-600 dark:text-slate-300">{{ hours(r.duration_minutes) }}</td>
-                            <td class="px-3 py-2 text-slate-600 dark:text-slate-300">{{ r.initiated_by ?? '—' }}</td>
-                            <td class="px-3 py-2 text-slate-600 dark:text-slate-300">{{ r.ordering_provider ?? '—' }}</td>
+                            <td class="px-3 py-2 text-slate-600 dark:text-slate-300">{{ r.initiated_by ?? '-' }}</td>
+                            <td class="px-3 py-2 text-slate-600 dark:text-slate-300">{{ r.ordering_provider ?? '-' }}</td>
                             <td class="px-3 py-2">
                                 <span :class="['inline-flex px-2 py-0.5 rounded text-xs', STATUS_CLASS[r.status]]">{{ r.status }}</span>
                             </td>

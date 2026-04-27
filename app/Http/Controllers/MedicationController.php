@@ -115,7 +115,7 @@ class MedicationController extends Controller
         // Check for drug-drug interactions with existing active medications
         $newAlerts = $this->interactionService->checkInteractions($medication, $participant);
 
-        // Phase Q5 — Prior auth auto-suggest: if formulary marks this drug as
+        // Phase Q5 : Prior auth auto-suggest: if formulary marks this drug as
         // requiring PA, surface a suggestion to the prescriber UI. Match on
         // exact drug_name within tenant; fall back to generic_name match.
         $paSuggestion = null;
@@ -145,7 +145,7 @@ class MedicationController extends Controller
             newValues:    ['drug_name' => $medication->drug_name, 'status' => 'active'],
         );
 
-        // Phase R2 — drug-lab monitoring suggestions surfaced to prescriber.
+        // Phase R2 : drug-lab monitoring suggestions surfaced to prescriber.
         $labMonitoring = DrugLabInteraction::forDrugName($medication->drug_name)->map(fn ($i) => [
             'lab_name'      => $i->lab_name,
             'loinc_code'    => $i->loinc_code,
@@ -197,8 +197,8 @@ class MedicationController extends Controller
     /**
      * List drug interaction alerts for a participant.
      * Returns:
-     *   active   — unacknowledged alerts, ordered by severity
-     *   reviewed — acknowledged alerts from the last 90 days, with acknowledger name
+     *   active   : unacknowledged alerts, ordered by severity
+     *   reviewed : acknowledged alerts from the last 90 days, with acknowledger name
      */
     public function interactions(Request $request, Participant $participant): JsonResponse
     {
@@ -300,7 +300,7 @@ class MedicationController extends Controller
             abort_unless($request->filled('witness_user_id'), 422);
         }
 
-        // eMAR records are append-only — update via direct DB to avoid triggering events
+        // eMAR records are append-only : update via direct DB to avoid triggering events
         EmarRecord::where('id', $record->id)->update([
             'status'                 => $request->input('status'),
             'administered_at'        => $request->input('administered_at'),
@@ -318,7 +318,7 @@ class MedicationController extends Controller
             userId:       $user->id,
             resourceType: 'emar_record',
             resourceId:   $record->id,
-            description:  "eMAR dose recorded: {$record->medication?->drug_name} — {$request->input('status')}",
+            description:  "eMAR dose recorded: {$record->medication?->drug_name} : {$request->input('status')}",
             newValues:    ['status' => $request->input('status'), 'administered_by' => $user->id],
         );
 
@@ -326,16 +326,16 @@ class MedicationController extends Controller
     }
 
     /**
-     * Record a PRN (as-needed) dose — creates a new eMAR record with status='given'.
+     * Record a PRN (as-needed) dose : creates a new eMAR record with status='given'.
      * Only available for medications with is_prn=true.
      */
     /**
-     * Phase B4 — BCMA scan verification. Nurses call this BEFORE administering
+     * Phase B4 : BCMA scan verification. Nurses call this BEFORE administering
      * to verify the participant wristband + med package scans match the eMAR
      * record. Returns one of:
-     *   - 200 {status: "ok"}                    — both scans match
-     *   - 200 {status: "override", expected, scanned} — mismatch, overridden with reason
-     *   - 422 {status: "mismatch"|"missing_scan"|"not_scannable"} — caller must fix
+     *   - 200 {status: "ok"}                    : both scans match
+     *   - 200 {status: "override", expected, scanned} : mismatch, overridden with reason
+     *   - 422 {status: "mismatch"|"missing_scan"|"not_scannable"} : caller must fix
      *
      * POST /emar/{record}/scan-verify
      */

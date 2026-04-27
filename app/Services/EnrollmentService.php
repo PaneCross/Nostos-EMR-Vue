@@ -58,7 +58,7 @@ class EnrollmentService
         'intake_complete'     => ['eligibility_pending', 'declined', 'withdrawn'],
         'eligibility_pending' => ['pending_enrollment', 'declined', 'withdrawn'],
         'pending_enrollment'  => ['enrolled', 'declined', 'withdrawn'],
-        // Terminal states — no outbound transitions
+        // Terminal states : no outbound transitions
         'enrolled'            => [],
         'declined'            => [],
         'withdrawn'           => [],
@@ -185,7 +185,7 @@ class EnrollmentService
         User $user,
     ): void {
         // Derive rollup type from the canonical reason string
-        // (42 CFR §460.160(b): death is a reason, not a status — see DisenrollmentTaxonomy).
+        // (42 CFR §460.160(b): death is a reason, not a status : see DisenrollmentTaxonomy).
         $type = \App\Support\DisenrollmentTaxonomy::typeForReason($reason);
         $isDeath = $type === \App\Support\DisenrollmentTaxonomy::TYPE_DEATH;
 
@@ -209,7 +209,7 @@ class EnrollmentService
         );
 
         // 42 CFR §460.116 transition plan tracking. Death (§460.160(b)) does not
-        // require a transition plan — CMS Manual Ch. 4 treats it as terminal.
+        // require a transition plan : CMS Manual Ch. 4 treats it as terminal.
         $planStatus = $isDeath ? DisenrollmentRecord::PLAN_NOT_REQUIRED : DisenrollmentRecord::PLAN_PENDING;
         $effectiveDateCarbon = Carbon::parse($effectiveDate);
 
@@ -283,7 +283,7 @@ class EnrollmentService
      */
     private function handleEnrollment(Referral $referral, User $user): void
     {
-        // If no participant has been linked yet, we cannot auto-create one —
+        // If no participant has been linked yet, we cannot auto-create one :
         // the full intake form is required. Log and alert.
         if (!$referral->participant_id) {
             Log::error("Referral #{$referral->id} enrolled but no participant record linked.", [
@@ -321,7 +321,7 @@ class EnrollmentService
         // Auto-create pending NPP acknowledgment consent record (HIPAA 45 CFR §164.520).
         // The participant must acknowledge the Notice of Privacy Practices at or before
         // first service delivery. Created as 'pending' so enrollment staff can track completion.
-        // W4-1: BLOCKER-02 resolution — formal consent tracking per 42 CFR §460.110.
+        // W4-1: BLOCKER-02 resolution : formal consent tracking per 42 CFR §460.110.
         \App\Models\ConsentRecord::create([
             'participant_id'     => $participant->id,
             'tenant_id'          => $referral->tenant_id,
@@ -331,7 +331,7 @@ class EnrollmentService
             'created_by_user_id' => $user->id,
         ]);
 
-        // Phase Q7 — auto-create the participant_idt chat channel for this participant.
+        // Phase Q7 : auto-create the participant_idt chat channel for this participant.
         \App\Models\ChatChannel::firstOrCreate(
             [
                 'tenant_id'      => $referral->tenant_id,

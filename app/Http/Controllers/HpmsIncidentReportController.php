@@ -1,6 +1,6 @@
 <?php
 
-// ─── HpmsIncidentReportController — Phase R8 ────────────────────────────────
+// ─── HpmsIncidentReportController : Phase R8 ────────────────────────────────
 // Five HPMS-aligned incident report exports for CMS PACE submissions:
 //   - falls
 //   - medication_errors
@@ -60,7 +60,7 @@ class HpmsIncidentReportController extends Controller
             'from'    => $from,
             'to'      => $to,
             'reports' => array_keys(self::REPORTS),
-            'honest_label' => 'These exports satisfy the HPMS incident-report file format. After download, submit via the HPMS portal — NostosEMR does not transmit to CMS.',
+            'honest_label' => 'These exports satisfy the HPMS incident-report file format. After download, submit via the HPMS portal : NostosEMR does not transmit to CMS.',
         ]);
     }
 

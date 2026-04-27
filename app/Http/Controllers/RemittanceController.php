@@ -8,10 +8,10 @@
 // and dispatches Process835RemittanceJob to parse it asynchronously.
 //
 // Route list:
-//   POST /finance/remittance/upload       → upload()  — store file + dispatch job
-//   GET  /finance/remittance              → index()   — Inertia batch list page
-//   GET  /finance/remittance/{batch}      → show()    — Inertia batch detail page
-//   GET  /finance/remittance/{batch}/claims → claims() — JSON claim list for a batch
+//   POST /finance/remittance/upload       → upload()  : store file + dispatch job
+//   GET  /finance/remittance              → index()   : Inertia batch list page
+//   GET  /finance/remittance/{batch}      → show()    : Inertia batch detail page
+//   GET  /finance/remittance/{batch}/claims → claims() : JSON claim list for a batch
 //
 // Authorization:
 //   Write (upload):           finance, it_admin, super_admin
@@ -139,7 +139,7 @@ class RemittanceController extends Controller
             ],
         );
 
-        // Dispatch the async parser job — returns immediately (non-blocking)
+        // Dispatch the async parser job : returns immediately (non-blocking)
         Process835RemittanceJob::dispatch($batch->id);
 
         return response()->json([
@@ -156,7 +156,7 @@ class RemittanceController extends Controller
      * Render the Inertia remittance batch list page.
      *
      * Returns paginated batches (25 per page) with aggregate counts.
-     * Excludes the raw edi_835_content column — never expose bulk EDI in list responses.
+     * Excludes the raw edi_835_content column : never expose bulk EDI in list responses.
      *
      * GET /finance/remittance
      */

@@ -1,5 +1,5 @@
 <!--
-  Day Center Attendance — manage daily check-ins and absences for enrolled
+  Day Center Attendance: manage daily check-ins and absences for enrolled
   PACE participants attending the day center.
 
   Loads the full enrolled roster on mount (GET /scheduling/day-center/roster),
@@ -101,7 +101,7 @@ const rosterLoading = ref(false)
 const search = ref('')
 const savingId = ref<number | null>(null)
 
-// Phase RS2 — live event-status snapshot (4 buckets)
+// Phase RS2: live event-status snapshot (4 buckets)
 interface EventStatus {
     totals: { scheduled: number; arrived: number; checked_out: number; absent_or_cancelled: number; expected: number }
 }
@@ -113,7 +113,7 @@ async function loadEventStatus() {
             params: { date: date.value, site_id: props.selectedSite },
         })
         eventStatus.value = r.data
-    } catch { /* silent — feature is read-only and best-effort */ }
+    } catch { /* silent: feature is read-only and best-effort */ }
 }
 
 // ── Summary from props (refreshes on Inertia reload) ──────────────────────────
@@ -296,7 +296,7 @@ function statusLabel(status: string | null): string {
                     >
                         Manage Schedules
                     </a>
-                    <!-- Phase RS2 — printable roster PDF -->
+                    <!-- Phase RS2: printable roster PDF -->
                     <a
                         :href="`/scheduling/day-center/roster.pdf?date=${date}&site_id=${props.selectedSite}`"
                         target="_blank"
@@ -313,7 +313,7 @@ function statusLabel(status: string | null): string {
                 </div>
             </div>
 
-            <!-- Phase RS2 — Live event-status snapshot (4 buckets, polls every 60s) -->
+            <!-- Phase RS2: Live event-status snapshot (4 buckets, polls every 60s) -->
             <div v-if="eventStatus" class="bg-white dark:bg-slate-800 rounded-xl border border-blue-200 dark:border-blue-800 p-4 shadow-sm" data-testid="dc-live-roster">
                 <div class="flex items-center justify-between mb-2">
                     <p class="text-sm font-semibold text-gray-700 dark:text-slate-300">Live Event Status</p>
@@ -425,7 +425,7 @@ function statusLabel(status: string | null): string {
                                     <span
                                         v-if="entry.source === 'cross_site' && entry.home_site"
                                         class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-sm font-medium bg-purple-100 dark:bg-purple-900/60 text-purple-700 dark:text-purple-300"
-                                        title="Cross-site visitor — enrolled at a different PACE site"
+                                        title="Cross-site visitor: enrolled at a different PACE site"
                                     >
                                         <HomeIcon class="w-3 h-3" />
                                         Home: {{ entry.home_site.name }}

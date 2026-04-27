@@ -13,8 +13,8 @@
 // Each OBX-equivalent component becomes one Observation with a valueQuantity
 // or valueString depending on whether the value is numeric.
 //
-// W4-9 — GAP-13: FHIR R4 DiagnosticReport resource (originally from integration log).
-// W5-2 — Updated to pull from emr_lab_results + emr_lab_result_components.
+// W4-9 : GAP-13: FHIR R4 DiagnosticReport resource (originally from integration log).
+// W5-2 : Updated to pull from emr_lab_results + emr_lab_result_components.
 // ─────────────────────────────────────────────────────────────────────────────
 
 namespace App\Fhir\Mappers;
@@ -154,7 +154,7 @@ class DiagnosticReportMapper
             'contained' => $contained,
 
             // ── Conclusion ────────────────────────────────────────────────────
-            'conclusion' => $lab->abnormal_flag ? 'Abnormal result — clinical review required.' : null,
+            'conclusion' => $lab->abnormal_flag ? 'Abnormal result : clinical review required.' : null,
         ];
 
         return $report;

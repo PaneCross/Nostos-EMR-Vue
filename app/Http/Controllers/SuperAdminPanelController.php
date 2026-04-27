@@ -1,12 +1,12 @@
 <?php
 
 // ─── SuperAdminPanelController ────────────────────────────────────────────────
-// Phase 10B — Nostos Super Admin panel for platform-level tenant management.
+// Phase 10B : Nostos Super Admin panel for platform-level tenant management.
 //
 // Accessible only to users with department='super_admin' (Nostos staff) or
 // role='super_admin' (tj@nostos.tech).
 //
-// The panel is NOT for PACE organization IT admins — it is Nostos-internal.
+// The panel is NOT for PACE organization IT admins : it is Nostos-internal.
 // IT admins use /it-admin/* for their own tenant's user/integration management.
 //
 // Routes:
@@ -150,29 +150,29 @@ class SuperAdminPanelController extends Controller
     }
 
     /**
-     * Onboarding wizard — create a new tenant with its first site and admin user.
+     * Onboarding wizard : create a new tenant with its first site and admin user.
      *
      * Wizard steps bundled as a single POST (all-or-nothing DB transaction):
      *   Step 1: Tenant details
      *   Step 2: First site
      *   Step 3: Admin user for the new tenant
      *   Step 4: Permissions (auto-seeded from PermissionSeeder defaults)
-     *   Step 5: Confirmation (handled client-side — this endpoint does the work)
+     *   Step 5: Confirmation (handled client-side : this endpoint does the work)
      */
     public function onboard(Request $request): JsonResponse
     {
         $this->requireNostosSuperAdmin();
 
         $data = $request->validate([
-            // Step 1 — Tenant
+            // Step 1 : Tenant
             'tenant_name'          => 'required|string|max:120|unique:shared_tenants,name',
             'transport_mode'       => 'required|in:direct,broker',
             'auto_logout_minutes'  => 'required|integer|min:5|max:120',
-            // Step 2 — First site
+            // Step 2 : First site
             'site_name'            => 'required|string|max:100',
             'site_city'            => 'nullable|string|max:80',
             'site_state'           => 'nullable|string|max:2',
-            // Step 3 — Admin user
+            // Step 3 : Admin user
             'admin_first_name'     => 'required|string|max:60',
             'admin_last_name'      => 'required|string|max:60',
             'admin_email'          => 'required|email|unique:shared_users,email',
@@ -203,7 +203,7 @@ class SuperAdminPanelController extends Controller
                 'is_active'  => true,
             ]);
 
-            // Create admin user (no password — OTP-only auth)
+            // Create admin user (no password : OTP-only auth)
             $user = User::create([
                 'tenant_id'              => $tenant->id,
                 'site_id'                => $site->id,

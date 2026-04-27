@@ -7,10 +7,10 @@
 // direct mode hides vendor-related content.
 //
 // Routes (GET, all under /dashboards/transportation/):
-//   manifest-summary — today's trip counts grouped by status
-//   add-ons          — pending add-on requests awaiting scheduling
-//   flag-alerts      — new participant mobility flags added today
-//   config           — transport_mode + broker vendor assignment count
+//   manifest-summary : today's trip counts grouped by status
+//   add-ons          : pending add-on requests awaiting scheduling
+//   flag-alerts      : new participant mobility flags added today
+//   config           : transport_mode + broker vendor assignment count
 // ─────────────────────────────────────────────────────────────────────────────
 
 namespace App\Http\Controllers\Dashboards;
@@ -124,7 +124,7 @@ class TransportationDashboardController extends Controller
     }
 
     /**
-     * New participant mobility flags added today — relevant to transport operations.
+     * New participant mobility flags added today : relevant to transport operations.
      * TRANSPORT_FLAGS: wheelchair, stretcher, oxygen, behavioral.
      */
     public function flagAlerts(): JsonResponse

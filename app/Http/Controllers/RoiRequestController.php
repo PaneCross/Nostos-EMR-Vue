@@ -2,7 +2,7 @@
 
 // ─── RoiRequestController ────────────────────────────────────────────────────
 // Phase B8b. Release of Information (records disclosure) queue.
-// HIPAA §164.524 — 30-day response deadline. qa_compliance ("privacy officer")
+// HIPAA §164.524 : 30-day response deadline. qa_compliance ("privacy officer")
 // manages the queue; clinical staff can intake.
 //
 // Routes:
@@ -149,7 +149,7 @@ class RoiRequestController extends Controller
             description:  "ROI request #{$roi->id} transitioned to {$validated['status']}.",
         );
 
-        // Phase P2 — log to HIPAA Accounting of Disclosures when fulfilled.
+        // Phase P2 : log to HIPAA Accounting of Disclosures when fulfilled.
         if ($validated['status'] === 'fulfilled') {
             $recipientType = match ($roi->requestor_type ?? 'self') {
                 'self'        => 'patient_self',

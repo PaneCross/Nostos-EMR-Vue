@@ -25,7 +25,7 @@ class WelcomeEmail extends Mailable
 
     public function envelope(): Envelope
     {
-        return new Envelope(subject: 'Welcome to NostosEMR — Your Account Has Been Created');
+        return new Envelope(subject: 'Welcome to NostosEMR : Your Account Has Been Created');
     }
 
     public function content(): Content

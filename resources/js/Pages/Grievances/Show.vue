@@ -1,5 +1,5 @@
 <!--
-  Grievance Detail View — two-column layout showing grievance information,
+  Grievance Detail View: two-column layout showing grievance information,
   investigation notes, resolution/escalation sections, CMS reporting controls,
   notify participant, and a full activity timeline. QA admins can take action
   to investigate, resolve, escalate, or withdraw the grievance.
@@ -13,10 +13,10 @@
 // Audience: QA Compliance staff working the grievance; read-only for others.
 //
 // Notable rules:
-//   - 42 CFR §460.120 — grievance system; resolution within 30 days, written
+//   - 42 CFR §460.120: grievance system; resolution within 30 days, written
 //     notice to the participant, and HPMS (Health Plan Management System,
 //     CMS submission portal) upload for reportable categories.
-//   - Append-only — timeline events cannot be edited (CMS audit trail).
+//   - Append-only: timeline events cannot be edited (CMS audit trail).
 // ────────────────────────────────────────────────────────────────────────────
 import { ref, computed, onMounted } from 'vue'
 import { Head, usePage, router } from '@inertiajs/vue3'
@@ -178,7 +178,7 @@ async function toggleCmsFlag() {
 }
 
 async function submitToCms() {
-  // Tracking flag only — the EMR does NOT transmit to CMS. Staff must have
+  // Tracking flag only: the EMR does NOT transmit to CMS. Staff must have
   // already submitted externally via HPMS per 42 CFR §460.120 before marking
   // this here. Clear confirmation language prevents accidental misuse.
   if (!confirm(
@@ -443,7 +443,7 @@ function fmtDateTime(d: string | null): string {
                   class="w-full px-3 py-2 text-sm rounded-lg border border-purple-300 dark:border-purple-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 focus:ring-2 focus:ring-purple-500 outline-none"
                 >
                   <option :value="null">Escalate to (optional)...</option>
-                  <option v-for="s in escalationStaff" :key="s.id" :value="s.id">{{ s.name }} — {{ s.department }}</option>
+                  <option v-for="s in escalationStaff" :key="s.id" :value="s.id">{{ s.name }}: {{ s.department }}</option>
                 </select>
                 <div class="flex gap-2">
                   <button @click="submitEscalate()" :disabled="actionLoading" class="flex-1 px-3 py-1.5 text-xs rounded-lg bg-purple-600 text-white hover:bg-purple-700 disabled:opacity-50 transition">Escalate</button>

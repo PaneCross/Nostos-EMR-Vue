@@ -4,7 +4,7 @@
 // Phase 8 (MVP roadmap). Append-only record of HL7 VXU messages generated for
 // an immunization. Used to audit what was sent, when, and how the registry
 // responded (when/if real transmission is wired). Today, submission status is
-// a tracking flag — UI labels explicitly say "simulated" until a state
+// a tracking flag : UI labels explicitly say "simulated" until a state
 // integration is live.
 // ─────────────────────────────────────────────────────────────────────────────
 

@@ -19,7 +19,7 @@
 // ID scheme uses prefixes ("tenant-" / "site-") to prevent ID collision between
 // tenant and site resources within the same FHIR server namespace.
 //
-// W4-9 — GAP-13: FHIR R4 Organization resource.
+// W4-9 : GAP-13: FHIR R4 Organization resource.
 // ─────────────────────────────────────────────────────────────────────────────
 
 namespace App\Fhir\Mappers;
@@ -81,7 +81,7 @@ class OrganizationMapper
      * Map a Site (physical PACE center) to a FHIR R4 Organization resource.
      *
      * Sites are child organizations of the tenant (partOf reference).
-     * Address fields are optional — some sites (telehealth-only) may not have
+     * Address fields are optional : some sites (telehealth-only) may not have
      * a physical address.
      */
     public static function fromSite(Site $site): array
@@ -90,7 +90,7 @@ class OrganizationMapper
             'resourceType' => 'Organization',
             'id'           => 'site-' . $site->id,
 
-            // Sites use the tenant-level H-number for billing — no separate site identifier
+            // Sites use the tenant-level H-number for billing : no separate site identifier
             'identifier' => [],
 
             'active' => (bool) $site->is_active,
@@ -109,7 +109,7 @@ class OrganizationMapper
 
             'name' => $site->name,
 
-            // Physical address — omitted when not set (telehealth or virtual sites)
+            // Physical address : omitted when not set (telehealth or virtual sites)
             'address' => $site->address ? [
                 [
                     'use'        => 'work',

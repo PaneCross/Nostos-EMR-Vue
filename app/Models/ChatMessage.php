@@ -26,7 +26,7 @@ class ChatMessage extends Model
 
     protected $table = 'emr_chat_messages';
 
-    // No updated_at — use edited_at for tracking message edits
+    // No updated_at : use edited_at for tracking message edits
     public const CREATED_AT = null;
     public const UPDATED_AT = null;
 
@@ -72,7 +72,7 @@ class ChatMessage extends Model
 
     /**
      * API-safe representation. Deleted messages expose only the placeholder
-     * text — never the original message_text — preserving HIPAA boundaries
+     * text : never the original message_text : preserving HIPAA boundaries
      * while showing the conversation thread structure.
      */
     public function toApiArray(): array

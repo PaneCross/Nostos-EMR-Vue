@@ -1,7 +1,7 @@
 <?php
 
 // ─── InfectionCaseController ─────────────────────────────────────────────────
-// Phase B2 — individual infection case CRUD + outbreak declaration.
+// Phase B2 : individual infection case CRUD + outbreak declaration.
 //
 // Routes:
 //   GET    /participants/{participant}/infections         index()

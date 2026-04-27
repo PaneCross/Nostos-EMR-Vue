@@ -12,7 +12,7 @@
 // Validates: reason_code (≤80 chars), reason_narrative (≤4000 chars), and an
 //            optional delivery_method describing how the notice will reach
 //            the participant (mail, hand-delivered, etc.).
-// Notable rules: 42 CFR §460.121 — 72-hour CMS clock for standard SDRs;
+// Notable rules: 42 CFR §460.121 : 72-hour CMS clock for standard SDRs;
 //                §460.122 governs the denial-notice + appeal pathway.
 // ─────────────────────────────────────────────────────────────────────────────
 

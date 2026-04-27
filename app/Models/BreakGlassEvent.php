@@ -4,7 +4,7 @@
 // HIPAA Emergency Access Override log. Records all instances where a user
 // invoked emergency access to a participant's chart outside their normal RBAC scope.
 //
-// This table is append-only — no UPDATE or DELETE ever. Each row is a permanent
+// This table is append-only : no UPDATE or DELETE ever. Each row is a permanent
 // immutable audit record. access_expires_at = access_granted_at + 4 hours.
 //
 // Supervisor acknowledgment confirms the event was reviewed post-hoc.

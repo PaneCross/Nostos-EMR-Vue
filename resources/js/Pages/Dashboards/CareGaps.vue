@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// ─── Dashboards/CareGaps.vue — Phase K1 ──────────────────────────────────────
+// ─── Dashboards/CareGaps.vue: Phase K1 ──────────────────────────────────────
 // Population-health "care gaps" view: participants who are missing recommended
 // screenings or interventions (annual flu vaccine, A1c, mammogram, etc.) per
 // HEDIS / CMS Stars measures. Two views: org-wide summary + the logged-in
@@ -70,7 +70,7 @@ const chart = computed(() => {
               <td class="px-2 py-1">{{ g.participant?.name ?? g.participant_id }}</td>
               <td class="px-2 py-1">{{ g.measure }}</td>
               <td class="px-2 py-1">{{ g.satisfied ? 'Satisfied' : 'Open' }}</td>
-              <td class="px-2 py-1">{{ g.next_due_date ?? '—' }}</td>
+              <td class="px-2 py-1">{{ g.next_due_date ?? '-' }}</td>
             </tr>
             <tr v-if="myPanel.length === 0">
               <td colspan="4" class="px-2 py-4 text-center text-gray-500 dark:text-slate-400">

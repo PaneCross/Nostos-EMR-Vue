@@ -171,7 +171,7 @@ const cmsReconciliationItems = computed<ActionItem[]>(() => {
 const spendDownItems = computed<ActionItem[]>(() =>
     (spendDownData.value?.overdue ?? []).map((r: any) => ({
         label: `${r.name} · ${r.period}`,
-        sublabel: `${r.state ?? '—'} · ${formatCurrency(r.paid)} of ${formatCurrency(r.obligation)} paid`,
+        sublabel: `${r.state ?? '-'} · ${formatCurrency(r.paid)} of ${formatCurrency(r.obligation)} paid`,
         href: r.href,
         badge: `${formatCurrency(r.remaining)} (${r.days_overdue}d)`,
         badgeColor: r.days_overdue > 30
@@ -184,7 +184,7 @@ const spendDownItems = computed<ActionItem[]>(() =>
 <template>
     <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 grid-flow-dense gap-6">
 
-        <!-- Current Month Capitation — KPI stat widget, not a list -->
+        <!-- Current Month Capitation: KPI stat widget, not a list -->
         <div class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 shadow-sm p-5">
             <h3 class="text-sm font-semibold text-gray-900 dark:text-slate-100 mb-3">Current Month Capitation</h3>
             <template v-if="loading">
@@ -235,7 +235,7 @@ const spendDownItems = computed<ActionItem[]>(() =>
             :loading="loading"
         />
 
-        <!-- Enrollment Changes This Month — KPI stat grid, not a list -->
+        <!-- Enrollment Changes This Month: KPI stat grid, not a list -->
         <div class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 shadow-sm p-5">
             <h3 class="text-sm font-semibold text-gray-900 dark:text-slate-100 mb-3">Enrollment Changes This Month</h3>
             <template v-if="loading">

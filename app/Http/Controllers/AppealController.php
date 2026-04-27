@@ -5,13 +5,13 @@
 // Also exposes the denial-notice PDF download endpoint.
 //
 // PLAIN-ENGLISH PURPOSE: If we (the PACE plan) deny a service a member
-// requested — say, an out-of-network specialist visit — the member has the
+// requested : say, an out-of-network specialist visit : the member has the
 // right to appeal that denial. This controller manages the appeal lifecycle:
 // member files appeal → we acknowledge → we review → we decide (uphold or
 // overturn) → if upheld, member can escalate to external review.
 //
 // Regulatory clock (42 CFR §460.122):
-//   - "We said no, here's how members fight back" — the federal appeals process.
+//   - "We said no, here's how members fight back" : the federal appeals process.
 //   - Standard appeal: we have 30 days to decide.
 //   - Expedited appeal: 72 hours (when delay would jeopardize member's health).
 //   - If we uphold, member can request CMS-level external review.
@@ -45,7 +45,7 @@ class AppealController extends Controller
         private ServiceDenialNoticeService $denialService,
     ) {}
 
-    /** GET /appeals — Inertia index page or JSON list. */
+    /** GET /appeals : Inertia index page or JSON list. */
     public function index(Request $request): InertiaResponse|JsonResponse
     {
         $user = $request->user();
@@ -93,7 +93,7 @@ class AppealController extends Controller
         ]);
     }
 
-    /** GET /appeals/{appeal} — detail page */
+    /** GET /appeals/{appeal} : detail page */
     public function show(Request $request, Appeal $appeal): InertiaResponse|JsonResponse
     {
         $user = $request->user();
@@ -118,7 +118,7 @@ class AppealController extends Controller
         ]);
     }
 
-    /** POST /appeals — file a new appeal from a denial notice */
+    /** POST /appeals : file a new appeal from a denial notice */
     public function store(FileAppealRequest $request): JsonResponse
     {
         $user = $request->user();
@@ -201,7 +201,7 @@ class AppealController extends Controller
 
     // ── Denial notice endpoints ───────────────────────────────────────────────
 
-    /** GET /denial-notices/{notice}/download — stream the PDF */
+    /** GET /denial-notices/{notice}/download : stream the PDF */
     public function downloadNoticePdf(Request $request, ServiceDenialNotice $notice)
     {
         abort_if($notice->tenant_id !== $request->user()->tenant_id, 403);
@@ -211,7 +211,7 @@ class AppealController extends Controller
         return Response::download(Storage::disk('local')->path($doc->file_path), $doc->file_name);
     }
 
-    /** GET /appeals/{appeal}/acknowledgment.pdf — stream ack letter */
+    /** GET /appeals/{appeal}/acknowledgment.pdf : stream ack letter */
     public function downloadAckPdf(Request $request, Appeal $appeal)
     {
         abort_if($appeal->tenant_id !== $request->user()->tenant_id, 403);
@@ -221,7 +221,7 @@ class AppealController extends Controller
         return Response::download(Storage::disk('local')->path($doc->file_path), $doc->file_name);
     }
 
-    /** GET /appeals/{appeal}/decision.pdf — stream decision letter */
+    /** GET /appeals/{appeal}/decision.pdf : stream decision letter */
     public function downloadDecisionPdf(Request $request, Appeal $appeal)
     {
         abort_if($appeal->tenant_id !== $request->user()->tenant_id, 403);

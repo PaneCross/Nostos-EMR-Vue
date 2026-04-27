@@ -5,12 +5,12 @@
 // EDI = Electronic Data Interchange (the X12 family of healthcare claim/eligibility messages).
 //
 // Route list:
-//   GET  /billing/batches                        → index()       — paginated list
-//   GET  /billing/batches/{batch}/download       → download()    — X12 file attachment
-//   POST /billing/batches/{batch}/acknowledge    → acknowledge() — process 277CA response
+//   GET  /billing/batches                        → index()       : paginated list
+//   GET  /billing/batches/{batch}/download       → download()    : X12 file attachment
+//   POST /billing/batches/{batch}/acknowledge    → acknowledge() : process 277CA response
 //
 // Department access: finance only (+ super_admin, it_admin).
-// file_content is NEVER returned in index() — only via download().
+// file_content is NEVER returned in index() : only via download().
 // ─────────────────────────────────────────────────────────────────────────────
 
 namespace App\Http\Controllers;
@@ -64,7 +64,7 @@ class EdiBatchController extends Controller
             ->orderBy('created_at', 'desc')
             ->paginate(50);
 
-        // Strip file_content from all items — download goes through download()
+        // Strip file_content from all items : download goes through download()
         $batches->getCollection()->transform(fn ($b) => $b->makeHidden('file_content'));
 
         return response()->json($batches);

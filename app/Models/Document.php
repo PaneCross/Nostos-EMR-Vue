@@ -1,7 +1,7 @@
 <?php
 
 // ─── Document ────────────────────────────────────────────────────────────────
-// Participant-level document record. Stores metadata only — file bytes live
+// Participant-level document record. Stores metadata only : file bytes live
 // on disk at storage/app/{file_path}.
 //
 // Soft-delete enforced: HIPAA prohibits permanent destruction of participant
@@ -81,7 +81,7 @@ class Document extends Model
         'document_category',
         'uploaded_by_user_id',
         'uploaded_at',
-        // Phase G6 — OCR
+        // Phase G6 : OCR
         'ocr_text', 'ocr_extracted_fields', 'ocr_processed_at', 'ocr_engine',
     ];
 

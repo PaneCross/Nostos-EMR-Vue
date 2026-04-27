@@ -234,7 +234,7 @@ async function closeWound(wound: WoundRecord) {
             </div>
           </div>
 
-          <!-- Phase J5 — Photo gallery -->
+          <!-- Phase J5: Photo gallery -->
           <WoundPhotoGallery :wound="wound" />
 
           <!-- Assessment form -->

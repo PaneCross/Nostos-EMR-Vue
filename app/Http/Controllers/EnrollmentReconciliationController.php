@@ -121,7 +121,7 @@ class EnrollmentReconciliationController extends Controller
         ]);
     }
 
-    /** GET JSON summary for a single MMR file — used by expand row. */
+    /** GET JSON summary for a single MMR file : used by expand row. */
     public function showMmrFile(Request $request, MmrFile $file): JsonResponse
     {
         $this->gate($request);

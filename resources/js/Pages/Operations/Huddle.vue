@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// ─── Operations/Huddle.vue — Phase K3 ────────────────────────────────────────
+// ─── Operations/Huddle.vue: Phase K3 ────────────────────────────────────────
 // Daily department huddle view. Quick at-a-glance summary used at morning
 // stand-ups: today's appointments, alerts, urgent items per selected
 // department. Department selector switches data source.
@@ -64,7 +64,7 @@ onMounted(refresh)
                 </template>
                 <template v-else>{{ it }}</template>
               </li>
-              <li v-if="!items.length" class="text-xs text-gray-500 dark:text-slate-400">—</li>
+              <li v-if="!items.length" class="text-xs text-gray-500 dark:text-slate-400">-</li>
             </ul>
           </div>
           <div v-else class="text-sm text-gray-700 dark:text-slate-200">{{ items }}</div>

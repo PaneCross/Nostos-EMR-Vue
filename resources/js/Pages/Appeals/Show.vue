@@ -7,8 +7,8 @@
 // Audience: QA Compliance + assigned reviewer.
 //
 // Notable rules:
-//   - 42 CFR §460.122 — appeals; 30-day standard / 72-hour expedited.
-//   - Append-only — past timeline events cannot be edited (audit trail
+//   - 42 CFR §460.122: appeals; 30-day standard / 72-hour expedited.
+//   - Append-only: past timeline events cannot be edited (audit trail
 //     integrity for CMS surveyor review).
 // ────────────────────────────────────────────────────────────────────────────
 
@@ -78,16 +78,16 @@ const STATUS_LABELS: Record<string, string> = {
     received: 'Received',
     acknowledged: 'Acknowledged',
     under_review: 'Under Review',
-    decided_upheld: 'Decided — Upheld',
-    decided_overturned: 'Decided — Overturned',
-    decided_partially_overturned: 'Decided — Partially Overturned',
+    decided_upheld: 'Decided: Upheld',
+    decided_overturned: 'Decided: Overturned',
+    decided_partially_overturned: 'Decided: Partially Overturned',
     withdrawn: 'Withdrawn',
     external_review_requested: 'External Review Requested',
     closed: 'Closed',
 }
 
-function fmt(d: string | null) { return d ? new Date(d).toLocaleString() : '—' }
-function fmtD(d: string | null) { return d ? new Date(d).toLocaleDateString() : '—' }
+function fmt(d: string | null) { return d ? new Date(d).toLocaleString() : '-' }
+function fmtD(d: string | null) { return d ? new Date(d).toLocaleDateString() : '-' }
 
 const isOpen = computed(() => ['received', 'acknowledged', 'under_review', 'external_review_requested'].includes(props.appeal.status))
 
@@ -168,7 +168,7 @@ const canDecide = computed(() => {
                         <div>
                             <h1 class="text-xl font-semibold text-slate-900 dark:text-slate-100">APPEAL-{{ appeal.id }}</h1>
                             <p class="text-sm text-slate-500 dark:text-slate-400">
-                                Participant appeal of service denial — 42 CFR §460.122
+                                Participant appeal of service denial: 42 CFR §460.122
                             </p>
                         </div>
                     </div>
@@ -180,7 +180,7 @@ const canDecide = computed(() => {
                                 : 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300',
                         ]">
                             <ClockIcon class="w-3.5 h-3.5" />
-                            {{ appeal.type === 'expedited' ? 'Expedited — 72h decision' : 'Standard — 30-day decision' }}
+                            {{ appeal.type === 'expedited' ? 'Expedited: 72h decision' : 'Standard: 30-day decision' }}
                         </span>
                     </div>
                 </div>
@@ -271,7 +271,7 @@ const canDecide = computed(() => {
                                 <dt class="w-40 text-slate-500 dark:text-slate-400">Cont. of Benefits:</dt>
                                 <dd class="text-slate-800 dark:text-slate-200">
                                     <span v-if="appeal.continuation_of_benefits" class="inline-flex items-center gap-1 text-amber-700 dark:text-amber-300">
-                                        <ExclamationTriangleIcon class="w-3.5 h-3.5" /> Yes — service continues during appeal
+                                        <ExclamationTriangleIcon class="w-3.5 h-3.5" /> Yes: service continues during appeal
                                     </span>
                                     <span v-else class="text-slate-500">No</span>
                                 </dd>

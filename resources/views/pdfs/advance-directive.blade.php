@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>{{ $type_label }} — {{ $participant->first_name }} {{ $participant->last_name }}</title>
+    <title>{{ $type_label }}: {{ $participant->first_name }} {{ $participant->last_name }}</title>
     <style>
         * { box-sizing: border-box; }
         body { font-family: DejaVu Sans, sans-serif; color: #0f172a; font-size: 11pt; margin: 0; padding: 0; }
@@ -28,20 +28,20 @@
 <body>
 <div class="wrap">
     <h1>{{ $type_label }}</h1>
-    <div class="sub">NostosEMR PACE Program — generated {{ $generated_at->format('F j, Y H:i') }}</div>
+    <div class="sub">NostosEMR PACE Program: generated {{ $generated_at->format('F j, Y H:i') }}</div>
 
     <h2>Participant</h2>
     <table class="meta">
         <tr><td class="k">Name</td><td>{{ $participant->first_name }} {{ $participant->last_name }}</td></tr>
-        <tr><td class="k">MRN</td><td>{{ $participant->mrn ?? '—' }}</td></tr>
-        <tr><td class="k">Date of Birth</td><td>{{ optional($participant->dob)->format('F j, Y') ?: '—' }}</td></tr>
-        <tr><td class="k">Gender</td><td>{{ ucfirst((string)($participant->gender ?? '—')) }}</td></tr>
+        <tr><td class="k">MRN</td><td>{{ $participant->mrn ?? '-' }}</td></tr>
+        <tr><td class="k">Date of Birth</td><td>{{ optional($participant->dob)->format('F j, Y') ?: '-' }}</td></tr>
+        <tr><td class="k">Gender</td><td>{{ ucfirst((string)($participant->gender ?? '-')) }}</td></tr>
         <tr><td class="k">Address</td><td>
             @if($address)
                 {{ $address->street ?? '' }}@if($address->unit) , {{ $address->unit }}@endif<br>
                 {{ $address->city ?? '' }} {{ $address->state ?? '' }} {{ $address->zip ?? '' }}
             @else
-                —
+               :
             @endif
         </td></tr>
         <tr><td class="k">Current Directive on File</td><td>{{ $participant->advanceDirectiveLabel() ?? 'None documented' }}</td></tr>
@@ -62,20 +62,20 @@
     @endif
 
     @if($type === 'polst' || $type === 'combined')
-        <h2>POLST — Life-Sustaining Treatment Orders</h2>
+        <h2>POLST: Life-Sustaining Treatment Orders</h2>
         <div class="box">
-            <div><strong>Section A — CPR status (when without pulse AND not breathing):</strong></div>
+            <div><strong>Section A: CPR status (when without pulse AND not breathing):</strong></div>
             <ol class="choices">
                 <li>☐ Attempt Resuscitation / CPR</li>
                 <li>☐ Do Not Attempt Resuscitation / DNR (Allow Natural Death)</li>
             </ol>
-            <div style="margin-top: 6pt;"><strong>Section B — Medical Interventions (when pulse and/or breathing present):</strong></div>
+            <div style="margin-top: 6pt;"><strong>Section B: Medical Interventions (when pulse and/or breathing present):</strong></div>
             <ol class="choices">
-                <li>☐ Full Treatment — all interventions including intubation &amp; ICU care</li>
-                <li>☐ Selective Treatment — medical treatment, IV fluids/antibiotics, no intubation</li>
-                <li>☐ Comfort-Focused Treatment — symptom relief only</li>
+                <li>☐ Full Treatment: all interventions including intubation &amp; ICU care</li>
+                <li>☐ Selective Treatment: medical treatment, IV fluids/antibiotics, no intubation</li>
+                <li>☐ Comfort-Focused Treatment: symptom relief only</li>
             </ol>
-            <div style="margin-top: 6pt;"><strong>Section C — Medically Assisted Nutrition:</strong></div>
+            <div style="margin-top: 6pt;"><strong>Section C: Medically Assisted Nutrition:</strong></div>
             <ol class="choices">
                 <li>☐ Long-term artificial nutrition</li>
                 <li>☐ Trial period of artificial nutrition</li>
@@ -98,7 +98,7 @@
     @endif
 
     @if($type === 'living_will' || $type === 'combined')
-        <h2>Living Will — Treatment Preferences</h2>
+        <h2>Living Will: Treatment Preferences</h2>
         <div class="box">
             <ol class="choices">
                 <li>If I have a terminal condition or am in a persistent vegetative state, I direct that treatments that only prolong dying be withheld or withdrawn.</li>
@@ -120,7 +120,7 @@
 </div>
 
 <div class="facsimile">
-    PACE-generated facsimile — confirm conformance to state-specific advance directive requirements before legal reliance.
+    PACE-generated facsimile: confirm conformance to state-specific advance directive requirements before legal reliance.
 </div>
 </body>
 </html>

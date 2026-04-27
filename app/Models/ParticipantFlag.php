@@ -11,7 +11,7 @@
 // Resolution is non-destructive: `is_active=false` + resolved_by + resolved_at.
 //
 // Notable rules:
-//  - PHI under HIPAA — tenant-scoped (tenant_id is required on every flag).
+//  - PHI under HIPAA : tenant-scoped (tenant_id is required on every flag).
 //  - Real-time: a ParticipantFlagUpdated event fires on create/update so
 //    open chart sessions and dashboards refresh immediately.
 // ─────────────────────────────────────────────────────────────────────────────

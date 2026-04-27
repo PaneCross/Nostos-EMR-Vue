@@ -1,5 +1,5 @@
 <!--
-  Grievance Queue — lists all grievances in three tabs: Open, Resolved, and CMS Reportable.
+  Grievance Queue: lists all grievances in three tabs: Open, Resolved, and CMS Reportable.
   QA admins can file new grievances via a modal with participant search and full form fields.
   Rows are clickable to navigate to the grievance detail view.
 -->
@@ -7,12 +7,12 @@
 // ─── Grievances/Index ───────────────────────────────────────────────────────
 // PACE grievance queue. Grievances are general complaints from a participant
 // or family member (quality of service, staff conduct, food, transport, etc.)
-// — distinct from Appeals (which contest a specific service denial decision).
+//: distinct from Appeals (which contest a specific service denial decision).
 //
 // Audience: QA Compliance department primarily; intake from any user.
 //
 // Notable rules:
-//   - 42 CFR §460.120 — grievance system; written notice + 30-day resolution
+//   - 42 CFR §460.120: grievance system; written notice + 30-day resolution
 //     target. The "CMS Reportable" tab surfaces ones requiring HPMS upload.
 //   - Day-25 aging alert + amber row color when nearing the 30-day deadline.
 // ────────────────────────────────────────────────────────────────────────────
@@ -206,7 +206,7 @@ function fmt(d: string | null): string {
       <div class="flex items-center justify-between">
         <div>
           <h1 class="text-2xl font-bold text-gray-900 dark:text-slate-100">Grievances</h1>
-          <p class="mt-1 text-sm text-gray-500 dark:text-slate-400">42 CFR §460.118 — Grievance and Appeals Process</p>
+          <p class="mt-1 text-sm text-gray-500 dark:text-slate-400">42 CFR §460.118: Grievance and Appeals Process</p>
         </div>
         <button
           v-if="props.isQaAdmin"

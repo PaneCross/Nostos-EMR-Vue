@@ -6,7 +6,7 @@
 // to a note that's already been signed.
 //
 // Extracted from ClinicalNoteController so the business rules for note signing
-// — audit logging, event broadcasting, HIPAA immutability enforcement — live
+// : audit logging, event broadcasting, HIPAA immutability enforcement : live
 // in one place and don't clutter the HTTP layer.
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -40,7 +40,7 @@ class NoteSigningService
             newValues:    ['note_id' => $note->id, 'signed_at' => $note->signed_at],
         );
 
-        // Phase B7 — if the signed note is linked to any problems, trigger HCC
+        // Phase B7 : if the signed note is linked to any problems, trigger HCC
         // re-scoring and write an audit entry referencing the refreshed RAF.
         // HccRiskScoringService::calculateRafScore returns a raw score map;
         // persistence is caller-side (we just log for audit trail).

@@ -88,13 +88,13 @@ const riskBand = ref<string | null>(null)       // 'low' | 'medium' | 'high'
 const riskScore = ref<number | null>(null)
 const careGapCount = ref<number | null>(null)
 
-// Phase O11 — sentinel flags so a 403/500 surfaces honestly as "—" instead
+// Phase O11: sentinel flags so a 403/500 surfaces honestly as "-" instead
 // of looking identical to a successful "0 hits" state.
 const beersFailed = ref(false)
 const riskFailed = ref(false)
 const careGapsFailed = ref(false)
 
-// Phase Q4 — eligibility chip (latest 270/271 check status)
+// Phase Q4: eligibility chip (latest 270/271 check status)
 const eligibilityStatus = ref<string | null>(null)
 const eligibilityCheckedAt = ref<string | null>(null)
 const eligibilityFailed = ref(false)
@@ -102,7 +102,7 @@ const eligibilityFailed = ref(false)
 onMounted(async () => {
   const id = props.participant.id
   // Fire all three in parallel; swallow individual failures so a 403 on one
-  // doesn't blank the rest. Track the failure so the template can render "—".
+  // doesn't blank the rest. Track the failure so the template can render "-".
   axios.get(`/participants/${id}/beers-flags`).then(r => {
     const rows = r.data?.flags ?? r.data?.rows ?? []
     beersCount.value = Array.isArray(rows) ? rows.length : 0
@@ -118,7 +118,7 @@ onMounted(async () => {
     const gaps = r.data?.gaps ?? []
     careGapCount.value = Array.isArray(gaps) ? gaps.filter((g: any) => !g.satisfied).length : 0
   }).catch(() => { careGapsFailed.value = true })
-  // Phase Q4 — latest eligibility check
+  // Phase Q4: latest eligibility check
   axios.get(`/participants/${id}/eligibility-checks`).then(r => {
     const latest = (r.data?.checks ?? [])[0]
     if (latest) {
@@ -404,7 +404,7 @@ const sectionHdr = 'text-xs font-bold text-slate-500 dark:text-slate-400 upperca
           <span v-else-if="['declined_directive','unknown','incapacitated_no_directive'].includes(participant.advance_directive_status ?? '')" class="inline-flex items-center px-2 py-0.5 rounded border text-xs font-medium bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-400 border-gray-300 dark:border-slate-600">No Directive</span>
         </div>
 
-        <!-- Phase I2 — clinical-risk chips -->
+        <!-- Phase I2: clinical-risk chips -->
         <div class="flex flex-wrap gap-1 mt-1" data-testid="clinical-risk-chips">
           <span
             v-if="beersCount !== null && beersCount > 0"
@@ -420,7 +420,7 @@ const sectionHdr = 'text-xs font-bold text-slate-500 dark:text-slate-400 upperca
             class="inline-flex items-center px-2 py-0.5 rounded border text-xs font-medium bg-gray-50 dark:bg-slate-800 text-gray-500 dark:text-slate-400 border-gray-200 dark:border-slate-700"
             data-testid="chip-beers-failed"
           >
-            Beers · —
+            Beers ·:
           </span>
           <span
             v-if="riskBand"
@@ -435,7 +435,7 @@ const sectionHdr = 'text-xs font-bold text-slate-500 dark:text-slate-400 upperca
             class="inline-flex items-center px-2 py-0.5 rounded border text-xs font-medium bg-gray-50 dark:bg-slate-800 text-gray-500 dark:text-slate-400 border-gray-200 dark:border-slate-700"
             data-testid="chip-risk-failed"
           >
-            Risk · —
+            Risk ·:
           </span>
           <span
             v-if="careGapCount !== null && careGapCount > 0"
@@ -450,9 +450,9 @@ const sectionHdr = 'text-xs font-bold text-slate-500 dark:text-slate-400 upperca
             class="inline-flex items-center px-2 py-0.5 rounded border text-xs font-medium bg-gray-50 dark:bg-slate-800 text-gray-500 dark:text-slate-400 border-gray-200 dark:border-slate-700"
             data-testid="chip-care-gaps-failed"
           >
-            Care gaps · —
+            Care gaps ·:
           </span>
-          <!-- Phase Q4 — eligibility chip -->
+          <!-- Phase Q4: eligibility chip -->
           <span
             v-if="eligibilityStatus"
             :title="`Latest 270/271 eligibility ${eligibilityStatus} (checked ${eligibilityCheckedAt})`"
@@ -468,7 +468,7 @@ const sectionHdr = 'text-xs font-bold text-slate-500 dark:text-slate-400 upperca
             class="inline-flex items-center px-2 py-0.5 rounded border text-xs font-medium bg-gray-50 dark:bg-slate-800 text-gray-500 dark:text-slate-400 border-gray-200 dark:border-slate-700"
             data-testid="chip-eligibility-failed"
           >
-            Eligibility · —
+            Eligibility ·:
           </span>
         </div>
       </div>

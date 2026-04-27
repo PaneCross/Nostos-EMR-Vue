@@ -34,7 +34,7 @@ class ProcessTransportStatusWebhookJob implements ShouldQueue
 
     public int $tries = 3;
 
-    /** Phase Y4 (Audit-13 M4): webhook payloads are tiny — short ceiling is fine. */
+    /** Phase Y4 (Audit-13 M4): webhook payloads are tiny : short ceiling is fine. */
     public int $timeout = 60;
 
     /** Jittered exponential backoff: ~30s, ~2m, ~5m. */
@@ -91,7 +91,7 @@ class ProcessTransportStatusWebhookJob implements ShouldQueue
             'participant_id'     => $participant->id,
             'source_module'      => 'transport',
             'alert_type'         => 'info',
-            'title'              => "Transport No-Show — {$name}",
+            'title'              => "Transport No-Show : {$name}",
             'message'            => "Participant {$name} (MRN: {$participant->mrn}) was marked as a no-show "
                                   . "by the transport driver. Please follow up.",
             'severity'           => 'warning',

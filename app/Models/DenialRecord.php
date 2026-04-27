@@ -48,7 +48,7 @@ class DenialRecord extends Model
         'written_off' => 'Written Off',
     ];
 
-    /** Terminal statuses — no further workflow actions possible. */
+    /** Terminal statuses : no further workflow actions possible. */
     public const TERMINAL_STATUSES = ['won', 'lost', 'written_off'];
 
     // ── Denial category constants ──────────────────────────────────────────────

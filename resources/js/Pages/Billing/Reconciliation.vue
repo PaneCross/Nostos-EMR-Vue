@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // ─── Billing/Reconciliation ─────────────────────────────────────────────────
 // Enrollment reconciliation against CMS files: ingest MMR (Monthly Membership
-// Report — who CMS thinks is enrolled) + TRR (Transaction Reply Report —
+// Report: who CMS thinks is enrolled) + TRR (Transaction Reply Report:
 // CMS's response to enrollment transactions submitted) and surface every
 // discrepancy as a worklist item.
 //
@@ -163,7 +163,7 @@ async function submitResolution(action: 'resolved' | 'ignored') {
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 function fmt(d: string | null): string {
-    return d ? new Date(d).toLocaleString() : '—'
+    return d ? new Date(d).toLocaleString() : '-'
 }
 
 function money(n: number): string {
@@ -251,7 +251,7 @@ const discrepancyCountsByType = computed(() => {
                 <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-5 space-y-3">
                     <h2 class="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Upload TRR</h2>
                     <p class="text-xs text-slate-500 dark:text-slate-400">
-                        Transaction Reply Report — CMS's per-transaction accept/reject response.
+                        Transaction Reply Report: CMS's per-transaction accept/reject response.
                     </p>
                     <div>
                         <label class="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">File (.txt)</label>
@@ -317,11 +317,11 @@ const discrepancyCountsByType = computed(() => {
                                     <span class="italic text-slate-400">{{ d.member_name ?? 'unknown' }}</span>
                                 </template>
                             </td>
-                            <td class="px-4 py-3 text-xs text-slate-500 dark:text-slate-400">{{ d.period ?? '—' }}</td>
+                            <td class="px-4 py-3 text-xs text-slate-500 dark:text-slate-400">{{ d.period ?? '-' }}</td>
                             <td class="px-4 py-3 text-right tabular-nums">{{ money(d.capitation_amount) }}</td>
                             <td class="px-4 py-3 text-right tabular-nums"
                                 :class="d.adjustment_amount !== 0 ? 'text-amber-700 dark:text-amber-300 font-semibold' : 'text-slate-400'">
-                                {{ d.adjustment_amount !== 0 ? money(d.adjustment_amount) : '—' }}
+                                {{ d.adjustment_amount !== 0 ? money(d.adjustment_amount) : '-' }}
                             </td>
                             <td class="px-4 py-3 text-right">
                                 <button @click="openResolve(d)"

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 // ─── IadlTab.vue ───────────────────────────────────────────────────────────
-// IADL — Instrumental Activities of Daily Living (Lawton 8-item
+// IADL: Instrumental Activities of Daily Living (Lawton 8-item
 // scale: phone, shopping, cooking, housekeeping, laundry, transport,
 // meds, finances). Each item is binary independent / needs-help.
 // Rolls up to 4 bands (independent / mild / moderate / severe).
@@ -107,7 +107,7 @@ const sparkPath = computed(() => {
 <template>
   <div class="space-y-6">
     <div class="flex items-center justify-between">
-      <h2 class="text-lg font-semibold text-gray-900 dark:text-slate-100">IADL — Lawton Scale</h2>
+      <h2 class="text-lg font-semibold text-gray-900 dark:text-slate-100">IADL: Lawton Scale</h2>
       <button
         type="button"
         class="inline-flex items-center gap-1 rounded bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700"
@@ -216,7 +216,7 @@ const sparkPath = computed(() => {
               </span>
             </td>
             <td class="px-3 py-2 text-gray-500 dark:text-slate-400">
-              {{ r.recorded_by ? `${r.recorded_by.first_name} ${r.recorded_by.last_name}` : '—' }}
+              {{ r.recorded_by ? `${r.recorded_by.first_name} ${r.recorded_by.last_name}` : '-' }}
             </td>
           </tr>
           <tr v-if="!loading && records.length === 0">

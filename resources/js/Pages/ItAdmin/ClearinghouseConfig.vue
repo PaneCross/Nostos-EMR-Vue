@@ -10,7 +10,7 @@
 //   - PAYWALL-DEFERRED: Availity / CHC / Office Ally adapters throw on use
 //     until a trading-partner agreement is signed. Default is the Null
 //     adapter (stages 837P files for manual upload via the payer portal).
-//   - The "no vendor / manual upload" banner is honest-labeling — do not
+//   - The "no vendor / manual upload" banner is honest-labeling: do not
 //     remove it without a real signed contract.
 // ────────────────────────────────────────────────────────────────────────────
 import { ref, reactive } from 'vue'
@@ -84,7 +84,7 @@ async function toggleActive(cfg: ClearinghouseCfg) {
 
 async function runHealthCheck(cfg: ClearinghouseCfg) {
     const r = await axios.post(`/it-admin/clearinghouse-config/${cfg.id}/health-check`)
-    window.alert(`[${cfg.adapter}] ${r.data.ok ? 'OK' : 'NOT WIRED'} — ${r.data.message}`)
+    window.alert(`[${cfg.adapter}] ${r.data.ok ? 'OK' : 'NOT WIRED'}: ${r.data.message}`)
 }
 </script>
 
@@ -171,7 +171,7 @@ async function runHealthCheck(cfg: ClearinghouseCfg) {
                     <tbody>
                         <tr v-if="configs.length === 0">
                             <td colspan="6" class="px-3 py-6 text-center text-slate-400">
-                                No configuration rows yet. The tenant is using the default "No vendor — manual upload" adapter.
+                                No configuration rows yet. The tenant is using the default "No vendor: manual upload" adapter.
                             </td>
                         </tr>
                         <tr v-for="cfg in configs" :key="cfg.id" class="border-t border-gray-100 dark:border-slate-700">
@@ -182,7 +182,7 @@ async function runHealthCheck(cfg: ClearinghouseCfg) {
                                 <span v-if="cfg.is_active" class="text-emerald-600 dark:text-emerald-400 font-medium">active</span>
                                 <span v-else class="text-slate-400">inactive</span>
                             </td>
-                            <td class="px-3 py-2 text-slate-500">{{ cfg.last_successful_at ?? '—' }}</td>
+                            <td class="px-3 py-2 text-slate-500">{{ cfg.last_successful_at ?? '-' }}</td>
                             <td class="px-3 py-2 text-right space-x-2">
                                 <button @click="toggleActive(cfg)" class="text-xs text-blue-600 dark:text-blue-400 hover:underline">
                                     {{ cfg.is_active ? 'Deactivate' : 'Activate' }}

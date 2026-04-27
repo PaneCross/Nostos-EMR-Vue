@@ -3,7 +3,7 @@
 // ─── WebhookController ────────────────────────────────────────────────────────
 // Handles incoming webhooks from the Nostos transport application.
 //
-// Route: POST /integrations/transport/status-webhook  (PUBLIC — no auth middleware)
+// Route: POST /integrations/transport/status-webhook  (PUBLIC : no auth middleware)
 //
 // Security:
 //   - HMAC-SHA256 signature validated via X-Transport-Signature header.

@@ -8,10 +8,10 @@
 // dispatches the appropriate delivery for their preference.
 //
 // Delivery modes:
-//   in_app_only     — handled by AlertCreatedEvent + Reverb (no email)
-//   email_immediate — send NotificationMail now via queue
-//   email_digest    — defer to DigestNotificationJob (no immediate email)
-//   off             — skip entirely
+//   in_app_only     : handled by AlertCreatedEvent + Reverb (no email)
+//   email_immediate : send NotificationMail now via queue
+//   email_digest    : defer to DigestNotificationJob (no immediate email)
+//   off             : skip entirely
 //
 // HIPAA: NotificationMail and DigestNotificationMail contain ZERO PHI.
 //
@@ -72,17 +72,17 @@ class NotificationDispatcher
             'email_immediate' => Mail::to($user->email)
                 ->queue(new NotificationMail($user)),
 
-            // Mark for digest collection — DigestNotificationJob picks these up
+            // Mark for digest collection : DigestNotificationJob picks these up
             'email_digest'    => $this->queueForDigest($user),
 
-            // 'off' or unknown — do nothing
+            // 'off' or unknown : do nothing
             default           => null,
         };
     }
 
     /**
      * Mark the user as having a pending digest item.
-     * Uses the Laravel cache with a 2-hour TTL — DigestNotificationJob
+     * Uses the Laravel cache with a 2-hour TTL : DigestNotificationJob
      * reads and clears these counters each time it runs.
      *
      * Cache key: digest_pending:{user_id}

@@ -1,7 +1,7 @@
 <?php
 
 // ─── AdvDirectiveRenewalWarningJob ───────────────────────────────────────────
-// Daily — finds advance directives with renewal_date approaching within the
+// Daily : finds advance directives with renewal_date approaching within the
 // org-tunable window (numericValue from preference). Routes to Social Work.
 //
 // Preference: workflow.advance_directive.renewal_warning_days

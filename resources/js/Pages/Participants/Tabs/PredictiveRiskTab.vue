@@ -4,7 +4,7 @@
 // Each model shows latest score + history sparkline. "Recompute"
 // triggers backend recalculation against current chart data.
 //
-// Scores are advisory — they inform IDT (Interdisciplinary Team — the
+// Scores are advisory: they inform IDT (Interdisciplinary Team: the
 // PACE clinical team that meets weekly) discussion but do not auto-
 // trigger orders. Models live in app/Services/PredictiveRisk/.
 // ───────────────────────────────────────────────────────────────────────────
@@ -82,7 +82,7 @@ const factors = computed(() => {
         <div class="mt-2 text-sm">
           <div>Score: <span class="font-semibold">{{ score.score }}</span></div>
           <div class="text-xs text-gray-500 dark:text-slate-400">Computed {{ score.computed_at?.slice(0, 16).replace('T', ' ') }}</div>
-          <!-- Phase O6 — provenance chip -->
+          <!-- Phase O6: provenance chip -->
           <span
             class="mt-1 inline-block rounded px-1.5 py-0.5 text-[10px]"
             :class="String(score.model_version ?? '').startsWith('trained-')

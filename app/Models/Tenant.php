@@ -4,8 +4,8 @@
 // Top-level multi-tenancy root. One row per PACE (Programs of All-Inclusive
 // Care for the Elderly) organization served by this EMR install.
 //
-// A tenant owns Sites (physical day-center locations), Users (staff), and —
-// indirectly through Site/Participant — every clinical record in the system.
+// A tenant owns Sites (physical day-center locations), Users (staff), and :
+// indirectly through Site/Participant : every clinical record in the system.
 // `cms_contract_id` is the federal Centers for Medicare & Medicaid Services
 // contract number issued to the PACE org. `transport_mode` chooses whether
 // participant rides are dispatched by an outside broker or in-house fleet.

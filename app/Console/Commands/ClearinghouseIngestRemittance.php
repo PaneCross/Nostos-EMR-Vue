@@ -6,7 +6,7 @@
 // Process835RemittanceJob for parsing via Remittance835ParserService.
 //
 // Under the default null gateway this command reports 0 files and exits
-// cleanly — that's the honest-label behavior while no vendor contract is
+// cleanly : that's the honest-label behavior while no vendor contract is
 // active. No error, just no work.
 //
 // Schedule (hourly) in routes/console.php / App\Console\Kernel::schedule().

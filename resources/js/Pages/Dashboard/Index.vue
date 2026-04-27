@@ -1,6 +1,6 @@
 <script setup lang="ts">
 // ─── Dashboard/Index.vue ───────────────────────────────────────────────────────
-// Main department dashboard page — rendered via Inertia for all departments.
+// Main department dashboard page: rendered via Inertia for all departments.
 // DashboardController injects: department, departmentLabel, role, impersonation.
 // All 14 clinical/operations + executive + super_admin departments render
 // live widget dashboards (real data via Promise.all widget endpoints).

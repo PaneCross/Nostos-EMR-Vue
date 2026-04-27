@@ -15,7 +15,7 @@ class UpdateAdlThresholdRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        // Permission further validated in AdlController — this confirms authentication
+        // Permission further validated in AdlController : this confirms authentication
         return auth()->check();
     }
 

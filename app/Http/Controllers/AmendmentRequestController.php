@@ -1,6 +1,6 @@
 <?php
 
-// ─── AmendmentRequestController — Phase P3 ──────────────────────────────────
+// ─── AmendmentRequestController : Phase P3 ──────────────────────────────────
 // HIPAA §164.526 Right to Amend. Patient/proxy submits via portal; staff
 // triages via /compliance/amendments queue.
 // ─────────────────────────────────────────────────────────────────────────────
@@ -28,7 +28,7 @@ class AmendmentRequestController extends Controller
         abort_unless($u->isSuperAdmin() || in_array($u->department, $allow, true), 403);
     }
 
-    /** GET /compliance/amendments — staff triage queue. */
+    /** GET /compliance/amendments : staff triage queue. */
     public function index(Request $request): JsonResponse|\Inertia\Response
     {
         $this->gateStaff();
@@ -47,7 +47,7 @@ class AmendmentRequestController extends Controller
         return response()->json(['requests' => $rows]);
     }
 
-    /** POST /participants/{p}/amendment-requests — staff-side create (portal also creates via portal flow). */
+    /** POST /participants/{p}/amendment-requests : staff-side create (portal also creates via portal flow). */
     public function store(Request $request, Participant $participant): JsonResponse
     {
         $this->gateStaff();
@@ -82,7 +82,7 @@ class AmendmentRequestController extends Controller
         return response()->json(['request' => $row], 201);
     }
 
-    /** POST /amendment-requests/{id}/decide — accept | deny | withdraw. */
+    /** POST /amendment-requests/{id}/decide : accept | deny | withdraw. */
     public function decide(Request $request, AmendmentRequest $amendmentRequest): JsonResponse
     {
         $this->gateStaff();
@@ -93,7 +93,7 @@ class AmendmentRequestController extends Controller
             'status'             => 'required|in:under_review,accepted,denied,withdrawn',
             'decision_rationale' => 'nullable|string|max:4000',
             'patient_disagreement_statement' => 'nullable|string|max:4000',
-            // Phase Q3 — §164.526(c)(3) downstream notification recipients.
+            // Phase Q3 : §164.526(c)(3) downstream notification recipients.
             'share_with'                       => 'nullable|array|max:25',
             'share_with.*.recipient_type'      => 'required_with:share_with|in:insurer,public_health,lab,family,legal,patient_self,provider,other',
             'share_with.*.recipient_name'      => 'required_with:share_with|string|max:200',
@@ -111,7 +111,7 @@ class AmendmentRequestController extends Controller
         $shareWith = $validated['share_with'] ?? [];
         unset($validated['share_with']);
 
-        // Phase X1 — Audit-12 H1: concurrency guard. Two reviewers POST'ing
+        // Phase X1 : Audit-12 H1: concurrency guard. Two reviewers POST'ing
         // simultaneously would each run the share_with loop and produce
         // duplicate immutable PhiDisclosure rows in the §164.528 accounting
         // log. Wrap the read/check/write in a transaction with row-level lock
@@ -129,7 +129,7 @@ class AmendmentRequestController extends Controller
                     'reviewer_decision_at' => in_array($validated['status'], ['accepted', 'denied'], true) ? now() : null,
                 ]));
 
-                // Phase Q3 — On accept, log one PhiDisclosure per downstream
+                // Phase Q3 : On accept, log one PhiDisclosure per downstream
                 // recipient identified per §164.526(c)(3). Inside the same
                 // transaction so a partial failure rolls back disclosures too.
                 if ($validated['status'] === 'accepted') {

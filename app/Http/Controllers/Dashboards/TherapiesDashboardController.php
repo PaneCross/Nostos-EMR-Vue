@@ -6,10 +6,10 @@
 // (or super_admin).
 //
 // Routes (GET, all under /dashboards/therapies/):
-//   schedule   — Today's therapy appointments (PT/OT/ST)
-//   goals      — Active therapy care plan goals (therapy_pt/ot/st domains)
-//   sdrs       — Open/overdue SDRs assigned to therapies
-//   docs       — Unsigned therapy notes (documentation queue)
+//   schedule   : Today's therapy appointments (PT/OT/ST)
+//   goals      : Active therapy care plan goals (therapy_pt/ot/st domains)
+//   sdrs       : Open/overdue SDRs assigned to therapies
+//   docs       : Unsigned therapy notes (documentation queue)
 // ─────────────────────────────────────────────────────────────────────────────
 
 namespace App\Http\Controllers\Dashboards;

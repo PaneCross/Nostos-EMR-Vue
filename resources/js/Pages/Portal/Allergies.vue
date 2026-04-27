@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // ─── Portal/Allergies.vue ────────────────────────────────────────────────────
 // Participant Portal page. Shows the participant their own allergy list with
-// severity color-coding. Read-only — corrections go through the amendment
+// severity color-coding. Read-only: corrections go through the amendment
 // workflow (HIPAA §164.526 right to amend).
 // ─────────────────────────────────────────────────────────────────────────────
 import { ref, onMounted } from 'vue'

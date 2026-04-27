@@ -4,15 +4,15 @@
 // Manages per-tenant state Medicaid encounter submission configuration.
 //
 // Route list:
-//   GET    /it-admin/state-config          → index()   — Inertia page + JSON list
-//   POST   /it-admin/state-config          → store()   — create config for a state
-//   PUT    /it-admin/state-config/{config} → update()  — update existing config
-//   DELETE /it-admin/state-config/{config} → destroy() — deactivate (soft-disable)
+//   GET    /it-admin/state-config          → index()   : Inertia page + JSON list
+//   POST   /it-admin/state-config          → store()   : create config for a state
+//   PUT    /it-admin/state-config/{config} → update()  : update existing config
+//   DELETE /it-admin/state-config/{config} → destroy() : deactivate (soft-disable)
 //
 // Department access: it_admin only (+ super_admin).
 // Finance can VIEW configs; only IT Admin can CREATE/UPDATE/DELETE.
 //
-// DEBT-038: State Medicaid encounter submission — configuration framework.
+// DEBT-038: State Medicaid encounter submission : configuration framework.
 // ─────────────────────────────────────────────────────────────────────────────
 
 namespace App\Http\Controllers;

@@ -1,6 +1,6 @@
 <?php
 
-// ─── PortalOtpService — Phase L1 ────────────────────────────────────────────
+// ─── PortalOtpService : Phase L1 ────────────────────────────────────────────
 // OTP send/verify for ParticipantPortalUser. Mirrors OtpService but targets
 // the portal-user subject. Email-only in v1; phone can share the same flow.
 // ─────────────────────────────────────────────────────────────────────────────
@@ -42,7 +42,7 @@ class PortalOtpService
             'attempts'   => 0,
         ]);
 
-        // Phase O10 — branded email delivery. Demo deliverability via Mailpit.
+        // Phase O10 : branded email delivery. Demo deliverability via Mailpit.
         // Production needs a HIPAA-BAA mail vendor (paywall item 12). The
         // wrapper try/catch keeps the OTP itself valid even if dispatch fails;
         // the row is already persisted above and admins can retrieve it.

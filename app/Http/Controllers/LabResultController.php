@@ -3,7 +3,7 @@
 // ─── LabResultController ──────────────────────────────────────────────────────
 // REST endpoints for participant lab results (emr_lab_results).
 //
-// W5-2: Lab Results Viewer — surfaces structured HL7-sourced and manually-entered
+// W5-2: Lab Results Viewer : surfaces structured HL7-sourced and manually-entered
 // lab results in the participant chart.
 //
 // Auth: standard RBAC (any authenticated user with participant access may read;
@@ -221,7 +221,7 @@ class LabResultController extends Controller
                 'source_module'      => 'lab_results',
                 'alert_type'         => 'abnormal_lab',
                 'title'              => ($hasCritical ? 'Critical' : 'Abnormal') . " Lab Result: {$participant->first_name} {$participant->last_name}",
-                'message'            => "{$data['test_name']} — " . ($hasCritical ? 'critical value' : 'abnormal result') . " entered by {$user->first_name} {$user->last_name}. Review required.",
+                'message'            => "{$data['test_name']} - " . ($hasCritical ? 'critical value' : 'abnormal result') . " entered by {$user->first_name} {$user->last_name}. Review required.",
                 'severity'           => $severity,
                 'target_departments' => ['primary_care'],
                 'created_by_system'  => false,

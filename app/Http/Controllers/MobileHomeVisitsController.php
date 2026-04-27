@@ -1,6 +1,6 @@
 <?php
 
-// ─── MobileHomeVisitsController — Phase M5 ──────────────────────────────────
+// ─── MobileHomeVisitsController : Phase M5 ──────────────────────────────────
 namespace App\Http\Controllers;
 
 use App\Models\Appointment;
@@ -32,7 +32,7 @@ class MobileHomeVisitsController extends Controller
 
     private function todayVisits($u): array
     {
-        // Phase P9 — strict scope:
+        // Phase P9 : strict scope:
         //   • home_visit appointment_type only (was: any type)
         //   • assigned-to-this-user only (was: also matched IS NULL → grabbed all unassigned)
         // Prevents home-care nurses from seeing clinic / lab / specialist

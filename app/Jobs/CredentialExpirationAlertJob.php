@@ -99,9 +99,9 @@ class CredentialExpirationAlertJob implements ShouldQueue
 
     private function titleFor(int $days, string $label): string
     {
-        if ($days < 0)  return "Staff credential EXPIRED — {$label}";
-        if ($days === 0) return "Staff credential DUE TODAY — {$label}";
-        return "Staff credential expires in {$days} days — {$label}";
+        if ($days < 0)  return "Staff credential EXPIRED : {$label}";
+        if ($days === 0) return "Staff credential DUE TODAY : {$label}";
+        return "Staff credential expires in {$days} days : {$label}";
     }
 
     private function messageFor(int $days, StaffCredential $c, $u): string

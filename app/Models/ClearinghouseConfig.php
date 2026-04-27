@@ -3,7 +3,7 @@
 // ─── ClearinghouseConfig ─────────────────────────────────────────────────────
 // Phase 12. Per-tenant configuration for claims clearinghouse integration.
 // Defaults to the null_gateway adapter which stages 837P files for manual
-// upload — honest-label behavior when no paid vendor contract is in place.
+// upload : honest-label behavior when no paid vendor contract is in place.
 //
 // The credentials_json column is encrypted at-rest. Schema + auth managed
 // through StateMedicaidConfig-style IT admin UI.
@@ -20,7 +20,7 @@ class ClearinghouseConfig extends Model
 
     public const ADAPTERS = ['null_gateway', 'availity', 'change_healthcare', 'office_ally', 'custom'];
     public const ADAPTER_LABELS = [
-        'null_gateway'      => 'No vendor — manual upload',
+        'null_gateway'      => 'No vendor : manual upload',
         'availity'          => 'Availity',
         'change_healthcare' => 'Change Healthcare',
         'office_ally'       => 'Office Ally',

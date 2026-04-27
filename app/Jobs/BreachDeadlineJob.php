@@ -1,6 +1,6 @@
 <?php
 
-// ─── BreachDeadlineJob — Phase Q1 ───────────────────────────────────────────
+// ─── BreachDeadlineJob : Phase Q1 ───────────────────────────────────────────
 // Daily sweep at 07:00. HIPAA §164.408 deadlines:
 //   500+ affected: HHS within 60 calendar days of discovery.
 //   <500 affected: HHS by Mar 1 of the year following discovery.

@@ -20,15 +20,15 @@ to maintain and fewer bugs.
 ## When to Write a Custom Composable
 
 Write a custom composable (in this folder) only when the logic is:
-1. **EMR-specific** — e.g. clinical note signing flow, SDR deadline calculation
-2. **Not covered by VueUse** — check the docs first
-3. **Reused by 2+ components** — if only one component uses it, keep the logic in the component
+1. **EMR-specific** - e.g. clinical note signing flow, SDR deadline calculation
+2. **Not covered by VueUse** - check the docs first
+3. **Reused by 2+ components** - if only one component uses it, keep the logic in the component
 
 ## File Naming
 
 - One composable per file
 - Name matches the function it exports: `useChat.ts` exports `useChat()`
-- Keep each file under 100 lines — split into smaller composables if it grows
+- Keep each file under 100 lines - split into smaller composables if it grows
 
 ## Custom Composables in This Project
 

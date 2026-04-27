@@ -1,15 +1,15 @@
 <script setup lang="ts">
 // ─── Compliance/Roi ─────────────────────────────────────────────────────────
-// Audit-pull universe for ROI (Release of Information) requests — i.e. a
+// Audit-pull universe for ROI (Release of Information) requests: i.e. a
 // participant or their representative invoking their HIPAA right to access
 // their own medical record. (NOT return-on-investment.)
 //
 // Audience: QA Compliance, Health Information Management.
 //
 // Notable rules:
-//   - HIPAA §164.524 — covered entity must respond to an access request
+//   - HIPAA §164.524: covered entity must respond to an access request
 //     within 30 days; one 30-day extension allowed with written notice.
-//   - Append-only — closed/fulfilled rows are historical and immutable.
+//   - Append-only: closed/fulfilled rows are historical and immutable.
 // ────────────────────────────────────────────────────────────────────────────
 import { ref, computed } from 'vue'
 import { Head, Link } from '@inertiajs/vue3'
@@ -55,7 +55,7 @@ const filtered = computed(() => {
 })
 
 function fmt(ts: string | null): string {
-    if (!ts) return '—'
+    if (!ts) return '-'
     return new Date(ts).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
@@ -70,10 +70,10 @@ const STATUS_CLASS: Record<string, string> = {
 
 <template>
     <AppShell title="ROI Requests">
-        <Head title="ROI Requests — Compliance" />
+        <Head title="ROI Requests: Compliance" />
         <div class="max-w-7xl mx-auto p-6 space-y-6">
             <div>
-                <h1 class="text-xl font-semibold text-slate-900 dark:text-slate-100">Release of Information Requests — 12-Month Universe</h1>
+                <h1 class="text-xl font-semibold text-slate-900 dark:text-slate-100">Release of Information Requests: 12-Month Universe</h1>
                 <p class="text-sm text-slate-500 dark:text-slate-400">
                     HIPAA §164.524. 30-day response deadline. Window: {{ fmt(summary.window_start) }} → {{ fmt(summary.window_end) }}.
                 </p>
@@ -129,7 +129,7 @@ const STATUS_CLASS: Record<string, string> = {
                                 <Link v-if="r.participant.id" :href="`/participants/${r.participant.id}`" class="text-blue-600 dark:text-blue-400 hover:underline">
                                     {{ r.participant.name }}
                                 </Link>
-                                <span v-else>—</span>
+                                <span v-else>-</span>
                                 <div class="text-xs text-slate-500">{{ r.participant.mrn }}</div>
                             </td>
                             <td class="px-3 py-2 text-slate-700 dark:text-slate-200">
@@ -154,7 +154,7 @@ const STATUS_CLASS: Record<string, string> = {
                                     <div class="text-xs text-slate-500">{{ r.fulfilled_by }}</div>
                                 </template>
                                 <span v-else-if="r.status === 'denied'" class="text-xs text-red-500 italic">{{ r.denial_reason }}</span>
-                                <span v-else class="text-slate-400">—</span>
+                                <span v-else class="text-slate-400">-</span>
                             </td>
                         </tr>
                     </tbody>

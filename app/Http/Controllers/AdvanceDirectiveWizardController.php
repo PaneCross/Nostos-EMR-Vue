@@ -1,6 +1,6 @@
 <?php
 
-// ─── AdvanceDirectiveWizardController — Phase M1 ────────────────────────────
+// ─── AdvanceDirectiveWizardController : Phase M1 ────────────────────────────
 // Wizard-style AD capture: structured choices JSON + signature via ConsentRecord.
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -25,7 +25,7 @@ class AdvanceDirectiveWizardController extends Controller
         abort_unless($u->isSuperAdmin() || in_array($u->department, $allow, true), 403);
     }
 
-    /** POST /participants/{p}/advance-directive — creates + signs the AD. */
+    /** POST /participants/{p}/advance-directive : creates + signs the AD. */
     public function store(Request $request, Participant $participant): JsonResponse
     {
         $this->gate();
@@ -58,7 +58,7 @@ class AdvanceDirectiveWizardController extends Controller
             'tenant_id'          => $participant->tenant_id,
             'participant_id'     => $participant->id,
             'consent_type'       => 'advance_directive',
-            'document_title'     => 'Advance Directive — ' . strtoupper($validated['ad_type']),
+            'document_title'     => 'Advance Directive : ' . strtoupper($validated['ad_type']),
             'document_version'   => '1.0',
             'status'             => 'acknowledged',
             'representative_type'=> $validated['representative_type'] ?? ($hasProxy ? 'healthcare_proxy' : 'self'),

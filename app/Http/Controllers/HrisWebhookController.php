@@ -1,7 +1,7 @@
 <?php
 
 // ─── HrisWebhookController ───────────────────────────────────────────────────
-// Phase 15.7 — Scaffold endpoint that receives HRIS webhooks
+// Phase 15.7 : Scaffold endpoint that receives HRIS webhooks
 // (BambooHR / Rippling / Gusto / custom). Records the event row; does NOT
 // yet auto-sync into the credentialing system. When a real HRIS contract
 // lands, wire the provider-specific processor in HrisSyncService.
@@ -49,8 +49,8 @@ class HrisWebhookController extends Controller
             'payload'           => $request->all(),
             'processing_status' => $verified ? 'received' : 'ignored',
             'processing_notes'  => $verified
-                ? 'Signature verified. Scaffold — no auto-sync to credentialing yet.'
-                : 'No active config or signature missing/invalid — event stored for audit only.',
+                ? 'Signature verified. Scaffold : no auto-sync to credentialing yet.'
+                : 'No active config or signature missing/invalid : event stored for audit only.',
             'received_at'       => now(),
         ]);
 

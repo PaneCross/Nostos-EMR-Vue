@@ -6,11 +6,11 @@
 // Audience: QA Compliance, Primary Care, Infection Preventionist.
 //
 // Notable rules:
-//   - 42 CFR §460 — infection control program is required.
+//   - 42 CFR §460: infection control program is required.
 //   - Aligned with CDC long-term-care (LTC) surveillance definitions.
 //   - Outbreak detection is automated; declared outbreaks send critical
 //     alerts to qa_compliance + primary_care + it_admin.
-//   - Append-only — historical cases are immutable (audit trail).
+//   - Append-only: historical cases are immutable (audit trail).
 // ────────────────────────────────────────────────────────────────────────────
 import { ref, computed } from 'vue'
 import { Head, Link } from '@inertiajs/vue3'
@@ -78,7 +78,7 @@ const filtered = computed(() => {
 })
 
 function fmt(ts: string | null): string {
-    if (!ts) return '—'
+    if (!ts) return '-'
     return new Date(ts).toLocaleString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
@@ -97,10 +97,10 @@ const OUTBREAK_STATUS_CLASS: Record<string, string> = {
 
 <template>
     <AppShell title="Infection Surveillance">
-        <Head title="Infections — Compliance" />
+        <Head title="Infections: Compliance" />
         <div class="max-w-7xl mx-auto p-6 space-y-6">
             <div>
-                <h1 class="text-xl font-semibold text-slate-900 dark:text-slate-100">Infection Surveillance — 12-Month Universe</h1>
+                <h1 class="text-xl font-semibold text-slate-900 dark:text-slate-100">Infection Surveillance: 12-Month Universe</h1>
                 <p class="text-sm text-slate-500 dark:text-slate-400">
                     42 CFR §460 + CDC LTC surveillance. Window:
                     {{ fmt(summary.window_start) }} → {{ fmt(summary.window_end) }}.
@@ -169,7 +169,7 @@ const OUTBREAK_STATUS_CLASS: Record<string, string> = {
                                     {{ o.organism_type }}
                                     <div v-if="o.organism_detail" class="text-xs text-slate-500">{{ o.organism_detail }}</div>
                                 </td>
-                                <td class="px-3 py-2 text-slate-600 dark:text-slate-300">{{ o.site_name ?? '—' }}</td>
+                                <td class="px-3 py-2 text-slate-600 dark:text-slate-300">{{ o.site_name ?? '-' }}</td>
                                 <td class="px-3 py-2 text-slate-600 dark:text-slate-300">{{ fmt(o.started_at) }}</td>
                                 <td class="px-3 py-2">
                                     <span :class="['inline-flex px-2 py-0.5 rounded text-xs', OUTBREAK_STATUS_CLASS[o.status]]">{{ o.status }}</span>
@@ -179,7 +179,7 @@ const OUTBREAK_STATUS_CLASS: Record<string, string> = {
                                     <span v-if="o.reported_to_state_at">{{ fmt(o.reported_to_state_at) }}</span>
                                     <span v-else class="text-xs text-red-500">not reported</span>
                                 </td>
-                                <td class="px-3 py-2 text-slate-600 dark:text-slate-300">{{ o.declared_by ?? '—' }}</td>
+                                <td class="px-3 py-2 text-slate-600 dark:text-slate-300">{{ o.declared_by ?? '-' }}</td>
                             </tr>
                         </tbody>
                     </table>
@@ -212,7 +212,7 @@ const OUTBREAK_STATUS_CLASS: Record<string, string> = {
                                     <Link v-if="c.participant.id" :href="c.href" class="text-blue-600 dark:text-blue-400 hover:underline">
                                         {{ c.participant.name }}
                                     </Link>
-                                    <span v-else>—</span>
+                                    <span v-else>-</span>
                                     <div class="text-xs text-slate-500">{{ c.participant.mrn }}</div>
                                 </td>
                                 <td class="px-3 py-2 text-slate-700 dark:text-slate-200">
@@ -226,7 +226,7 @@ const OUTBREAK_STATUS_CLASS: Record<string, string> = {
                                 <td class="px-3 py-2 text-slate-600 dark:text-slate-300">{{ c.source }}</td>
                                 <td class="px-3 py-2 text-center">
                                     <span v-if="c.hospitalization_required" class="text-red-600 dark:text-red-400">●</span>
-                                    <span v-else class="text-slate-400">—</span>
+                                    <span v-else class="text-slate-400">-</span>
                                 </td>
                                 <td class="px-3 py-2 text-slate-600 dark:text-slate-300">
                                     <span v-if="c.resolution_date">{{ fmt(c.resolution_date) }}</span>
@@ -236,7 +236,7 @@ const OUTBREAK_STATUS_CLASS: Record<string, string> = {
                                     <span v-if="c.outbreak_id" class="inline-flex px-2 py-0.5 rounded text-xs bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300">
                                         #{{ c.outbreak_id }}
                                     </span>
-                                    <span v-else class="text-slate-400">—</span>
+                                    <span v-else class="text-slate-400">-</span>
                                 </td>
                             </tr>
                         </tbody>

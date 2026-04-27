@@ -1,11 +1,11 @@
 <?php
 
 // ─── BereavementFollowupOverdueJob ───────────────────────────────────────────
-// Daily — finds bereavement family-contact follow-ups not made within 14 days
+// Daily : finds bereavement family-contact follow-ups not made within 14 days
 // of the bereavement event. Routes to Social Work Supervisor if opted in.
 //
 // Preference: designation.social_work_supervisor.bereavement_followup_missed.
-// Note: schema may vary by tenant — the job uses defensive table existence
+// Note: schema may vary by tenant : the job uses defensive table existence
 // checks since bereavement workflow shipped in Phase C3.
 // ─────────────────────────────────────────────────────────────────────────────
 

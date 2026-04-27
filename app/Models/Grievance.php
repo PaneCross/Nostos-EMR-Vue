@@ -2,7 +2,7 @@
 
 // ─── Grievance ─────────────────────────────────────────────────────────────────
 // Represents a participant, family, or staff grievance per 42 CFR §460.120–§460.121.
-// 42 CFR §460.120-121 — grievance + service-delivery-request rules. Grievance = "I'm unhappy with care." SDR = an internal service hand-off (e.g. PCP → pharmacy).
+// 42 CFR §460.120-121 : grievance + service-delivery-request rules. Grievance = "I'm unhappy with care." SDR = an internal service hand-off (e.g. PCP → pharmacy).
 //
 // CMS timelines (enforced by GrievanceOverdueJob and GrievanceService::checkOverdue):
 //   - Standard: resolve within 30 days
@@ -32,7 +32,7 @@ class Grievance extends Model
 
     // ── Constants ─────────────────────────────────────────────────────────────
 
-    /** Who filed the grievance — may not be a system user (e.g. anonymous, family) */
+    /** Who filed the grievance : may not be a system user (e.g. anonymous, family) */
     public const FILED_BY_TYPES = [
         'participant', 'family_member', 'caregiver',
         'legal_representative', 'staff', 'anonymous',
@@ -55,7 +55,7 @@ class Grievance extends Model
         'other'              => 'Other',
     ];
 
-    /** Status lifecycle — see class docblock */
+    /** Status lifecycle : see class docblock */
     public const STATUSES = ['open', 'under_review', 'resolved', 'escalated', 'withdrawn'];
 
     public const STATUS_LABELS = [
@@ -81,7 +81,7 @@ class Grievance extends Model
     /**
      * Categories that are always CMS-reportable on their face.
      * Grievances in these categories are auto-flagged cms_reportable=true
-     * at creation — no manual assessment required.
+     * at creation : no manual assessment required.
      * Source: 42 CFR §460.112 (non-discrimination) and CMS PACE survey guidance.
      */
     public const CMS_AUTO_FLAG_CATEGORIES = ['discrimination'];
@@ -90,7 +90,7 @@ class Grievance extends Model
      * Categories that require QA to actively assess CMS reportability before
      * the grievance is resolved. Resolving one of these without ever flagging
      * cms_reportable fires a warning alert to qa_compliance as an accountability net.
-     * This does NOT block resolution — it creates a paper trail.
+     * This does NOT block resolution : it creates a paper trail.
      */
     public const CMS_REVIEW_REQUIRED_CATEGORIES = [
         'discrimination', 'staff_conduct', 'quality_of_care',
@@ -224,7 +224,7 @@ class Grievance extends Model
     }
 
     /**
-     * Phase 13.5 — days elapsed since filing (for aging-band calculations in UI).
+     * Phase 13.5 : days elapsed since filing (for aging-band calculations in UI).
      * Returns null for closed grievances.
      */
     public function ageInDays(): ?int
@@ -234,9 +234,9 @@ class Grievance extends Model
     }
 
     /**
-     * Phase 13.5 — aging color band for the standard 30-day window. Returns one
+     * Phase 13.5 : aging color band for the standard 30-day window. Returns one
      * of: 'green' (0-15d), 'yellow' (16-25d), 'red' (26-30d), 'overdue' (>30d).
-     * Urgent grievances are not aging-banded through this helper — they have
+     * Urgent grievances are not aging-banded through this helper : they have
      * their own 72-hour logic via isUrgentOverdue().
      */
     public function agingBand(): ?string
@@ -276,7 +276,7 @@ class Grievance extends Model
 
     /**
      * Serialize for API responses (list view).
-     * Keeps PHI to a minimum — full details on show endpoint.
+     * Keeps PHI to a minimum : full details on show endpoint.
      */
     public function toApiArray(): array
     {

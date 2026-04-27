@@ -7,23 +7,23 @@
 // RemittanceAdjustment records.
 //
 // X12 835 segment reference:
-//   ISA — Interchange Control Header
-//   GS  — Functional Group Header
-//   ST  — Transaction Set Header (835)
-//   BPR — Financial Information (payment amount, method, date)
-//   TRN — Reassociation Trace Number (check/EFT number)
-//   REF — Reference Information
-//   DTM — Date/Time Reference
-//   N1  — Name (payer = PR loop, payee = PE loop)
-//   LX  — Header Number (service line counter)
-//   CLP — Claim Payment Information (one per claim)
-//   CAS — Claim Adjustment Segment (one or more per CLP)
-//   NM1 — Name (rendering provider etc.)
-//   SVC — Service Payment Information (service line detail)
-//   DTM — Service date within claim loop
-//   SE  — Transaction Set Trailer
-//   GE  — Functional Group Trailer
-//   IEA — Interchange Control Trailer
+//   ISA : Interchange Control Header
+//   GS  : Functional Group Header
+//   ST  : Transaction Set Header (835)
+//   BPR : Financial Information (payment amount, method, date)
+//   TRN : Reassociation Trace Number (check/EFT number)
+//   REF : Reference Information
+//   DTM : Date/Time Reference
+//   N1  : Name (payer = PR loop, payee = PE loop)
+//   LX  : Header Number (service line counter)
+//   CLP : Claim Payment Information (one per claim)
+//   CAS : Claim Adjustment Segment (one or more per CLP)
+//   NM1 : Name (rendering provider etc.)
+//   SVC : Service Payment Information (service line detail)
+//   DTM : Service date within claim loop
+//   SE  : Transaction Set Trailer
+//   GE  : Functional Group Trailer
+//   IEA : Interchange Control Trailer
 //
 // parse() returns a structured array with 'batch' header info and 'claims' array.
 // matchToClaims() attempts to cross-reference claims to emr_encounter_log records
@@ -179,7 +179,7 @@ class Remittance835ParserService
                 // ── Claim loop segments ───────────────────────────────────────
 
                 case 'LX':
-                    // New service line counter — used to group SVC within a claim
+                    // New service line counter : used to group SVC within a claim
                     $lastServiceLineId = $elements[1] ?? null;
                     break;
 
@@ -262,7 +262,7 @@ class Remittance835ParserService
                     break;
 
                 case 'SE':
-                    // End of transaction — save last claim
+                    // End of transaction : save last claim
                     if ($currentClaim !== null) {
                         $claims[] = $currentClaim;
                         $currentClaim = null;
@@ -432,7 +432,7 @@ class Remittance835ParserService
                 return; // Found and validated ST segment
             }
         }
-        // No ST segment found — may still be parseable, log warning but don't throw
+        // No ST segment found : may still be parseable, log warning but don't throw
         Log::warning('[Remittance835ParserService] No ST segment found in EDI content.');
     }
 }

@@ -1,7 +1,7 @@
 <?php
 
 // ─── ResolveGrievanceRequest ─────────────────────────────────────────────────
-// Validates closing out a Grievance — a formal participant complaint about
+// Validates closing out a Grievance : a formal participant complaint about
 // the PACE program (quality of care, staff conduct, billing, etc.).
 // Distinct from an Appeal, which contests a specific service denial.
 //
@@ -9,7 +9,7 @@
 //            controller (typically QA / Compliance staff).
 // Validates: resolution_text (≥10 chars describing how the issue was
 //            resolved) and resolution_date.
-// Notable rules: 42 CFR §460.120 — PACE grievance process. Resolution must
+// Notable rules: 42 CFR §460.120 : PACE grievance process. Resolution must
 //                be documented and communicated to the complainant.
 // ─────────────────────────────────────────────────────────────────────────────
 

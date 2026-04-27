@@ -1,6 +1,6 @@
 <?php
 
-// ─── MarketingFunnelController — Phase R9 ───────────────────────────────────
+// ─── MarketingFunnelController : Phase R9 ───────────────────────────────────
 // Aggregates Referral pipeline into a marketing/lead-source funnel:
 //   - per-source totals
 //   - per-source conversion rates (referrals → intake_complete → enrolled)

@@ -11,7 +11,7 @@ class FortifyServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        // NostosEMR is fully passwordless — we disable Fortify's built-in
+        // NostosEMR is fully passwordless : we disable Fortify's built-in
         // authentication views and only use our custom OTP flow.
         Fortify::loginView(fn () => inertia('Auth/Login'));
     }

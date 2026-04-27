@@ -121,7 +121,7 @@ function selectRow(id: number) {
                     </select>
                 </div>
 
-                <!-- Phase U1 — encounter creation happens via clinical flow
+                <!-- Phase U1: encounter creation happens via clinical flow
                      (Appointment → Encounter auto-create); no standalone create UI.
                      Manual entry is via POST /billing/encounters with full 837P fields,
                      used by integration tests + API consumers, not finance staff. -->

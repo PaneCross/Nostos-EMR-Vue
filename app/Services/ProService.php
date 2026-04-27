@@ -31,7 +31,7 @@ class ProService
             $survey = ProSurvey::find($row->survey_id);
             if (! $p || ! $survey) continue;
 
-            $body = "[NostosEMR] {$survey->title} — reply via portal. Weekly check-in.";
+            $body = "[NostosEMR] {$survey->title} : reply via portal. Weekly check-in.";
             $to = $p->mobile_phone ?? $p->home_phone ?? null;
             $result = $to ? $this->sms->send($to, $body) : ['sent' => false, 'channel' => 'null'];
 

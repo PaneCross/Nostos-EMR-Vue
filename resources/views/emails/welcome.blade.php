@@ -26,7 +26,7 @@
         If you did not expect this email, please contact your IT Admin immediately.
     </p>
 
-    <p>— NostosEMR System</p>
+    <p>- NostosEMR System</p>
 
 </body>
 </html>

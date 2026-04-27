@@ -1,7 +1,7 @@
 <?php
 
 // ─── CommitteeController ─────────────────────────────────────────────────────
-// Phase 15.8 — CRUD for committees, members, meetings, and votes.
+// Phase 15.8 : CRUD for committees, members, meetings, and votes.
 // Gated to qa_compliance + executive + it_admin + super_admin.
 // ─────────────────────────────────────────────────────────────────────────────
 

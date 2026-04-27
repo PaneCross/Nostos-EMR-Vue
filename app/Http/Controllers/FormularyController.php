@@ -1,7 +1,7 @@
 <?php
 
 // ─── FormularyController ─────────────────────────────────────────────────────
-// Phase 15.10 — Per-tenant formulary CRUD + check + coverage determinations.
+// Phase 15.10 : Per-tenant formulary CRUD + check + coverage determinations.
 // ─────────────────────────────────────────────────────────────────────────────
 
 namespace App\Http\Controllers;

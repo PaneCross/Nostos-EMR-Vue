@@ -186,7 +186,7 @@ class IncidentController extends Controller
     }
 
     /**
-     * Phase B3 — Classify an incident as a sentinel event.
+     * Phase B3 : Classify an incident as a sentinel event.
      * Gate: qa_compliance / executive / super_admin. Forces rca_required=true
      * and auto-sets 5-day CMS deadline + 30-day RCA deadline from classification.
      *

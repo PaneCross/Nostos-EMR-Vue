@@ -18,9 +18,9 @@
 //   - All routes enforce participant→tenant match (abort 403 on mismatch).
 //
 // Idempotency: start() returns the existing in_progress/decisions_made record if
-// one exists — safe to call repeatedly from the wizard.
+// one exists : safe to call repeatedly from the wizard.
 //
-// Immutability: approved records are locked — mutation routes return 409.
+// Immutability: approved records are locked : mutation routes return 409.
 // ──────────────────────────────────────────────────────────────────────────────
 
 namespace App\Http\Controllers;
@@ -44,7 +44,7 @@ class MedReconciliationController extends Controller
 
     /**
      * Create (or return existing) in_progress reconciliation for the participant.
-     * Idempotent — safe to call again if the wizard is reopened.
+     * Idempotent : safe to call again if the wizard is reopened.
      *
      * POST /participants/{participant}/med-reconciliation/start
      */

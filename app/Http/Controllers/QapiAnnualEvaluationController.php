@@ -2,11 +2,11 @@
 
 // ─── QapiAnnualEvaluationController ───────────────────────────────────────────
 // UI + actions for the §460.200 annual QAPI evaluation artifact.
-// 42 CFR §460.200 — Annual quality-assurance evaluation (the once-a-year PACE org self-review).
-//   GET  /qapi/evaluations                — Inertia index
-//   POST /qapi/evaluations                — generate (or regenerate) for a year
-//   POST /qapi/evaluations/{eval}/review  — stamp governing body review
-//   GET  /qapi/evaluations/{eval}/download — download PDF
+// 42 CFR §460.200 : Annual quality-assurance evaluation (the once-a-year PACE org self-review).
+//   GET  /qapi/evaluations                : Inertia index
+//   POST /qapi/evaluations                : generate (or regenerate) for a year
+//   POST /qapi/evaluations/{eval}/review  : stamp governing body review
+//   GET  /qapi/evaluations/{eval}/download : download PDF
 // ─────────────────────────────────────────────────────────────────────────────
 
 namespace App\Http\Controllers;

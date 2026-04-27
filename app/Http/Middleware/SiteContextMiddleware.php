@@ -1,7 +1,7 @@
 <?php
 
 // ─── SiteContextMiddleware ────────────────────────────────────────────────────
-// Phase 10B — Multi-site context resolution for executive and Nostos SA dept users.
+// Phase 10B : Multi-site context resolution for executive and Nostos SA dept users.
 //
 // Resolves the "active site" for the current authenticated request:
 //   - Regular users: always their own site_id from shared_users

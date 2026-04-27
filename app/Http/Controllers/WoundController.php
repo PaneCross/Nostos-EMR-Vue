@@ -143,7 +143,7 @@ class WoundController extends Controller
     }
 
     /**
-     * Update wound record metadata (not an assessment — use addAssessment for measurements).
+     * Update wound record metadata (not an assessment : use addAssessment for measurements).
      *
      * PUT /participants/{participant}/wounds/{wound}
      */

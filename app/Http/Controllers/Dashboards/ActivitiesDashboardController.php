@@ -6,10 +6,10 @@
 // (or super_admin).
 //
 // Routes (GET, all under /dashboards/activities/):
-//   schedule  — Today's activities sessions and day center attendance
-//   goals     — Active care plan goals in the activities domain
-//   sdrs      — Open/overdue SDRs assigned to activities
-//   docs      — Unsigned activity notes (documentation queue)
+//   schedule  : Today's activities sessions and day center attendance
+//   goals     : Active care plan goals in the activities domain
+//   sdrs      : Open/overdue SDRs assigned to activities
+//   docs      : Unsigned activity notes (documentation queue)
 // ─────────────────────────────────────────────────────────────────────────────
 
 namespace App\Http\Controllers\Dashboards;
@@ -163,7 +163,7 @@ class ActivitiesDashboardController extends Controller
         $this->requireDept();
         $tenantId = Auth::user()->tenant_id;
 
-        // Activity notes use note_type='activity_notes' — map to department scope
+        // Activity notes use note_type='activity_notes' : map to department scope
         $notes = ClinicalNote::where('tenant_id', $tenantId)
             ->forDepartment('activities')
             ->unsigned()

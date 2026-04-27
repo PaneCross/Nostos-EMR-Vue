@@ -1,7 +1,7 @@
 <?php
 
-// ─── PhiDisclosure — Phase P2 ───────────────────────────────────────────────
-// HIPAA §164.528 Accounting of Disclosures. Append-only — never updated;
+// ─── PhiDisclosure : Phase P2 ───────────────────────────────────────────────
+// HIPAA §164.528 Accounting of Disclosures. Append-only : never updated;
 // records the moment a PHI release happened.
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -42,7 +42,7 @@ class PhiDisclosure extends Model
     public function scopeForTenant($q, int $t)        { return $q->where('tenant_id', $t); }
     public function scopeForParticipant($q, int $pid) { return $q->where('participant_id', $pid); }
 
-    /** §164.528(a)(1) — accounting period is 6 years prior to the request. */
+    /** §164.528(a)(1) : accounting period is 6 years prior to the request. */
     public function scopeAccountingPeriod($q)
     {
         return $q->where('disclosed_at', '>=', now()->subYears(6));

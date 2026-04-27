@@ -37,7 +37,7 @@ class SocialiteController extends Controller
             return redirect()->route('login')->withErrors(['oauth' => 'Unsupported provider.']);
         }
 
-        // In local dev, OAuth credentials won't be set — show friendly message.
+        // In local dev, OAuth credentials won't be set : show friendly message.
         $clientId = config("services.{$provider}.client_id");
 
         if (empty($clientId)) {

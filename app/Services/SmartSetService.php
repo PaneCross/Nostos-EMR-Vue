@@ -1,7 +1,7 @@
 <?php
 
 // ─── SmartSetService ─────────────────────────────────────────────────────────
-// Phase F2 — quick-order SmartSets. Pre-built bundles of ClinicalOrder rows
+// Phase F2 : quick-order SmartSets. Pre-built bundles of ClinicalOrder rows
 // for common admission / exacerbation workflows.
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -21,7 +21,7 @@ class SmartSetService
             'orders' => [
                 ['order_type' => 'lab',    'instructions' => 'A1C', 'clinical_indication' => 'Diabetes admission protocol'],
                 ['order_type' => 'lab',    'instructions' => 'BMP (glucose, creatinine)', 'clinical_indication' => 'Diabetes admission protocol'],
-                ['order_type' => 'consult','instructions' => 'Dietary referral — diabetic diet + education', 'clinical_indication' => 'Diabetes admission protocol'],
+                ['order_type' => 'consult','instructions' => 'Dietary referral : diabetic diet + education', 'clinical_indication' => 'Diabetes admission protocol'],
                 ['order_type' => 'medication_change', 'instructions' => 'Fingerstick BG AC+HS', 'clinical_indication' => 'Diabetes admission protocol'],
             ],
         ],

@@ -2,10 +2,10 @@
 
 // ─── LevelIiReportingController ───────────────────────────────────────────────
 // CMS Level I / Level II quarterly reporting UI + actions.
-//   GET  /compliance/level-ii-reporting             — Inertia index
-//   POST /compliance/level-ii-reporting             — generate/regenerate (year, quarter)
-//   POST /compliance/level-ii-reporting/{sub}/mark-submitted — honest flag only
-//   GET  /compliance/level-ii-reporting/{sub}/download       — stream CSV
+//   GET  /compliance/level-ii-reporting             : Inertia index
+//   POST /compliance/level-ii-reporting             : generate/regenerate (year, quarter)
+//   POST /compliance/level-ii-reporting/{sub}/mark-submitted : honest flag only
+//   GET  /compliance/level-ii-reporting/{sub}/download       : stream CSV
 // ─────────────────────────────────────────────────────────────────────────────
 
 namespace App\Http\Controllers;

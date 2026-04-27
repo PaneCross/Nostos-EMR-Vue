@@ -67,7 +67,7 @@ const options = computed<ChartOptions<'bar'>>(() => ({
 <template>
     <div :style="{ height: `${height}px` }" role="img" :aria-label="title ?? 'Bar chart'">
         <Bar :data="chartData" :options="options" />
-        <!-- Screen reader fallback — populate via the named slot when chart data is meaningful -->
+        <!-- Screen reader fallback: populate via the named slot when chart data is meaningful -->
         <div class="sr-only">
             <slot name="sr-description">
                 {{ title ? `${title}: ` : '' }}Chart data table not available.

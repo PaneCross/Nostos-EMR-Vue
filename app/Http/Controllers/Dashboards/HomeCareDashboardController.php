@@ -6,10 +6,10 @@
 // (or super_admin).
 //
 // Routes (GET, all under /dashboards/home-care/):
-//   schedule    — Today's home visits
-//   adl-alerts  — Active ADL decline alerts (threshold breaches) for home_care
-//   goals       — Active care plan goals in the home_care domain
-//   sdrs        — Open/overdue SDRs assigned to home_care
+//   schedule    : Today's home visits
+//   adl-alerts  : Active ADL decline alerts (threshold breaches) for home_care
+//   goals       : Active care plan goals in the home_care domain
+//   sdrs        : Open/overdue SDRs assigned to home_care
 // ─────────────────────────────────────────────────────────────────────────────
 
 namespace App\Http\Controllers\Dashboards;
@@ -240,7 +240,7 @@ class HomeCareDashboardController extends Controller
     }
 
     /**
-     * Phase I7 — Active restraint episodes with monitoring overdue.
+     * Phase I7 : Active restraint episodes with monitoring overdue.
      */
     public function restraintOverdue(): JsonResponse
     {
@@ -268,7 +268,7 @@ class HomeCareDashboardController extends Controller
     }
 
     /**
-     * Phase I7 — Active infection cases across participants.
+     * Phase I7 : Active infection cases across participants.
      */
     public function activeInfections(): JsonResponse
     {
@@ -297,7 +297,7 @@ class HomeCareDashboardController extends Controller
     }
 
     /**
-     * Phase I7 — High-risk participants on tenant caseload (recent scores).
+     * Phase I7 : High-risk participants on tenant caseload (recent scores).
      */
     public function highRiskCaseload(): JsonResponse
     {

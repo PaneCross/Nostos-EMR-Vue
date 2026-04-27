@@ -1,7 +1,7 @@
 <?php
 
 // ─── RestraintEpisode ────────────────────────────────────────────────────────
-// Phase B1 — restraint documentation. One episode per start/stop. Physical,
+// Phase B1 : restraint documentation. One episode per start/stop. Physical,
 // chemical, or both. Chemical (or both) requires an ordering provider.
 // Monitoring at the declared interval (default 15 min physical / 30 min
 // chemical) via RestraintMonitoringObservation children. IDT review required

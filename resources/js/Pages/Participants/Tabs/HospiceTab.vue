@@ -3,7 +3,7 @@
 // Hospice lifecycle for a PACE participant: refer → enroll → IDT
 // (Interdisciplinary Team) review → death, plus bereavement contacts
 // for family at day-15 / day-30 / month-3 after death. PACE may carry
-// hospice in-house or refer out — this tab covers both paths.
+// hospice in-house or refer out: this tab covers both paths.
 //
 // Notable rules: enrolling auto-creates a 5-order comfort-care bundle.
 // Recording death also auto-disenrolls the participant.

@@ -1,5 +1,5 @@
 <!--
-  Alerts List — shows active and dismissed alerts with severity and read filters.
+  Alerts List: shows active and dismissed alerts with severity and read filters.
   All data is loaded via axios (no Inertia props). Users can acknowledge alerts
   (marks as read) and dismiss them (removes from active list). Alert rows link
   to the relevant participant or chat channel.

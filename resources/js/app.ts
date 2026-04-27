@@ -1,10 +1,10 @@
-// ─── NostosEMR Vue — Application Entry Point ─────────────────────────────────
+// ─── NostosEMR Vue - Application Entry Point ─────────────────────────────────
 // Bootstraps the Inertia + Vue 3 SPA. This file runs ONCE per page-load on
 // the client and configures everything every page depends on:
 //
 //   1. Vue 3 + Inertia client setup (lazy-loads page components on demand).
 //   2. Global axios config (sends cookies, XSRF token, X-Requested-With header).
-//   3. Global axios response interceptor (V5/W2) — surfaces 5xx, 403, 409,
+//   3. Global axios response interceptor (V5/W2) - surfaces 5xx, 403, 409,
 //      and network failures as toasts via the 'nostos:toast' CustomEvent
 //      that Components/Toaster.vue listens for. Skips 422 (forms render
 //      their own per-field errors) and 401 (auth redirect handles it).
@@ -35,7 +35,7 @@ window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest'
 window.axios.defaults.withCredentials = true
 window.axios.defaults.withXSRFToken = true
 
-// ─── Phase U2 + V5 — global axios error surfacer ───────────────────────────
+// ─── Phase U2 + V5 - global axios error surfacer ───────────────────────────
 // Audit-9 found multiple empty catch{} blocks that swallow 4xx/5xx silently,
 // causing UIs to flip "saved=true" when nothing was persisted. This response
 // interceptor logs every failure to the console AND emits a 'nostos:toast'
@@ -107,14 +107,14 @@ createInertiaApp({
     },
 })
 
-// Phase O2 — register the portal service worker after initial render so we
+// Phase O2 - register the portal service worker after initial render so we
 // don't delay first paint. Scoped to /portal/ so internal staff routes aren't
 // affected by the cache-first shell. Bump `CACHE` in public/sw.js per release
 // until an asset-hash invalidation strategy lands.
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
         navigator.serviceWorker.register('/sw.js', { scope: '/portal/' }).catch(() => {
-            // Silent — PWA is a progressive enhancement; nothing fails if it's absent.
+            // Silent - PWA is a progressive enhancement; nothing fails if it's absent.
         })
     })
 }

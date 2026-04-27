@@ -32,7 +32,7 @@ class Alert extends Model
     public const UPDATED_AT = null;
 
     // ── Source modules ────────────────────────────────────────────────────────
-    // NOTE: not enforced as a CHECK constraint in DB — this list documents the
+    // NOTE: not enforced as a CHECK constraint in DB : this list documents the
     // production callers seen across app/Jobs and app/Services. Keep in sync.
     public const SOURCE_MODULES = [
         'adl', 'assessment', 'sdr', 'allergy', 'manual', 'chat',

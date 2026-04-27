@@ -88,7 +88,7 @@ class ParticipantController extends Controller
             $query->whereHas('activeFlags');
         }
 
-        // IDT Due filter — mirrors Participant::idtReviewOverdue() in SQL.
+        // IDT Due filter : mirrors Participant::idtReviewOverdue() in SQL.
         // 42 CFR §460.104(c): enrolled participants must be reassessed every 6 months.
         // Overdue = enrolled AND no review in the last 180 days AND (enrolled >180 days ago
         // OR has any prior review on record).
@@ -110,7 +110,7 @@ class ParticipantController extends Controller
             // W4-5: Append idt_review_overdue computed flag so Participants/Index.tsx
             // can show an amber "IDT Due" badge for enrolled participants overdue for their
             // 6-month IDT reassessment (42 CFR §460.104(c)).
-            // idtReviewOverdue() returns false for non-enrolled participants — safe to call on all.
+            // idtReviewOverdue() returns false for non-enrolled participants : safe to call on all.
             fn (Participant $p) => array_merge($p->toArray(), [
                 'idt_review_overdue' => $p->idtReviewOverdue(),
             ])
@@ -179,7 +179,7 @@ class ParticipantController extends Controller
 
         $participant->load(['site', 'tenant', 'createdBy']);
 
-        // HIPAA: audit trail access restricted to IT and QA only — clinical staff
+        // HIPAA: audit trail access restricted to IT and QA only : clinical staff
         // should not see who else has accessed a participant's chart.
         $canViewAudit = in_array($user->department, ['it_admin', 'qa_compliance']);
 
@@ -270,7 +270,7 @@ class ParticipantController extends Controller
                           || $user->department === 'it_admin',
             'canViewAudit' => $canViewAudit,
             // CMS disenrollment taxonomy for the Disenrollment tab modal.
-            // Single source of truth — see App\Support\DisenrollmentTaxonomy.
+            // Single source of truth : see App\Support\DisenrollmentTaxonomy.
             'disenrollmentReasons' => \App\Support\DisenrollmentTaxonomy::groupedLabels(),
         ]);
     }
@@ -384,13 +384,13 @@ class ParticipantController extends Controller
         $this->authorizeForTenant($participant, $user);
 
         $request->validate([
-            // Phase X2 — Audit-12 H2: mimetypes: validates by file content,
+            // Phase X2 : Audit-12 H2: mimetypes: validates by file content,
             // not extension. The 'image' rule already does PHP getimagesize
             // sniffing but mimetypes: belt-and-suspenders.
             'photo' => ['required', 'image', 'mimetypes:image/jpeg,image/png,image/webp', 'max:4096'],
         ]);
 
-        // Phase X5 — Audit-12 L2: store-then-update-then-delete-old order so a
+        // Phase X5 : Audit-12 L2: store-then-update-then-delete-old order so a
         // failed DB update doesn't orphan the user with no photo. Old file is
         // only deleted after the new photo_path is committed.
         $oldPath  = $participant->photo_path;
@@ -404,7 +404,7 @@ class ParticipantController extends Controller
         try {
             $participant->update(['photo_path' => $path]);
         } catch (\Throwable $e) {
-            // DB update failed — clean up the just-uploaded file so we don't
+            // DB update failed : clean up the just-uploaded file so we don't
             // leave it orphaned on disk.
             \Illuminate\Support\Facades\Storage::disk('public')->delete($path);
             throw $e;

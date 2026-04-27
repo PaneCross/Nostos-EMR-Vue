@@ -26,7 +26,7 @@ import { UserGroupIcon } from '@heroicons/vue/24/outline'
             <article class="prose prose-slate dark:prose-invert max-w-none text-sm leading-relaxed">
                 <h2>1. Scope</h2>
                 <p>
-                    This policy applies to every individual granted access to NostosEMR — employees, contractors,
+                    This policy applies to every individual granted access to NostosEMR: employees, contractors,
                     volunteers, and temporary staff. By using this system you acknowledge and agree to these terms.
                 </p>
 
@@ -59,7 +59,7 @@ import { UserGroupIcon } from '@heroicons/vue/24/outline'
                 <p>
                     Every clinical action you take is logged with your identity, timestamp, and before/after values
                     in an append-only audit trail retained for a minimum of 10 years per 42 CFR §460.210. Clinical
-                    notes, once signed, are immutable — corrections are added as addenda.
+                    notes, once signed, are immutable: corrections are added as addenda.
                 </p>
 
                 <h2>6. Incident Reporting</h2>

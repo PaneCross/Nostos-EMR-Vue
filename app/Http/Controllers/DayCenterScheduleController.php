@@ -4,7 +4,7 @@
 // Admin bulk management for participant day-center recurring schedules.
 //
 // Routes:
-//   GET  /scheduling/day-center/manage — Inertia page listing all enrolled
+//   GET  /scheduling/day-center/manage : Inertia page listing all enrolled
 //        participants with their day_center_days, filterable by site, inline
 //        edit pills.
 // ─────────────────────────────────────────────────────────────────────────────

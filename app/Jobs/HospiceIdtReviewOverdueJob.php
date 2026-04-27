@@ -3,7 +3,7 @@
 // ─── HospiceIdtReviewOverdueJob ──────────────────────────────────────────────
 // Phase C3. Daily. Finds hospice-enrolled participants whose last IDT review
 // is older than HOSPICE_IDT_REVIEW_DAYS (180). Emits a warning alert to
-// primary_care + social_work + qa_compliance — triggers re-certification
+// primary_care + social_work + qa_compliance : triggers re-certification
 // conversation. Dedup 30d per participant.
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -51,7 +51,7 @@ class HospiceIdtReviewOverdueJob implements ShouldQueue
                 'severity'           => 'warning',
                 'title'              => 'Hospice IDT review overdue',
                 'message'            => $daysSince
-                    ? "Hospice-enrolled participant #{$p->id} — last IDT review {$daysSince} days ago. Recertification conversation indicated."
+                    ? "Hospice-enrolled participant #{$p->id} : last IDT review {$daysSince} days ago. Recertification conversation indicated."
                     : "Hospice-enrolled participant #{$p->id} has no IDT review on record. Schedule huddle.",
                 'target_departments' => ['primary_care', 'social_work', 'qa_compliance'],
                 'metadata'           => [

@@ -5,14 +5,14 @@
 //
 // PACE participants are dually eligible (Medicare + Medicaid). Many states
 // require separate 837 encounter submissions to the state Medicaid agency.
-// Rules vary dramatically by state — submission format, timing, companion guide
+// Rules vary dramatically by state : submission format, timing, companion guide
 // deviations, and clearinghouse requirements all differ.
 //
 // One config per tenant per state_code. Managed by IT Admin only.
 // This table implements DEBT-038 (State Medicaid encounter submission support)
-// as a configuration framework — the actual 837 submission pipeline builds on top.
+// as a configuration framework : the actual 837 submission pipeline builds on top.
 //
-// Phase 9C — Part B (State Medicaid Configuration Framework)
+// Phase 9C : Part B (State Medicaid Configuration Framework)
 // ─────────────────────────────────────────────────────────────────────────────
 
 namespace App\Models;
@@ -71,7 +71,7 @@ class StateMedicaidConfig extends Model
 
     // ── Scopes ────────────────────────────────────────────────────────────────
 
-    /** Filter by tenant — required on all EMR queries (multi-tenant isolation) */
+    /** Filter by tenant : required on all EMR queries (multi-tenant isolation) */
     public function scopeForTenant($query, int $tenantId)
     {
         return $query->where('tenant_id', $tenantId);

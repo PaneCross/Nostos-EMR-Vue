@@ -2,11 +2,11 @@
 
 // ─── Sdr (Service Delivery Request) Model ────────────────────────────────────
 // Cross-department requests for services, referrals, orders, and care changes.
-// 42 CFR §460.121 — Service Delivery Requests must be acted on within 72 hours (24h if urgent).
+// 42 CFR §460.121 : Service Delivery Requests must be acted on within 72 hours (24h if urgent).
 //
 // 72-Hour Rule (CMS/PACE operational requirement):
 //   - due_at is ALWAYS = submitted_at + 72 hours
-//   - This is enforced in boot() — setting due_at to anything else throws
+//   - This is enforced in boot() : setting due_at to anything else throws
 //   - SdrDeadlineEnforcementJob runs every 15 min and:
 //       - Fires warning alert at 24h remaining
 //       - Fires urgent alert at 8h remaining
@@ -44,7 +44,7 @@ class Sdr extends Model
     public const PRIORITIES = ['routine', 'urgent', 'emergent'];
     public const STATUSES   = ['submitted', 'acknowledged', 'in_progress', 'completed', 'cancelled', 'denied'];
 
-    // Terminal statuses — no further state transitions after reaching one.
+    // Terminal statuses : no further state transitions after reaching one.
     // 'denied' feeds the §460.122 denial notice → appeal workflow.
     public const TERMINAL_STATUSES = ['completed', 'cancelled', 'denied'];
 

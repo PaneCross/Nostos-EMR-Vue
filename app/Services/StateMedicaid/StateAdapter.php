@@ -1,6 +1,6 @@
 <?php
 
-// ─── StateAdapter — Phase M6 ────────────────────────────────────────────────
+// ─── StateAdapter : Phase M6 ────────────────────────────────────────────────
 // Per-state Medicaid adapter contract. Each real state implementation
 // transforms a standard 837P payload into the state-specific submission format
 // (file layout, header, delimiters) required by that state's portal.

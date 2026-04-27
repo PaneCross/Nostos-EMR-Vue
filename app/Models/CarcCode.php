@@ -7,7 +7,7 @@
 // a payer adjusted a claim. Published by Washington Publishing Company (WPC)
 // under contract with CMS.
 //
-// Append-only (UPDATED_AT = null) — reference data; updated only via seeder
+// Append-only (UPDATED_AT = null) : reference data; updated only via seeder
 // when CMS publishes a new CARC code set.
 //
 // Populated by CarcCodeSeeder with ~55 commonly encountered codes.
@@ -23,7 +23,7 @@ class CarcCode extends Model
 {
     protected $table = 'emr_carc_codes';
 
-    /** Disable updated_at — reference data is append-only. */
+    /** Disable updated_at : reference data is append-only. */
     public const UPDATED_AT = null;
 
     // ── Fillable ───────────────────────────────────────────────────────────────

@@ -112,7 +112,7 @@ class QualityMeasureService
                 Participant::where('tenant_id', $t)->where('enrollment_status', 'enrolled')->count(),
             ],
             'HOS'  => fn ($t) => [
-                // Participants without a hospitalization in last 90d (lower is worse — so numerator = "not hospitalized")
+                // Participants without a hospitalization in last 90d (lower is worse : so numerator = "not hospitalized")
                 Participant::where('tenant_id', $t)->where('enrollment_status', 'enrolled')
                     ->whereNotExists(function ($q) {
                         $q->selectRaw(1)->from('emr_incidents')

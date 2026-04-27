@@ -85,7 +85,7 @@ class ActivityController extends Controller
             'notes'             => 'nullable|string|max:2000',
         ]);
 
-        // Idempotent — one row per (event, participant).
+        // Idempotent : one row per (event, participant).
         $att = ActivityAttendance::updateOrCreate(
             [
                 'activity_event_id' => $event->id,

@@ -25,7 +25,7 @@ class OtpService
             ->first();
 
         if (! $user) {
-            // Silently succeed — do NOT reveal whether email is registered
+            // Silently succeed : do NOT reveal whether email is registered
             return true;
         }
 

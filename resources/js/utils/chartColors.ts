@@ -11,7 +11,7 @@ export interface ChartPalette {
     gridColor: string
 }
 
-// Indigo/slate — general purpose UI
+// Indigo/slate - general purpose UI
 const defaultPalette: ChartPalette = {
     backgrounds: [
         'rgba(99, 102, 241, 0.7)',   // indigo-500
@@ -32,7 +32,7 @@ const defaultPalette: ChartPalette = {
     gridColor: 'rgba(148, 163, 184, 0.2)',
 }
 
-// Teal/emerald — clinical data (vitals, medications, care plans)
+// Teal/emerald - clinical data (vitals, medications, care plans)
 const clinicalPalette: ChartPalette = {
     backgrounds: [
         'rgba(20, 184, 166, 0.7)',   // teal-500
@@ -53,7 +53,7 @@ const clinicalPalette: ChartPalette = {
     gridColor: 'rgba(20, 184, 166, 0.15)',
 }
 
-// Violet/indigo — financial data (capitation, encounters, billing)
+// Violet/indigo - financial data (capitation, encounters, billing)
 const financePalette: ChartPalette = {
     backgrounds: [
         'rgba(139, 92, 246, 0.7)',   // violet-500

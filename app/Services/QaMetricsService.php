@@ -4,12 +4,12 @@
 // Computes QA/Compliance KPIs displayed on the QA Dashboard.
 //
 // All metrics are tenant-scoped and designed for the KPI cards:
-//   1. SDR compliance rate    — % of SDRs completed within the 72h window
-//   2. Overdue assessments    — assessments past their next_due_date
-//   3. Unsigned notes >24h    — draft notes older than 24 hours
-//   4. Open incidents         — non-closed incidents (all types)
-//   5. Overdue care plans     — care plans whose review_due_date has passed
-//   6. Hospital/ER this month — hospitalization + er_visit incidents this month
+//   1. SDR compliance rate    : % of SDRs completed within the 72h window
+//   2. Overdue assessments    : assessments past their next_due_date
+//   3. Unsigned notes >24h    : draft notes older than 24 hours
+//   4. Open incidents         : non-closed incidents (all types)
+//   5. Overdue care plans     : care plans whose review_due_date has passed
+//   6. Hospital/ER this month : hospitalization + er_visit incidents this month
 //
 // DocumentationComplianceJob calls this service daily to generate alerts.
 // ─────────────────────────────────────────────────────────────────────────────

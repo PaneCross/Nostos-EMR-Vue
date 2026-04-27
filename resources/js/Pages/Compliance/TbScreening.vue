@@ -6,7 +6,7 @@
 // Audience: QA Compliance, Primary Care, HR (for staff TB tracking).
 //
 // Notable rules:
-//   - 42 CFR §460.71 — annual TB screening cadence required.
+//   - 42 CFR §460.71: annual TB screening cadence required.
 //   - PPD-method rows must record induration_mm or are flagged invalid.
 //   - Daily job thresholds: 60d / 30d / today / overdue surface here.
 // ────────────────────────────────────────────────────────────────────────────
@@ -49,7 +49,7 @@ const filtered = computed(() => {
 })
 
 function fmt(d: string | null): string {
-    if (!d) return '—'
+    if (!d) return '-'
     return new Date(d).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
@@ -65,11 +65,11 @@ const STATUS_CLASS: Record<string, string> = {
 
 <template>
     <AppShell title="TB Screening">
-        <Head title="TB Screening — Compliance" />
+        <Head title="TB Screening: Compliance" />
         <div class="max-w-7xl mx-auto p-6 space-y-6">
             <div>
-                <h1 class="text-xl font-semibold text-slate-900 dark:text-slate-100">TB Screening — Enrolled Roster</h1>
-                <p class="text-sm text-slate-500 dark:text-slate-400">42 CFR §460.71 — annual TB screening required for every enrolled participant.</p>
+                <h1 class="text-xl font-semibold text-slate-900 dark:text-slate-100">TB Screening: Enrolled Roster</h1>
+                <p class="text-sm text-slate-500 dark:text-slate-400">42 CFR §460.71: annual TB screening required for every enrolled participant.</p>
             </div>
 
             <div class="grid grid-cols-2 md:grid-cols-6 gap-3">
@@ -125,8 +125,8 @@ const STATUS_CLASS: Record<string, string> = {
                                 <Link :href="r.href" class="text-blue-600 dark:text-blue-400 hover:underline">{{ r.name }}</Link>
                                 <div class="text-xs text-slate-500">{{ r.mrn }}</div>
                             </td>
-                            <td class="px-3 py-2 text-slate-700 dark:text-slate-200">{{ r.latest_type ?? '—' }}</td>
-                            <td class="px-3 py-2 text-slate-600 dark:text-slate-300">{{ r.latest_result ?? '—' }}</td>
+                            <td class="px-3 py-2 text-slate-700 dark:text-slate-200">{{ r.latest_type ?? '-' }}</td>
+                            <td class="px-3 py-2 text-slate-600 dark:text-slate-300">{{ r.latest_result ?? '-' }}</td>
                             <td class="px-3 py-2 text-slate-600 dark:text-slate-300">{{ fmt(r.performed_date) }}</td>
                             <td class="px-3 py-2 text-slate-600 dark:text-slate-300">{{ fmt(r.next_due_date) }}</td>
                             <td class="px-3 py-2">

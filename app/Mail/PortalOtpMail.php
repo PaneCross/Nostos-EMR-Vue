@@ -1,6 +1,6 @@
 <?php
 
-// ─── PortalOtpMail — Phase O10 ──────────────────────────────────────────────
+// ─── PortalOtpMail : Phase O10 ──────────────────────────────────────────────
 // Branded participant-portal OTP email. Mirrors the staff OtpMail pattern
 // but typed to ParticipantPortalUser. Demo deliverability via Mailpit; for
 // production a HIPAA-BAA mail vendor must be configured (see paywall report

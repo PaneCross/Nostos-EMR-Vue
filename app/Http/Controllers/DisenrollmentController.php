@@ -13,7 +13,7 @@
 //   Only enrollment, qa_compliance, and it_admin can update.
 //
 // The DisenrollmentRecord is created automatically by EnrollmentService::disenroll().
-// This controller is read/update only — creation is handled by the enrollment workflow.
+// This controller is read/update only : creation is handled by the enrollment workflow.
 // ──────────────────────────────────────────────────────────────────────────────
 
 namespace App\Http\Controllers;

@@ -15,9 +15,9 @@
 // Class mapping (appointment_type → ActCode):
 //   home_visit → HH  (home health)
 //   telehealth → VR  (virtual)
-//   all others → AMB (ambulatory — PACE day center default)
+//   all others → AMB (ambulatory : PACE day center default)
 //
-// W4-9 — GAP-13: FHIR R4 Encounter resource.
+// W4-9 : GAP-13: FHIR R4 Encounter resource.
 // ─────────────────────────────────────────────────────────────────────────────
 
 namespace App\Fhir\Mappers;

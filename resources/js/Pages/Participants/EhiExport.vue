@@ -1,6 +1,6 @@
 <script setup lang="ts">
 // ─── Participants / EHI Export ────────────────────────────────────────────────
-// 21st Century Cures Act § 4004 — Electronic Health Information export.
+// 21st Century Cures Act § 4004: Electronic Health Information export.
 // Staff-initiated (at participant or rep request). 24-hour download token.
 // Phase 5 (MVP roadmap).
 // ─────────────────────────────────────────────────────────────────────────────
@@ -49,11 +49,11 @@ async function requestExport() {
 }
 
 function fmt(d: string | null): string {
-    return d ? new Date(d).toLocaleString() : '—'
+    return d ? new Date(d).toLocaleString() : '-'
 }
 
 function hoursRemaining(expiresAt: string | null): string {
-    if (!expiresAt) return '—'
+    if (!expiresAt) return '-'
     const ms = new Date(expiresAt).getTime() - Date.now()
     if (ms <= 0) return 'expired'
     const hours = Math.floor(ms / 3_600_000)
@@ -64,7 +64,7 @@ function hoursRemaining(expiresAt: string | null): string {
 
 <template>
     <AppShell>
-        <Head :title="`EHI Export — ${participant.first_name} ${participant.last_name}`" />
+        <Head :title="`EHI Export: ${participant.first_name} ${participant.last_name}`" />
 
         <div class="px-6 py-6 max-w-5xl mx-auto space-y-6">
             <!-- Header -->
@@ -77,7 +77,7 @@ function hoursRemaining(expiresAt: string | null): string {
                     <ArchiveBoxArrowDownIcon class="w-7 h-7 text-indigo-600 dark:text-indigo-400 mt-0.5" />
                     <div>
                         <h1 class="text-xl font-semibold text-slate-900 dark:text-slate-100">
-                            EHI Export — {{ participant.last_name }}, {{ participant.first_name }}
+                            EHI Export: {{ participant.last_name }}, {{ participant.first_name }}
                         </h1>
                         <p class="text-sm text-slate-500 dark:text-slate-400">
                             Electronic Health Information export per 21st Century Cures Act § 4004 · MRN {{ participant.mrn }}
@@ -137,7 +137,7 @@ function hoursRemaining(expiresAt: string | null): string {
                     <tbody class="divide-y divide-slate-100 dark:divide-slate-700">
                         <tr v-for="e in exports" :key="e.id">
                             <td class="px-5 py-3 text-slate-700 dark:text-slate-200 text-xs">{{ fmt(e.created_at) }}</td>
-                            <td class="px-5 py-3 text-slate-700 dark:text-slate-200 text-xs">{{ e.requested_by ?? '—' }}</td>
+                            <td class="px-5 py-3 text-slate-700 dark:text-slate-200 text-xs">{{ e.requested_by ?? '-' }}</td>
                             <td class="px-5 py-3 text-xs">
                                 <span v-if="e.downloaded_at" class="inline-flex items-center gap-1 text-slate-500 dark:text-slate-400">
                                     <CheckBadgeIcon class="w-4 h-4" /> Downloaded {{ fmt(e.downloaded_at) }}

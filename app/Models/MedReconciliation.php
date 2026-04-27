@@ -1,7 +1,7 @@
 <?php
 
 // ─── MedReconciliation Model ──────────────────────────────────────────────────
-// Medication reconciliation record — documents a formal medication review
+// Medication reconciliation record : documents a formal medication review
 // performed when a participant's medication list is compared against an external
 // source (discharge summary, pharmacy printout, etc.).
 //
@@ -142,7 +142,7 @@ class MedReconciliation extends Model
     /** Human-readable label for the prior_source field. */
     public function sourceLabel(): string
     {
-        return self::SOURCE_LABELS[$this->prior_source] ?? $this->prior_source ?? '—';
+        return self::SOURCE_LABELS[$this->prior_source] ?? $this->prior_source ?? ':';
     }
 
     // ── Scopes ────────────────────────────────────────────────────────────────
@@ -169,7 +169,7 @@ class MedReconciliation extends Model
         return $query->whereIn('status', ['in_progress', 'decisions_made']);
     }
 
-    /** Reconciliations that found discrepancies — flagged for follow-up. */
+    /** Reconciliations that found discrepancies : flagged for follow-up. */
     public function scopeWithDiscrepancies(Builder $query): Builder
     {
         return $query->where('has_discrepancies', true);

@@ -5,7 +5,7 @@
 // outbreak when ≥3 cases of the same organism occur at the same site within
 // the detection window (7 days).
 //
-// Idempotent — won't create duplicate outbreaks for an already-active
+// Idempotent : won't create duplicate outbreaks for an already-active
 // (organism, site) pair. Back-links qualifying unlinked cases to the
 // outbreak when a new one is declared.
 //
@@ -38,7 +38,7 @@ class OutbreakDetectionService
         $declared = [];
 
         // Group recent cases by (site_id, organism_type). Treat null-site
-        // as its own bucket — cases without a site don't cluster into an
+        // as its own bucket : cases without a site don't cluster into an
         // auto-detected outbreak (they need manual review).
         $clusters = InfectionCase::forTenant($tenantId)
             ->where('onset_date', '>=', $since->toDateString())

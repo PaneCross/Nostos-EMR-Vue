@@ -1,5 +1,5 @@
 {{--
-    Service Denial Notice — CMS-style letter per 42 CFR §460.122.
+    Service Denial Notice: CMS-style letter per 42 CFR §460.122.
     Must include: reason, appeal rights, external review path, appeal deadline.
     Rendered to PDF by ServiceDenialNoticeService::generatePdf().
 --}}
@@ -25,7 +25,7 @@
 </head>
 <body>
     <h1>Notice of Service Denial</h1>
-    <p class="meta">42 CFR §460.122 — Participant Appeal Rights</p>
+    <p class="meta">42 CFR §460.122: Participant Appeal Rights</p>
 
     <table class="meta-table">
         <tr>
@@ -38,7 +38,7 @@
         </tr>
         <tr>
             <td class="label">Date of Birth:</td>
-            <td>{{ optional($participant->dob)->format('F j, Y') ?? '—' }}</td>
+            <td>{{ optional($participant->dob)->format('F j, Y') ?? '-' }}</td>
         </tr>
         @if ($notice->sdr)
             <tr>

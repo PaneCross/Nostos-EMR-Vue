@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // ─── Portal/Messages.vue ─────────────────────────────────────────────────────
 // Participant Portal secure-messaging inbox. Participant ↔ care-team messages
-// stay inside the system (HIPAA-compliant — no PHI ever leaves over plain
+// stay inside the system (HIPAA-compliant: no PHI ever leaves over plain
 // email). New messages route to the participant's IDT for triage/response.
 // ─────────────────────────────────────────────────────────────────────────────
 import { ref, onMounted } from 'vue'

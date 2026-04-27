@@ -3,7 +3,7 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Annual QAPI Evaluation — {{ $year }}</title>
+    <title>Annual QAPI Evaluation: {{ $year }}</title>
     <style>
         @page { margin: 0.75in; }
         body { font-family: DejaVu Sans, Helvetica, sans-serif; font-size: 10.5pt; color: #111; line-height: 1.45; }
@@ -28,12 +28,12 @@
     </style>
 </head>
 <body>
-    <h1>Annual QAPI Evaluation — {{ $year }}</h1>
+    <h1>Annual QAPI Evaluation: {{ $year }}</h1>
     <p class="meta">
         {{ $tenantName }} · Generated {{ $generatedAt->format('F j, Y g:i A') }}
         by {{ optional($generatedBy)->first_name }} {{ optional($generatedBy)->last_name }}
     </p>
-    <p class="meta">42 CFR §460.130–§460.140 and §460.200 — Quality Assessment and Performance Improvement Program</p>
+    <p class="meta">42 CFR §460.130–§460.140 and §460.200: Quality Assessment and Performance Improvement Program</p>
 
     <h2>Executive Summary</h2>
     <table class="kpi">
@@ -48,7 +48,7 @@
         <tr><td class="label">Mortality events (deaths)</td><td>{{ $summary['mortality_count'] ?? 0 }}</td></tr>
     </table>
 
-    <h2>QAPI Projects — Detailed</h2>
+    <h2>QAPI Projects: Detailed</h2>
     @if (empty($projects))
         <p class="meta">No QAPI projects on record for {{ $year }}.</p>
     @else
@@ -67,15 +67,15 @@
                 @foreach ($projects as $p)
                     <tr>
                         <td>{{ $p['title'] }}</td>
-                        <td>{{ $p['domain_label'] ?? $p['domain'] ?? '—' }}</td>
-                        <td class="status-{{ $p['status'] ?? 'planning' }}">{{ ucfirst($p['status'] ?? '—') }}</td>
-                        <td>{{ $p['aim_statement'] ?? '—' }}</td>
+                        <td>{{ $p['domain_label'] ?? $p['domain'] ?? '-' }}</td>
+                        <td class="status-{{ $p['status'] ?? 'planning' }}">{{ ucfirst($p['status'] ?? '-') }}</td>
+                        <td>{{ $p['aim_statement'] ?? '-' }}</td>
                         <td>
-                            {{ $p['baseline_metric'] ?? '—' }} →
-                            {{ $p['current_metric'] ?? '—' }} →
-                            {{ $p['target_metric'] ?? '—' }}
+                            {{ $p['baseline_metric'] ?? '-' }} →
+                            {{ $p['current_metric'] ?? '-' }} →
+                            {{ $p['target_metric'] ?? '-' }}
                         </td>
-                        <td>{{ $p['findings'] ?? '—' }}</td>
+                        <td>{{ $p['findings'] ?? '-' }}</td>
                     </tr>
                 @endforeach
             </tbody>
@@ -89,9 +89,9 @@
         reporting export, once available.)
     </p>
     <ul>
-        <li>Incidents by type: {{ $summary['incident_types_summary'] ?? '—' }}</li>
+        <li>Incidents by type: {{ $summary['incident_types_summary'] ?? '-' }}</li>
         <li>Appeals overturned: {{ $summary['appeals_overturned'] ?? 0 }} of {{ $summary['appeal_count'] ?? 0 }}</li>
-        <li>Grievance avg. resolution time: {{ $summary['grievance_avg_resolution_days'] ?? '—' }} days</li>
+        <li>Grievance avg. resolution time: {{ $summary['grievance_avg_resolution_days'] ?? '-' }} days</li>
     </ul>
 
     <h2>Governing Body Review</h2>

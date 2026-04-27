@@ -13,7 +13,7 @@
 // and the compliance posture widget on the QA dashboard.
 //
 // NOTE: status is manually maintained by IT Admin. isExpired() / isExpiringSoon()
-// are runtime computed from the date field — use these for real-time checks,
+// are runtime computed from the date field : use these for real-time checks,
 // not the status column which may be stale if not manually updated.
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -32,7 +32,7 @@ class BaaRecord extends Model
 
     // ── Constants ─────────────────────────────────────────────────────────────
 
-    /** Vendor categories — drive the UI filter chips and badge colors */
+    /** Vendor categories : drive the UI filter chips and badge colors */
     public const VENDOR_TYPES = [
         'cloud_provider', 'clearinghouse', 'lab', 'pharmacy',
         'ehr', 'telehealth', 'it_services', 'other',
@@ -49,7 +49,7 @@ class BaaRecord extends Model
         'other'          => 'Other',
     ];
 
-    /** BAA status lifecycle — manually maintained by IT Admin */
+    /** BAA status lifecycle : manually maintained by IT Admin */
     public const STATUSES = ['active', 'expiring_soon', 'expired', 'pending', 'terminated'];
 
     public const STATUS_LABELS = [
@@ -124,7 +124,7 @@ class BaaRecord extends Model
 
     /**
      * Returns true if the BAA expiration date is in the past.
-     * Runtime check — use this instead of checking status='expired'
+     * Runtime check : use this instead of checking status='expired'
      * since the status field may not be manually updated promptly.
      */
     public function isExpired(): bool

@@ -9,10 +9,10 @@
 //
 // Auth gate: authorize() returns true; finer-grained checks are in the
 //            controller.
-// Validates: notification_method — must be one of
+// Validates: notification_method : must be one of
 //            Grievance::NOTIFICATION_METHODS (mail, phone, in-person,
 //            secure-message, etc.).
-// Notable rules: 42 CFR §460.120 — PACE grievance process requires written
+// Notable rules: 42 CFR §460.120 : PACE grievance process requires written
 //                communication of resolution to the participant.
 // ─────────────────────────────────────────────────────────────────────────────
 

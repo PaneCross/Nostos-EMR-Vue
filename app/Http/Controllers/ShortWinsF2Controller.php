@@ -1,7 +1,7 @@
 <?php
 
 // ─── ShortWinsF2Controller ───────────────────────────────────────────────────
-// Phase F2 — 8 short wins surfacing prior-phase back-end work + a few new
+// Phase F2 : 8 short wins surfacing prior-phase back-end work + a few new
 // lightweight features:
 //   1. Beers Criteria flags wrapper (reuses C6 service)
 //   2. Quick-order SmartSets (SmartSetService)
@@ -9,8 +9,8 @@
 //   4. Participant-search filter pills (extends existing GlobalSearch pattern)
 //   5. Bulk care-plan signing (single audit row)
 //   6. Scheduled-note reminder surface (reads from ScheduledNoteReminderJob
-//      output — job handles creation; this returns the queue)
-//   7. QR wristband print — whole-center bundle
+//      output : job handles creation; this returns the queue)
+//   7. QR wristband print : whole-center bundle
 //   8. Participant timeline view (UNION of notes/orders/vitals/appointments)
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -153,7 +153,7 @@ class ShortWinsF2Controller extends Controller
         return response()->json(['signed_count' => $updated]);
     }
 
-    /** GET /wristbands/center-print.pdf?site_id=X — all active participants at site. */
+    /** GET /wristbands/center-print.pdf?site_id=X : all active participants at site. */
     public function centerWristbandPdf(Request $request): Response
     {
         $this->gate();
@@ -186,7 +186,7 @@ class ShortWinsF2Controller extends Controller
         return $pdf->stream("center-wristbands-{$siteId}.pdf");
     }
 
-    /** GET /participants/{p}/timeline — merged notes/orders/vitals/appointments. */
+    /** GET /participants/{p}/timeline : merged notes/orders/vitals/appointments. */
     public function timeline(Request $request, Participant $participant): JsonResponse
     {
         $this->gate();
@@ -221,7 +221,7 @@ class ShortWinsF2Controller extends Controller
         return response()->json(['timeline' => $merged]);
     }
 
-    /** GET /note-reminders/upcoming — quarterly reassessment queue. */
+    /** GET /note-reminders/upcoming : quarterly reassessment queue. */
     public function noteRemindersUpcoming(Request $request): JsonResponse
     {
         $this->gate();

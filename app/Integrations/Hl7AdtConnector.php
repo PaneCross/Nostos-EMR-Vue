@@ -4,9 +4,9 @@
 // Handles inbound HL7 v2 ADT (Admit-Discharge-Transfer) messages from hospitals.
 //
 // Supported event types:
-//   A01 — Admit: participant has been admitted to a facility
-//   A03 — Discharge: participant has been discharged
-//   A08 — Update: demographic/encounter information updated (audit only)
+//   A01 : Admit: participant has been admitted to a facility
+//   A03 : Discharge: participant has been discharged
+//   A08 : Update: demographic/encounter information updated (audit only)
 //
 // Message flow:
 //   1. POST /integrations/hl7/adt (IntegrationController)
@@ -15,7 +15,7 @@
 //   4. Connector dispatches ProcessHl7AdtJob (async, 'integrations' queue)
 //   5. IntegrationController returns HTTP 202 Accepted immediately
 //
-// Unknown MRNs: logged as failed (graceful — PACE participant may not be registered yet).
+// Unknown MRNs: logged as failed (graceful : PACE participant may not be registered yet).
 // ─────────────────────────────────────────────────────────────────────────────
 
 namespace App\Integrations;
@@ -35,7 +35,7 @@ class Hl7AdtConnector
      */
     public static function receive(array $payload, int $tenantId): IntegrationLog
     {
-        // Log every inbound message before dispatching — so even if dispatch fails,
+        // Log every inbound message before dispatching : so even if dispatch fails,
         // there is a record that the message was received.
         $logEntry = IntegrationLog::create([
             'tenant_id'      => $tenantId,

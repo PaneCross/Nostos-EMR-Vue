@@ -1,6 +1,6 @@
 <?php
 
-// ─── AmendmentDeadlineJob — Phase Q1 ────────────────────────────────────────
+// ─── AmendmentDeadlineJob : Phase Q1 ────────────────────────────────────────
 // Daily sweep at 06:30. HIPAA §164.526(b)(2) gives the covered entity 60
 // days to decide an amendment request. Two alerts per open request:
 //   1. T-7d warning when deadline approaches → qa_compliance + social_work

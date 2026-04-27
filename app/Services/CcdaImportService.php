@@ -9,7 +9,7 @@
 //   2. Medications
 //   3. Problems
 //
-// Returns a parsed summary array. Does NOT write to the database — the
+// Returns a parsed summary array. Does NOT write to the database : the
 // MedReconciliation workflow decides which entries to accept, reconcile, or
 // merge. This keeps import safe (clinical review required).
 //
@@ -53,7 +53,7 @@ class CcdaImportService
 
         libxml_use_internal_errors(true);
         $dom = new \DOMDocument();
-        // Phase X4 — Audit-12 M1: protect against XXE (XML External Entity)
+        // Phase X4 : Audit-12 M1: protect against XXE (XML External Entity)
         // attacks. LIBXML_NONET disables network access; LIBXML_NOENT keeps
         // entity substitution off. CCDA imports never need external DTDs or
         // remote entity resolution.

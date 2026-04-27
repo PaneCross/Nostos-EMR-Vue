@@ -4,9 +4,9 @@
 // REST API for Part D Prescription Drug Event (PDE) records.
 //
 // Route list:
-//   GET  /billing/pde        → index()  — paginated PDE list with filters
-//   POST /billing/pde        → store()  — create PDE record
-//   GET  /billing/pde/troop  → troop()  — TrOOP summary per participant for current year
+//   GET  /billing/pde        → index()  : paginated PDE list with filters
+//   POST /billing/pde        → store()  : create PDE record
+//   GET  /billing/pde/troop  → troop()  : TrOOP summary per participant for current year
 //
 // Department access: finance only (+ super_admin, it_admin).
 // ─────────────────────────────────────────────────────────────────────────────

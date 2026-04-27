@@ -6,7 +6,7 @@
 // ERA batch. Each row captures how the payer adjudicated one specific claim
 // that was previously submitted on an 837P transaction.
 //
-// Append-only model (UPDATED_AT = null) — 835 adjudication data is immutable
+// Append-only model (UPDATED_AT = null) : 835 adjudication data is immutable
 // once parsed. Post-adjudication workflow is tracked in emr_denial_records.
 //
 // Claim status codes map to X12 CLP02 standard values:
@@ -27,7 +27,7 @@ class RemittanceClaim extends Model
 
     protected $table = 'emr_remittance_claims';
 
-    /** Disable updated_at — 835 claim data is append-only. */
+    /** Disable updated_at : 835 claim data is append-only. */
     public const UPDATED_AT = null;
 
     // ── Claim status constants ─────────────────────────────────────────────────
@@ -115,7 +115,7 @@ class RemittanceClaim extends Model
         return $this->belongsTo(EncounterLog::class, 'encounter_log_id');
     }
 
-    /** CAS segment adjustments — the "why" behind the payment difference. */
+    /** CAS segment adjustments : the "why" behind the payment difference. */
     public function adjustments(): HasMany
     {
         return $this->hasMany(RemittanceAdjustment::class, 'remittance_claim_id');

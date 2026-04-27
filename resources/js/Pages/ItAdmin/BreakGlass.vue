@@ -13,9 +13,9 @@
 // Audience: IT Admin + supervisors review/ack each event.
 //
 // Notable rules:
-//   - 45 CFR §164.312(a)(2)(ii) — emergency-access procedure must exist and
+//   - 45 CFR §164.312(a)(2)(ii): emergency-access procedure must exist and
 //     be reviewed. Events older than 24h without supervisor ack render amber.
-//   - Append-only — events cannot be deleted; ack is the only mutation.
+//   - Append-only: events cannot be deleted; ack is the only mutation.
 // ────────────────────────────────────────────────────────────────────────────
 import { ref, computed } from 'vue'
 import { Head, usePage } from '@inertiajs/vue3'
@@ -88,7 +88,7 @@ const handleAcknowledge = async (eventId: number) => {
             e.id === eventId ? { ...e, is_acknowledged: true, acknowledged_at: new Date().toISOString() } : e
         )
     } catch {
-        // silently handle — user can retry
+        // silently handle: user can retry
     } finally {
         acknowledging.value = null
     }

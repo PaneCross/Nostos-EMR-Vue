@@ -1,6 +1,6 @@
 <?php
 
-// ─── EncounterDataSubmissionController — Phase S4 ───────────────────────────
+// ─── EncounterDataSubmissionController : Phase S4 ───────────────────────────
 namespace App\Http\Controllers;
 
 use App\Models\AuditLog;
@@ -44,8 +44,8 @@ class EncounterDataSubmissionController extends Controller
         return \Inertia\Inertia::render('Billing/EncounterDataSubmission', [
             'driver'        => $driver,
             'driver_label'  => match ($driver) {
-                'direct_cms' => 'Direct CMS EDS (paywall — Trading Partner Agreement required)',
-                'availity'   => 'Availity routed to CMS EDS (paywall — clearinghouse contract)',
+                'direct_cms' => 'Direct CMS EDS (paywall : Trading Partner Agreement required)',
+                'availity'   => 'Availity routed to CMS EDS (paywall : clearinghouse contract)',
                 default      => 'Null gateway (manual operator upload to CMS EDS portal)',
             },
             'is_real_vendor' => in_array($driver, ['direct_cms', 'availity'], true),

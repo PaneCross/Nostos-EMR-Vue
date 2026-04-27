@@ -21,9 +21,9 @@
 // ApiToken::hasScope() which understands both notations.
 //
 // Deliberate omissions (for the MVP, not forever):
-//   - refresh_token grant (SMART "offline_access" scope) — defer to Phase 15
-//   - OpenID id_token — defer to Phase 15
-//   - launch (EHR-embedded) — defer; standalone launch covers MVP use cases
+//   - refresh_token grant (SMART "offline_access" scope) : defer to Phase 15
+//   - OpenID id_token : defer to Phase 15
+//   - launch (EHR-embedded) : defer; standalone launch covers MVP use cases
 // ─────────────────────────────────────────────────────────────────────────────
 
 namespace App\Http\Controllers;
@@ -75,7 +75,7 @@ class SmartOAuthController extends Controller
         }
 
         if (! $client->allowsRedirectUri($validated['redirect_uri'])) {
-            // Do NOT redirect — per OAuth2 spec, bad redirect_uri must not redirect
+            // Do NOT redirect : per OAuth2 spec, bad redirect_uri must not redirect
             return response()->json([
                 'error'             => 'invalid_redirect_uri',
                 'error_description' => 'redirect_uri is not registered for this client.',

@@ -3,7 +3,7 @@
 // ─── ImmunizationSubmissionController ────────────────────────────────────────
 // Phase 8 (MVP roadmap). Generates an HL7 VXU message for a single
 // immunization and records it as an ImmunizationSubmission row. Does NOT
-// actually transmit to a state IIS — honest-labeled. The response includes
+// actually transmit to a state IIS : honest-labeled. The response includes
 // the rendered VXU text so staff can download/inspect it.
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -80,7 +80,7 @@ class ImmunizationSubmissionController extends Controller
                 'submitted_at'       => $row->submitted_at?->toIso8601String(),
                 'message_control_id' => $row->message_control_id,
                 'vxu_message'        => $row->vxu_message,
-                'honest_label'       => 'Simulated submission — no actual transmission to state IIS.',
+                'honest_label'       => 'Simulated submission : no actual transmission to state IIS.',
             ],
         ], 201);
     }

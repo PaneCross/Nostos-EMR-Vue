@@ -126,7 +126,7 @@ class RemittanceBatch extends Model
 
     // ── Query Scopes ──────────────────────────────────────────────────────────
 
-    /** Scope to a specific tenant — always apply in multi-tenant queries. */
+    /** Scope to a specific tenant : always apply in multi-tenant queries. */
     public function scopeForTenant($query, int $tenantId)
     {
         return $query->where('tenant_id', $tenantId);
@@ -197,7 +197,7 @@ class RemittanceBatch extends Model
 
     /**
      * Compact array for list views.
-     * Raw EDI content is excluded — never expose bulk EDI in API list responses.
+     * Raw EDI content is excluded : never expose bulk EDI in API list responses.
      */
     public function toApiArray(): array
     {

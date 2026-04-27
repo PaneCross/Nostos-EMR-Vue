@@ -9,7 +9,7 @@
 //   - scheduled_time < now() (the administration window has passed)
 //
 // The LATE_THRESHOLD_MINUTES constant (30 min) gives nurses a grace period
-// before a dose is flagged — a dose due at 08:00 won't flag as late until 08:30.
+// before a dose is flagged : a dose due at 08:00 won't flag as late until 08:30.
 //
 // When a record is marked late, an alert is also created targeting the
 // 'primary_care' and 'nursing' (therapies) departments via AlertService.
@@ -73,7 +73,7 @@ class LateMarDetectionJob implements ShouldQueue
                 'participant_id'     => $participant->id,
                 'source_module'      => 'medications',
                 'alert_type'         => 'warning',
-                'title'              => "Late Medication Dose — {$medName}",
+                'title'              => "Late Medication Dose : {$medName}",
                 'message'            => "{$medName} was scheduled at "
                                        . $record->scheduled_time->format('g:i A')
                                        . " for {$participant->first_name} {$participant->last_name}"

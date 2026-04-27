@@ -1,7 +1,7 @@
 <?php
 
 // ─── DetectLateEmarPatternJob ────────────────────────────────────────────────
-// Daily sweep — groups EMAR records by administering nurse, finds nurses who
+// Daily sweep : groups EMAR records by administering nurse, finds nurses who
 // triggered a concerning number of LATE doses within the org-tunable window.
 // Threshold + window are tenant-customizable via Org Settings:
 //   designation.nursing_director.late_emar_pattern → kind=numeric_threshold.

@@ -64,7 +64,7 @@ class ProfileController extends Controller
         /** @var \App\Models\User $user */
         $user = $request->user();
 
-        // Merge validated keys only — discard unknown keys from input
+        // Merge validated keys only : discard unknown keys from input
         $current = $user->notification_preferences ?? [];
 
         foreach (self::PREF_KEYS as $key) {

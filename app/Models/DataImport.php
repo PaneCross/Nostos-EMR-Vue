@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-// Phase 15.4 — CSV import batch metadata.
+// Phase 15.4 : CSV import batch metadata.
 class DataImport extends Model
 {
     protected $table = 'emr_data_imports';

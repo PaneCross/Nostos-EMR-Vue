@@ -1,6 +1,6 @@
 <?php
 
-// ─── EligibilityGateway (interface) — Phase P5 ──────────────────────────────
+// ─── EligibilityGateway (interface) : Phase P5 ──────────────────────────────
 // Vendor-agnostic X12 270/271 contract. NullEligibilityGateway is the safe
 // default; real adapters (Availity / Change Healthcare) implement once
 // contracts + credentials land. Mirrors ClearinghouseGateway pattern.

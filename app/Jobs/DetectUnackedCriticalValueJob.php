@@ -1,7 +1,7 @@
 <?php
 
 // ─── DetectUnackedCriticalValueJob ───────────────────────────────────────────
-// Hourly sweep — escalates critical lab values that haven't been acknowledged
+// Hourly sweep : escalates critical lab values that haven't been acknowledged
 // within the tenant-tunable hour window. Re-uses the threshold infrastructure
 // (events_count is unused here; window_days is repurposed as window_hours).
 //
@@ -54,7 +54,7 @@ class DetectUnackedCriticalValueJob implements ShouldQueue
                 ->get();
 
             foreach ($unacked as $cv) {
-                // Dedupe — skip if we've already escalated this acknowledgment row
+                // Dedupe : skip if we've already escalated this acknowledgment row
                 $exists = Alert::where('tenant_id', $tenantId)
                     ->where('alert_type', 'critical_value_unacked_escalation')
                     ->whereJsonContains('metadata->ack_id', (int) $cv->id)

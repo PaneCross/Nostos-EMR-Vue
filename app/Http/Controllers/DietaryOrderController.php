@@ -123,7 +123,7 @@ class DietaryOrderController extends Controller
         return response()->json(['order' => $order->fresh()]);
     }
 
-    /** Dietary department roster — active orders grouped by diet_type. */
+    /** Dietary department roster : active orders grouped by diet_type. */
     public function roster(Request $request): JsonResponse
     {
         $this->gate();

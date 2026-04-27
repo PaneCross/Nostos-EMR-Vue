@@ -2,7 +2,7 @@
 
 // ─── StoreAssessmentRequest ───────────────────────────────────────────────────
 // Validates creating a new clinical assessment.
-// responses is a required array — its structure varies by assessment_type
+// responses is a required array : its structure varies by assessment_type
 // and is validated downstream by NoteTemplateService if needed.
 // ──────────────────────────────────────────────────────────────────────────────
 

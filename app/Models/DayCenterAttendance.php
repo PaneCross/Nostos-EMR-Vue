@@ -35,7 +35,7 @@ class DayCenterAttendance extends Model
 
     protected $casts = [
         'attendance_date' => 'date',
-        // Phase RS4 — uniform string cast so check-in/out compares as 'HH:MM:SS'
+        // Phase RS4 : uniform string cast so check-in/out compares as 'HH:MM:SS'
         // across drivers (postgres returns string, MySQL returns Carbon timestamp).
         'check_in_time'   => 'string',
         'check_out_time'  => 'string',

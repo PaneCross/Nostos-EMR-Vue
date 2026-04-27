@@ -8,7 +8,7 @@
 // emr_emar_records for the coming day. Each active, non-PRN medication gets
 // one or more EmarRecord rows depending on frequency.
 //
-// PRN medications are intentionally excluded — PRN doses are charted on-demand
+// PRN medications are intentionally excluded : PRN doses are charted on-demand
 // by nurses when they administer, not pre-scheduled.
 //
 // Frequency-to-times mapping:

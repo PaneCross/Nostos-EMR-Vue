@@ -2,11 +2,11 @@
 
 // ─── IntegrationLog ───────────────────────────────────────────────────────────
 // Append-only log of every external integration message exchanged with this
-// EMR — used for audit, troubleshooting, and retry of failed deliveries.
+// EMR : used for audit, troubleshooting, and retry of failed deliveries.
 //
 // Connectors that write here:
 //  - hl7_adt        : HL7 (Health Level 7) ADT (Admission/Discharge/Transfer)
-//                     messages from hospital partners — tells us when our
+//                     messages from hospital partners : tells us when our
 //                     participant is admitted/discharged elsewhere.
 //  - lab_results    : Inbound HL7 ORU lab results.
 //  - pharmacy_ncpdp : Pharmacy network messaging (NCPDP standard).
@@ -30,7 +30,7 @@ class IntegrationLog extends Model
 
     protected $table = 'emr_integration_log';
 
-    // Append-only — no updated_at column
+    // Append-only : no updated_at column
     public $timestamps = false;
 
     // ── Constants ─────────────────────────────────────────────────────────────

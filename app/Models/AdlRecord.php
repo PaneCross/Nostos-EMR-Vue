@@ -1,7 +1,7 @@
 <?php
 
 // ─── AdlRecord Model ──────────────────────────────────────────────────────────
-// Append-only ADL observation. No SoftDeletes — historical records must be preserved.
+// Append-only ADL observation. No SoftDeletes : historical records must be preserved.
 // threshold_breached is set by AdlThresholdService on insert and never changed.
 //
 // LEVELS is ordered from best (independent) to worst (total_dependent).
@@ -32,11 +32,11 @@ class AdlRecord extends Model
     // ── Independence levels ordered best → worst ──────────────────────────────
     // Index position is used for comparison: higher index = more dependent = worse
     public const LEVELS = [
-        'independent',      // index 0 — best
+        'independent',      // index 0 : best
         'supervision',      // index 1
         'limited_assist',   // index 2
         'extensive_assist', // index 3
-        'total_dependent',  // index 4 — worst
+        'total_dependent',  // index 4 : worst
     ];
 
     protected $fillable = [

@@ -7,27 +7,27 @@
 // document the IDT (Interdisciplinary Team) builds saying what the member's
 // goals are, who's responsible for each, and when to revisit. It must be
 // reviewed every 6 months and re-approved by an IDT or Primary Care admin.
-// Each version is immutable once approved — new edits create a new version
+// Each version is immutable once approved : new edits create a new version
 // and archive the old one.
 //
 // Plan lifecycle: draft → under_review → active (one active per member) → archived.
 //
-// 42 CFR §460.104(d) — "Participation Offering": before approving a plan we
+// 42 CFR §460.104(d) : "Participation Offering": before approving a plan we
 // must record that we offered the member a chance to participate in building
 // it (and their response, even if "I trust the team, decide for me"). The
 // approve endpoint emits a warning if this is missing but does not block
-// approval — CMS survey guidance is "warn now, fix before next survey."
+// approval : CMS survey guidance is "warn now, fix before next survey."
 //
 // Routes (nested under /participants/{participant}/careplan):
-//   GET    /careplan                              — active plan with goals
-//   POST   /careplan                              — create a new draft plan
-//   GET    /careplan/{id}                         — specific plan version with goals
-//   PUT    /careplan/{id}/goals/{domain}          — upsert a domain goal
-//   POST   /careplan/{id}/approve                 — approve plan (IDT/PC Admin only)
-//   POST   /careplan/{id}/new-version             — create new draft version
-//   PATCH  /careplan/{id}/participation           — record participant offer/response (W4-5)
+//   GET    /careplan                              : active plan with goals
+//   POST   /careplan                              : create a new draft plan
+//   GET    /careplan/{id}                         : specific plan version with goals
+//   PUT    /careplan/{id}/goals/{domain}          : upsert a domain goal
+//   POST   /careplan/{id}/approve                 : approve plan (IDT/PC Admin only)
+//   POST   /careplan/{id}/new-version             : create new draft version
+//   PATCH  /careplan/{id}/participation           : record participant offer/response (W4-5)
 //
-// W4-5: approve() now enforces 42 CFR §460.104(d) — participation must be offered
+// W4-5: approve() now enforces 42 CFR §460.104(d) : participation must be offered
 // before a plan can be approved. A warning is returned if the field is missing,
 // but approval proceeds (soft enforcement per CMS survey guidance).
 //
@@ -184,7 +184,7 @@ class CarePlanController extends Controller
      * Approves a draft or under_review care plan.
      * Restricted to IDT Admin + Primary Care Admin.
      *
-     * W4-5: 42 CFR §460.104(d) — participation must be documented before approval.
+     * W4-5: 42 CFR §460.104(d) : participation must be documented before approval.
      * This is a soft enforcement: the plan is approved but a 'participation_warning'
      * flag in the response signals the UI to surface a reminder to staff.
      */
@@ -209,7 +209,7 @@ class CarePlanController extends Controller
             resourceType: 'participant',
             resourceId: $participant->id,
             description: "Care plan v{$carePlan->version} approved for {$participant->mrn}"
-                . ($participationWarning ? ' (participation not documented — 42 CFR §460.104(d))' : ''),
+                . ($participationWarning ? ' (participation not documented : 42 CFR §460.104(d))' : ''),
             newValues: [
                 'care_plan_id'          => $carePlan->id,
                 'effective_date'        => $carePlan->effective_date,

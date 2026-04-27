@@ -16,7 +16,7 @@
     </style>
 </head>
 <body>
-    <h1>Day Center Roster — {{ $site_name }}</h1>
+    <h1>Day Center Roster: {{ $site_name }}</h1>
     <div class="meta">
         {{ $tenant_name }} · {{ \Carbon\Carbon::parse($date)->format('l, F j, Y') }}<br>
         Generated {{ $generated_at->format('M j, Y g:i A T') }}
@@ -40,7 +40,7 @@
                     <td>{{ $row['mrn'] }}</td>
                     <td>{{ $row['name'] }}@if (!empty($row['preferred_name'])) <em>({{ $row['preferred_name'] }})</em>@endif</td>
                     <td>{{ str_replace('_', ' ', $row['source']) }}</td>
-                    <td>{{ $row['attendance'] ?? '—' }}</td>
+                    <td>{{ $row['attendance'] ?? '-' }}</td>
                     <td class="check">☐</td>
                     <td class="check">☐</td>
                     <td>&nbsp;</td>

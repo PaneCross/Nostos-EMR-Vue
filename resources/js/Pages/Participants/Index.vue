@@ -119,7 +119,7 @@ function clearFilters() {
 
 // ── Display helpers ────────────────────────────────────────────────────────────
 
-// Laravel serializes date fields as full ISO timestamps — slice to date part
+// Laravel serializes date fields as full ISO timestamps: slice to date part
 // to avoid "Invalid Date" when constructing with 'T12:00:00' appended.
 function parseDate(val: string | null | undefined): Date | null {
     if (!val) return null
@@ -215,7 +215,7 @@ const STATUSES = ['referred', 'intake', 'pending', 'enrolled', 'disenrolled']
                     />
                 </div>
 
-                <!-- Site filter (kept as dropdown — scales better than pills for many sites) -->
+                <!-- Site filter (kept as dropdown: scales better than pills for many sites) -->
                 <select name="select"
                     :value="siteId"
                     aria-label="Filter by site"
@@ -304,7 +304,7 @@ const STATUSES = ['referred', 'intake', 'pending', 'enrolled', 'disenrolled']
                     Active Flags
                 </button>
 
-                <!-- IDT Due toggle pill — 42 CFR §460.104(c) 6-month reassessment -->
+                <!-- IDT Due toggle pill: 42 CFR §460.104(c) 6-month reassessment -->
                 <button
                     type="button"
                     :aria-pressed="idtDue"
@@ -431,11 +431,11 @@ const STATUSES = ['referred', 'intake', 'pending', 'enrolled', 'disenrolled']
                                     >
                                         +{{ ppt.active_flags.length - 4 }}
                                     </span>
-                                    <!-- IDT reassessment overdue — 42 CFR §460.104(c) -->
+                                    <!-- IDT reassessment overdue: 42 CFR §460.104(c) -->
                                     <span
                                         v-if="ppt.idt_review_overdue"
                                         class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300 whitespace-nowrap"
-                                        title="IDT reassessment overdue (42 CFR §460.104(c) — 6-month required)"
+                                        title="IDT reassessment overdue (42 CFR §460.104(c): 6-month required)"
                                     >
                                         IDT Due
                                     </span>

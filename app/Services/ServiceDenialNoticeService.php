@@ -3,7 +3,7 @@
 // ─── ServiceDenialNoticeService ───────────────────────────────────────────────
 // Creates a ServiceDenialNotice for a denied SDR (or denied claim), renders
 // the CMS-style denial letter PDF, stores it as a Document, and logs an audit
-// event. Idempotent per (sdr_id, issued_at) — resending reprints the same PDF.
+// event. Idempotent per (sdr_id, issued_at) : resending reprints the same PDF.
 //
 // Per 42 CFR §460.122 the notice must include:
 //   - reason for denial (reason_code + narrative)
@@ -107,7 +107,7 @@ class ServiceDenialNoticeService
             'file_type'           => 'pdf',
             'file_size_bytes'     => strlen($pdfBinary),
             'document_category'   => 'legal',
-            'description'         => "Service Denial Notice — SDR-{$notice->sdr_id}",
+            'description'         => "Service Denial Notice : SDR-{$notice->sdr_id}",
         ]);
     }
 }

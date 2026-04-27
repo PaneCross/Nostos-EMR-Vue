@@ -3,7 +3,7 @@
 namespace App\Services\Ocr;
 
 /**
- * AWS Textract OCR gateway stub — Phase M4.
+ * AWS Textract OCR gateway stub : Phase M4.
  * Activated when AWS credentials + SDK land. Throws until configured.
  */
 class AwsTextractOcrGateway implements OcrGateway

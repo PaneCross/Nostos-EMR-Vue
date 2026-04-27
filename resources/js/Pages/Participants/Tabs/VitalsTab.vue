@@ -4,7 +4,7 @@
 // Column headers are clickable to switch the active chart view. Out-of-range
 // values highlighted: BP systolic > 180 → red, O2 < 92 → red. BMI color-coded
 // by clinical range. Transfer dates shown as amber dashed reference lines.
-// Append-only — no edit/delete. Last 30 readings used for chart; last 20 for table.
+// Append-only: no edit/delete. Last 30 readings used for chart; last 20 for table.
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { ref, computed, onMounted, onUnmounted } from 'vue'
@@ -83,7 +83,7 @@ const TABLE_HEADERS: { label: string; chartKey?: string }[] = [
 
 // ── Responsive chart dimensions ────────────────────────────────────────────────
 // ResizeObserver measures the container in real pixels so the SVG is drawn at
-// 1:1 pixel scale — no viewBox distortion, no text stretching.
+// 1:1 pixel scale: no viewBox distortion, no text stretching.
 
 const containerEl = ref<HTMLDivElement | null>(null)
 const svgEl       = ref<SVGSVGElement | null>(null)
@@ -91,7 +91,7 @@ const svgWidth    = ref(760)
 
 const SVG_H   = 180
 const M       = { top: 10, right: 14, bottom: 30, left: 44 }
-const CHART_H = SVG_H - M.top - M.bottom  // 140 — constant
+const CHART_H = SVG_H - M.top - M.bottom  // 140: constant
 
 // Reactive horizontal drawing area
 const chartAreaW = computed(() => Math.max(200, svgWidth.value - M.left - M.right))
@@ -268,7 +268,7 @@ const hoverIdx = ref<number | null>(null)
 function onSvgMouseMove(e: MouseEvent) {
   if (!svgEl.value || !hasChartData.value) return
   const rect = svgEl.value.getBoundingClientRect()
-  // SVG is drawn at 1:1 pixel scale — no coordinate conversion needed
+  // SVG is drawn at 1:1 pixel scale: no coordinate conversion needed
   const mouseX = e.clientX - rect.left
   const N = chartData.value.length
   if (N === 0) return
@@ -579,7 +579,7 @@ async function submit() {
           />
         </svg>
 
-        <!-- Tooltip card — pixel-positioned to snap to nearest data point -->
+        <!-- Tooltip card: pixel-positioned to snap to nearest data point -->
         <div
           v-if="hoverIdx !== null && hoverPoint"
           class="absolute pointer-events-none z-10

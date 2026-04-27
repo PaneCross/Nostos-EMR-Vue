@@ -5,16 +5,16 @@
 //
 // All endpoints filter by tenant and department via Alert::forUser() scope.
 //
-// GET /alerts              — paginated alerts for current user
-//   ?status=active         — all active alerts (Alerts page full list)
-//   ?status=dismissed      — inactive alerts dismissed in the last 30 days
-//   (no status)            — bell view: bellVisible() scope (unread + ack'd within 24h)
-//   ?severity=critical|warning|info  — filter by severity (active/bell only)
-//   ?unread_only=1         — unacknowledged only (active/bell only)
-// GET /alerts/unread-count — JSON {count: N} for notification bell polling
-// POST /alerts             — manual alert (clinical roles only)
-// PATCH /alerts/{id}/acknowledge — mark alert as acknowledged (idempotent)
-// PATCH /alerts/{id}/resolve     — mark alert as resolved / inactive (idempotent)
+// GET /alerts              : paginated alerts for current user
+//   ?status=active         : all active alerts (Alerts page full list)
+//   ?status=dismissed      : inactive alerts dismissed in the last 30 days
+//   (no status)            : bell view: bellVisible() scope (unread + ack'd within 24h)
+//   ?severity=critical|warning|info  : filter by severity (active/bell only)
+//   ?unread_only=1         : unacknowledged only (active/bell only)
+// GET /alerts/unread-count : JSON {count: N} for notification bell polling
+// POST /alerts             : manual alert (clinical roles only)
+// PATCH /alerts/{id}/acknowledge : mark alert as acknowledged (idempotent)
+// PATCH /alerts/{id}/resolve     : mark alert as resolved / inactive (idempotent)
 // ──────────────────────────────────────────────────────────────────────────────
 
 namespace App\Http\Controllers;

@@ -8,7 +8,7 @@
 // Stage 3/4/unstageable/DTI pressure injuries trigger critical alerts to
 // primary_care + qa_compliance (CMS quality metric).
 //
-// SoftDeletes only — wound records are part of the clinical record (HIPAA).
+// SoftDeletes only : wound records are part of the clinical record (HIPAA).
 // ─────────────────────────────────────────────────────────────────────────────
 
 namespace App\Models;

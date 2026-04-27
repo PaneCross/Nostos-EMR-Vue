@@ -8,10 +8,10 @@
 // QA dashboard at /qa/dashboard with tabs and CSV export).
 //
 // Routes (GET, all under /dashboards/qa-compliance/):
-//   metrics     — all 6 QaMetricsService KPIs in a single response
-//   incidents   — open incidents list (non-closed, ordered by severity)
-//   docs        — unsigned notes >24h + overdue assessments summary
-//   care-plans  — overdue care plans list
+//   metrics     : all 6 QaMetricsService KPIs in a single response
+//   incidents   : open incidents list (non-closed, ordered by severity)
+//   docs        : unsigned notes >24h + overdue assessments summary
+//   care-plans  : overdue care plans list
 // ─────────────────────────────────────────────────────────────────────────────
 
 namespace App\Http\Controllers\Dashboards;
@@ -171,7 +171,7 @@ class QaComplianceDashboardController extends Controller
 
     /**
      * Overdue care plans (review_due_date in the past, status not archived).
-     * QA monitors these for CMS compliance — care plans must be reviewed per schedule.
+     * QA monitors these for CMS compliance : care plans must be reviewed per schedule.
      */
     public function carePlans(): JsonResponse
     {
@@ -242,7 +242,7 @@ class QaComplianceDashboardController extends Controller
     }
 
     /**
-     * Phase I7 — Sentinel events rollup (last 30 days). Lists classified
+     * Phase I7 : Sentinel events rollup (last 30 days). Lists classified
      * sentinel incidents with CMS-5d / RCA-30d deadline status.
      */
     public function sentinelRollup(): JsonResponse
@@ -275,7 +275,7 @@ class QaComplianceDashboardController extends Controller
     }
 
     /**
-     * Phase I7 — Critical-value escalations still pending (overdue).
+     * Phase I7 : Critical-value escalations still pending (overdue).
      */
     public function criticalValuesPending(): JsonResponse
     {
@@ -305,7 +305,7 @@ class QaComplianceDashboardController extends Controller
     }
 
     /**
-     * Phase I7 — ROI requests due within 5 days (or overdue).
+     * Phase I7 : ROI requests due within 5 days (or overdue).
      */
     public function roiDueSoon(): JsonResponse
     {
@@ -335,7 +335,7 @@ class QaComplianceDashboardController extends Controller
     }
 
     /**
-     * Phase I7 — TB screening overdue count (annual §460.71).
+     * Phase I7 : TB screening overdue count (annual §460.71).
      */
     public function tbOverdue(): JsonResponse
     {

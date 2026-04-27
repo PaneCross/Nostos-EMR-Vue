@@ -17,7 +17,7 @@
 //   Both are enforced here, never overridable from the UI.
 //
 // W4-6 / GAP-10: For falls with injuries_sustained=true, creates a
-//   SignificantChangeEvent (42 CFR §460.104(b) — IDT reassessment within 30 days).
+//   SignificantChangeEvent (42 CFR §460.104(b) : IDT reassessment within 30 days).
 // ─────────────────────────────────────────────────────────────────────────────
 
 namespace App\Services;
@@ -102,7 +102,7 @@ class IncidentService
                         'participant_id'     => $participant->id,
                         'source_module'      => 'qa',
                         'alert_type'         => 'compliance_officer_cms_reportable',
-                        'title'              => "CMS-reportable incident — #{$incident->id}",
+                        'title'              => "CMS-reportable incident : #{$incident->id}",
                         'message'            => "Incident #{$incident->id} ({$incident->typeLabel()}) flagged CMS-reportable at intake.",
                         'severity'           => 'warning',
                         'target_departments' => ['qa_compliance'],
@@ -122,7 +122,7 @@ class IncidentService
     /**
      * Update the incident's status.
      * Validates allowed transitions.
-     * 'closed' requires canClose() — blocks if RCA is pending.
+     * 'closed' requires canClose() : blocks if RCA is pending.
      *
      * @throws LogicException if the transition is invalid.
      */
@@ -182,7 +182,7 @@ class IncidentService
     }
 
     /**
-     * Phase B3 — classify an existing incident as a sentinel event.
+     * Phase B3 : classify an existing incident as a sentinel event.
      * Sets is_sentinel=true + dual deadlines (5-day CMS + 30-day RCA) from
      * the classification moment. Always forces rca_required=true regardless
      * of incident_type, because sentinels always need a documented RCA.
@@ -218,11 +218,11 @@ class IncidentService
                 . '; RCA deadline ' . $incident->sentinel_rca_30day_deadline->toDateTimeString() . '.',
         );
 
-        // Phase SS2 — optional notification routing per Org Settings preferences.
+        // Phase SS2 : optional notification routing per Org Settings preferences.
         // Program Director gets a critical alert when a sentinel is classified, IF
         // the org has the preference enabled. Default is OFF; tenants opt in via
         // /executive/org-settings. The hardwired QA/audit chain remains in place
-        // regardless — this is an ADDITIONAL recipient layer, not a replacement.
+        // regardless : this is an ADDITIONAL recipient layer, not a replacement.
         $prefs = app(NotificationPreferenceService::class);
         if ($prefs->shouldNotify($incident->tenant_id, 'designation.program_director.sentinel_event')) {
             $director = User::where('tenant_id', $incident->tenant_id)
@@ -234,7 +234,7 @@ class IncidentService
                     'tenant_id'          => $incident->tenant_id,
                     'participant_id'     => $incident->participant_id,
                     'alert_type'         => 'sentinel_event_classified',
-                    'title'              => "Sentinel Event — Incident #{$incident->id}",
+                    'title'              => "Sentinel Event : Incident #{$incident->id}",
                     'message'            => "Sentinel event classified for Incident #{$incident->id}. CMS 5-day reporting clock has started.",
                     'severity'           => 'critical',
                     'source_module'      => 'qa',

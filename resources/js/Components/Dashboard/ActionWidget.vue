@@ -1,6 +1,6 @@
 <script setup lang="ts">
 // ─── ActionWidget.vue ─────────────────────────────────────────────────────────
-// Reusable dashboard widget — every dept dashboard uses this component.
+// Reusable dashboard widget: every dept dashboard uses this component.
 // Shows: title + description + clickable action rows with badge + sublabel.
 // Loading state shows skeleton; empty state shows emptyMessage.
 // "View all" link in footer navigates to viewAllHref.
@@ -11,10 +11,10 @@ import { router } from '@inertiajs/vue3'
 import { ArrowRightIcon } from '@heroicons/vue/24/outline'
 
 export interface ActionItem {
-    label: string       // Primary row text (e.g. 'Mildred Testpatient — SOAP Note')
+    label: string       // Primary row text (e.g. 'Mildred Testpatient: SOAP Note')
     href?: string       // Direct link to the specific item. When omitted, the row
                         // renders as non-interactive (most dept dashboards don't
-                        // yet wire up per-item deep links — see backlog).
+                        // yet wire up per-item deep links: see backlog).
     badge?: string      // Optional badge text (e.g. '3d overdue', 'Critical')
     badgeColor?: string // Tailwind classes for the badge chip
     sublabel?: string   // Secondary text shown below label (e.g. 'MRN 00042 | 09:30')
@@ -38,7 +38,7 @@ const overflow = computed(() => props.items.length - props.maxItems)
 
 function navigate(href: string | undefined) {
     if (!href) {
-        // Item without a deep link — silently no-op rather than crash.
+        // Item without a deep link: silently no-op rather than crash.
         // Backlog: wire per-item href on dept dashboards (see ItAdminDashboard etc.)
         return
     }
@@ -123,7 +123,7 @@ function navigate(href: string | undefined) {
             </ul>
         </div>
 
-        <!-- Footer — View All link -->
+        <!-- Footer: View All link -->
         <div v-if="viewAllHref" class="px-4 py-2.5 border-t border-gray-100 dark:border-slate-700/60">
             <button
                 type="button"

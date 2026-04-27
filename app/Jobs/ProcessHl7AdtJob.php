@@ -4,28 +4,28 @@
 // Processes inbound HL7 ADT messages asynchronously.
 //
 // PLAIN-ENGLISH PURPOSE: Hospitals send us small structured text messages
-// when one of our members goes in or comes out — admit, discharge, transfer.
+// when one of our members goes in or comes out : admit, discharge, transfer.
 // This job receives those messages from the queue, figures out which member
 // they refer to, and triggers the right downstream action: create an alert
 // for social work, queue a 72-hour discharge follow-up, freeze the care
 // plan for review, etc.
 //
 // Acronym glossary used in this file:
-//   HL7  = Health Level 7 — the industry messaging standard for clinical data.
+//   HL7  = Health Level 7 : the industry messaging standard for clinical data.
 //          ADT messages are a class within HL7 v2.
-//   ADT  = Admission / Discharge / Transfer — the class of HL7 messages
+//   ADT  = Admission / Discharge / Transfer : the class of HL7 messages
 //          tracking patient location changes.
 //   A01, A03, A08 = the specific HL7 ADT event codes:
 //          A01 = patient admitted to a facility
 //          A03 = patient discharged from a facility
 //          A08 = update to demographic/encounter info (no location change)
-//   MRN  = Medical Record Number — our internal per-tenant patient ID.
+//   MRN  = Medical Record Number : our internal per-tenant patient ID.
 //   IDT  = Interdisciplinary Team (PACE clinical team).
 //   SDR  = Service Delivery Request (internal task hand-off).
 //   PACE = Programs of All-Inclusive Care for the Elderly.
 //
 // 42 CFR §460.104(b) (referenced below): when a member has a "significant
-// change" — a hospitalization counts — the IDT must reassess the care plan
+// change" : a hospitalization counts : the IDT must reassess the care plan
 // within 30 days. This job creates the SignificantChangeEvent that drives
 // the 30-day clock.
 //
@@ -38,13 +38,13 @@
 //
 // A03 (Discharge):
 //   - Looks up participant by MRN
-//   - Creates Sdr (72-hour discharge follow-up rule — CMS PACE requirement)
+//   - Creates Sdr (72-hour discharge follow-up rule : CMS PACE requirement)
 //   - Puts active care plan into under_review status
 //   - Creates alert for idt ('Participant discharged - review meds + care plan', severity=warning)
 //   - Marks integration_log as processed
 //
-// A08 (Update — demographic/encounter data update):
-//   - Audit log only — no clinical actions, per PACE protocol
+// A08 (Update : demographic/encounter data update):
+//   - Audit log only : no clinical actions, per PACE protocol
 //   - Marks integration_log as processed
 //
 // Unknown MRN:
@@ -109,7 +109,7 @@ class ProcessHl7AdtJob implements ShouldQueue
             'patient_mrn'        => $mrn,
         ]);
 
-        // A08 — update only: record in audit log, no clinical action needed
+        // A08 : update only: record in audit log, no clinical action needed
         if ($messageType === 'A08') {
             $this->handleA08($logEntry);
             return;
@@ -121,9 +121,9 @@ class ProcessHl7AdtJob implements ShouldQueue
             ->first();
 
         if (! $participant) {
-            // MRN not found — could be a non-enrolled individual or data entry error.
+            // MRN not found : could be a non-enrolled individual or data entry error.
             // Log warning and mark failed so IT Admin can review and retry.
-            Log::warning('[ProcessHl7AdtJob] Unknown MRN — participant not found', [
+            Log::warning('[ProcessHl7AdtJob] Unknown MRN : participant not found', [
                 'mrn'       => $mrn,
                 'tenant_id' => $this->tenantId,
             ]);
@@ -158,7 +158,7 @@ class ProcessHl7AdtJob implements ShouldQueue
             'participant_id' => $participant->id,
             'service_date'   => now()->toDateString(),
             'service_type'   => 'other',
-            'notes'          => "HL7 A01 Admission — {$facility}",
+            'notes'          => "HL7 A01 Admission : {$facility}",
         ]);
 
         // Alert social_work and idt: PACE care coordination requires both departments
@@ -221,7 +221,7 @@ class ProcessHl7AdtJob implements ShouldQueue
     ): void {
         $facility = $this->payload['facility'] ?? 'External Facility';
 
-        // Create SDR — boot() auto-sets due_at = now() + 72h (42 CFR 460 enforcement)
+        // Create SDR : boot() auto-sets due_at = now() + 72h (42 CFR 460 enforcement)
         // requesting_user_id is nullable: system-generated SDRs have no requesting user
         Sdr::create([
             'tenant_id'             => $this->tenantId,
@@ -235,7 +235,7 @@ class ProcessHl7AdtJob implements ShouldQueue
             'priority'              => 'urgent',
         ]);
 
-        // Put the active care plan under review — discharge requires plan reassessment
+        // Put the active care plan under review : discharge requires plan reassessment
         CarePlan::where('tenant_id', $this->tenantId)
             ->where('participant_id', $participant->id)
             ->where('status', 'active')
@@ -313,7 +313,7 @@ class ProcessHl7AdtJob implements ShouldQueue
                 ->first();
 
         if (! $systemUser) {
-            Log::warning('[ProcessHl7AdtJob] No active user found for tenant — skipping transition note', [
+            Log::warning('[ProcessHl7AdtJob] No active user found for tenant : skipping transition note', [
                 'tenant_id'       => $this->tenantId,
                 'participant_id'  => $participant->id,
                 'transition_type' => $transitionType,

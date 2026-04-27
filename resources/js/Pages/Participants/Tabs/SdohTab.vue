@@ -2,7 +2,7 @@
 // ─── SdohTab.vue ──────────────────────────────────────────────────────────────
 // Social Determinants of Health (SDOH) screening per PRAPARE / USCDI v3.
 // Each record is a full point-in-time assessment with 6 domains + safety/notes.
-// Schema: emr_social_determinants — one row per assessment (not per domain).
+// Schema: emr_social_determinants: one row per assessment (not per domain).
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { ref, onMounted, computed } from 'vue'

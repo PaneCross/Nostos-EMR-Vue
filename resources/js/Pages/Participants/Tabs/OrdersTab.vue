@@ -1,6 +1,6 @@
 <script setup lang="ts">
 // ─── OrdersTab.vue ─────────────────────────────────────────────────────────
-// Clinical orders — CPOE (Computerized Provider Order Entry). Lists
+// Clinical orders: CPOE (Computerized Provider Order Entry). Lists
 // orders for a participant with status lifecycle, expand-to-history,
 // and inline action buttons.
 //

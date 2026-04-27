@@ -1,6 +1,6 @@
 <?php
 
-// ─── EligibilityCheckController — Phase P5 ──────────────────────────────────
+// ─── EligibilityCheckController : Phase P5 ──────────────────────────────────
 namespace App\Http\Controllers;
 
 use App\Models\AuditLog;

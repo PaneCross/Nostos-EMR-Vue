@@ -3,7 +3,7 @@
 // ─── ClearinghouseGatewayFactory ─────────────────────────────────────────────
 // Phase 12. Resolves the right ClearinghouseGateway implementation for a
 // given tenant. If no active config exists for the tenant, a synthetic
-// NullClearinghouseGateway + NULL config is returned — the EMR ALWAYS has a
+// NullClearinghouseGateway + NULL config is returned : the EMR ALWAYS has a
 // working transmission path, even if that path is "stage for manual upload."
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -26,7 +26,7 @@ class ClearinghouseGatewayFactory
             $cfg = new ClearinghouseConfig([
                 'tenant_id'     => $tenantId,
                 'adapter'       => 'null_gateway',
-                'display_name'  => 'Default — no vendor configured',
+                'display_name'  => 'Default : no vendor configured',
                 'environment'   => 'sandbox',
                 'is_active'     => true,
             ]);

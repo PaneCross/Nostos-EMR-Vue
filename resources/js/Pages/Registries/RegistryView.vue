@@ -1,6 +1,6 @@
 <script setup lang="ts">
 // ─── Registries/RegistryView ────────────────────────────────────────────────
-// Generic disease-registry view — rendered for CHF (Congestive Heart Failure),
+// Generic disease-registry view: rendered for CHF (Congestive Heart Failure),
 // COPD (Chronic Obstructive Pulmonary Disease), Diabetes, and any other
 // registries via the `registry` prop. Lists every enrolled participant with
 // the condition + their care-gap status (last A1C, last echo, etc.).
@@ -70,7 +70,7 @@ const columns = computed(() => {
                       {{ r[c] }}
                     </Link>
                   </template>
-                  <template v-else>{{ r[c] ?? '—' }}</template>
+                  <template v-else>{{ r[c] ?? '-' }}</template>
                 </td>
               </tr>
               <tr v-if="data.rows.length === 0">

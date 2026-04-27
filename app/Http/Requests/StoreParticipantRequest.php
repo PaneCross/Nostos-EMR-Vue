@@ -15,7 +15,7 @@
 //            "disenrolled", disenrollment_date and disenrollment_reason
 //            are required; disenrollment_type is voluntary | involuntary
 //            | death.
-// Notable rules: 42 CFR §460.160(b) — death is treated as a disenrollment
+// Notable rules: 42 CFR §460.160(b) : death is treated as a disenrollment
 //                REASON, not a top-level status.
 // ─────────────────────────────────────────────────────────────────────────────
 

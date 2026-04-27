@@ -4,57 +4,57 @@
 // Generates CMS Health Plan Management System (HPMS) submission files for PACE.
 //
 // PLAIN-ENGLISH PURPOSE: Once a month CMS expects a list of who enrolled in
-// our PACE program and who left. That list is uploaded to HPMS — CMS's
-// contractor-facing portal — as pipe-delimited text files. This service
+// our PACE program and who left. That list is uploaded to HPMS : CMS's
+// contractor-facing portal : as pipe-delimited text files. This service
 // produces those files. Quarterly we also send aggregate quality data,
 // and annually a member-satisfaction survey roll-up.
 //
 // Acronym glossary used in this file:
 //   CMS      = Centers for Medicare & Medicaid Services (federal regulator/payer).
 //   PACE     = Programs of All-Inclusive Care for the Elderly.
-//   HPMS     = Health Plan Management System — CMS's contractor portal.
+//   HPMS     = Health Plan Management System : CMS's contractor portal.
 //   H-Number = a PACE org's CMS Contract ID (e.g. "H1234"); think of it as
 //              the federal account number for our program.
-//   MBI      = Medicare Beneficiary Identifier — the patient's 11-character
+//   MBI      = Medicare Beneficiary Identifier : the patient's 11-character
 //              federal Medicare ID (replaced SSN-based HICN in 2018).
-//   ADT      = Admission/Discharge/Transfer — a class of HL7 messages tracking
+//   ADT      = Admission/Discharge/Transfer : a class of HL7 messages tracking
 //              when a member is admitted to or discharged from a facility.
-//   HOS-M    = Health Outcomes Survey – Modified — the annual CMS-required
+//   HOS-M    = Health Outcomes Survey – Modified : the annual CMS-required
 //              member health-status survey for PACE.
 //
 // HPMS submission types:
-//   enrollment     — Monthly, pipe-delimited, one record per newly enrolled participant
-//   disenrollment  — Monthly, pipe-delimited, one record per disenrolled participant
-//   quality_data   — Quarterly, fixed-width, hospitalization/immunization/fall rates
-//   hos_m          — Annual, aggregate HOS-M survey results
+//   enrollment     : Monthly, pipe-delimited, one record per newly enrolled participant
+//   disenrollment  : Monthly, pipe-delimited, one record per disenrolled participant
+//   quality_data   : Quarterly, fixed-width, hospitalization/immunization/fall rates
+//   hos_m          : Annual, aggregate HOS-M survey results
 //
 // Generated files are stored in emr_hpms_submissions.file_content.
-// Downloads are served through HpmsController::download() — never direct URL.
+// Downloads are served through HpmsController::download() : never direct URL.
 //
 // ── GAP-14: HPMS Enrollment File Field Verification (W4-9) ───────────────────
-// CMS HPMS Enrollment File — 11 required fields per CMS HPMS companion guide.
+// CMS HPMS Enrollment File : 11 required fields per CMS HPMS companion guide.
 // Verified against the HPMS Enrollment/Disenrollment companion guide (V2025).
 //
 // Field #  | CMS Name                  | Source in NostosEMR
 // ---------|---------------------------|--------------------------------------
 // Field 1  | H-Number (Contract ID)    | shared_tenants.cms_contract_id
 // Field 2  | Member ID (MBI)           | emr_participants.medicare_id (encrypted)
-// Field 3  | Medicare Part A Eff. Date | emr_participants.medicare_a_start_date (NEW — migration 96)
-// Field 4  | Medicare Part B Eff. Date | emr_participants.medicare_b_start_date (NEW — migration 96)
+// Field 3  | Medicare Part A Eff. Date | emr_participants.medicare_a_start_date (NEW : migration 96)
+// Field 4  | Medicare Part B Eff. Date | emr_participants.medicare_b_start_date (NEW : migration 96)
 // Field 5  | Medicaid ID               | emr_participants.medicaid_id (encrypted)
 // Field 6  | Enrollment Effective Date | emr_participants.enrollment_date
 // Field 7  | Disenrollment Date        | emr_participants.disenrollment_date (disenrollment file only)
 // Field 8  | Disenrollment Reason      | emr_participants.disenrollment_reason (disenrollment file only)
 // Field 9  | Date of Birth             | emr_participants.dob
 // Field 10 | Sex (M/F/U)               | emr_participants.gender → mapped to M/F/U
-// Field 11 | County FIPS Code          | emr_participants.county_fips_code (NEW — migration 96)
+// Field 11 | County FIPS Code          | emr_participants.county_fips_code (NEW : migration 96)
 //
 // Fields 3, 4, 11 require migration 96 (2025_04_04_000001_add_hpms_fields_to_emr_participants).
 // Run: php artisan migrate before generating enrollment files for these fields.
 //
 // NOTE: File format approximates CMS HPMS companion guide specifications.
 // Real production use requires verification against current-year HPMS companion guide
-// (updated annually by CMS — check HPMS portal for latest version).
+// (updated annually by CMS : check HPMS portal for latest version).
 // The H-number in Field 1 is required on every line by CMS for cross-reference.
 // ─────────────────────────────────────────────────────────────────────────────
 // ─────────────────────────────────────────────────────────────────────────────
@@ -101,19 +101,19 @@ class HpmsFileService
         $lines = ["{$hNumber}|{$month}|HPMS_ENROLLMENT|V2025.1"];
 
         foreach ($participants as $p) {
-            // CMS HPMS enrollment file — 11 fields per companion guide (GAP-14, W4-9)
+            // CMS HPMS enrollment file : 11 fields per companion guide (GAP-14, W4-9)
             //
-            // Field 1: H-Number (contract ID) — identifies the PACE organization to CMS
-            // Field 2: MBI (Medicare Beneficiary Identifier) — encrypted at rest, decrypted on export
-            // Field 3: Medicare Part A effective date — format YYYYMMDD (nullable: '' if missing)
-            // Field 4: Medicare Part B effective date — format YYYYMMDD (nullable: '' if missing)
-            // Field 5: Medicaid ID — state Medicaid identifier (encrypted at rest, decrypted on export)
-            // Field 6: PACE enrollment effective date — format YYYYMMDD
-            // Field 7: N/A for enrollment file (disenrollment date) — empty
-            // Field 8: N/A for enrollment file (disenrollment reason) — empty
-            // Field 9: Date of birth — format YYYYMMDD
-            // Field 10: Sex — M/F/U (CMS uses M=Male, F=Female, U=Unknown/Undisclosed)
-            // Field 11: County FIPS code — 5-digit (e.g. '39049' = Franklin County OH)
+            // Field 1: H-Number (contract ID) : identifies the PACE organization to CMS
+            // Field 2: MBI (Medicare Beneficiary Identifier) : encrypted at rest, decrypted on export
+            // Field 3: Medicare Part A effective date : format YYYYMMDD (nullable: '' if missing)
+            // Field 4: Medicare Part B effective date : format YYYYMMDD (nullable: '' if missing)
+            // Field 5: Medicaid ID : state Medicaid identifier (encrypted at rest, decrypted on export)
+            // Field 6: PACE enrollment effective date : format YYYYMMDD
+            // Field 7: N/A for enrollment file (disenrollment date) : empty
+            // Field 8: N/A for enrollment file (disenrollment reason) : empty
+            // Field 9: Date of birth : format YYYYMMDD
+            // Field 10: Sex : M/F/U (CMS uses M=Male, F=Female, U=Unknown/Undisclosed)
+            // Field 11: County FIPS code : 5-digit (e.g. '39049' = Franklin County OH)
             $lines[] = implode('|', [
                 $hNumber,                                                                    // Field 1
                 $p->medicare_id ?? "UNK{$p->id}",                                          // Field 2
@@ -171,7 +171,7 @@ class HpmsFileService
         $periodEnd    = $periodStart->copy()->endOfMonth();
 
         // Participants who reached a terminal enrollment status this month.
-        // Per 42 CFR §460.160(b), death is a disenrollment reason — not a status.
+        // Per 42 CFR §460.160(b), death is a disenrollment reason : not a status.
         $participants = Participant::where('tenant_id', $tenantId)
             ->where('enrollment_status', 'disenrolled')
             ->whereBetween('updated_at', [$periodStart, $periodEnd])
@@ -218,7 +218,7 @@ class HpmsFileService
      * Quality metrics included:
      *   - Hospitalization rate (inpatient admissions / participant months)
      *   - Fall rate (fall incidents / participant months)
-     *   - Immunization rates (flu, pneumococcal — PENDING external data linkage)
+     *   - Immunization rates (flu, pneumococcal : PENDING external data linkage)
      *
      * @param  int  $tenantId  Tenant generating the file
      * @param  int  $year      Reporting year
@@ -237,7 +237,7 @@ class HpmsFileService
 
         $participantMonths = max($participantCount * 3, 1); // approximate (3 months per quarter)
 
-        // Falls: incidents of type 'fall' — column is `occurred_at` per emr_incidents schema
+        // Falls: incidents of type 'fall' : column is `occurred_at` per emr_incidents schema
         $fallCount = Incident::where('tenant_id', $tenantId)
             ->where('incident_type', 'fall')
             ->whereBetween('occurred_at', [$periodStart, $periodEnd])
@@ -262,7 +262,7 @@ class HpmsFileService
             ->count('participant_id');
 
         // Pneumococcal immunization rate: participants with any pneumo vaccine on record (ever)
-        // CMS PACE measures lifetime coverage, not annual — count ever-vaccinated participants
+        // CMS PACE measures lifetime coverage, not annual : count ever-vaccinated participants
         $pneumoVaccinatedCount = Immunization::where('tenant_id', $tenantId)
             ->whereIn('vaccine_type', ['pneumococcal_ppsv23', 'pneumococcal_pcv15', 'pneumococcal_pcv20'])
             ->where('refused', false)

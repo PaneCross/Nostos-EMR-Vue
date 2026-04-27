@@ -4,20 +4,20 @@
 // Physical or service locations used for appointment scheduling in a PACE program.
 //
 // Location types:
-//   pace_center        — The main PACE day center (where most in-center visits happen)
-//   acs_location       — Adult Care Setting (alternative care site)
-//   dialysis           — Contracted dialysis facility
-//   specialist         — Specialist office (contracted or community)
-//   hospital           — Hospital / ED / inpatient
-//   pharmacy           — Contracted pharmacy
-//   lab                — Laboratory (Quest, LabCorp, hospital lab)
-//   day_program        — Adult day program (non-PACE)
-//   other_external     — Any other external location
+//   pace_center        : The main PACE day center (where most in-center visits happen)
+//   acs_location       : Adult Care Setting (alternative care site)
+//   dialysis           : Contracted dialysis facility
+//   specialist         : Specialist office (contracted or community)
+//   hospital           : Hospital / ED / inpatient
+//   pharmacy           : Contracted pharmacy
+//   lab                : Laboratory (Quest, LabCorp, hospital lab)
+//   day_program        : Adult day program (non-PACE)
+//   other_external     : Any other external location
 //
 // Managed by: Transportation Team (create/edit/delete).
 // Used by: Appointment scheduling (location_id FK on emr_appointments).
 //
-// Soft deletes preserve history — archived locations still appear on past appointments.
+// Soft deletes preserve history : archived locations still appear on past appointments.
 // ──────────────────────────────────────────────────────────────────────────────
 
 namespace App\Models;
@@ -94,7 +94,7 @@ class Location extends Model
         return $this->belongsTo(Tenant::class);
     }
 
-    /** Parent PACE site (nullable — external locations have no site). */
+    /** Parent PACE site (nullable : external locations have no site). */
     public function site(): BelongsTo
     {
         return $this->belongsTo(Site::class, 'site_id');

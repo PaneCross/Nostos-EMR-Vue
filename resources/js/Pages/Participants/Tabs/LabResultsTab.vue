@@ -84,7 +84,7 @@ async function markReviewed(result: LabResult) {
       results.value[idx].reviewed_at = new Date().toISOString()
     }
   } catch {
-    // ignore — already reviewed returns 409 which is fine
+    // ignore: already reviewed returns 409 which is fine
   } finally {
     reviewingId.value = null
   }

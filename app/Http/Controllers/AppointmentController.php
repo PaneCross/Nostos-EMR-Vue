@@ -147,7 +147,7 @@ class AppointmentController extends Controller
     }
 
     /**
-     * Phase 14.2 — standalone appointment detail Inertia page.
+     * Phase 14.2 : standalone appointment detail Inertia page.
      * GET /appointments/{appointment}
      *
      * Renders the full detail view independent of a participant route context,
@@ -213,7 +213,7 @@ class AppointmentController extends Controller
             }
         }
 
-        // Strip the confirmation flag — it's not an Appointment column.
+        // Strip the confirmation flag : it's not an Appointment column.
         unset($data['cross_site_confirmed']);
 
         // ── Conflict check: participant cannot have overlapping appointments ──
@@ -252,7 +252,7 @@ class AppointmentController extends Controller
             newValues:    $data,
         );
 
-        // Cross-site audit entry — surfaces on the participant's audit tab so
+        // Cross-site audit entry : surfaces on the participant's audit tab so
         // home-site staff can see the participant is going elsewhere that day.
         if ($crossSite) {
             AuditLog::record(
@@ -436,7 +436,7 @@ class AppointmentController extends Controller
             description:  "Participant {$participant->mrn} marked no-show for {$appointment->appointment_type} appointment",
         );
 
-        // Phase Q7 — alert to transportation + scheduling on no-show.
+        // Phase Q7 : alert to transportation + scheduling on no-show.
         app(AlertService::class)->create([
             'tenant_id'          => $user->tenant_id,
             'participant_id'     => $participant->id,

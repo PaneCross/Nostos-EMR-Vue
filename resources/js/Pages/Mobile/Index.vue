@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// ─── Mobile/Index.vue — Phase M5 (home-care day list) ───────────────────────
+// ─── Mobile/Index.vue: Phase M5 (home-care day list) ───────────────────────
 // Mobile-optimized home-care companion. Used by home-care nurses + aides on
 // phones/tablets in the field: today's visit list with one-tap navigation to
 // each participant + voice-note dictation for quick charting between visits.
@@ -14,7 +14,7 @@ function onTranscript(t: string) { draftNote.value += t }
 </script>
 
 <template>
-  <Head title="Mobile — Today's visits" />
+  <Head title="Mobile: Today's visits" />
   <div class="min-h-screen bg-slate-50 dark:bg-slate-950">
     <header class="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-4 py-3">
       <h1 class="text-base font-semibold text-slate-900 dark:text-slate-100">Today's home visits</h1>
@@ -32,13 +32,13 @@ function onTranscript(t: string) { draftNote.value += t }
         class="rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-4 space-y-2"
       >
         <div class="flex items-baseline justify-between">
-          <div class="font-medium text-slate-900 dark:text-slate-100">{{ v.participant?.name ?? '—' }}</div>
+          <div class="font-medium text-slate-900 dark:text-slate-100">{{ v.participant?.name ?? '-' }}</div>
           <div class="text-xs text-slate-500 dark:text-slate-400">
             {{ String(v.scheduled_start ?? '').slice(11, 16) }}
           </div>
         </div>
         <div class="text-xs text-slate-500 dark:text-slate-400">
-          MRN {{ v.participant?.mrn ?? '—' }} · {{ v.appointment_type ?? 'Home visit' }} · {{ v.status }}
+          MRN {{ v.participant?.mrn ?? '-' }} · {{ v.appointment_type ?? 'Home visit' }} · {{ v.status }}
         </div>
         <div class="flex flex-wrap gap-2 pt-2">
           <Link

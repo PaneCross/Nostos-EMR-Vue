@@ -1,7 +1,7 @@
 <?php
 
 // ─── EmarRecord Model ─────────────────────────────────────────────────────────
-// Electronic Medication Administration Record — one record per scheduled dose.
+// Electronic Medication Administration Record : one record per scheduled dose.
 // APPEND-ONLY (no SoftDeletes, no updated_at). Clinical audit trail.
 //
 // Row lifecycle:
@@ -15,13 +15,13 @@
 // require witness_user_id before MedicationController accepts the record.
 //
 // Status meanings:
-//   scheduled     — Pre-generated, awaiting administration
-//   given         — Successfully administered; administered_at + user filled
-//   refused       — Participant declined; reason_not_given required
-//   held          — Held per MD order; reason_not_given required
-//   not_available — Drug not in stock; reason_not_given required
-//   late          — Scheduled window passed without administration (set by LateMarDetectionJob, not by direct user action)
-//   missed        — Nurse explicitly marked as missed
+//   scheduled     : Pre-generated, awaiting administration
+//   given         : Successfully administered; administered_at + user filled
+//   refused       : Participant declined; reason_not_given required
+//   held          : Held per MD order; reason_not_given required
+//   not_available : Drug not in stock; reason_not_given required
+//   late          : Scheduled window passed without administration (set by LateMarDetectionJob, not by direct user action)
+//   missed        : Nurse explicitly marked as missed
 // ──────────────────────────────────────────────────────────────────────────────
 
 namespace App\Models;

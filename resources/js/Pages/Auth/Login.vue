@@ -21,7 +21,7 @@ const error = ref<string | null>(page.props.errors?.oauth ?? null)
 const success = ref<string | null>(null)
 const countdown = ref(0)
 
-// Countdown timer — ticks down from 60 when a code is sent
+// Countdown timer: ticks down from 60 when a code is sent
 let countdownTimer: ReturnType<typeof setInterval> | null = null
 
 function startCountdown() {

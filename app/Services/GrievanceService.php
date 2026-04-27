@@ -86,7 +86,7 @@ class GrievanceService
 
         // Auto-flag discrimination grievances as CMS-reportable at creation.
         // 42 CFR §460.112 requires reporting civil rights / non-discrimination violations.
-        // QA review is still required — this prevents the flag from being missed entirely.
+        // QA review is still required : this prevents the flag from being missed entirely.
         if (in_array($grievance->category, Grievance::CMS_AUTO_FLAG_CATEGORIES, true)) {
             $grievance->update(['cms_reportable' => true]);
             AuditLog::record(
@@ -101,7 +101,7 @@ class GrievanceService
         }
 
         // Urgent grievances require immediate notification to QA + IT Admin
-        // per CMS §460.120(c) — 72-hour resolution clock starts now.
+        // per CMS §460.120(c) : 72-hour resolution clock starts now.
         // If a compliance_officer designation holder exists, name them in the alert.
         if ($grievance->priority === 'urgent') {
             $complianceOfficer = User::where('tenant_id', $participant->tenant_id)
@@ -199,7 +199,7 @@ class GrievanceService
                         Alert::create([
                             'tenant_id'          => $grievance->tenant_id,
                             'alert_type'         => 'program_director_cms_reportable_escalation',
-                            'title'              => "CMS-reportable grievance escalated — {$grievance->referenceNumber()}",
+                            'title'              => "CMS-reportable grievance escalated : {$grievance->referenceNumber()}",
                             'message'            => "Grievance {$grievance->referenceNumber()} (category: {$grievance->categoryLabel()}) was escalated and is flagged CMS-reportable.",
                             'severity'           => 'critical',
                             'source_module'      => 'grievances',
@@ -217,7 +217,7 @@ class GrievanceService
 
         // Accountability net: when resolving a high-risk-category grievance without
         // ever setting cms_reportable=true, fire a warning to qa_compliance.
-        // This does NOT block resolution — it creates an auditable paper trail so
+        // This does NOT block resolution : it creates an auditable paper trail so
         // QA can confirm the determination was deliberate, not an oversight.
         // Applies to: discrimination, staff_conduct, quality_of_care (CMS_REVIEW_REQUIRED_CATEGORIES).
         if ($newStatus === 'resolved'
@@ -248,7 +248,7 @@ class GrievanceService
      * that person and targets their department. A compliance_officer designation
      * holder is also looked up as a fallback reference.
      *
-     * CMS surveys ask "who reviewed this escalated grievance?" — this satisfies
+     * CMS surveys ask "who reviewed this escalated grievance?" : this satisfies
      * the named accountability requirement per 42 CFR §460.120.
      */
     private function createEscalationAlert(Grievance $grievance, array $data, User $actor): void
@@ -320,7 +320,7 @@ class GrievanceService
     /**
      * Record that the grievance has been submitted to CMS.
      * Sets cms_reported_at timestamp. Only valid if cms_reportable is true.
-     * This action is irreversible — once reported to CMS, the timestamp stands.
+     * This action is irreversible : once reported to CMS, the timestamp stands.
      *
      * @throws LogicException if grievance is not flagged as CMS reportable
      */
@@ -443,7 +443,7 @@ class GrievanceService
             $standardCount++;
         }
 
-        // Phase 13.5 — day-25 warning (approaching 30-day deadline)
+        // Phase 13.5 : day-25 warning (approaching 30-day deadline)
         // Fires once per grievance (dedup via metadata.grievance_id within 48h).
         $approachingCount = 0;
         $approaching = Grievance::forTenant($tenantId)

@@ -1,6 +1,6 @@
 <?php
 
-// ─── BillingReconciliationController — Phase M6 ─────────────────────────────
+// ─── BillingReconciliationController : Phase M6 ─────────────────────────────
 namespace App\Http\Controllers;
 
 use App\Models\CapitationRecord;
@@ -20,7 +20,7 @@ class BillingReconciliationController extends Controller
         );
     }
 
-    /** GET /billing/pde-reconciliation.json — submitted vs paid vs variance */
+    /** GET /billing/pde-reconciliation.json : submitted vs paid vs variance */
     public function pdeJson(): JsonResponse
     {
         $this->gate();
@@ -42,7 +42,7 @@ class BillingReconciliationController extends Controller
         return response()->json(['rows' => $rows]);
     }
 
-    /** GET /billing/capitation-reconciliation.json — MMR vs local expected */
+    /** GET /billing/capitation-reconciliation.json : MMR vs local expected */
     public function capitationJson(): JsonResponse
     {
         $this->gate();

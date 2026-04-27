@@ -6,10 +6,10 @@
 // (or super_admin).
 //
 // Routes (GET, all under /dashboards/dietary/):
-//   assessments   — Nutritional assessments overdue or due within 14 days
-//   goals         — Active dietary care plan goals
-//   restrictions  — Allergy and dietary restriction summary across participants
-//   sdrs          — Open/overdue SDRs assigned to dietary
+//   assessments   : Nutritional assessments overdue or due within 14 days
+//   goals         : Active dietary care plan goals
+//   restrictions  : Allergy and dietary restriction summary across participants
+//   sdrs          : Open/overdue SDRs assigned to dietary
 // ─────────────────────────────────────────────────────────────────────────────
 
 namespace App\Http\Controllers\Dashboards;
@@ -210,7 +210,7 @@ class DietaryDashboardController extends Controller
     }
 
     /**
-     * Phase I7 — Active dietary orders grouped by diet type.
+     * Phase I7 : Active dietary orders grouped by diet type.
      */
     public function ordersByDietType(): JsonResponse
     {
@@ -230,7 +230,7 @@ class DietaryDashboardController extends Controller
     }
 
     /**
-     * Phase I7 — IADL food-prep impaired → dietary consult candidates.
+     * Phase I7 : IADL food-prep impaired → dietary consult candidates.
      */
     public function iadlFoodPrepCandidates(): JsonResponse
     {

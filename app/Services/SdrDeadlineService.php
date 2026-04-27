@@ -70,7 +70,7 @@ class SdrDeadlineService
             $this->createDeadlineAlert($sdr, $warnKey, 'warning',
                 "SDR due in less than {$warnThreshold} hours" . ($isExpedited ? ' (EXPEDITED)' : ''),
                 'Service Delivery Request (' . ($isExpedited ? 'expedited 24h' : 'standard 72h')
-                    . ") due within {$warnThreshold} hours — escalation imminent.",
+                    . ") due within {$warnThreshold} hours : escalation imminent.",
             );
             return 'warning';
         }
@@ -121,7 +121,7 @@ class SdrDeadlineService
             'source_module'      => 'sdr',
             'alert_type'         => 'sdr_overdue',
             'severity'           => 'critical',
-            'title'              => 'SDR Overdue — Escalated',
+            'title'              => 'SDR Overdue : Escalated',
             'message'            => $reason,
             'target_departments' => $targetDepts,
             'created_by_system'  => true,
@@ -139,7 +139,7 @@ class SdrDeadlineService
             description: $reason,
         );
 
-        Log::warning("[SdrDeadlineService] SDR #{$sdr->id} escalated — overdue", [
+        Log::warning("[SdrDeadlineService] SDR #{$sdr->id} escalated : overdue", [
             'sdr_id'           => $sdr->id,
             'participant_id'   => $sdr->participant_id,
             'assigned_dept'    => $sdr->assigned_department,
@@ -166,7 +166,7 @@ class SdrDeadlineService
             'alert_type'         => $alertType,
             'severity'           => $severity,
             'title'              => $title,
-            'message'            => $message . " (SDR #{$sdr->id} — {$sdr->typeLabel()})",
+            'message'            => $message . " (SDR #{$sdr->id} : {$sdr->typeLabel()})",
             'target_departments' => [$sdr->assigned_department],
             'created_by_system'  => true,
         ]);

@@ -1,15 +1,15 @@
 <script setup lang="ts">
 // ─── Compliance/AdeReporting ────────────────────────────────────────────────
-// Audit-pull universe for ADEs (Adverse Drug Events) — patient harm
+// Audit-pull universe for ADEs (Adverse Drug Events): patient harm
 // associated with medication use. Surfaces serious / fatal events that may
 // require FDA MedWatch reporting and CMS audit response.
 //
 // Audience: QA Compliance, Pharmacy leadership.
 //
 // Notable rules:
-//   - 42 CFR §460.200 (QAPI) — adverse events must be tracked + analyzed.
+//   - 42 CFR §460.200 (QAPI): adverse events must be tracked + analyzed.
 //   - FDA MedWatch reporting threshold for serious/unexpected events.
-//   - Append-only — historical events cannot be edited (audit trail).
+//   - Append-only: historical events cannot be edited (audit trail).
 // ────────────────────────────────────────────────────────────────────────────
 import { ref, computed } from 'vue'
 import { Head, Link } from '@inertiajs/vue3'
@@ -58,7 +58,7 @@ const filtered = computed(() => {
 })
 
 function fmt(d: string | null): string {
-    if (!d) return '—'
+    if (!d) return '-'
     return new Date(d).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
@@ -73,10 +73,10 @@ const SEVERITY_CLASS: Record<string, string> = {
 
 <template>
     <AppShell title="ADE Reporting">
-        <Head title="Adverse Drug Events — Compliance" />
+        <Head title="Adverse Drug Events: Compliance" />
         <div class="max-w-7xl mx-auto p-6 space-y-6">
             <div>
-                <h1 class="text-xl font-semibold text-slate-900 dark:text-slate-100">Adverse Drug Events — 12-Month Universe</h1>
+                <h1 class="text-xl font-semibold text-slate-900 dark:text-slate-100">Adverse Drug Events: 12-Month Universe</h1>
                 <p class="text-sm text-slate-500 dark:text-slate-400">
                     FDA MedWatch + CMS PACE Audit. Severe+ events auto-create allergies. MedWatch deadline 15 days from onset.
                     Window: {{ fmt(summary.window_start) }} → {{ fmt(summary.window_end) }}.
@@ -138,10 +138,10 @@ const SEVERITY_CLASS: Record<string, string> = {
                                 <Link v-if="r.participant.id" :href="r.href" class="text-blue-600 dark:text-blue-400 hover:underline">
                                     {{ r.participant.name }}
                                 </Link>
-                                <span v-else>—</span>
+                                <span v-else>-</span>
                                 <div class="text-xs text-slate-500">{{ r.participant.mrn }}</div>
                             </td>
-                            <td class="px-3 py-2 text-slate-700 dark:text-slate-200">{{ r.medication ?? '—' }}</td>
+                            <td class="px-3 py-2 text-slate-700 dark:text-slate-200">{{ r.medication ?? '-' }}</td>
                             <td class="px-3 py-2 text-slate-600 dark:text-slate-300">{{ fmt(r.onset_date) }}</td>
                             <td class="px-3 py-2">
                                 <span :class="['inline-flex px-2 py-0.5 rounded text-xs', SEVERITY_CLASS[r.severity]]">{{ r.severity }}</span>
@@ -155,7 +155,7 @@ const SEVERITY_CLASS: Record<string, string> = {
                                 </template>
                                 <span v-else-if="r.medwatch_overdue" class="inline-flex px-2 py-0.5 rounded text-xs bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300">OVERDUE</span>
                                 <span v-else-if="r.requires_medwatch" class="text-xs text-amber-600 dark:text-amber-400">pending</span>
-                                <span v-else class="text-slate-400">—</span>
+                                <span v-else class="text-slate-400">-</span>
                             </td>
                             <td class="px-3 py-2 space-y-1">
                                 <span v-if="r.auto_allergy_created" class="inline-block text-xs px-2 py-0.5 rounded bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300">auto-allergy</span>

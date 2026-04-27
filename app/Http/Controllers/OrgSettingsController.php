@@ -10,7 +10,7 @@
 // Auth gate: super_admin role OR department=executive AND role=admin.
 // Tenant-scoped: every request reads/writes only the calling user's tenant.
 //
-// OS3 — Per-site override capability:
+// OS3 : Per-site override capability:
 //   The page is tabbed. The default "Org Defaults" tab edits the tenant-wide
 //   row (site_id NULL). Optional per-site tabs edit site-specific overrides.
 //   Save bodies include an explicit `site_id` (null or numeric); the service
@@ -93,7 +93,7 @@ class OrgSettingsController extends Controller
             'override_count' => $overrideCounts[$s->id] ?? 0,
         ]);
 
-        // Sites that already have at least one override row — these get tabs.
+        // Sites that already have at least one override row : these get tabs.
         $sitesWithOverrides = array_keys($overrideCounts);
 
         return Inertia::render('Executive/OrgSettings', [

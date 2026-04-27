@@ -21,7 +21,7 @@ class MrnService
             $prefix = $site->mrn_prefix ?? $this->derivePrefix($site->name);
 
             // Count all participants (including soft-deleted) for this site to get a
-            // monotonic sequence — never reuse a number even after deletion.
+            // monotonic sequence : never reuse a number even after deletion.
             // PostgreSQL does not allow FOR UPDATE with aggregate functions, so we
             // lock the rows in a subquery and count the result.
             $result = DB::selectOne(

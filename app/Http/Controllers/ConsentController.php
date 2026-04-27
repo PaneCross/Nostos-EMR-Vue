@@ -92,7 +92,7 @@ class ConsentController extends Controller
     }
 
     /**
-     * Update a consent record — typically to record acknowledgment or refusal.
+     * Update a consent record : typically to record acknowledgment or refusal.
      * Requires enrollment, qa_compliance, or it_admin department.
      */
     public function update(UpdateConsentRequest $request, Participant $participant, ConsentRecord $consent): JsonResponse
@@ -122,7 +122,7 @@ class ConsentController extends Controller
     }
 
     /**
-     * Phase B8a — E-signature capture. Accepts a data-URL PNG signature,
+     * Phase B8a : E-signature capture. Accepts a data-URL PNG signature,
      * optional proxy info, captures IP, stamps signed_at + disclaimer
      * version, and transitions status to 'acknowledged'.
      *
@@ -197,7 +197,7 @@ class ConsentController extends Controller
     }
 
     /**
-     * Phase B8a — PDF of a signed consent with embedded audit stamp
+     * Phase B8a : PDF of a signed consent with embedded audit stamp
      * (signed-at, IP, disclaimer version, signer, proxy info if applicable).
      *
      * GET /participants/{participant}/consents/{consent}/signed.pdf

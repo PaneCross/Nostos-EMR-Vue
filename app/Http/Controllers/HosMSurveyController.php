@@ -4,10 +4,10 @@
 // REST API for Health Outcomes Survey for Medicare (HOS-M) annual surveys.
 //
 // Route list:
-//   GET  /billing/hos-m               → index()   — list surveys with filters
-//   POST /billing/hos-m               → store()   — create survey record
-//   PUT  /billing/hos-m/{survey}      → update()  — update survey responses
-//   POST /billing/hos-m/{survey}/submit → submit() — mark as submitted to CMS
+//   GET  /billing/hos-m               → index()   : list surveys with filters
+//   POST /billing/hos-m               → store()   : create survey record
+//   PUT  /billing/hos-m/{survey}      → update()  : update survey responses
+//   POST /billing/hos-m/{survey}/submit → submit() : mark as submitted to CMS
 //
 // Department access: finance + primary_care (administrators of the survey)
 //   + super_admin + it_admin.
@@ -71,7 +71,7 @@ class HosMSurveyController extends Controller
             ->values()
             ->all();
 
-        // Full list of surveys for the selected year — drives the table.
+        // Full list of surveys for the selected year : drives the table.
         $surveys = HosMSurvey::forTenant($tenantId)
             ->forYear($selectedYear)
             ->with([
@@ -93,7 +93,7 @@ class HosMSurveyController extends Controller
         ];
 
         // Enrolled participants for the "Add Survey" picker.
-        // HOS-M is a post-enrollment annual survey per CMS HPMS requirements —
+        // HOS-M is a post-enrollment annual survey per CMS HPMS requirements :
         // only enrolled participants (not potential enrollees) are eligible.
         $enrolledParticipants = Participant::where('tenant_id', $tenantId)
             ->where('enrollment_status', 'enrolled')
@@ -151,7 +151,7 @@ class HosMSurveyController extends Controller
                 'administered_by_user_id' => $request->user()->id,
             ]));
         } catch (\Illuminate\Database\QueryException $e) {
-            // Unique constraint violation — survey already exists for this year
+            // Unique constraint violation : survey already exists for this year
             return response()->json([
                 'error' => "A HOS-M survey already exists for this participant in {$data['survey_year']}.",
             ], 409);

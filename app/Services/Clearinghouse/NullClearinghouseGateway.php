@@ -33,7 +33,7 @@ class NullClearinghouseGateway implements ClearinghouseGateway
         try {
             Storage::disk('local')->put($path, $batch->edi_content ?? '');
         } catch (\Throwable $e) {
-            // Non-fatal — we still log the transmission; the operator can
+            // Non-fatal : we still log the transmission; the operator can
             // retrieve content via the controller endpoint.
         }
 
@@ -72,12 +72,12 @@ class NullClearinghouseGateway implements ClearinghouseGateway
             'attempted_at'     => now(),
             'completed_at'     => now(),
             'attempt_number'   => 1,
-            'raw_payload'      => 'Null gateway — no remote status available.',
+            'raw_payload'      => 'Null gateway : no remote status available.',
         ]);
 
         return new ClearinghouseTransmissionResult(
             status: 'staged_manual',
-            message: 'Null gateway — status tracked manually.',
+            message: 'Null gateway : status tracked manually.',
             transmissionId: $row->id,
         );
     }

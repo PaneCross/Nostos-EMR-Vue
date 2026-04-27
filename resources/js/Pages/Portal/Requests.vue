@@ -2,7 +2,7 @@
 // ─── Portal/Requests.vue ─────────────────────────────────────────────────────
 // Participant Portal "self-service requests" page. Buttons that submit common
 // requests to the care team: refill request, transport request, ROI (Release
-// of Information — HIPAA-authorized PHI release to a 3rd party), record
+// of Information: HIPAA-authorized PHI release to a 3rd party), record
 // amendment (HIPAA §164.526), and accounting-of-disclosures (HIPAA §164.528).
 // Each submit creates a staff task for the appropriate department.
 // ─────────────────────────────────────────────────────────────────────────────
@@ -68,7 +68,7 @@ function amendmentRequest() {
       </button>
       <button :disabled="submitting" class="rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-4 text-left hover:border-blue-400 disabled:opacity-50" @click="amendmentRequest">
         <div class="font-medium text-slate-900 dark:text-slate-100">Request a record amendment</div>
-        <div class="text-xs text-slate-500 dark:text-slate-400">HIPAA §164.526 — 60-day decision window.</div>
+        <div class="text-xs text-slate-500 dark:text-slate-400">HIPAA §164.526: 60-day decision window.</div>
       </button>
     </div>
   </PortalShell>

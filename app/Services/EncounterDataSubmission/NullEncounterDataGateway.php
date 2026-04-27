@@ -12,7 +12,7 @@ class NullEncounterDataGateway implements EncounterDataGateway
             'status'    => 'staged',
             'reference' => 'null-' . $batch->id,
             'payload'   => [
-                'message' => 'Null gateway — 837P staged in emr_edi_batches.file_content for manual operator upload to CMS EDS portal.',
+                'message' => 'Null gateway : 837P staged in emr_edi_batches.file_content for manual operator upload to CMS EDS portal.',
             ],
         ];
     }

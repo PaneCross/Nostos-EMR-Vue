@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-// Phase 15.7 — HRIS provider configuration (per-tenant, one row per provider).
+// Phase 15.7 : HRIS provider configuration (per-tenant, one row per provider).
 class HrisConfig extends Model
 {
     protected $table = 'emr_hris_configs';
@@ -33,7 +33,7 @@ class HrisConfig extends Model
     public function verifySecret(string $signature, string $payload): bool
     {
         if ($this->webhook_secret_hash === null) return false;
-        // HMAC-SHA256 verification — this is the realistic pattern;
+        // HMAC-SHA256 verification : this is the realistic pattern;
         // scaffold just compares hashed secret for simplicity.
         $expected = hash_hmac('sha256', $payload, $this->rawSecret() ?? '');
         return hash_equals($expected, $signature);

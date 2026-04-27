@@ -1,6 +1,6 @@
 <?php
 
-// ─── PhiDisclosureController — Phase P2 ─────────────────────────────────────
+// ─── PhiDisclosureController : Phase P2 ─────────────────────────────────────
 // Read endpoints for the HIPAA §164.528 Accounting of Disclosures.
 // ─────────────────────────────────────────────────────────────────────────────
 

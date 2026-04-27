@@ -1,7 +1,7 @@
 <?php
 
 // ─── ParticipantFlagController ────────────────────────────────────────────────
-// JSON CRUD + resolve endpoints for ParticipantFlag rows — the safety/clinical
+// JSON CRUD + resolve endpoints for ParticipantFlag rows : the safety/clinical
 // alerts pinned to the chart (wheelchair, fall_risk, DNR, hospice, etc.).
 //
 // Routes: index/store/update on /participants/{p}/flags, plus a `resolve`

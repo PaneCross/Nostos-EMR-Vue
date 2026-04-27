@@ -84,7 +84,7 @@ const siteLoading = ref(false)
 onMounted(() => {
     axios.get('/reports/data')
         .then(res => { kpis.value = res.data.kpis })
-        .catch(() => {/* non-fatal — KPIs are supplementary */})
+        .catch(() => {/* non-fatal: KPIs are supplementary */})
 })
 
 // ── Computed ───────────────────────────────────────────────────────────────────

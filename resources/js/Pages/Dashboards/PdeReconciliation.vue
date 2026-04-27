@@ -4,7 +4,7 @@
 // the Part D claim records the org submits to CMS. This page reconciles
 // submitted vs accepted vs rejected PDEs by month so pharmacy + finance can
 // track Part D claim health.
-// Data: GET /billing/pde-reconciliation.json — bar chart + table.
+// Data: GET /billing/pde-reconciliation.json: bar chart + table.
 // ─────────────────────────────────────────────────────────────────────────────
 import { ref, computed, onMounted } from 'vue'
 import { Head } from '@inertiajs/vue3'

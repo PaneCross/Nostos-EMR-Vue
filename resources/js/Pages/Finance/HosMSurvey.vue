@@ -1,6 +1,6 @@
 <!--
   Finance / HOS-M Annual Surveys
-  Health Outcomes Survey for Medicare (PACE) — tracks annual survey
+  Health Outcomes Survey for Medicare (PACE): tracks annual survey
   administration, completion, and CMS submission. One survey per participant
   per year (DB unique constraint enforced).
 
@@ -70,7 +70,7 @@ const surveyList = computed<HosMSurvey[]>(() =>
 )
 
 // ── Year selector ────────────────────────────────────────────────────────────
-// Server-side change — reloads the page with ?year=N so stats + surveys table
+// Server-side change: reloads the page with ?year=N so stats + surveys table
 // refresh to show only that year.
 function changeYear(year: number | string) {
     const y = Number(year)
@@ -79,7 +79,7 @@ function changeYear(year: number | string) {
 }
 
 // ── Status filter chips ──────────────────────────────────────────────────────
-// Client-side — cheap to compute from `surveyList` which already holds the
+// Client-side: cheap to compute from `surveyList` which already holds the
 // year's surveys. Chips are mutually-exclusive "all | incomplete | complete
 // (pending CMS) | submitted".
 type StatusFilter = 'all' | 'incomplete' | 'pending_cms' | 'submitted'
@@ -194,10 +194,10 @@ const participantsByStatus = computed<{ needs: ParticipantSummary[]; done: Parti
             label  = 'Submitted to CMS'
         } else if (existing.completed) {
             status = 'complete'
-            label  = 'Complete — pending CMS submission'
+            label  = 'Complete: pending CMS submission'
         } else {
             status = 'incomplete'
-            label  = 'Incomplete — in progress'
+            label  = 'Incomplete: in progress'
         }
         done.push({ ...p, surveyStatus: status, statusLabel: label })
     }
@@ -378,7 +378,7 @@ async function submitCurrentToCms() {
                 <div>
                     <h1 class="text-2xl font-bold text-gray-900 dark:text-slate-100">HOS-M Annual Surveys</h1>
                     <p class="text-sm text-gray-500 dark:text-slate-400 mt-0.5">
-                        Health Outcomes Survey for Medicare (PACE) — {{ selectedYear }} administration
+                        Health Outcomes Survey for Medicare (PACE): {{ selectedYear }} administration
                     </p>
                 </div>
                 <div class="flex items-center gap-2">
@@ -657,7 +657,7 @@ async function submitCurrentToCms() {
                                 :label="`Already Has ${form.survey_year} Survey (${participantsByStatus.done.length})`"
                             >
                                 <option v-for="p in participantsByStatus.done" :key="p.id" :value="p.id" disabled>
-                                    {{ p.last_name }}, {{ p.first_name }} ({{ p.mrn }}) — {{ p.statusLabel }}
+                                    {{ p.last_name }}, {{ p.first_name }} ({{ p.mrn }}): {{ p.statusLabel }}
                                 </option>
                             </optgroup>
                         </select>
@@ -707,7 +707,7 @@ async function submitCurrentToCms() {
                     <!-- Responses (optional) -->
                     <details class="border border-gray-200 dark:border-slate-700 rounded-lg">
                         <summary class="px-3 py-2 text-sm font-medium text-gray-700 dark:text-slate-300 cursor-pointer select-none">
-                            Survey Responses <span class="text-gray-400 dark:text-slate-500 font-normal">(optional — can be added later)</span>
+                            Survey Responses <span class="text-gray-400 dark:text-slate-500 font-normal">(optional: can be added later)</span>
                         </summary>
                         <div class="px-3 py-3 border-t border-gray-200 dark:border-slate-700 space-y-3">
                             <p class="text-sm text-gray-500 dark:text-slate-400">

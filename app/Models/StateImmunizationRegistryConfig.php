@@ -4,7 +4,7 @@
 // Phase 8 (MVP roadmap). Per-tenant configuration for state IIS (Immunization
 // Information System) submissions. Governs VXU message envelope fields and
 // captures state companion-guide quirks as free-text. Actual transmission is
-// not implemented — this table exists so the Hl7VxuBuilder can stamp the
+// not implemented : this table exists so the Hl7VxuBuilder can stamp the
 // right facility/application identifiers and so operational rollout can
 // wire real transmission without schema churn.
 // ─────────────────────────────────────────────────────────────────────────────

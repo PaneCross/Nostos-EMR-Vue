@@ -4,10 +4,10 @@
 // Facade over the RBAC permission table (emr_role_permissions) and the sidebar
 // navigation structure. Used in two places:
 //
-//   1. HandleInertiaRequests middleware — shares permissionMap and navGroups
+//   1. HandleInertiaRequests middleware : shares permissionMap and navGroups
 //      with every Inertia response so the React frontend knows what to render.
 //
-//   2. Controller authorization — use can() for module-level checks, or rely on
+//   2. Controller authorization : use can() for module-level checks, or rely on
 //      CheckDepartmentAccess middleware for route-level enforcement.
 //
 // RBAC model:
@@ -122,11 +122,11 @@ class PermissionService
     }
 
     /**
-     * The complete sidebar navigation manifest — every group, item, module key,
+     * The complete sidebar navigation manifest : every group, item, module key,
      * and href in the application.
      *
      * This is intentionally hardcoded (not in a config file) so that module keys
-     * stay co-located with their hrefs and labels — easier to grep and rename.
+     * stay co-located with their hrefs and labels : easier to grep and rename.
      *
      * IMPORTANT: The 'module' value must match the module column in emr_role_permissions.
      * When adding a new nav item:
@@ -135,7 +135,7 @@ class PermissionService
      *   3. Run php artisan db:seed --class=PermissionSeeder (or migrate:fresh --seed).
      *
      * Items that are not yet built (Phase 5+) are kept here so the sidebar
-     * renders them as "Coming Soon" stubs — the ComingSoonController handles those routes.
+     * renders them as "Coming Soon" stubs : the ComingSoonController handles those routes.
      */
     private function allNavGroups(): array
     {
@@ -159,7 +159,7 @@ class PermissionService
                     ['label' => 'Care Plans',       'module' => 'care_plans',       'href' => '/clinical/care-plans'],
                     ['label' => 'Medications',      'module' => 'medications',      'href' => '/clinical/medications'],
                     ['label' => 'Orders',           'module' => 'orders',           'href' => '/orders'],
-                    // Phase O4 — Wave I-N clinical surfaces
+                    // Phase O4 : Wave I-N clinical surfaces
                     ['label' => 'My Panel',         'module' => 'participants',     'href' => '/ops/panel'],
                     ['label' => 'Tasks',            'module' => 'assessments',      'href' => '/tasks'],
                     ['label' => 'Home-Care Mobile', 'module' => 'participants',     'href' => '/mobile'],
@@ -175,12 +175,12 @@ class PermissionService
                     ['label' => 'IDT Dashboard',    'module' => 'idt_dashboard',    'href' => '/idt'],
                     ['label' => 'Meeting Minutes',  'module' => 'idt_minutes',      'href' => '/idt/meetings'],
                     ['label' => 'SDR Tracker',      'module' => 'sdr_tracker',      'href' => '/sdrs'],
-                    // Phase O4 — Wave I-N IDT surfaces
+                    // Phase O4 : Wave I-N IDT surfaces
                     ['label' => 'Team Huddle',      'module' => 'idt_dashboard',    'href' => '/ops/huddle'],
                 ],
             ],
 
-            // Phase O4 — Wave I-N Operations group (dietary + activities)
+            // Phase O4 : Wave I-N Operations group (dietary + activities)
             [
                 'label' => 'Operations',
                 'icon'  => 'clipboard',
@@ -218,7 +218,7 @@ class PermissionService
                 'label' => 'Billing',
                 'icon'  => 'dollar',
                 'items' => [
-                    // Finance Dashboard — existing Phase 6C page
+                    // Finance Dashboard : existing Phase 6C page
                     ['label' => 'Finance Dashboard',   'module' => 'billing',              'href' => '/finance/dashboard'],
                     // Phase 9B billing engine pages
                     ['label' => 'Encounters',          'module' => 'encounters',           'href' => '/billing/encounters'],
@@ -230,12 +230,12 @@ class PermissionService
                     ['label' => 'Revenue Integrity',   'module' => 'revenue_integrity',    'href' => '/billing/revenue-integrity'],
                     // Phase 6 (MVP roadmap): CMS MMR/TRR reconciliation
                     ['label' => 'CMS Reconciliation',  'module' => 'cms_reconciliation',   'href' => '/billing/reconciliation'],
-                    // Phase O4 — Wave M6 reconciliation dashboards
+                    // Phase O4 : Wave M6 reconciliation dashboards
                     ['label' => 'PDE Reconciliation',  'module' => 'pde_records',          'href' => '/dashboards/pde-reconciliation'],
                     ['label' => 'Capitation Reconciliation', 'module' => 'capitation',     'href' => '/dashboards/capitation-reconciliation'],
-                    // Phase S2 — Contracted-provider network
+                    // Phase S2 : Contracted-provider network
                     ['label' => 'Contracted Providers',      'module' => 'capitation',     'href' => '/network/contracted-providers'],
-                    // Phase S3 — DME tracking
+                    // Phase S3 : DME tracking
                     ['label' => 'DME Inventory',             'module' => 'capitation',     'href' => '/network/dme'],
                     // Phase S4 + S5
                     ['label' => 'Encounter Data Submission', 'module' => 'edi_batches',    'href' => '/billing/encounter-data-submission'],
@@ -248,7 +248,7 @@ class PermissionService
                 'items' => [
                     ['label' => 'Reports',          'module' => 'reports',             'href' => '/reports'],
                     ['label' => 'Audit Log',        'module' => 'audit_log',           'href' => '/it-admin/audit'],
-                    // Phase O4 — Wave I-N BI + quality dashboards
+                    // Phase O4 : Wave I-N BI + quality dashboards
                     ['label' => 'Quality Measures', 'module' => 'reports',             'href' => '/dashboards/quality'],
                     ['label' => 'Care Gaps',        'module' => 'reports',             'href' => '/dashboards/gaps'],
                     ['label' => 'High-Risk Panel',  'module' => 'reports',             'href' => '/dashboards/high-risk'],
@@ -270,11 +270,11 @@ class PermissionService
                     ['label' => 'QAPI Annual Eval', 'module' => 'qapi_projects', 'href' => '/qapi/evaluations'],
                     // Phase 3 (MVP roadmap): CMS Level I / Level II quarterly reporting
                     ['label' => 'Level I/II Reporting', 'module' => 'level_ii_reporting', 'href' => '/compliance/level-ii-reporting'],
-                    // Phase O4 — Wave I compliance universes
+                    // Phase O4 : Wave I compliance universes
                     ['label' => 'ADE Reporting',    'module' => 'audit_log',     'href' => '/compliance/ade-reporting'],
                     ['label' => 'ROI Requests',     'module' => 'audit_log',     'href' => '/compliance/roi'],
                     ['label' => 'TB Screening',     'module' => 'audit_log',     'href' => '/compliance/tb-screening'],
-                    // Phase RS1 — Wave R surface entries
+                    // Phase RS1 : Wave R surface entries
                     ['label' => 'HPMS Incident Reports', 'module' => 'audit_log', 'href' => '/compliance/hpms-incident-reports'],
                     ['label' => 'CMS Audit Universes',   'module' => 'audit_log', 'href' => '/compliance/cms-audit-universes'],
                 ],
@@ -297,7 +297,7 @@ class PermissionService
                 'icon'  => 'chart',
                 'items' => [
                     ['label' => 'Executive Overview', 'module' => 'executive_overview', 'href' => '/dashboard/executive'],
-                    // Phase SS — org-wide notification + workflow preferences
+                    // Phase SS : org-wide notification + workflow preferences
                     ['label' => 'Org Settings',      'module' => 'org_settings',      'href' => '/executive/org-settings'],
                 ],
             ],

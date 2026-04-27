@@ -1,7 +1,7 @@
 <?php
 
 // ─── IadlRecord ──────────────────────────────────────────────────────────────
-// Phase C1. Snapshot-style Lawton IADL assessment. Append-only — one row per
+// Phase C1. Snapshot-style Lawton IADL assessment. Append-only : one row per
 // complete assessment.
 // ─────────────────────────────────────────────────────────────────────────────
 

@@ -4,7 +4,7 @@
 // Manages the grievance workflow per 42 CFR §460.120–§460.121.
 //
 // PLAIN-ENGLISH PURPOSE: A "grievance" is a complaint a member (or someone
-// representing them) lodges about the PACE program — quality of care, staff
+// representing them) lodges about the PACE program : quality of care, staff
 // behavior, food, transportation, billing, anything. CMS requires us to log
 // every one, investigate, resolve within a deadline, and report to CMS if
 // it crosses certain reportable thresholds.
@@ -14,8 +14,8 @@
 // different rules, different forms.
 //
 // Regulatory clocks:
-//   - 42 CFR §460.120 — standard grievance: 30 days to resolve.
-//   - 42 CFR §460.121 — urgent / Service Delivery Request: 72 hours
+//   - 42 CFR §460.120 : standard grievance: 30 days to resolve.
+//   - 42 CFR §460.121 : urgent / Service Delivery Request: 72 hours
 //                       (24 hours if the member's life or function is at risk).
 //
 // "CMS-reportable" flag: certain category × severity combinations must be
@@ -246,7 +246,7 @@ class GrievanceController extends Controller
             'withdrawn'    => 'Withdrawn',
         ];
 
-        // CMS compliance events are only shown to QA admins — they contain
+        // CMS compliance events are only shown to QA admins : they contain
         // regulatory classification decisions not relevant to clinical staff.
         $baseActions = [
             'grievance.opened',
@@ -352,7 +352,7 @@ class GrievanceController extends Controller
 
     /**
      * Transition a grievance from 'open' → 'under_review'.
-     * No extra data required — QA admin clicking "Start Investigation".
+     * No extra data required : QA admin clicking "Start Investigation".
      */
     public function startReview(Grievance $grievance): JsonResponse
     {
@@ -397,7 +397,7 @@ class GrievanceController extends Controller
 
         $data = $request->validated();
 
-        // Validate escalated_to_user_id for tenant isolation — cannot target cross-tenant user
+        // Validate escalated_to_user_id for tenant isolation : cannot target cross-tenant user
         if (!empty($data['escalated_to_user_id'])) {
             $targetUser = User::where('id', $data['escalated_to_user_id'])
                 ->where('tenant_id', Auth::user()->tenant_id)
@@ -460,7 +460,7 @@ class GrievanceController extends Controller
         // Once reported to CMS, the flag cannot be cleared
         if (! $reportable && $grievance->cms_reported_at) {
             return response()->json([
-                'message' => 'Cannot remove CMS reportable flag — this grievance has already been submitted to CMS.',
+                'message' => 'Cannot remove CMS reportable flag : this grievance has already been submitted to CMS.',
             ], 409);
         }
 

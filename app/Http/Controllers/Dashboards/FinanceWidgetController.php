@@ -9,13 +9,13 @@
 // All endpoints require the finance department (or super_admin).
 //
 // Routes (GET, all under /dashboards/finance/):
-//   capitation          — current month total vs prior month comparison
-//   authorizations      — active authorizations expiring within 30 days
-//   enrollment-changes  — enrolled vs disenrolled participant counts this month
-//   encounters          — encounter log total count (pending export)
-//   open-denials        — open + appealing denial counts with revenue at risk
-//   revenue-at-risk     — denied amount breakdown by denial category
-//   recent-remittance   — last 5 remittance batches with payment totals
+//   capitation          : current month total vs prior month comparison
+//   authorizations      : active authorizations expiring within 30 days
+//   enrollment-changes  : enrolled vs disenrolled participant counts this month
+//   encounters          : encounter log total count (pending export)
+//   open-denials        : open + appealing denial counts with revenue at risk
+//   revenue-at-risk     : denied amount breakdown by denial category
+//   recent-remittance   : last 5 remittance batches with payment totals
 // ─────────────────────────────────────────────────────────────────────────────
 
 namespace App\Http\Controllers\Dashboards;
@@ -242,7 +242,7 @@ class FinanceWidgetController extends Controller
         $this->requireDept();
         $tenantId = Auth::user()->tenant_id;
 
-        // Category breakdown — groups open+appealing denials by category
+        // Category breakdown : groups open+appealing denials by category
         $byCategory = DenialRecord::where('tenant_id', $tenantId)
             ->whereIn('status', ['open', 'appealing'])
             ->get(['denial_category', 'denied_amount'])
@@ -275,7 +275,7 @@ class FinanceWidgetController extends Controller
     }
 
     /**
-     * Last 5 remittance batches — shows payment totals and denial counts.
+     * Last 5 remittance batches : shows payment totals and denial counts.
      * Finance team uses this to track ERA receipt and denial activity.
      */
     public function recentRemittance(): JsonResponse

@@ -13,7 +13,7 @@ class BreachIncident extends Model
     public const TYPES    = ['lost_device', 'email_misdirect', 'unauthorized_access', 'hacking', 'paper_disposal', 'improper_disclosure', 'other'];
     public const STATUSES = ['open', 'individuals_notified', 'hhs_notified', 'closed'];
 
-    /** §164.408 — 500+ affected: HHS within 60 calendar days of discovery. */
+    /** §164.408 : 500+ affected: HHS within 60 calendar days of discovery. */
     public const LARGE_BREACH_THRESHOLD = 500;
     public const LARGE_BREACH_DEADLINE_DAYS = 60;
 
@@ -47,7 +47,7 @@ class BreachIncident extends Model
         if ($affected >= self::LARGE_BREACH_THRESHOLD) {
             return $discovered->copy()->addDays(self::LARGE_BREACH_DEADLINE_DAYS);
         }
-        // Phase X5 — Audit-12 M3: HHS deadline calendar-year boundary must be
+        // Phase X5 : Audit-12 M3: HHS deadline calendar-year boundary must be
         // computed in UTC. A breach discovered Dec 31 23:30 PST is Jan 1 next
         // year in UTC; reading $discovered->year without normalizing skews
         // the "year following discovery" anchor by 12 months in either

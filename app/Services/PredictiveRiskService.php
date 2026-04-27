@@ -40,7 +40,7 @@ class PredictiveRiskService
     {
         $features = $this->extract($p);
 
-        // Phase O6 — prefer a trained model version if one exists for this
+        // Phase O6 : prefer a trained model version if one exists for this
         // (tenant, risk_type). Falls back to the heuristic weights otherwise.
         $trainedVersion = \App\Models\PredictiveModelVersion::forTenant($p->tenant_id)
             ->forRiskType($riskType)

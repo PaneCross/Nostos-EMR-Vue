@@ -4,7 +4,7 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 @layer base {
-    /* Global dark mode input text color — covers all inputs without per-element classes */
+    /* Global dark mode input text color - covers all inputs without per-element classes */
     .dark input,
     .dark select,
     .dark textarea {
@@ -42,7 +42,7 @@
         background: transparent;
     }
 
-    /* Dark mode — webkit */
+    /* Dark mode - webkit */
     .dark ::-webkit-scrollbar-thumb {
         background: rgb(71 85 105); /* slate-600 */
     }
@@ -74,7 +74,7 @@
 }
 
 /* ── Slide-reveal transition (used by pending banners, inline alerts) ──────── */
-/* Smoothly expands a block into the flow — height, padding, margin, border,
+/* Smoothly expands a block into the flow - height, padding, margin, border,
    and opacity all transition together so sibling content slides rather than
    jumps. Parent's space-y-* gap is neutralized during collapsed state. */
 .slide-reveal-enter-active,

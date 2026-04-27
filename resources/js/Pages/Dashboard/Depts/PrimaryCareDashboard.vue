@@ -61,7 +61,7 @@ onMounted(() => {
 
 const highRiskItems = computed<ActionItem[]>(() =>
     highRisk.value.map(s => ({
-        label: `${s.participant?.name ?? '-'} — ${s.risk_type}`,
+        label: `${s.participant?.name ?? '-'}: ${s.risk_type}`,
         sublabel: `Score ${s.score} · Band ${s.band}`,
         badge: s.band?.toUpperCase(),
         badgeColor: 'bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300',
@@ -81,7 +81,7 @@ const inrOverdueItems = computed<ActionItem[]>(() =>
 
 const scheduleItems = computed<ActionItem[]>(() =>
     appointments.value.map(a => ({
-        label: `${a.participant?.name ?? '-'} — ${a.type_label ?? '-'}`,
+        label: `${a.participant?.name ?? '-'}: ${a.type_label ?? '-'}`,
         sublabel: a.scheduled_start ?? undefined,
         badge: a.status === 'confirmed' ? 'Confirmed'
             : a.status === 'scheduled' ? 'Scheduled'
@@ -95,7 +95,7 @@ const scheduleItems = computed<ActionItem[]>(() =>
 
 const alertItems = computed<ActionItem[]>(() =>
     alerts.value.map(a => ({
-        label: `${a.participant?.name ?? 'No participant'} — ${a.type_label ?? '-'}`,
+        label: `${a.participant?.name ?? 'No participant'}: ${a.type_label ?? '-'}`,
         sublabel: a.created_at ?? undefined,
         badge: a.severity ?? '-',
         badgeColor: a.severity === 'critical'
@@ -109,7 +109,7 @@ const alertItems = computed<ActionItem[]>(() =>
 
 const unsignedNoteItems = computed<ActionItem[]>(() =>
     unsignedNotes.value.map(n => ({
-        label: `${n.participant?.name ?? '-'} — ${n.type_label ?? '-'}`,
+        label: `${n.participant?.name ?? '-'}: ${n.type_label ?? '-'}`,
         sublabel: n.visit_date ?? n.created_at ?? undefined,
         badge: n.author ? undefined : 'Unassigned',
         badgeColor: 'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300',
@@ -119,7 +119,7 @@ const unsignedNoteItems = computed<ActionItem[]>(() =>
 
 const overdueAssessmentItems = computed<ActionItem[]>(() =>
     overdueAssessments.value.map(a => ({
-        label: `${a.participant?.name ?? '-'} — ${a.type_label ?? '-'}`,
+        label: `${a.participant?.name ?? '-'}: ${a.type_label ?? '-'}`,
         sublabel: a.next_due_date ? `Due ${a.next_due_date}` : undefined,
         badge: `${a.days_overdue ?? 0}d overdue`,
         badgeColor: 'bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300',
@@ -134,7 +134,7 @@ const vitalItems = computed<ActionItem[]>(() =>
         if (v.oxygen_saturation) parts.push(`O2: ${v.oxygen_saturation}%`)
         if (v.recorded_at) parts.push(v.recorded_at)
         return {
-            label: `${v.participant?.name ?? '-'} — Vitals`,
+            label: `${v.participant?.name ?? '-'}: Vitals`,
             sublabel: parts.join(' | ') || undefined,
             badge: v.out_of_range ? 'Out of range' : undefined,
             badgeColor: 'bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300',
@@ -145,7 +145,7 @@ const vitalItems = computed<ActionItem[]>(() =>
 
 const orderItems = computed<ActionItem[]>(() =>
     orders.value.map(o => ({
-        label: `${o.participant_first_name ?? ''} ${o.participant_last_name ?? ''} — ${o.order_type_label ?? '-'}`.trim(),
+        label: `${o.participant_first_name ?? ''} ${o.participant_last_name ?? ''}: ${o.order_type_label ?? '-'}`.trim(),
         sublabel: o.is_overdue ? 'OVERDUE' : (o.status ?? undefined),
         badge: o.priority?.toUpperCase() ?? '-',
         badgeColor: o.priority === 'stat'
@@ -159,7 +159,7 @@ const orderItems = computed<ActionItem[]>(() =>
 
 const woundItems = computed<ActionItem[]>(() =>
     wounds.value.map(w => ({
-        label: `${w.participant?.name ?? '-'} — ${w.type_label ?? '-'}`,
+        label: `${w.participant?.name ?? '-'}: ${w.type_label ?? '-'}`,
         sublabel: [w.location, w.days_open != null ? `${w.days_open}d open` : null].filter(Boolean).join(' | ') || undefined,
         badge: w.is_critical ? 'Stage 3+' : (w.stage_label ?? 'Open'),
         badgeColor: w.is_critical
@@ -210,7 +210,7 @@ const woundItems = computed<ActionItem[]>(() =>
 
         <ActionWidget
             title="Recent Vitals"
-            description="Vitals recorded recently — flagged if out of range."
+            description="Vitals recorded recently: flagged if out of range."
             :items="vitalItems"
             emptyMessage="No recent vitals recorded."
             viewAllHref="/clinical/vitals"

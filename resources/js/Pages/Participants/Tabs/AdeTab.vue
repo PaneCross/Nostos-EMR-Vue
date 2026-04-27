@@ -1,6 +1,6 @@
 <script setup lang="ts">
 // ─── AdeTab.vue ────────────────────────────────────────────────────────────
-// ADE — Adverse Drug Events. Harmful medication reactions captured
+// ADE: Adverse Drug Events. Harmful medication reactions captured
 // per-event with severity (mild → fatal), causality (definite →
 // unlikely), and a "reported to FDA MedWatch" flag. Severity ≥ severe
 // auto-creates a corresponding Allergy record (Phase C5 backend).
@@ -106,7 +106,7 @@ function medwatchRequired(e: any): boolean {
         <div>
           <label class="block text-xs mb-1">Medication (optional)</label>
           <select v-model="form.medication_id" class="w-full rounded border-gray-300 dark:border-slate-600 text-sm">
-            <option value="">— (unknown) —</option>
+            <option value="">- (unknown) -</option>
             <option v-for="m in meds" :key="m.id" :value="m.id">{{ m.drug_name }}</option>
           </select>
         </div>
@@ -152,7 +152,7 @@ function medwatchRequired(e: any): boolean {
         <tbody class="divide-y divide-gray-200 dark:divide-slate-700">
           <tr v-for="e in events" :key="e.id">
             <td class="px-3 py-2">{{ e.onset_date }}</td>
-            <td class="px-3 py-2">{{ e.medication?.drug_name ?? '—' }}</td>
+            <td class="px-3 py-2">{{ e.medication?.drug_name ?? '-' }}</td>
             <td class="px-3 py-2 max-w-xs truncate">{{ e.reaction_description }}</td>
             <td class="px-3 py-2">
               <span class="inline-block rounded px-2 py-0.5 text-xs" :class="severityColor(e.severity)">
@@ -171,7 +171,7 @@ function medwatchRequired(e: any): boolean {
               >
                 Mark reported
               </button>
-              <span v-else class="text-xs text-gray-400">—</span>
+              <span v-else class="text-xs text-gray-400">-</span>
             </td>
           </tr>
           <tr v-if="!loading && events.length === 0">

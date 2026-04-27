@@ -104,7 +104,7 @@ class ClinicalNoteController extends Controller
             'status'              => ClinicalNote::STATUS_DRAFT,
         ]));
 
-        // Phase B7 — link to problem(s) if caller provided ids.
+        // Phase B7 : link to problem(s) if caller provided ids.
         $primaryId = $request->input('primary_problem_id');
         $secondary = (array) $request->input('secondary_problem_ids', []);
         $this->linkProblems($note, $participant, $primaryId, $secondary);

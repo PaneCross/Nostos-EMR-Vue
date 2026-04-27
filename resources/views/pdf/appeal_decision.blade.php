@@ -1,4 +1,4 @@
-{{-- Appeal Decision Letter — 3 variants via $outcome: upheld | overturned | partially_overturned --}}
+{{-- Appeal Decision Letter: 3 variants via $outcome: upheld | overturned | partially_overturned --}}
 <!DOCTYPE html>
 <html>
 <head>

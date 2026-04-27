@@ -2,7 +2,7 @@
 
 // ─── ReferralNoteController ───────────────────────────────────────────────────
 // Single-endpoint controller for appending notes to an enrollment referral.
-// Notes are immutable once written — no update or delete routes exist.
+// Notes are immutable once written : no update or delete routes exist.
 //
 // Routes:
 //   POST /enrollment/referrals/{referral}/notes  → store()  Append a note
@@ -27,11 +27,11 @@ class ReferralNoteController extends Controller
     {
         $user = $request->user();
 
-        // Tenant guard — reject cross-tenant referrals (defensive; route model
+        // Tenant guard : reject cross-tenant referrals (defensive; route model
         // binding already constrains to this tenant's data in practice).
         abort_if($referral->tenant_id !== $user->tenant_id, 403);
 
-        // Write permission — same roles that can transition referral status.
+        // Write permission : same roles that can transition referral status.
         abort_unless(
             $user->role === 'super_admin'
             || in_array($user->department, ['enrollment', 'it_admin', 'super_admin'], true),

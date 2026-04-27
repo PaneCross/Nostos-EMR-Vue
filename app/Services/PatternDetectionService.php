@@ -14,15 +14,15 @@
 //   - DetectLateEmarPatternJob
 //   - DetectBcmaOverridePatternJob
 //   - DetectControlledSubstancePatternJob
-//   - DetectUnackedCriticalValueJob (degenerate case — count=1, window=hours)
+//   - DetectUnackedCriticalValueJob (degenerate case : count=1, window=hours)
 //
 // Each job:
-//   1. Reads the org-level threshold via thresholdValue() — events_count + window_days
+//   1. Reads the org-level threshold via thresholdValue() : events_count + window_days
 //   2. Builds a GROUP BY actor query over the right base table
 //   3. Calls `dispatchPatternAlerts()` to fan out alerts + dedupe
 //
 // Service consumes the org-level preference (no per-site cascade for
-// pattern jobs — cron runs tenant-wide). Future enhancement: per-site
+// pattern jobs : cron runs tenant-wide). Future enhancement: per-site
 // pattern detection if customer demand surfaces.
 // ─────────────────────────────────────────────────────────────────────────────
 

@@ -1,6 +1,6 @@
 <?php
 
-// ─── HieGateway (interface) — Phase M3 ───────────────────────────────────────
+// ─── HieGateway (interface) : Phase M3 ───────────────────────────────────────
 // Vendor-agnostic HIE (Health Information Exchange) contract. Real adapters
 // (Sequoia/CommonWell/Carequality) implement this once contracts + SDKs exist.
 // NullHieGateway is the default: stores CCDs locally for manual pickup.

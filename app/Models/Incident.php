@@ -129,7 +129,7 @@ class Incident extends Model
         'rca_completed_by_user_id',
         'cms_reportable',
         'cms_reported_at',
-        // W4-6 CMS/SMA notification tracking (auto-set by IncidentService — never from UI)
+        // W4-6 CMS/SMA notification tracking (auto-set by IncidentService : never from UI)
         'cms_notification_required',
         'cms_notification_sent_at',
         'sma_notification_sent_at',

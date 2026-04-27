@@ -8,12 +8,12 @@
 // hand us a list and say "give me every grievance for the last 12 months in
 // this format." These endpoints are the canned exports that satisfy those
 // asks. The endpoints are intentionally flat (one row per record), unpaginated,
-// and tenant-scoped — auditors paste them into their workpapers.
+// and tenant-scoped : auditors paste them into their workpapers.
 //
 // Acronym glossary used in this file:
 //   PACE   = Programs of All-Inclusive Care for the Elderly.
 //   CMS    = Centers for Medicare & Medicaid Services (federal regulator).
-//   NF-LOC = Nursing-Facility Level of Care — the state-administered clinical
+//   NF-LOC = Nursing-Facility Level of Care : the state-administered clinical
 //            determination that someone is sick enough to qualify for a nursing
 //            home. PACE eligibility requires NF-LOC. Must be re-certified annually
 //            per 42 CFR §460.160(b)(2).
@@ -115,7 +115,7 @@ class ComplianceController extends Controller
     }
 
     /**
-     * Service Denial Notices universe — every notice issued, for §460.122 audit.
+     * Service Denial Notices universe : every notice issued, for §460.122 audit.
      * Phase 1 closed out denial-notice creation; this exposes the audit listing.
      */
     public function denialNotices(Request $request): JsonResponse
@@ -141,7 +141,7 @@ class ComplianceController extends Controller
     }
 
     /**
-     * Appeals universe — every §460.122 appeal with status, clocks, decision.
+     * Appeals universe : every §460.122 appeal with status, clocks, decision.
      */
     public function appeals(Request $request): JsonResponse
     {
@@ -168,7 +168,7 @@ class ComplianceController extends Controller
     }
 
     /**
-     * SDR SLA universe — every SDR with type (standard/expedited), due clock,
+     * SDR SLA universe : every SDR with type (standard/expedited), due clock,
      * and decision time. Feeds the CMS "SDDR" audit protocol.
      * Phase 2 (MVP roadmap) §460.121.
      */
@@ -269,7 +269,7 @@ class ComplianceController extends Controller
     }
 
     /**
-     * Phase B1 (MVP completion roadmap) — Restraints universe.
+     * Phase B1 (MVP completion roadmap) : Restraints universe.
      * 42 CFR §460 + CMS PACE Audit Protocol.
      * Last 12 months of physical + chemical restraint episodes with
      * monitoring observation count, IDT review status, and aggregate
@@ -347,7 +347,7 @@ class ComplianceController extends Controller
     }
 
     /**
-     * Phase B2 (MVP completion roadmap) — Infection surveillance universe.
+     * Phase B2 (MVP completion roadmap) : Infection surveillance universe.
      * 42 CFR §460 + CMS PACE Audit Protocol + CDC LTC surveillance.
      * Last 12 months of infection cases + declared outbreaks with
      * per-organism / per-site summary counters. Flat JSON + Inertia.
@@ -448,7 +448,7 @@ class ComplianceController extends Controller
     }
 
     /**
-     * Phase B3 (MVP completion roadmap) — Sentinel events universe.
+     * Phase B3 (MVP completion roadmap) : Sentinel events universe.
      * 42 CFR §460.136. Last 12 months of sentinel-classified incidents with
      * dual-deadline status (CMS 5-day + RCA 30-day) and RCA completion tracking.
      */
@@ -519,7 +519,7 @@ class ComplianceController extends Controller
     }
 
     /**
-     * Phase B8b — ROI requests universe (HIPAA §164.524 records-disclosure audit).
+     * Phase B8b : ROI requests universe (HIPAA §164.524 records-disclosure audit).
      * 12-month window with open + closed requests.
      */
     public function roi(Request $request): JsonResponse|InertiaResponse
@@ -580,7 +580,7 @@ class ComplianceController extends Controller
     }
 
     /**
-     * Phase C2a — TB screening universe. §460.71 annual TB screening audit pull.
+     * Phase C2a : TB screening universe. §460.71 annual TB screening audit pull.
      * For each enrolled participant: latest screening + days to due + status band.
      */
     public function tbScreening(Request $request): JsonResponse|InertiaResponse
@@ -640,7 +640,7 @@ class ComplianceController extends Controller
     }
 
     /**
-     * Phase I1 — ADE reporting universe (closes Phase C5 scope miss).
+     * Phase I1 : ADE reporting universe (closes Phase C5 scope miss).
      * 12-month Adverse Drug Event pull with MedWatch reporting status.
      */
     public function ade(Request $request): JsonResponse|InertiaResponse
@@ -704,7 +704,7 @@ class ComplianceController extends Controller
     }
 
     /**
-     * Phase P11 — Reportable infectious disease CSV export.
+     * Phase P11 : Reportable infectious disease CSV export.
      * Each state has its own DPH portal + format; this is a manual upload bridge.
      * GET /compliance/reportable-infections.csv
      */

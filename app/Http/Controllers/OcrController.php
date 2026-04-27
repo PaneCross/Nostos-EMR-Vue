@@ -25,7 +25,7 @@ class OcrController extends Controller
         ]);
     }
 
-    /** GET /documents/search?q=... — simple ILIKE on ocr_text. */
+    /** GET /documents/search?q=... : simple ILIKE on ocr_text. */
     public function search(Request $request): JsonResponse
     {
         $u = Auth::user();

@@ -15,7 +15,7 @@
 // Notable rules:
 //   - Adapter pattern: each connector type has a vendor adapter. Most
 //     non-default vendors are PAYWALL-DEFERRED (see paywall report).
-//   - Retry is idempotent — duplicate ADT messages are de-duped server-side
+//   - Retry is idempotent: duplicate ADT messages are de-duped server-side
 //     by message control ID.
 // ────────────────────────────────────────────────────────────────────────────
 import { ref, computed, onMounted } from 'vue'
@@ -151,7 +151,7 @@ onMounted(() => {}) // log already loaded from props
                 </div>
             </div>
 
-            <!-- Phase Q4 — Eligibility driver card -->
+            <!-- Phase Q4: Eligibility driver card -->
             <div v-if="eligibility" class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-4 shadow-sm mb-6" data-testid="eligibility-driver-card">
                 <div class="flex items-center justify-between mb-2">
                     <span class="font-semibold text-gray-900 dark:text-slate-100">X12 270/271 Eligibility (Phase P5)</span>

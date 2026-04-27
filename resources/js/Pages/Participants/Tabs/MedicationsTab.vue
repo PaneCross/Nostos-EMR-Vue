@@ -100,7 +100,7 @@ const activeMeds   = computed(() => medications.value.filter(m => m.status === '
 const inactiveMeds = computed(() => medications.value.filter(m => m.status === 'discontinued' || m.status === 'on_hold'))
 
 // ── Lifecycle ─────────────────────────────────────────────────────────────────
-// Phase J5 — Beers PIM flags, keyed by medication_id
+// Phase J5: Beers PIM flags, keyed by medication_id
 const beersByMedId = ref<Record<number, any[]>>({})
 
 onMounted(async () => {
@@ -128,7 +128,7 @@ function beersFor(medId: number): any[] {
   return beersByMedId.value[medId] ?? []
 }
 function beersTooltip(flags: any[]): string {
-  return flags.map(f => `${f.risk_category}: ${f.rationale ?? ''}${f.recommendation ? ' — ' + f.recommendation : ''}`).join('\n')
+  return flags.map(f => `${f.risk_category}: ${f.rationale ?? ''}${f.recommendation ? ': ' + f.recommendation : ''}`).join('\n')
 }
 
 // ── Drug reference typeahead ──────────────────────────────────────────────────

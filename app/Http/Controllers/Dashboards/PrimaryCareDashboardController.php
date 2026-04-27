@@ -6,11 +6,11 @@
 // (or super_admin).
 //
 // Routes (GET, all under /dashboards/primary-care/):
-//   schedule    — Today's clinic/lab/specialist/telehealth appointments
-//   alerts      — Active alerts targeting primary_care
-//   docs        — Unsigned notes + overdue assessments (documentation queue)
-//   vitals      — 5 most recent vitals records across the tenant
-//   lab-results — Unreviewed abnormal lab results (W5-2)
+//   schedule    : Today's clinic/lab/specialist/telehealth appointments
+//   alerts      : Active alerts targeting primary_care
+//   docs        : Unsigned notes + overdue assessments (documentation queue)
+//   vitals      : 5 most recent vitals records across the tenant
+//   lab-results : Unreviewed abnormal lab results (W5-2)
 // ─────────────────────────────────────────────────────────────────────────────
 
 namespace App\Http\Controllers\Dashboards;
@@ -372,7 +372,7 @@ class PrimaryCareDashboardController extends Controller
     }
 
     /**
-     * Phase I6 — Care-gap rollup for the authenticated PCP's panel.
+     * Phase I6 : Care-gap rollup for the authenticated PCP's panel.
      */
     public function careGapsRollup(): JsonResponse
     {
@@ -401,7 +401,7 @@ class PrimaryCareDashboardController extends Controller
     }
 
     /**
-     * Phase I6 — Top-10 predictive-risk-high participants (PCP panel scoped).
+     * Phase I6 : Top-10 predictive-risk-high participants (PCP panel scoped).
      */
     public function highRiskPanel(): JsonResponse
     {
@@ -437,7 +437,7 @@ class PrimaryCareDashboardController extends Controller
     }
 
     /**
-     * Phase I6 — INR overdue warfarin plans, panel-scoped for PCP.
+     * Phase I6 : INR overdue warfarin plans, panel-scoped for PCP.
      */
     public function inrOverdue(): JsonResponse
     {

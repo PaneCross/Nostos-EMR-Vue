@@ -62,7 +62,7 @@ class Problem extends Model
         return $this->belongsTo(User::class, 'last_reviewed_by_user_id');
     }
 
-    /** Phase B7 — clinical notes that reference this problem. */
+    /** Phase B7 : clinical notes that reference this problem. */
     public function linkedNotes(): BelongsToMany
     {
         return $this->belongsToMany(ClinicalNote::class, 'emr_clinical_note_problems', 'problem_id', 'clinical_note_id')

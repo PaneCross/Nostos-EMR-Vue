@@ -3,7 +3,7 @@
 // Physical + chemical restraint episodes with monitoring observations
 // and IDT (Interdisciplinary Team) review tracking. Restraint use is
 // a high-scrutiny event under 42 CFR §460 and the CMS PACE Audit
-// Protocol — every episode requires periodic monitoring (every 4h)
+// Protocol: every episode requires periodic monitoring (every 4h)
 // and an IDT review within 24h.
 //
 // Append-only: episodes are never deleted, only ended. Write access:
@@ -177,7 +177,7 @@ async function recordIdt(episodeId: number) {
 }
 
 function fmt(ts: string | null): string {
-    if (!ts) return '—'
+    if (!ts) return '-'
     return new Date(ts).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })
 }
 
@@ -201,7 +201,7 @@ onMounted(load)
             <div>
                 <h2 class="text-base font-semibold text-slate-900 dark:text-slate-100">Restraint Episodes</h2>
                 <p class="text-xs text-slate-500 dark:text-slate-400">
-                    42 CFR §460 + CMS PACE Audit — physical + chemical restraint documentation with monitoring + IDT review.
+                    42 CFR §460 + CMS PACE Audit: physical + chemical restraint documentation with monitoring + IDT review.
                 </p>
             </div>
             <button @click="showNew = !showNew"
@@ -310,19 +310,19 @@ onMounted(load)
                     <div class="grid grid-cols-3 gap-2 text-xs">
                         <label><span class="text-slate-500">Skin</span>
                             <select v-model="obsForm.skin_integrity" class="mt-1 w-full rounded border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-xs">
-                                <option value="">—</option>
+                                <option value="">-</option>
                                 <option>intact</option><option>reddened</option><option>broken</option><option>other</option>
                             </select>
                         </label>
                         <label><span class="text-slate-500">Circulation</span>
                             <select v-model="obsForm.circulation" class="mt-1 w-full rounded border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-xs">
-                                <option value="">—</option>
+                                <option value="">-</option>
                                 <option>adequate</option><option>diminished</option><option>absent</option>
                             </select>
                         </label>
                         <label><span class="text-slate-500">Mental status</span>
                             <select v-model="obsForm.mental_status" class="mt-1 w-full rounded border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-xs">
-                                <option value="">—</option>
+                                <option value="">-</option>
                                 <option>calm</option><option>agitated</option><option>sedated</option><option>unresponsive</option><option>other</option>
                             </select>
                         </label>
@@ -357,7 +357,7 @@ onMounted(load)
                 <!-- Observation log -->
                 <details v-if="(e.observations?.length ?? 0) > 0" class="mt-3 text-xs">
                     <summary class="cursor-pointer text-slate-500 dark:text-slate-400">
-                        {{ e.observations?.length ?? 0 }} observation(s) — click to expand
+                        {{ e.observations?.length ?? 0 }} observation(s): click to expand
                     </summary>
                     <div class="mt-2 space-y-2">
                         <div v-for="o in e.observations ?? []" :key="o.id"
@@ -381,7 +381,7 @@ onMounted(load)
                 <!-- Disposition (discontinued + IDT outcome) -->
                 <div v-if="!e.is_active" class="mt-3 text-xs text-slate-600 dark:text-slate-400 border-t border-slate-200 dark:border-slate-700 pt-2 space-y-1">
                     <p v-if="e.discontinued_at">
-                        <span class="font-semibold">Discontinued:</span> {{ fmt(e.discontinued_at) }} — {{ e.discontinuation_reason }}
+                        <span class="font-semibold">Discontinued:</span> {{ fmt(e.discontinued_at) }}: {{ e.discontinuation_reason }}
                     </p>
                     <p v-if="e.idt_review_date">
                         <span class="font-semibold">IDT review {{ e.idt_review_date }}:</span> {{ e.outcome_text }}

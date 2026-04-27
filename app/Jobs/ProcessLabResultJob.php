@@ -5,32 +5,32 @@
 //
 // Flow:
 //   1. Resolve participant by MRN (scoped to tenant)
-//   2. Parse payload — extract header fields + component array
+//   2. Parse payload : extract header fields + component array
 //   3. Create LabResult record (emr_lab_results)
-//   4. Create LabResultComponent records (emr_lab_result_components) — one per OBX
+//   4. Create LabResultComponent records (emr_lab_result_components) : one per OBX
 //   5. Create EncounterLog for billing/tracking (service_type='other')
 //   6. If abnormal_flag is true: create alert for primary_care
 //      - severity='critical' if any component has critical_low or critical_high
 //      - severity='warning' for other abnormal results
 //   7. Mark integration_log as processed
 //
-// Unknown MRN: mark integration_log as failed (graceful — log warning, don't throw)
-// Parse failure: gracefully degrade — store result without components, log warning
+// Unknown MRN: mark integration_log as failed (graceful : log warning, don't throw)
+// Parse failure: gracefully degrade : store result without components, log warning
 //
 // Expected payload structure (from LabResultConnector / IntegrationController):
-//   patient_mrn    — MRN to resolve participant
-//   test_name      — Panel/test name
-//   test_code      — LOINC or local code (optional)
-//   value          — Top-level result value (for single-component labs)
-//   unit           — Unit of measure
-//   abnormal_flag  — Boolean overall flag
-//   result_date    — Date of collection (YYYY-MM-DD)
-//   collected_at   — ISO datetime of collection (optional, falls back to result_date)
-//   resulted_at    — ISO datetime of result availability (optional)
-//   ordering_provider — Provider name (optional)
-//   performing_facility — Lab facility name (optional)
-//   overall_status — final/preliminary/corrected/cancelled (optional, default: final)
-//   components     — Array of OBX segment objects (optional, for panel results)
+//   patient_mrn    : MRN to resolve participant
+//   test_name      : Panel/test name
+//   test_code      : LOINC or local code (optional)
+//   value          : Top-level result value (for single-component labs)
+//   unit           : Unit of measure
+//   abnormal_flag  : Boolean overall flag
+//   result_date    : Date of collection (YYYY-MM-DD)
+//   collected_at   : ISO datetime of collection (optional, falls back to result_date)
+//   resulted_at    : ISO datetime of result availability (optional)
+//   ordering_provider : Provider name (optional)
+//   performing_facility : Lab facility name (optional)
+//   overall_status : final/preliminary/corrected/cancelled (optional, default: final)
+//   components     : Array of OBX segment objects (optional, for panel results)
 //     Each component: { name, code?, value, unit?, reference_range?, abnormal_flag? }
 //     abnormal_flag values: normal, low, high, critical_low, critical_high, abnormal
 //
@@ -96,7 +96,7 @@ class ProcessLabResultJob implements ShouldQueue
             ->first();
 
         if (! $participant) {
-            Log::warning('[ProcessLabResultJob] Unknown MRN — participant not found', [
+            Log::warning('[ProcessLabResultJob] Unknown MRN : participant not found', [
                 'mrn'       => $mrn,
                 'tenant_id' => $this->tenantId,
             ]);
@@ -184,7 +184,7 @@ class ProcessLabResultJob implements ShouldQueue
                     }
 
                 } elseif ($value !== null) {
-                    // Single-value result — create one component from top-level fields
+                    // Single-value result : create one component from top-level fields
                     $compFlag = $abnormal ? 'abnormal' : 'normal';
 
                     LabResultComponent::create([
@@ -204,7 +204,7 @@ class ProcessLabResultJob implements ShouldQueue
                 'integration_log_id' => $this->integrationLogId,
                 'error'              => $e->getMessage(),
             ]);
-            // $labResult may be null or partial — only proceed with billing/alerts
+            // $labResult may be null or partial : only proceed with billing/alerts
         }
 
         // ── 4. Always create an encounter log for billing/Finance tracking ────
@@ -229,14 +229,14 @@ class ProcessLabResultJob implements ShouldQueue
                 'source_module'      => 'integration',
                 'alert_type'         => 'abnormal_lab',
                 'title'              => ($hasCritical ? 'Critical' : 'Abnormal') . " Lab Result: {$participant->first_name} {$participant->last_name}",
-                'message'            => "{$testName}: {$value} {$unit} — flagged as " . ($hasCritical ? 'CRITICAL' : 'abnormal') . ". Review required.",
+                'message'            => "{$testName}: {$value} {$unit} - flagged as " . ($hasCritical ? 'CRITICAL' : 'abnormal') . ". Review required.",
                 'severity'           => $severity,
                 'target_departments' => ['primary_care'],
                 'created_by_system'  => true,
                 'metadata'           => $labResult ? ['lab_result_id' => $labResult->id] : null,
             ]);
 
-            // Phase SS2 — workflow preference: copy Nursing Director on abnormal labs.
+            // Phase SS2 : workflow preference: copy Nursing Director on abnormal labs.
             // The ordering provider (primary_care) always gets the alert above; this
             // is an additional recipient for orgs that want nursing oversight on
             // every abnormal flag. Default OFF.
@@ -252,7 +252,7 @@ class ProcessLabResultJob implements ShouldQueue
                         'participant_id'     => $participant->id,
                         'source_module'      => 'integration',
                         'alert_type'         => 'abnormal_lab_nursing_copy',
-                        'title'              => "Abnormal lab — nursing review: {$participant->first_name} {$participant->last_name}",
+                        'title'              => "Abnormal lab : nursing review: {$participant->first_name} {$participant->last_name}",
                         'message'            => "{$testName}: {$value} {$unit} flagged abnormal. Forwarded for nursing oversight.",
                         'severity'           => 'warning',
                         'target_departments' => ['home_care'],

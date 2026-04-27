@@ -159,7 +159,7 @@ class LabResult extends Model
         ];
     }
 
-    /** API-safe array including component detail — used for Show endpoint. */
+    /** API-safe array including component detail : used for Show endpoint. */
     public function toDetailArray(): array
     {
         $base = $this->toApiArray();

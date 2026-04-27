@@ -2,11 +2,11 @@
 
 // ─── ClinicalDecisionSupportService ──────────────────────────────────────────
 // Phase 15.6. Three MVP CDS rules:
-//   1. Fall risk auto-flag — high Morse fall-scale score → create alert +
+//   1. Fall risk auto-flag : high Morse fall-scale score → create alert +
 //      (optional) participant flag
-//   2. Sepsis screening trigger — combination of vitals + recent fever →
+//   2. Sepsis screening trigger : combination of vitals + recent fever →
 //      warning alert to primary_care
-//   3. Anticoagulant + NSAID interaction guardrail — alert if the two are
+//   3. Anticoagulant + NSAID interaction guardrail : alert if the two are
 //      concurrently active
 //
 // Callable standalone or on model save hooks. Returns a structured
@@ -84,7 +84,7 @@ class ClinicalDecisionSupportService
         // qSOFA quickSOFA thresholds: RR ≥22, SBP ≤100, altered mental status
         if (($recent->respiratory_rate ?? 0) >= 22)   $qsofa++;
         if (($recent->systolic_bp ?? 999) <= 100)     $qsofa++;
-        // Altered mental status stub — we don't capture it structurally yet
+        // Altered mental status stub : we don't capture it structurally yet
         $highFever = ($recent->temperature_f ?? 0) >= 101.5;
 
         $triggered = $qsofa >= 2 || ($qsofa >= 1 && $highFever);

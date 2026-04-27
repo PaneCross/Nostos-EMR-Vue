@@ -47,7 +47,7 @@
         </div>
         <div class="footer">
             NostosEMR &bull; PACE Electronic Medical Records &bull;
-            This is an automated message — do not reply.
+            This is an automated message: do not reply.
         </div>
     </div>
 </body>

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // ─── IdtDashboard.vue ─────────────────────────────────────────────────────────
 // IDT (Interdisciplinary Team) department live dashboard. The IDT is the core
-// PACE care-planning body — clinicians from 11 disciplines meet to review each
+// PACE care-planning body: clinicians from 11 disciplines meet to review each
 // participant. Shows scheduled IDT meetings, overdue SDRs by department, care
 // plans needing review, and significant participant changes since last review.
 // 42 CFR §460.102 mandates IDT review at enrollment, semi-annually, and on
@@ -169,7 +169,7 @@ const sdrSlaItems = computed<ActionItem[]>(() =>
             (s.window_pct ?? 0) >= 50 ? 'bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300' :
                                          'bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300'
         return {
-            label: s.participant?.name ?? '—',
+            label: s.participant?.name ?? '-',
             sublabel: `${(s.request_type ?? '').replace(/_/g, ' ')} · ${(s.assigned_department ?? '').replace(/_/g, ' ')}${isExp ? ' · EXPEDITED' : ''}`,
             badge,
             badgeColor,

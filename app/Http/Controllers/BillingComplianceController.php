@@ -4,8 +4,8 @@
 // Powers the Billing Compliance Checklist for the Finance department.
 //
 // Route list:
-//   GET /billing/compliance-checklist       → index() — Inertia page
-//   GET /billing/compliance-checklist/data  → data()  — JSON checklist (live refresh)
+//   GET /billing/compliance-checklist       → index() : Inertia page
+//   GET /billing/compliance-checklist/data  → data()  : JSON checklist (live refresh)
 //
 // Uses BillingComplianceService to compute 5 checklist categories:
 //   1. Encounter Data (completeness, diagnosis codes, rejections)

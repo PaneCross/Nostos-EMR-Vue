@@ -2,12 +2,12 @@
 
 // ─── ChatChannel Model ────────────────────────────────────────────────────────
 // A conversation channel. Four types:
-//   direct        — DM between exactly two users
-//   department    — One per department; all dept users auto-joined at tenant setup
-//   participant_idt — Per-participant IDT care-team channel; auto-created on enrollment
-//   broadcast     — Org-wide; all users auto-joined at tenant setup
+//   direct        : DM between exactly two users
+//   department    : One per department; all dept users auto-joined at tenant setup
+//   participant_idt : Per-participant IDT care-team channel; auto-created on enrollment
+//   broadcast     : Org-wide; all users auto-joined at tenant setup
 //
-// Soft deletes are NOT used — channels are is_active=false when retired.
+// Soft deletes are NOT used : channels are is_active=false when retired.
 // Messages use soft deletes for HIPAA 6-year retention.
 // ──────────────────────────────────────────────────────────────────────────────
 
@@ -26,7 +26,7 @@ class ChatChannel extends Model
 
     protected $table = 'emr_chat_channels';
 
-    // No updated_at — channels don't change after creation
+    // No updated_at : channels don't change after creation
     public const UPDATED_AT = null;
 
     protected $fillable = [
@@ -100,7 +100,7 @@ class ChatChannel extends Model
 
     /**
      * Display name for the channel from the perspective of a given user.
-     * DM channels have no stored name — derive from the other participant.
+     * DM channels have no stored name : derive from the other participant.
      */
     public function displayName(User $viewer): string
     {

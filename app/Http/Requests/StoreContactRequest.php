@@ -1,8 +1,8 @@
 <?php
 
 // ─── StoreContactRequest ─────────────────────────────────────────────────────
-// Validates adding a contact person to a participant's chart — emergency
-// contact, next of kin, POA (Power of Attorney — a legal representative),
+// Validates adding a contact person to a participant's chart : emergency
+// contact, next of kin, POA (Power of Attorney : a legal representative),
 // caregiver, primary-care or specialist physician outside PACE, etc.
 //
 // Auth gate: Any authenticated user; finer-grained checks are in the

@@ -1,7 +1,7 @@
 <?php
 
 // ─── PriorAuthQueueDigestJob ─────────────────────────────────────────────────
-// Daily — finds prior-auth requests pending >3 days; sends a single digest
+// Daily : finds prior-auth requests pending >3 days; sends a single digest
 // alert per tenant to the Pharmacy Director if the org opted in.
 //
 // Preference: designation.pharmacy_director.prior_auth_queue_oversight

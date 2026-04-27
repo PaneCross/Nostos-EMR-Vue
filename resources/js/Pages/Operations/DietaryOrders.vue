@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// ─── Operations/DietaryOrders.vue — Phase K3 ─────────────────────────────────
+// ─── Operations/DietaryOrders.vue: Phase K3 ─────────────────────────────────
 // Kitchen/food-service roster. Lists active diet orders grouped by diet type
 // (regular / cardiac / renal / pureed / etc.) so kitchen staff can plan meal
 // prep for the day-center census.
@@ -24,7 +24,7 @@ onMounted(async () => {
   <Head title="Dietary Orders" />
   <AppShell>
     <div class="p-6 space-y-6">
-      <h1 class="text-xl font-semibold text-gray-900 dark:text-slate-100">Dietary Orders — Roster</h1>
+      <h1 class="text-xl font-semibold text-gray-900 dark:text-slate-100">Dietary Orders: Roster</h1>
 
       <div v-if="loading" class="text-sm text-gray-500 dark:text-slate-400">Loading…</div>
       <div v-else-if="Object.keys(groups).length === 0" class="text-sm text-gray-500 dark:text-slate-400">
@@ -54,8 +54,8 @@ onMounted(async () => {
                   {{ o.participant.first_name }} {{ o.participant.last_name }}
                 </Link>
               </td>
-              <td class="px-3 py-1">{{ o.calorie_target ?? '—' }}</td>
-              <td class="px-3 py-1">{{ o.fluid_restriction_ml_per_day ? `${o.fluid_restriction_ml_per_day} mL/d` : '—' }}</td>
+              <td class="px-3 py-1">{{ o.calorie_target ?? '-' }}</td>
+              <td class="px-3 py-1">{{ o.fluid_restriction_ml_per_day ? `${o.fluid_restriction_ml_per_day} mL/d` : '-' }}</td>
               <td class="px-3 py-1">{{ o.effective_date }}</td>
             </tr>
           </tbody>

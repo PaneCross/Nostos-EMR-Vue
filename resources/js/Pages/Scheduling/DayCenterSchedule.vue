@@ -1,5 +1,5 @@
 <!--
-  Day Center Schedule Management — bulk view/edit of participant recurring
+  Day Center Schedule Management: bulk view/edit of participant recurring
   day-center patterns. Click a day to stage a change; changes are held in a
   pending queue until the user reviews and approves them in batch. Protects
   against accidental single-click edits.
@@ -9,7 +9,7 @@
 // ─── Scheduling/DayCenterSchedule ───────────────────────────────────────────
 // Bulk-edit each participant's recurring weekly day-center pattern (e.g.
 // "Mary attends Mon/Wed/Fri at the East site"). Changes stage in a pending
-// queue and require explicit batch approval — protects against accidental
+// queue and require explicit batch approval: protects against accidental
 // single-click edits to production schedules.
 //
 // Audience: Center Manager, Scheduling staff, IDT (recommends pattern).
@@ -226,7 +226,7 @@ function dayPct(code: string): number {
     return Math.round((dayCounts.value[code] / totalEnrolled.value) * 100)
 }
 
-// For load balance indicators — highlight peak vs. light days (weekdays only)
+// For load balance indicators: highlight peak vs. light days (weekdays only)
 const weekdayCounts = computed(() => {
     const c = dayCounts.value
     return [c.mon, c.tue, c.wed, c.thu, c.fri]
@@ -307,7 +307,7 @@ const totalPending = computed(() => pendingRows.value.length)
             <!-- Summary row: weekday cards + compact distribution chart side by side -->
             <div>
                 <div class="flex flex-col 2xl:flex-row gap-3">
-                    <!-- Weekday cards — expand to fill remaining width -->
+                    <!-- Weekday cards: expand to fill remaining width -->
                     <div class="grid grid-cols-7 gap-2 flex-1 min-w-0">
                         <div
                             v-for="code in DAY_CODES"
@@ -599,7 +599,7 @@ const totalPending = computed(() => pendingRows.value.length)
                                 Remove {{ DAY_LABELS[d] }}
                             </span>
                         </div>
-                        <!-- Before / after — always chronological -->
+                        <!-- Before / after: always chronological -->
                         <p class="text-sm text-gray-400 dark:text-slate-500 mt-1.5">
                             <span class="line-through">{{ formatDays(row.original_days) }}</span>
                             <span class="mx-1">→</span>

@@ -8,7 +8,7 @@
 //
 // Notable rules:
 //   - PACE language: pre-enrollment people are "Potential Enrollees" (not
-//     "Participants" — that term is reserved for fully enrolled members).
+//     "Participants": that term is reserved for fully enrolled members).
 //   - 42 CFR §460.150-158 govern enrollment determination + effective dates.
 //   - State machine is enforced server-side; the UI hides invalid transitions.
 // ────────────────────────────────────────────────────────────────────────────
@@ -49,7 +49,7 @@ const props = defineProps<{
     defaultSiteId: number | null
 }>()
 
-// Helper — potential enrollee's display name, with fallback.
+// Helper: potential enrollee's display name, with fallback.
 // Per NPA / 42 CFR §460.154, pre-enrollment individuals are "potential enrollees".
 // Internal DB columns use the shorter `prospective_*` prefix for brevity.
 function potentialEnrolleeName(r: Referral): string {

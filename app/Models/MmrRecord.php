@@ -18,7 +18,7 @@ class MmrRecord extends Model
 
     protected $table = 'emr_mmr_records';
 
-    // Discrepancy type constants — used in scopes, controllers, and the UI.
+    // Discrepancy type constants : used in scopes, controllers, and the UI.
     public const DISC_NONE                    = null;
     public const DISC_CMS_ENROLLED_NOT_LOCAL  = 'cms_enrolled_not_local';  // CMS says enrolled, we don't have them
     public const DISC_CMS_DISENROLLED_LOCAL_ENROLLED = 'cms_disenrolled_local_enrolled';

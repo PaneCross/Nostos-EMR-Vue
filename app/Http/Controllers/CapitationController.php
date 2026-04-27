@@ -9,10 +9,10 @@
 //   - Bulk CSV import for monthly CMS remittance data
 //
 // Route list:
-//   GET  /billing/capitation              → index()       — Inertia page
-//   GET  /billing/capitation/data         → data()        — JSON KPIs + records
-//   POST /billing/capitation              → store()       — create record
-//   POST /billing/capitation/bulk-import  → bulkImport()  — CSV import
+//   GET  /billing/capitation              → index()       : Inertia page
+//   GET  /billing/capitation/data         → data()        : JSON KPIs + records
+//   POST /billing/capitation              → store()       : create record
+//   POST /billing/capitation/bulk-import  → bulkImport()  : CSV import
 //
 // CSV expected columns (in order, comma-delimited, first row = header):
 //   participant_id OR medicare_id, month_year, total_capitation,
@@ -162,7 +162,7 @@ class CapitationController extends Controller
             'rate_effective_date'  => ['nullable', 'date'],
         ]);
 
-        // Phase R1 — block Medicaid capitation when share-of-cost obligation
+        // Phase R1 : block Medicaid capitation when share-of-cost obligation
         // for this period is unmet (per SpendDownService design memo).
         if ((float) $data['medicaid_rate'] > 0) {
             $participant = Participant::find($data['participant_id']);

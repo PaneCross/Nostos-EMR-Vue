@@ -53,7 +53,7 @@ class HospiceController extends Controller
         if (in_array($participant->hospice_status, ['enrolled', 'graduated', 'deceased'], true)) {
             return response()->json([
                 'error'   => 'invalid_state',
-                'message' => "Cannot refer — participant is already {$participant->hospice_status}.",
+                'message' => "Cannot refer : participant is already {$participant->hospice_status}.",
             ], 422);
         }
         return response()->json(['participant' => $this->svc->refer($participant, $u, $validated)]);
@@ -73,7 +73,7 @@ class HospiceController extends Controller
         if (in_array($participant->hospice_status, ['graduated', 'deceased'], true)) {
             return response()->json([
                 'error'   => 'invalid_state',
-                'message' => "Cannot enroll — participant is {$participant->hospice_status}.",
+                'message' => "Cannot enroll : participant is {$participant->hospice_status}.",
             ], 422);
         }
 

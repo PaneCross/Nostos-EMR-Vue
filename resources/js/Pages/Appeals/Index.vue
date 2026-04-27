@@ -7,7 +7,7 @@
 // Audience: QA Compliance, Enrollment, Super Admin roles.
 //
 // Notable rules:
-//   - 42 CFR §460.122 — standard appeals decided within 30 days; expedited
+//   - 42 CFR §460.122: standard appeals decided within 30 days; expedited
 //     appeals within 72 hours. Row coloring (green/yellow/red) tracks how
 //     much of that decision window has been consumed.
 // ────────────────────────────────────────────────────────────────────────────
@@ -47,9 +47,9 @@ const STATUS_LABELS: Record<string, string> = {
     received: 'Received',
     acknowledged: 'Acknowledged',
     under_review: 'Under Review',
-    decided_upheld: 'Decided — Upheld',
-    decided_overturned: 'Decided — Overturned',
-    decided_partially_overturned: 'Decided — Partially Overturned',
+    decided_upheld: 'Decided: Upheld',
+    decided_overturned: 'Decided: Overturned',
+    decided_partially_overturned: 'Decided: Partially Overturned',
     withdrawn: 'Withdrawn',
     external_review_requested: 'External Review Requested',
     closed: 'Closed',
@@ -125,7 +125,7 @@ function applyFilter(val: string) {
                     <div>
                         <h1 class="text-xl font-semibold text-slate-900 dark:text-slate-100">Appeals</h1>
                         <p class="text-sm text-slate-500 dark:text-slate-400">
-                            Participant appeals of service denials — 42 CFR §460.122
+                            Participant appeals of service denials: 42 CFR §460.122
                         </p>
                     </div>
                 </div>
@@ -219,7 +219,7 @@ function applyFilter(val: string) {
                                 <span v-if="a.continuation_of_benefits" class="inline-flex items-center gap-1 text-xs text-amber-700 dark:text-amber-300">
                                     <ExclamationTriangleIcon class="w-3.5 h-3.5" /> Yes
                                 </span>
-                                <span v-else class="text-xs text-slate-400">—</span>
+                                <span v-else class="text-xs text-slate-400">-</span>
                             </td>
                         </tr>
                     </tbody>

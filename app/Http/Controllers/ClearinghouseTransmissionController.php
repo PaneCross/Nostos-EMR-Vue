@@ -96,7 +96,7 @@ class ClearinghouseTransmissionController extends Controller
             'transmission_id'       => $result->transmissionId,
         ];
         if ($gateway->name() === 'null_gateway') {
-            $body['honest_label'] = 'No vendor contract active — 837P staged for manual upload. '
+            $body['honest_label'] = 'No vendor contract active : 837P staged for manual upload. '
                 . 'When a clearinghouse contract lands, IT admin activates the tenant config and this flow transmits automatically.';
         }
         return response()->json($body, $result->succeeded() ? 200 : 503);

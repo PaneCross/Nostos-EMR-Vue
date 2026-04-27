@@ -1,6 +1,6 @@
 <?php
 
-// ─── HieController — Phase M3 ────────────────────────────────────────────────
+// ─── HieController : Phase M3 ────────────────────────────────────────────────
 // Publish CCD + document-query endpoint. Delegates to the configured HIE
 // gateway (default null). OAuth-protected reuse of existing FHIR token guard.
 // ─────────────────────────────────────────────────────────────────────────────
@@ -37,7 +37,7 @@ class HieController extends Controller
         abort_unless($u->isSuperAdmin() || in_array($u->department, $allow, true), 403);
     }
 
-    /** POST /participants/{p}/hie/publish — ship CCD to the HIE. */
+    /** POST /participants/{p}/hie/publish : ship CCD to the HIE. */
     public function publish(Request $r, Participant $participant, CcdaExportService $ccd): JsonResponse
     {
         $this->gate($r);
@@ -56,7 +56,7 @@ class HieController extends Controller
             description: "CCD published via {$this->gateway()->name()} ({$result['transmission_id']}).",
         );
 
-        // Phase P2 — HIPAA §164.528 Accounting of Disclosures.
+        // Phase P2 : HIPAA §164.528 Accounting of Disclosures.
         app(\App\Services\PhiDisclosureService::class)->record(
             tenantId:         $participant->tenant_id,
             participantId:    $participant->id,
@@ -72,7 +72,7 @@ class HieController extends Controller
         return response()->json(['gateway' => $this->gateway()->name(), 'result' => $result]);
     }
 
-    /** GET /participants/{p}/hie/documents — query HIE for prior documents. */
+    /** GET /participants/{p}/hie/documents : query HIE for prior documents. */
     public function documents(Request $r, Participant $participant): JsonResponse
     {
         $this->gate($r);
@@ -85,7 +85,7 @@ class HieController extends Controller
         ]);
     }
 
-    /** GET /hie/ccd/{participant} — returns a fresh CCD XML (OAuth-protected). */
+    /** GET /hie/ccd/{participant} : returns a fresh CCD XML (OAuth-protected). */
     public function ccd(Request $r, Participant $participant, CcdaExportService $ccd): Response
     {
         // Reuse existing FHIR API token guard via middleware (registered in routes).

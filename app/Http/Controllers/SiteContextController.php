@@ -1,21 +1,21 @@
 <?php
 
 // ─── SiteContextController ───────────────────────────────────────────────────
-// Phase 10B — Site context switcher for executive and Nostos SA dept users.
+// Phase 10B : Site context switcher for executive and Nostos SA dept users.
 //
 // Allows users who can switch site context to select an active site for their
 // current session. The active site filters participant/clinical data shown on
 // dashboards and executive views.
 //
 // Routes:
-//   POST /site-context/switch  — set session active_site_id (JSON)
-//   DELETE /site-context       — clear session active_site_id, revert to own site (JSON)
+//   POST /site-context/switch  : set session active_site_id (JSON)
+//   DELETE /site-context       : clear session active_site_id, revert to own site (JSON)
 //
 // Access control:
 //   - Executive users: may only switch to sites within their own tenant
 //   - role='super_admin': may switch to any site across all tenants
 //   - department='super_admin': may switch to any site across all tenants
-//   - Regular users: 403 — they have no concept of site switching
+//   - Regular users: 403 : they have no concept of site switching
 // ─────────────────────────────────────────────────────────────────────────────
 
 namespace App\Http\Controllers;

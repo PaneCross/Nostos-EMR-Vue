@@ -1,6 +1,6 @@
 <?php
 
-// ─── ParticipantRafController — Phase R10 ───────────────────────────────────
+// ─── ParticipantRafController : Phase R10 ───────────────────────────────────
 // Clinician-accessible per-participant RAF dashboard. Surfaces:
 //   - Current-year RAF score (CMS-HCC V28 per HccMappingSeeder)
 //   - Prior-year RAF score (delta visibility for V28 transition)
@@ -54,7 +54,7 @@ class ParticipantRafController extends Controller
             'delta_label'    => $delta > 0 ? 'increase' : ($delta < 0 ? 'decrease' : 'unchanged'),
             'hcc_gaps'       => $gaps,
             'gap_count'      => count($gaps),
-            'honest_label'   => 'RAF computed locally from emr_problems × emr_hcc_mappings. Final CMS-published RAF may differ — see CMS HPMS report.',
+            'honest_label'   => 'RAF computed locally from emr_problems × emr_hcc_mappings. Final CMS-published RAF may differ : see CMS HPMS report.',
         ]);
     }
 }

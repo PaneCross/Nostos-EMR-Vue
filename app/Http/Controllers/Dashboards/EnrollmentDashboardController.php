@@ -5,10 +5,10 @@
 // All endpoints require the enrollment department (or super_admin).
 //
 // Routes (GET, all under /dashboards/enrollment/):
-//   pipeline           — referral counts per pipeline status (Kanban column totals)
-//   eligibility-pending — referrals awaiting eligibility verification, oldest first
-//   disenrollments     — participants with upcoming disenrollment dates (within 30 days)
-//   new-referrals      — new referrals received this calendar week
+//   pipeline           : referral counts per pipeline status (Kanban column totals)
+//   eligibility-pending : referrals awaiting eligibility verification, oldest first
+//   disenrollments     : participants with upcoming disenrollment dates (within 30 days)
+//   new-referrals      : new referrals received this calendar week
 // ─────────────────────────────────────────────────────────────────────────────
 
 namespace App\Http\Controllers\Dashboards;
@@ -90,7 +90,7 @@ class EnrollmentDashboardController extends Controller
         $referrals = Referral::forTenant($tenantId)
             ->where('status', 'eligibility_pending')
             ->with(['assignedTo:id,first_name,last_name'])
-            ->orderBy('created_at', 'asc') // oldest first — longest-waiting cases surface
+            ->orderBy('created_at', 'asc') // oldest first : longest-waiting cases surface
             ->limit(20)
             ->get()
             ->map(fn (Referral $r) => [
@@ -140,7 +140,7 @@ class EnrollmentDashboardController extends Controller
                 'href'                => "/participants/{$p->id}",
             ]);
 
-        // Rolling 12-month voluntary vs involuntary vs death counts — the grain
+        // Rolling 12-month voluntary vs involuntary vs death counts : the grain
         // CMS HPMS reporting and NPA metrics aggregate at.
         $yearAgo = now()->subYear()->toDateString();
         $rollup = Participant::where('tenant_id', $tenantId)

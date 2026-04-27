@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Clinical Note #{{ $note->id }} — {{ $note->participant->mrn }}</title>
+    <title>Clinical Note #{{ $note->id }}: {{ $note->participant->mrn }}</title>
     <style>
         body { font-family: 'DejaVu Sans', Helvetica, sans-serif; font-size: 11px; color: #111; }
         h1 { font-size: 16px; margin: 0 0 10px 0; }
@@ -18,7 +18,7 @@
         <strong>Participant:</strong> {{ $note->participant->last_name }}, {{ $note->participant->first_name }}
         &nbsp; MRN {{ $note->participant->mrn }}
         &nbsp; DOB {{ $note->participant->dob?->format('m/d/Y') }}<br>
-        <strong>Visit:</strong> {{ $note->visit_date?->toDateString() }} · {{ $note->visit_type ?? '—' }}<br>
+        <strong>Visit:</strong> {{ $note->visit_date?->toDateString() }} · {{ $note->visit_type ?? '-' }}<br>
         <strong>Author:</strong> {{ $note->author?->first_name }} {{ $note->author?->last_name }}
         @if ($note->author?->department) ({{ $note->author->department }}) @endif<br>
         <strong>Status:</strong> {{ strtoupper($note->status) }}

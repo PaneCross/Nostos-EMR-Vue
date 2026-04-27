@@ -21,7 +21,7 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>Participant Portal — NostosEMR</h1>
+            <h1>Participant Portal: NostosEMR</h1>
         </div>
         <div class="body">
             <p class="greeting">Hello.</p>
@@ -37,7 +37,7 @@
 
             <div class="notice">
                 If you did not request this code, please ignore this email. Do not share this
-                code with anyone — NostosEMR staff will never ask for your sign-in code.
+                code with anyone: NostosEMR staff will never ask for your sign-in code.
             </div>
 
             <p style="color:#475569;font-size:14px;">
@@ -47,7 +47,7 @@
         </div>
         <div class="footer">
             NostosEMR Participant Portal &bull;
-            This is an automated message — do not reply.
+            This is an automated message: do not reply.
         </div>
     </div>
 </body>

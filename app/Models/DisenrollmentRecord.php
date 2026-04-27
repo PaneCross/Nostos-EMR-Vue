@@ -104,7 +104,7 @@ class DisenrollmentRecord extends Model
 
     // ─── Scopes ────────────────────────────────────────────────────────────────
 
-    /** Restrict to a single tenant — always apply before returning records. */
+    /** Restrict to a single tenant : always apply before returning records. */
     public function scopeForTenant($query, int $tenantId)
     {
         return $query->where('tenant_id', $tenantId);

@@ -10,7 +10,7 @@
 //            compliance_officer designation.
 // Validates: outcome (must be one of Appeal::DECIDED_STATUSES) + narrative
 //            (10–8000 chars) explaining the rationale for the ruling.
-// Notable rules: 42 CFR §460.122 — PACE service-denial / appeal regulation.
+// Notable rules: 42 CFR §460.122 : PACE service-denial / appeal regulation.
 //                Standard appeals must be decided within 30 days; expedited
 //                within 72 hours.
 // ─────────────────────────────────────────────────────────────────────────────

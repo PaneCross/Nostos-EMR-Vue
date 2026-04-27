@@ -5,12 +5,12 @@
 //
 // Two types of conflict checks:
 //
-//   1. checkParticipantConflict — standard overlap detection.
+//   1. checkParticipantConflict : standard overlap detection.
 //      A new appointment overlaps an existing one if:
 //        existing.start < new.end  AND  existing.end > new.start
 //      Cancelled appointments are excluded (they no longer block the slot).
 //
-//   2. checkTransportConflict — transport window detection.
+//   2. checkTransportConflict : transport window detection.
 //      Transport scheduling requires a 2-hour buffer around each appointment
 //      that needs transport. This prevents scheduling two transport-required
 //      appointments so close together that the vehicle cannot return in time.
@@ -36,7 +36,7 @@ class ConflictDetectionService
      * Overlap condition (half-open intervals):
      *   existing.start < $end  AND  existing.end > $start
      *
-     * Cancelled appointments are excluded — they no longer block the slot.
+     * Cancelled appointments are excluded : they no longer block the slot.
      *
      * @param  int       $participantId  Participant to check conflicts for.
      * @param  Carbon    $start          Proposed appointment start time.

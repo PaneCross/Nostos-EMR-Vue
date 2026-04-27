@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Team Huddle — {{ strtoupper($department) }} — {{ $date }}</title>
+    <title>Team Huddle: {{ strtoupper($department) }}: {{ $date }}</title>
     <style>
         body { font-family: 'DejaVu Sans', sans-serif; font-size: 10px; color: #111; }
         h1 { font-size: 16px; margin: 0; }
@@ -15,7 +15,7 @@
     </style>
 </head>
 <body>
-    <h1>Team Huddle — {{ strtoupper($department) }}</h1>
+    <h1>Team Huddle: {{ strtoupper($department) }}</h1>
     <p class="meta">{{ $date }} · generated {{ now()->toDateTimeString() }} UTC</p>
 
     <h2>Critical alerts ({{ count($critical_alerts) }})</h2>
@@ -54,7 +54,7 @@
     @if (count($new_discharges))
         <ul>
             @foreach ($new_discharges as $d)
-                <li>{{ $d->participant?->last_name }}, {{ $d->participant?->first_name }} — from {{ $d->discharge_from_facility }} on {{ $d->discharged_on }}</li>
+                <li>{{ $d->participant?->last_name }}, {{ $d->participant?->first_name }}: from {{ $d->discharge_from_facility }} on {{ $d->discharged_on }}</li>
             @endforeach
         </ul>
     @else <p class="empty">None.</p>
@@ -64,7 +64,7 @@
     @if (count($sentinel_events))
         <ul>
             @foreach ($sentinel_events as $s)
-                <li>Incident #{{ $s->id }} — {{ $s->incident_type }} · {{ $s->participant?->last_name }}, {{ $s->participant?->first_name }}</li>
+                <li>Incident #{{ $s->id }}: {{ $s->incident_type }} · {{ $s->participant?->last_name }}, {{ $s->participant?->first_name }}</li>
             @endforeach
         </ul>
     @else <p class="empty">None.</p>
@@ -86,7 +86,7 @@
         <table>
             <tr><th>Panel</th><th>Participant</th><th>When</th></tr>
             @foreach ($incoming_labs as $l)
-                <tr><td>{{ $l->panel_name ?? $l->loinc_code ?? '—' }}</td><td>#{{ $l->participant_id }}</td><td>{{ $l->created_at->toDateTimeString() }}</td></tr>
+                <tr><td>{{ $l->panel_name ?? $l->loinc_code ?? '-' }}</td><td>#{{ $l->participant_id }}</td><td>{{ $l->created_at->toDateTimeString() }}</td></tr>
             @endforeach
         </table>
     @else <p class="empty">None.</p>

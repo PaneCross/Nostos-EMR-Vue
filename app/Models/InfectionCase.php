@@ -2,7 +2,7 @@
 
 // ─── InfectionCase ───────────────────────────────────────────────────────────
 // Phase B2. One case per (participant × organism × onset). Links to an
-// InfectionOutbreak when part of a cluster (outbreak_id is nullable — some
+// InfectionOutbreak when part of a cluster (outbreak_id is nullable : some
 // cases are isolated community exposures that never cluster).
 // ─────────────────────────────────────────────────────────────────────────────
 

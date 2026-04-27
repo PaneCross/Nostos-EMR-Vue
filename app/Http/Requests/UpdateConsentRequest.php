@@ -1,7 +1,7 @@
 <?php
 
 // ─── UpdateConsentRequest ────────────────────────────────────────────────────
-// Validates editing an existing consent record on a participant's chart —
+// Validates editing an existing consent record on a participant's chart :
 // typically used to flip status (active → revoked, pending → active),
 // attach acknowledgement details, or upload the scanned signed copy.
 //
@@ -9,7 +9,7 @@
 //            controller.
 // Validates: optional status + acknowledged_by + acknowledged_at,
 //            optional representative_type (POA = Power of Attorney,
-//            healthcare proxy, guardian, etc. — used when someone other
+//            healthcare proxy, guardian, etc. : used when someone other
 //            than the participant signs), optional notes, optional
 //            document_path pointing at the stored scan.
 // ─────────────────────────────────────────────────────────────────────────────

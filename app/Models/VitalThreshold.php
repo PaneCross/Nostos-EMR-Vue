@@ -46,7 +46,7 @@ class VitalThreshold extends Model
     ];
 
     /**
-     * Resolve thresholds for a (tenant, field) — tenant-override if present,
+     * Resolve thresholds for a (tenant, field) : tenant-override if present,
      * else the hard-coded national default.
      *
      * @return array{warning_low: ?float, warning_high: ?float, critical_low: ?float, critical_high: ?float}

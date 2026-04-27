@@ -49,7 +49,7 @@ onMounted(() => {
         breakGlassData.value = r5.data
         credentialsData.value = r6.data
     }).catch(() => {
-        // Non-blocking — widgets will show empty state
+        // Non-blocking: widgets will show empty state
     }).finally(() => loading.value = false)
 })
 
@@ -154,7 +154,7 @@ const credentialItems = computed<ActionItem[]>(() =>
             c.status === 'due_30'    ? 'bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300' :
                                        'bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300'
         return {
-            label: c.user?.name ?? '—',
+            label: c.user?.name ?? '-',
             sublabel: `${c.type_label} · ${c.title}`,
             badge,
             badgeColor,

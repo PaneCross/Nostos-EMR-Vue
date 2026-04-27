@@ -1,7 +1,7 @@
 <script setup lang="ts">
-// ─── Operations/StateMedicaidSubmissions.vue — Phase O11 ────────────────────
+// ─── Operations/StateMedicaidSubmissions.vue: Phase O11 ────────────────────
 // Read-only log of state-Medicaid enrollment/disenrollment submissions. Each
-// state has its own portal/format — this page records what was submitted, when,
+// state has its own portal/format: this page records what was submitted, when,
 // and the status. The submission gateway itself is per-state vendor scaffolding;
 // this page is the audit history.
 // ─────────────────────────────────────────────────────────────────────────────
@@ -21,7 +21,7 @@ defineProps<{
     <div class="p-6 space-y-4">
       <h1 class="text-xl font-semibold text-gray-900 dark:text-slate-100">State Medicaid Submissions</h1>
 
-      <!-- Phase O11 — honest-labeling banner -->
+      <!-- Phase O11: honest-labeling banner -->
       <div
         class="rounded-lg border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950/30 p-4 flex items-start gap-3"
         data-testid="state-medicaid-banner"

@@ -1,6 +1,6 @@
 <?php
 
-// ─── IbnrController — Phase S5 ──────────────────────────────────────────────
+// ─── IbnrController : Phase S5 ──────────────────────────────────────────────
 namespace App\Http\Controllers;
 
 use App\Services\IbnrEstimateService;
@@ -29,7 +29,7 @@ class IbnrController extends Controller
         return \Inertia\Inertia::render('Billing/Ibnr', [
             'months_back' => $months,
             'estimate'    => $estimate,
-            'honest_label' => 'Directional IBNR estimate using lag-based completion factors. Not actuarial-grade — for finance-team monthly close visibility only. A real actuarial model would use development triangles and payer-specific lag patterns.',
+            'honest_label' => 'Directional IBNR estimate using lag-based completion factors. Not actuarial-grade : for finance-team monthly close visibility only. A real actuarial model would use development triangles and payer-specific lag patterns.',
         ]);
     }
 }

@@ -1,5 +1,5 @@
 <!--
-  IDT Meetings — Paginated list of all IDT meetings with status filter pills.
+  IDT Meetings: Paginated list of all IDT meetings with status filter pills.
   Clicking a row navigates to the meeting detail / run-meeting page.
   Filterable by: All, Scheduled, In Progress, Completed.
 
@@ -15,7 +15,7 @@
 // Audience: All clinical roles; QA Compliance for retroactive review.
 //
 // Notable rules:
-//   - 42 CFR §460.102 — IDT meeting + per-participant plan-of-care review
+//   - 42 CFR §460.102: IDT meeting + per-participant plan-of-care review
 //     evidence must be retained for CMS audit.
 //   - Completed meetings are read-only (audit trail integrity).
 // ────────────────────────────────────────────────────────────────────────────

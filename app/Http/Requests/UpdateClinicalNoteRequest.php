@@ -15,7 +15,7 @@ class UpdateClinicalNoteRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        // Controller also enforces canEdit() — this is a belt-and-suspenders check
+        // Controller also enforces canEdit() : this is a belt-and-suspenders check
         $note = $this->route('note');
         return $note instanceof ClinicalNote && $note->canEdit(auth()->user());
     }

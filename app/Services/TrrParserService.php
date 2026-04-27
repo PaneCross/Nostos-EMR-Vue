@@ -3,7 +3,7 @@
 // ─── TrrParserService ─────────────────────────────────────────────────────────
 // Parses an uploaded CMS TRR (Transaction Reply Report) file.
 //
-// Expected format (honest-labeled — Phase 12 will adapter-swap for real HPMS):
+// Expected format (honest-labeled : Phase 12 will adapter-swap for real HPMS):
 //
 //   HEADER|<contract_id>
 //   <mbi>|<txn_code>|<result>|<trc_code>|<trc_description>|<effective YYYY-MM-DD>|<txn_date YYYY-MM-DD>
@@ -40,7 +40,7 @@ class TrrParserService
             DB::transaction(function () use ($file, $records) {
                 TrrRecord::where('trr_file_id', $file->id)->delete();
                 foreach ($records as $row) {
-                    // Attempt to match to a local participant by MBI (clear comparison —
+                    // Attempt to match to a local participant by MBI (clear comparison :
                     // Participant.medicare_id is encrypted column cast; we match via
                     // Eloquent equality which decrypts-on-read).
                     $matched = Participant::where('tenant_id', $file->tenant_id)

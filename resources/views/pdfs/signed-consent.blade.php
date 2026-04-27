@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Signed Consent — {{ $consent->typeLabel() }} — {{ $participant->mrn }}</title>
+    <title>Signed Consent: {{ $consent->typeLabel() }}: {{ $participant->mrn }}</title>
     <style>
         body { font-family: 'DejaVu Sans', Helvetica, sans-serif; font-size: 11px; color: #111; }
         h1 { font-size: 16px; margin: 0 0 12px 0; }
@@ -18,7 +18,7 @@
     </style>
 </head>
 <body>
-    <h1>{{ $consent->typeLabel() }} — Signed Acknowledgment</h1>
+    <h1>{{ $consent->typeLabel() }}: Signed Acknowledgment</h1>
 
     <h2>Participant</h2>
     <table class="meta-table">
@@ -30,7 +30,7 @@
     <h2>Document</h2>
     <table class="meta-table">
         <tr><td>Title</td><td>{{ $consent->document_title ?? $consent->typeLabel() }}</td></tr>
-        <tr><td>Version</td><td>{{ $consent->document_version ?? '—' }}</td></tr>
+        <tr><td>Version</td><td>{{ $consent->document_version ?? '-' }}</td></tr>
         <tr><td>Consent type</td><td>{{ $consent->consent_type }}</td></tr>
     </table>
 
@@ -50,7 +50,7 @@
     </table>
 
     <div class="audit-stamp">
-        <strong>Audit stamp —</strong>
+        <strong>Audit stamp -</strong>
         Signed <strong>{{ $consent->signed_at?->toDateTimeString() }} UTC</strong>
         from IP <strong>{{ $consent->signed_ip_address ?? 'unknown' }}</strong>.
         ESIGN/UETA disclaimer version <strong>{{ $consent->esign_disclaimer_version }}</strong>

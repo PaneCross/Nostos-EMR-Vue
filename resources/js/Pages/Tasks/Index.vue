@@ -1,6 +1,6 @@
 <script setup lang="ts">
 // ─── Tasks/Index.vue ────────────────────────────────────────────────────────
-// Phase I5 — staff task queue. 3-tab view (Mine / My Dept / All) with filter
+// Phase I5: staff task queue. 3-tab view (Mine / My Dept / All) with filter
 // pills, overdue highlighting, quick Start/Complete/Cancel actions, and
 // navigation back to the related resource if polymorphic.
 // ─────────────────────────────────────────────────────────────────────────────
@@ -81,7 +81,7 @@ function isOverdue(t: Task): boolean {
 }
 
 function fmt(dt: string | null): string {
-  if (!dt) return '—'
+  if (!dt) return '-'
   return new Date(dt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })
 }
 
@@ -222,7 +222,7 @@ function relatedHref(t: Task): string | null {
                   <div class="text-xs text-slate-500">{{ t.assigned_user.department }}</div>
                 </template>
                 <span v-else-if="t.assigned_to_department" class="text-xs">Dept: {{ t.assigned_to_department }}</span>
-                <span v-else class="text-slate-400">—</span>
+                <span v-else class="text-slate-400">-</span>
               </td>
               <td class="px-3 py-2">
                 <Link v-if="relatedHref(t)" :href="relatedHref(t)!" class="text-blue-600 dark:text-blue-400 hover:underline text-xs">
@@ -230,7 +230,7 @@ function relatedHref(t: Task): string | null {
                   <template v-else-if="t.related_to_type">{{ t.related_to_type }} #{{ t.related_to_id }}</template>
                   <template v-else>link</template>
                 </Link>
-                <span v-else class="text-slate-400">—</span>
+                <span v-else class="text-slate-400">-</span>
               </td>
               <td class="px-3 py-2">
                 <span :class="['inline-block text-xs px-2 py-0.5 rounded-full', STATUS_CLASS[t.status]]">

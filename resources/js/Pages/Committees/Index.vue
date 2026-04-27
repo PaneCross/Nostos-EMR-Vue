@@ -109,7 +109,7 @@ async function markHeld(meeting: Meeting) {
             <div class="flex items-center justify-between">
                 <div>
                     <h1 class="text-xl font-semibold text-slate-900 dark:text-slate-100">Committees</h1>
-                    <p class="text-sm text-slate-500 dark:text-slate-400">Governing board, QAPI, IDT oversight, formulary — meetings, minutes, votes.</p>
+                    <p class="text-sm text-slate-500 dark:text-slate-400">Governing board, QAPI, IDT oversight, formulary: meetings, minutes, votes.</p>
                 </div>
                 <button @click="showCreate = !showCreate"
                     class="px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm">

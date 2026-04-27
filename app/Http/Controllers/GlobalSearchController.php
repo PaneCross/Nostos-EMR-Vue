@@ -9,7 +9,7 @@
 //   participants | referrals | appointments | grievances | orders | sdrs
 //
 // All queries are tenant-scoped. Each kind capped at 6 results; overall cap
-// ~36 rows — small enough to render a nice command palette without paging.
+// ~36 rows : small enough to render a nice command palette without paging.
 // ─────────────────────────────────────────────────────────────────────────────
 
 namespace App\Http\Controllers;

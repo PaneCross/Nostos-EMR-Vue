@@ -1,7 +1,7 @@
 <?php
 
 // ─── DenialAppealDeadlineAlertJob ────────────────────────────────────────────
-// Phase 12 (MVP roadmap). Nightly sweep — flags denial records whose appeal
+// Phase 12 (MVP roadmap). Nightly sweep : flags denial records whose appeal
 // deadline (42 CFR §405.942: 120 days from denial_date by default) is within
 // the next 14 days AND which remain in status='open' with no appeal filed.
 //

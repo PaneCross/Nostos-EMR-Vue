@@ -1,6 +1,6 @@
 <?php
 
-// ─── PriorAuthRequestController — Phase P6 ──────────────────────────────────
+// ─── PriorAuthRequestController : Phase P6 ──────────────────────────────────
 namespace App\Http\Controllers;
 
 use App\Models\AuditLog;
@@ -20,7 +20,7 @@ class PriorAuthRequestController extends Controller
         abort_unless($u->isSuperAdmin() || in_array($u->department, $allow, true), 403);
     }
 
-    /** GET /pharmacy/prior-auth — pharmacist + PCP queue. */
+    /** GET /pharmacy/prior-auth : pharmacist + PCP queue. */
     public function queue(Request $request): JsonResponse|\Inertia\Response
     {
         $this->gate();

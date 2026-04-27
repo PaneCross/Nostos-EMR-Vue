@@ -106,7 +106,7 @@ async function submit() {
     const e = err as { response?: { data?: { message?: string } } }
     error.value = e.response?.data?.message ?? 'Failed to save.'
   } finally {
-    // Phase W1 — Audit-11 H1: clear saving on every path.
+    // Phase W1: Audit-11 H1: clear saving on every path.
     saving.value = false
   }
 }

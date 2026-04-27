@@ -1,17 +1,17 @@
 <?php
 
 // ─── BcmaService ─────────────────────────────────────────────────────────────
-// Phase B4 — Barcode Medication Administration.
+// Phase B4 : Barcode Medication Administration.
 // Verifies a scanned (participant_barcode, medication_barcode) pair against
 // an eMAR record and records the scan on the record. Supports clinical
 // override with reason (logs as a high-priority audit event + emits alert).
 //
 // Verify outcomes:
-//   OK             — both scans match the record; scan timestamps written
-//   OVERRIDE       — mismatch, but user provided override reason; audit+alert
-//   MISSING_SCAN   — participant or med scan empty; record not updated (422)
-//   MISMATCH       — mismatch, no override reason; record not updated (422)
-//   NOT_SCANNABLE  — participant has no barcode_value yet (run backfill)
+//   OK             : both scans match the record; scan timestamps written
+//   OVERRIDE       : mismatch, but user provided override reason; audit+alert
+//   MISSING_SCAN   : participant or med scan empty; record not updated (422)
+//   MISMATCH       : mismatch, no override reason; record not updated (422)
+//   NOT_SCANNABLE  : participant has no barcode_value yet (run backfill)
 // ─────────────────────────────────────────────────────────────────────────────
 
 namespace App\Services;
@@ -68,11 +68,11 @@ class BcmaService
         $now = now();
 
         if ($participantMatch && $medMatch) {
-            // Clean scan — record both timestamps, no mismatch.
+            // Clean scan : record both timestamps, no mismatch.
             $record->update([
                 'barcode_scanned_participant_at' => $now,
                 'barcode_scanned_med_at'         => $now,
-                // Clear any prior override — shouldn't happen but defensive.
+                // Clear any prior override : shouldn't happen but defensive.
                 'barcode_mismatch_overridden_by_user_id' => null,
                 'barcode_override_reason_text'           => null,
             ]);

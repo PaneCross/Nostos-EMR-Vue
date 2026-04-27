@@ -4,14 +4,14 @@
 // Passwordless staff login via OTP (One-Time Password) emailed codes.
 //
 // Three endpoints:
-//   GET  /login              showLogin   — renders the Vue login page.
-//   POST /auth/request-otp   requestOtp  — emails a 6-digit code (always 200,
+//   GET  /login              showLogin   : renders the Vue login page.
+//   POST /auth/request-otp   requestOtp  : emails a 6-digit code (always 200,
 //                                          never reveals whether the email
 //                                          is registered).
-//   POST /auth/verify-otp    verifyOtp   — verifies the code and signs the
+//   POST /auth/verify-otp    verifyOtp   : verifies the code and signs the
 //                                          user in, returning the dashboard
 //                                          redirect URL.
-//   POST /auth/logout        logout      — invalidates session; logs reason
+//   POST /auth/logout        logout      : invalidates session; logs reason
 //                                          (timeout vs explicit) to AuditLog.
 //
 // Notable rules:

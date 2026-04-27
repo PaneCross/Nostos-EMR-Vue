@@ -4,7 +4,7 @@
 // The central record for every PACE participant (patient) in the system.
 //
 // Multi-tenancy: every participant belongs to a tenant (PACE organization) and a
-// site (physical PACE center). All queries must be scoped by tenant_id — use the
+// site (physical PACE center). All queries must be scoped by tenant_id : use the
 // forTenant() scope or the CheckDepartmentAccess middleware, never query globally.
 //
 // MRN: auto-generated on creation by MrnService using the site's mrn_prefix +
@@ -42,7 +42,7 @@ class Participant extends Model
 
     protected $table = 'emr_participants';
 
-    /** Phase C3 — Hospice workflow state values. */
+    /** Phase C3 : Hospice workflow state values. */
     public const HOSPICE_STATUSES = ['none', 'referred', 'enrolled', 'graduated', 'deceased'];
 
     /** Days an enrolled hospice participant can go without IDT review before alerting. */
@@ -55,7 +55,7 @@ class Participant extends Model
         'medicaid_id', 'county_fips_code', 'pace_contract_id', 'h_number',
         'primary_language', 'interpreter_needed', 'interpreter_language',
         'enrollment_status', 'enrollment_date', 'disenrollment_date', 'disenrollment_reason', 'disenrollment_type',
-        // Phase C3 — hospice workflow state
+        // Phase C3 : hospice workflow state
         'hospice_status', 'hospice_started_at', 'hospice_last_idt_review_at',
         'hospice_provider_text', 'hospice_diagnosis_text',
         'nursing_facility_eligible', 'nf_certification_date',
@@ -77,7 +77,7 @@ class Participant extends Model
         'nf_certification_date'         => 'date',
         'nf_certification_expires_at'   => 'date',
         'nf_recert_waived'              => 'boolean',
-        // Phase C3 — hospice timestamps
+        // Phase C3 : hospice timestamps
         'hospice_started_at'            => 'datetime',
         'hospice_last_idt_review_at'    => 'datetime',
         // W4-9: HPMS enrollment file fields (GAP-14)
@@ -89,7 +89,7 @@ class Participant extends Model
         'advance_directive_reviewed_at' => 'date',
         // W4-2 HIPAA §164.312(a)(2)(iv): PHI identifier fields encrypted at rest using APP_KEY.
         // Laravel's 'encrypted' cast uses AES-256-CBC via Crypt::encryptString() on write
-        // and Crypt::decryptString() on read — transparent to all Eloquent callers.
+        // and Crypt::decryptString() on read : transparent to all Eloquent callers.
         // IMPORTANT: Rotating APP_KEY requires re-seeding (decrypt fails with wrong key).
         'ssn_last_four'                 => 'encrypted',
         'medicare_id'                   => 'encrypted',
@@ -110,7 +110,7 @@ class Participant extends Model
                 $site = Site::findOrFail($participant->site_id);
                 $participant->mrn = app(MrnService::class)->generate($site);
             }
-            // Phase B4 — auto-generate BCMA barcode. Format: PT-<tenant>-<mrn>.
+            // Phase B4 : auto-generate BCMA barcode. Format: PT-<tenant>-<mrn>.
             if (empty($participant->barcode_value) && ! empty($participant->mrn)) {
                 $participant->barcode_value = "PT-{$participant->tenant_id}-{$participant->mrn}";
             }
@@ -198,7 +198,7 @@ class Participant extends Model
         return $this->hasMany(AdlThreshold::class, 'participant_id');
     }
 
-    /** Active allergies with life-threatening severity — drives the red profile banner. */
+    /** Active allergies with life-threatening severity : drives the red profile banner. */
     public function activeLifeThreateningAllergies(): HasMany
     {
         return $this->hasMany(Allergy::class, 'participant_id')
@@ -267,7 +267,7 @@ class Participant extends Model
         return $this->hasMany(EhiExport::class, 'participant_id');
     }
 
-    /** Unacknowledged drug interaction alerts — shown in header/banner. */
+    /** Unacknowledged drug interaction alerts : shown in header/banner. */
     public function unacknowledgedInteractionAlerts(): HasMany
     {
         return $this->hasMany(DrugInteractionAlert::class, 'participant_id')
@@ -285,7 +285,7 @@ class Participant extends Model
 
     /**
      * All IDT participant reviews for this participant.
-     * Reviews are linked through IdtMeeting (meeting_id FK) — see IdtParticipantReview model.
+     * Reviews are linked through IdtMeeting (meeting_id FK) : see IdtParticipantReview model.
      * Note: the model uses `meeting_id` (not `idt_meeting_id`) and has no `tenant_id`.
      */
     public function idtParticipantReviews(): HasMany
@@ -351,7 +351,7 @@ class Participant extends Model
         $lastReview = $this->lastIdtReviewedAt();
 
         if (is_null($lastReview)) {
-            // No review on record — overdue if enrolled more than 180 days
+            // No review on record : overdue if enrolled more than 180 days
             return $this->enrollment_date !== null
                 && $this->enrollment_date->diffInDays(now()) > 180;
         }
@@ -431,7 +431,7 @@ class Participant extends Model
                 default          => 'Directive on File',
             },
             'declined_directive'          => 'Declined Directive',
-            'incapacitated_no_directive'  => 'Incapacitated — No Directive',
+            'incapacitated_no_directive'  => 'Incapacitated : No Directive',
             'unknown'                     => 'Directive Status Unknown',
             default                       => null,
         };
@@ -453,7 +453,7 @@ class Participant extends Model
     /**
      * Full-text name/MRN search across the participant directory.
      * Searches first_name, last_name, MRN, and concatenated full name.
-     * Uses PostgreSQL case-insensitive ILIKE — not portable to MySQL.
+     * Uses PostgreSQL case-insensitive ILIKE : not portable to MySQL.
      * The CONCAT clause catches "John Doe" style searches where neither token
      * matches a single column individually.
      */

@@ -105,7 +105,7 @@ class FhirController extends Controller
      * Return a FHIR Bundle of Observation resources for a participant's vitals.
      * Scope: observation.read
      * Required: ?patient={participantId}
-     * Optional: ?category=vital-signs (ignored — always vital-signs for this system)
+     * Optional: ?category=vital-signs (ignored : always vital-signs for this system)
      *
      * GET /fhir/R4/Observation?patient={id}
      */
@@ -641,7 +641,7 @@ class FhirController extends Controller
             ])
         );
 
-        // Phase Q2 — HIPAA §164.528 Accounting of Disclosures
+        // Phase Q2 : HIPAA §164.528 Accounting of Disclosures
         // Participant-scoped reads disclose PHI to the OAuth client. Practitioner
         // and Organization reads disclose only directory data → not logged here.
         $participantScoped = ! in_array($resourceType, ['Practitioner', 'Organization'], true);

@@ -1,5 +1,5 @@
 <!--
-  SDR Management — Service Delivery Requests with 72-hour enforcement tracking.
+  SDR Management: Service Delivery Requests with 72-hour enforcement tracking.
 
   Shows four filter tabs: My Department / Assigned To Me / Overdue / All (QA only).
   Each SDR card displays participant, request type, priority, time remaining (or
@@ -13,7 +13,7 @@
 -->
 <script setup lang="ts">
 // ─── Sdrs/Index ─────────────────────────────────────────────────────────────
-// SDR (Service Delivery Request) queue — the internal hand-off ticket between
+// SDR (Service Delivery Request) queue: the internal hand-off ticket between
 // PACE departments (e.g. Primary Care -> Pharmacy "please refill X").
 //
 // Audience: every clinical/operational department. Filter tabs scope to the
@@ -21,7 +21,7 @@
 // (QA Compliance only) the all-tenants view.
 //
 // Notable rules:
-//   - 42 CFR §460.121 — service delivery requests must be acted on within
+//   - 42 CFR §460.121: service delivery requests must be acted on within
 //     a 72-hour window; the time-remaining countdown drives this UI.
 //   - Status transitions (acknowledge/in-progress/complete) are PATCH'd via
 //     axios so Inertia state is preserved (no full-page reload).

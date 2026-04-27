@@ -3,7 +3,7 @@
 <head><meta charset="utf-8"></head>
 <body style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: 40px auto; padding: 20px;">
 
-    <h2 style="color: #1d4ed8;">New Notification — NostosEMR</h2>
+    <h2 style="color: #1d4ed8;">New Notification: NostosEMR</h2>
 
     <p>Hi {{ $recipient->first_name }},</p>
 
@@ -23,7 +23,7 @@
         This email contains no patient or clinical information for HIPAA compliance.
     </p>
 
-    <p>— NostosEMR System</p>
+    <p>- NostosEMR System</p>
 
 </body>
 </html>

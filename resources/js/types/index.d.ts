@@ -1,4 +1,4 @@
-// ─── NostosEMR Vue — Shared TypeScript Types ──────────────────────────────────
+// ─── NostosEMR Vue - Shared TypeScript Types ──────────────────────────────────
 // Global type definitions shared across all Vue pages and components.
 // Mirrors the Inertia shared props injected by HandleInertiaRequests.php.
 // ─────────────────────────────────────────────────────────────────────────────

@@ -66,7 +66,7 @@ const sentinelItems = computed<ActionItem[]>(() =>
 
 const cvItems = computed<ActionItem[]>(() =>
     cvRows.value.map(c => ({
-        label: `${c.participant?.name ?? '-'} — ${c.field_name}`,
+        label: `${c.participant?.name ?? '-'}: ${c.field_name}`,
         sublabel: `Value: ${c.value} · Deadline ${c.deadline_at ?? '-'}`,
         badge: c.overdue ? 'OVERDUE' : (c.severity ?? '-'),
         badgeColor: c.overdue
@@ -153,7 +153,7 @@ const appealItems = computed<ActionItem[]>(() =>
                              'bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300'
         const badge = a.overdue ? 'overdue' : a.type === 'expedited' ? `exp ${pct}%` : `${pct}%`
         return {
-            label: a.participant?.name ?? '—',
+            label: a.participant?.name ?? '-',
             sublabel: `${(a.status ?? '').replace(/_/g, ' ')}${a.continuation_of_benefits ? ' · COB' : ''}`,
             badge,
             badgeColor,

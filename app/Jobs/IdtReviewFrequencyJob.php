@@ -17,17 +17,17 @@
 //
 // 42 CFR §460.104(c) in plain English: "Reassess each enrolled member at
 // least every 6 months, and sooner if their condition changes meaningfully."
-// (See also §460.104(b) — the "significant change triggers a 30-day
+// (See also §460.104(b) : the "significant change triggers a 30-day
 // reassessment" rule, surfaced via SignificantChangeOverdueJob.)
 //
 // CMS surveyors check for this every PACE audit. Late reassessments are one
-// of the most-cited deficiencies — hence the daily nag.
+// of the most-cited deficiencies : hence the daily nag.
 //
 // Schedule: daily at 07:30 (staggered from TransferCompletionJob at 7am)
 // Queue:    idt-review
 //
 // Deduplication: skips participants that already have an unacknowledged
-// 'idt_review_overdue' alert (is_active=true) — avoids flooding the alert feed.
+// 'idt_review_overdue' alert (is_active=true) : avoids flooding the alert feed.
 //
 // Alert type: 'idt_review_overdue'
 // Severity:   'warning'
@@ -72,7 +72,7 @@ class IdtReviewFrequencyJob implements ShouldQueue
                 $processed++;
 
                 // Deduplication: skip if an unacknowledged 'idt_review_overdue' alert already
-                // exists for this participant. Use is_active=true (not is_dismissed — that column
+                // exists for this participant. Use is_active=true (not is_dismissed : that column
                 // does not exist on emr_alerts). Use alert_type for dedup (not action_type).
                 $existing = Alert::where('tenant_id', $tenant->id)
                     ->where('participant_id', $participant->id)
@@ -115,7 +115,7 @@ class IdtReviewFrequencyJob implements ShouldQueue
                 $alertsCreated++;
             }
 
-            // Phase R4 — 42 CFR §460.116(b): advance directive must be reviewed
+            // Phase R4 : 42 CFR §460.116(b): advance directive must be reviewed
             // at every IDT reassessment. Warn when the on-file review timestamp
             // is missing or older than 6 months (matches IDT cadence).
             $adOverdue = Participant::forTenant($tenant->id)

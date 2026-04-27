@@ -10,8 +10,8 @@
 // when the participant lacks capacity. Soft-deletes preserve history.
 //
 // Notable rules:
-//  - PHI under HIPAA — tenant-scoped through the parent Participant.
-//  - 42 CFR §460.156 (rights) — legal representative role drives consent flow.
+//  - PHI under HIPAA : tenant-scoped through the parent Participant.
+//  - 42 CFR §460.156 (rights) : legal representative role drives consent flow.
 // ─────────────────────────────────────────────────────────────────────────────
 
 namespace App\Models;
@@ -44,7 +44,7 @@ class ParticipantContact extends Model
         'phone_primary', 'phone_secondary', 'email',
         'is_legal_representative', 'is_emergency_contact',
         'priority_order', 'notes',
-        // Phase S1 — structured legal + relationship roles
+        // Phase S1 : structured legal + relationship roles
         'legal_role', 'relationship_role',
     ];
 

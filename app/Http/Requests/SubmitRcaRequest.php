@@ -26,7 +26,7 @@ class SubmitRcaRequest extends FormRequest
     }
 
     /**
-     * Phase W3 — Sentinel-event RCA per Phase B3: 30-day deadline (42 CFR §460.136
+     * Phase W3 : Sentinel-event RCA per Phase B3: 30-day deadline (42 CFR §460.136
      * QAPI), so message wording cites the regulatory expectation.
      */
     public function messages(): array

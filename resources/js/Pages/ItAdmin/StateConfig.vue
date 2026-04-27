@@ -6,7 +6,7 @@
 <script setup lang="ts">
 // ─── ItAdmin/StateConfig ────────────────────────────────────────────────────
 // Per-state Medicaid configuration: submission format, clearinghouse routing,
-// state Medicaid contact info — needed because each state's 837 (X12 EDI
+// state Medicaid contact info: needed because each state's 837 (X12 EDI
 // claim) Medicaid encounter submission has its own conventions.
 //
 // Audience: IT Admin edits; Finance reads.
@@ -15,7 +15,7 @@
 //   - PAYWALL-DEFERRED: real per-state Medicaid integration depends on
 //     each state's portal/SFTP credentials; current state is configuration
 //     scaffolding only (per Phase 15.9 / DEBT-038).
-//   - Changes affect downstream EDI batch generation — coordinate with
+//   - Changes affect downstream EDI batch generation: coordinate with
 //     Finance before flipping a live submission format.
 // ────────────────────────────────────────────────────────────────────────────
 import { ref } from 'vue'

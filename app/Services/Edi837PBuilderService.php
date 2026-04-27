@@ -10,24 +10,24 @@
 // pipe-delimited "I saw this patient and did this" message.
 //
 // Acronym glossary used in this file:
-//   EDI       = Electronic Data Interchange — the X12 family of healthcare
+//   EDI       = Electronic Data Interchange : the X12 family of healthcare
 //               messages (claims, eligibility, remittance). Pipe-delimited text.
 //   X12       = the umbrella standards body whose 5010 release governs current
 //               US healthcare EDI; "5010A1" is the specific addendum version.
 //   837P      = the X12 transaction set for **Professional** medical claims
 //               (clinician encounters). 837I is the institutional/hospital flavor.
 //   CMS       = Centers for Medicare & Medicaid Services (federal regulator/payer).
-//   EDS       = Encounter Data System — CMS's intake for encounter records.
-//   CSSC      = Customer Service & Support Center — the CMS contractor that
+//   EDS       = Encounter Data System : CMS's intake for encounter records.
+//   CSSC      = Customer Service & Support Center : the CMS contractor that
 //               receives EDS submissions on CMS's behalf.
-//   NPI       = National Provider Identifier — every clinician + organization
+//   NPI       = National Provider Identifier : every clinician + organization
 //               has a 10-digit NPI assigned by CMS (think of it as a tax ID for healthcare).
-//   POS       = Place of Service — a 2-digit code where care happened
+//   POS       = Place of Service : a 2-digit code where care happened
 //               (e.g. "11" = office, "12" = home, "32" = nursing facility).
-//   CLM       = Claim segment — the header row inside the 837P that identifies
+//   CLM       = Claim segment : the header row inside the 837P that identifies
 //               this specific claim (claim ID, charge, patient, dates).
-//   ICD-10    = International Classification of Diseases v10 — the diagnosis code system.
-//   CPT       = Current Procedural Terminology — the procedure code system.
+//   ICD-10    = International Classification of Diseases v10 : the diagnosis code system.
+//   CPT       = Current Procedural Terminology : the procedure code system.
 //   PXC       = Provider Taxonomy Code (in this file, "261QR0405X" = PACE).
 //
 // Read this for context: https://www.cms.gov/Medicare/Billing/ElectronicBillingEDITrans/837P
@@ -95,7 +95,7 @@ class Edi837PBuilderService
 
         if ($valid->isEmpty()) {
             throw new \InvalidArgumentException(
-                'No valid encounters found — ensure each encounter has diagnosis codes, procedure code, and billing NPI.'
+                'No valid encounters found : ensure each encounter has diagnosis codes, procedure code, and billing NPI.'
             );
         }
 
@@ -136,7 +136,7 @@ class Edi837PBuilderService
      *   2000B = Information Receiver (PACE org)
      *   2000C = Service Provider
      *   2000D = Subscriber/Beneficiary
-     *   2200D = Claim Status — contains STC (status code), REF (patient control)
+     *   2200D = Claim Status : contains STC (status code), REF (patient control)
      *
      * @param  string   $edi277Content  Raw X12 277CA file content
      * @param  EdiBatch $batch          The batch this acknowledgement is for
@@ -151,7 +151,7 @@ class Edi837PBuilderService
             $elements = explode('*', trim($segment));
             $id       = $elements[0] ?? '';
 
-            // STC segment: Status Information — STC*{cat}*{status_date}*{action}
+            // STC segment: Status Information : STC*{cat}*{status_date}*{action}
             // A1 = Accepted, A3 = Accepted with Changes, R0-R9 = Rejected
             if ($id === 'STC') {
                 $statusCode = substr($elements[1] ?? '', 0, 2);

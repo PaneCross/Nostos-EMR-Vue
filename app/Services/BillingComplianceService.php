@@ -6,29 +6,29 @@
 //
 // PLAIN-ENGLISH PURPOSE: PACE organizations get paid a fixed monthly amount per
 // member (capitation) instead of fee-per-visit. CMS requires us to prove our
-// billing pipeline is healthy — encounters logged, diagnoses coded, payment
+// billing pipeline is healthy : encounters logged, diagnoses coded, payment
 // reconciled. This service runs the daily "are we billing-clean?" check.
 //
 // Acronym glossary used in this file:
 //   PACE  = Programs of All-Inclusive Care for the Elderly (Medicare/Medicaid program for frail elderly 55+).
 //   CMS   = Centers for Medicare & Medicaid Services (the federal regulator that pays us).
-//   RAF   = Risk Adjustment Factor — a per-member multiplier on the CMS payment.
+//   RAF   = Risk Adjustment Factor : a per-member multiplier on the CMS payment.
 //           Sicker members → higher RAF → more payment. Computed from diagnoses.
-//   HCC   = Hierarchical Condition Category — diagnostic groupings CMS uses to
+//   HCC   = Hierarchical Condition Category : diagnostic groupings CMS uses to
 //           compute RAF. "HCC gap" = a known diagnosis we never coded, leaving money on the table.
-//   HPMS  = Health Plan Management System — CMS's contractor portal where PACE orgs
+//   HPMS  = Health Plan Management System : CMS's contractor portal where PACE orgs
 //           upload monthly enrollment + disenrollment files.
-//   PDE   = Prescription Drug Event — every Part-D prescription dispensed produces
+//   PDE   = Prescription Drug Event : every Part-D prescription dispensed produces
 //           a PDE record we submit to CMS for reconciliation.
-//   TrOOP = True Out-Of-Pocket — Part D's running total of what a member has
+//   TrOOP = True Out-Of-Pocket : Part D's running total of what a member has
 //           personally paid this year. Crossing thresholds changes their cost-share.
 //
 // Five checklist categories (per CMS PACE billing requirements):
-//   1. Encounter Data       — completeness, diagnosis codes, pending queue
-//   2. Risk Adjustment      — RAF scores current, HCC gaps identified, stale records
-//   3. Capitation           — current-month records present, RAF reconciliation
-//   4. HPMS                 — enrollment file submissions, pending items
-//   5. Part D / PDE         — PDE records present, TrOOP alerts, near-threshold count
+//   1. Encounter Data       : completeness, diagnosis codes, pending queue
+//   2. Risk Adjustment      : RAF scores current, HCC gaps identified, stale records
+//   3. Capitation           : current-month records present, RAF reconciliation
+//   4. HPMS                 : enrollment file submissions, pending items
+//   5. Part D / PDE         : PDE records present, TrOOP alerts, near-threshold count
 //
 // Each check returns: {label, status: 'pass'|'warn'|'fail', value, detail}
 // Status rules:
@@ -36,7 +36,7 @@
 //   warn = approaching a compliance threshold (action recommended)
 //   fail = threshold exceeded or required data missing (action required)
 //
-// Phase 9C — Part C (Billing Compliance Checklist)
+// Phase 9C : Part C (Billing Compliance Checklist)
 // ─────────────────────────────────────────────────────────────────────────────
 
 namespace App\Services;
@@ -143,7 +143,7 @@ class BillingComplianceService
                     'label'  => 'Rejected encounters awaiting resubmission',
                     'status' => $rejected === 0 ? 'pass' : ($rejected <= 3 ? 'warn' : 'fail'),
                     'value'  => (string) $rejected,
-                    'detail' => "{$rejected} encounters rejected by CMS — review and resubmit",
+                    'detail' => "{$rejected} encounters rejected by CMS : review and resubmit",
                 ],
             ],
         ];
@@ -201,7 +201,7 @@ class BillingComplianceService
                     'label'  => 'Participants with RAF score below 1.0 (possible under-documentation)',
                     'status' => $lowRaf === 0 ? 'pass' : ($lowRaf <= 3 ? 'warn' : 'fail'),
                     'value'  => (string) $lowRaf,
-                    'detail' => "{$lowRaf} participants have RAF scores below 1.0 — review for missed HCC diagnoses",
+                    'detail' => "{$lowRaf} participants have RAF scores below 1.0 : review for missed HCC diagnoses",
                 ],
             ],
         ];
@@ -250,7 +250,7 @@ class BillingComplianceService
                     'label'  => 'Capitation records with RAF score populated',
                     'status' => $rafCoverageRate >= 90 ? 'pass' : ($rafCoverageRate >= 70 ? 'warn' : 'fail'),
                     'value'  => "{$rafCoverageRate}%",
-                    'detail' => "{$missingRaf} capitation records missing HCC risk score — needed for CMS rate reconciliation",
+                    'detail' => "{$missingRaf} capitation records missing HCC risk score : needed for CMS rate reconciliation",
                 ],
             ],
         ];
@@ -287,7 +287,7 @@ class BillingComplianceService
             ->latest()
             ->first();
 
-        // Use 'status' column (not 'submission_status' — see HpmsSubmission model)
+        // Use 'status' column (not 'submission_status' : see HpmsSubmission model)
         $currentStatus = $currentSubmission?->status ?? 'not_submitted';
         $priorStatus   = $priorSubmission?->status ?? 'not_submitted';
 
@@ -363,7 +363,7 @@ class BillingComplianceService
                     'value'  => (string) $pdeThisMonth,
                     'detail' => $pdeThisMonth > 0
                         ? "{$pdeThisMonth} PDE records for current month"
-                        : "No PDE records found for {$currentMonth} — verify pharmacy activity",
+                        : "No PDE records found for {$currentMonth} : verify pharmacy activity",
                 ],
                 [
                     'label'  => 'Pending PDE submissions',

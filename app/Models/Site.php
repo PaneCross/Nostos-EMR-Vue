@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-// NOTE: Participant is referenced below — no import needed (same namespace)
+// NOTE: Participant is referenced below : no import needed (same namespace)
 
 class Site extends Model
 {

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 // ─── Network/ContractedProviders ────────────────────────────────────────────
-// Manage the PACE program's external contracted-provider network — specialists,
+// Manage the PACE program's external contracted-provider network: specialists,
 // hospitals, ancillary services with negotiated per-CPT rates that the program
 // uses to estimate downstream cost when authorizing referrals.
 //
@@ -175,7 +175,7 @@ async function submitAddContract() {
                 <div v-if="p.npi" class="text-xs text-gray-500">NPI {{ p.npi }}</div>
               </td>
               <td class="px-3 py-2 text-sm text-gray-700 dark:text-slate-300">{{ p.provider_type }}</td>
-              <td class="px-3 py-2 text-sm text-gray-700 dark:text-slate-300">{{ p.specialty || '—' }}</td>
+              <td class="px-3 py-2 text-sm text-gray-700 dark:text-slate-300">{{ p.specialty || '-' }}</td>
               <td class="px-3 py-2 text-sm">
                 <template v-if="p.active_contract">
                   <span class="text-gray-900 dark:text-slate-100">

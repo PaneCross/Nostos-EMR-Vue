@@ -7,7 +7,7 @@
 // Audience: All clinical roles + IDT facilitators.
 //
 // Notable rules:
-//   - 42 CFR §460.104 — IDT must develop + review the plan of care at
+//   - 42 CFR §460.104: IDT must develop + review the plan of care at
 //     enrollment, every 6 months, and after significant change. Past-due
 //     review dates render red here.
 //   - Care plans are versioned (append-only); editing creates a new version.

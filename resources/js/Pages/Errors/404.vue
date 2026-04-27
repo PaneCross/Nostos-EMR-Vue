@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // Errors/404.vue
 // Full-page 404 Not Found error screen. Shown when the requested URL does not
-// match any route or the requested resource does not exist. No AppShell —
+// match any route or the requested resource does not exist. No AppShell:
 // renders as a standalone centered layout. Provides a Go to Dashboard button
 // that navigates to /dashboard via router.visit().
 // Route: rendered by Inertia on 404 responses.
@@ -23,7 +23,7 @@ import { MagnifyingGlassIcon } from '@heroicons/vue/24/outline'
 
             <!-- Error code -->
             <p class="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-2">
-                404 — Page Not Found
+                404: Page Not Found
             </p>
 
             <!-- Heading -->

@@ -4,12 +4,12 @@
 // Cross-participant clinical overview pages.
 //
 // These pages aggregate clinical data across ALL enrolled participants for the
-// current tenant — useful for clinical supervisors and IT Admin reviewing the
+// current tenant : useful for clinical supervisors and IT Admin reviewing the
 // full population's medication and care plan status.
 //
 // Routes:
-//   GET /clinical/medications  — Inertia: medication population overview
-//   GET /clinical/orders       — Inertia: active care plan goals worklist
+//   GET /clinical/medications  : Inertia: medication population overview
+//   GET /clinical/orders       : Inertia: active care plan goals worklist
 // ─────────────────────────────────────────────────────────────────────────────
 
 namespace App\Http\Controllers;
@@ -100,7 +100,7 @@ class ClinicalOverviewController extends Controller
 
     /**
      * GET /clinical/orders
-     * Active care plan goals worklist — functions as a clinical orders overview
+     * Active care plan goals worklist : functions as a clinical orders overview
      * until a full CPOE module is built (DEBT-CPOE).
      * Shows active goals across all participants ordered by target date (soonest first).
      */

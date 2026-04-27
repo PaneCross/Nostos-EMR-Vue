@@ -1,7 +1,7 @@
 <?php
 
 // ─── DetectBcmaOverridePatternJob ────────────────────────────────────────────
-// Daily sweep — finds nurses with concerning BCMA mismatch override frequency.
+// Daily sweep : finds nurses with concerning BCMA mismatch override frequency.
 // Threshold + window tunable via Org Settings:
 //   designation.nursing_director.bcma_override_pattern.
 // ─────────────────────────────────────────────────────────────────────────────

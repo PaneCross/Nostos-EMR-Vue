@@ -1,8 +1,8 @@
 <script setup lang="ts">
 // ─── AnticoagulationTab.vue ────────────────────────────────────────────────
-// Anticoagulation plan + INR (International Normalized Ratio — the
+// Anticoagulation plan + INR (International Normalized Ratio: the
 // warfarin lab) tracking. Supports warfarin (target INR window) and
-// DOACs (direct oral anticoagulants — apixaban, rivaroxaban,
+// DOACs (direct oral anticoagulants: apixaban, rivaroxaban,
 // dabigatran, edoxaban; INR not monitored). Out-of-range INR auto-
 // emits warning or critical alerts to clinical staff.
 //
@@ -250,9 +250,9 @@ const sparkPath = computed(() => {
               <span v-if="r.in_range !== null" class="inline-block rounded px-2 py-0.5 text-xs" :class="inRange(r) ? 'bg-green-100 dark:bg-green-900/60 text-green-700 dark:text-green-300' : 'bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300'">
                 {{ inRange(r) ? 'In range' : 'Out of range' }}
               </span>
-              <span v-else class="text-gray-400">—</span>
+              <span v-else class="text-gray-400">-</span>
             </td>
-            <td class="px-2 py-1 text-gray-500 dark:text-slate-400">{{ r.dose_adjustment_text || '—' }}</td>
+            <td class="px-2 py-1 text-gray-500 dark:text-slate-400">{{ r.dose_adjustment_text || '-' }}</td>
           </tr>
         </tbody>
       </table>

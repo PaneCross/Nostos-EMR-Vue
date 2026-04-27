@@ -112,9 +112,9 @@ class NfLocRecertAlertJob implements ShouldQueue
 
     private function titleFor(int $days, Participant $p): string
     {
-        if ($days < 0) return "NF-LOC recert OVERDUE — {$p->fullName()}";
-        if ($days === 0) return "NF-LOC recert DUE TODAY — {$p->fullName()}";
-        return "NF-LOC recert in {$days} days — {$p->fullName()}";
+        if ($days < 0) return "NF-LOC recert OVERDUE : {$p->fullName()}";
+        if ($days === 0) return "NF-LOC recert DUE TODAY : {$p->fullName()}";
+        return "NF-LOC recert in {$days} days : {$p->fullName()}";
     }
 
     private function messageFor(int $days, Participant $p): string
@@ -122,7 +122,7 @@ class NfLocRecertAlertJob implements ShouldQueue
         $date = $p->nf_certification_expires_at?->format('Y-m-d') ?? 'unknown';
         if ($days < 0) {
             $over = abs($days);
-            return "Annual NF level-of-care recertification for {$p->fullName()} (MRN {$p->mrn}) was due on {$date} — {$over} day(s) overdue. 42 CFR §460.160(b)(2).";
+            return "Annual NF level-of-care recertification for {$p->fullName()} (MRN {$p->mrn}) was due on {$date} : {$over} day(s) overdue. 42 CFR §460.160(b)(2).";
         }
         return "Annual NF level-of-care recertification for {$p->fullName()} (MRN {$p->mrn}) expires on {$date}. 42 CFR §460.160(b)(2).";
     }

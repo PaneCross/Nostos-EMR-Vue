@@ -1,6 +1,6 @@
 <?php
 
-// ─── CmsAuditUniverseController — Phase R11 ─────────────────────────────────
+// ─── CmsAuditUniverseController : Phase R11 ─────────────────────────────────
 // CMS PACE Audit Protocol 2.0 universe pulls. Four universes:
 //   - sdr:            Service Determination Requests (42 CFR §460.121)
 //   - grievances:     Grievance log
@@ -12,7 +12,7 @@
 //   - Each export increments an attempt counter per (audit_id, universe).
 //     CMS allows 3 attempts; the 4th is rejected with an explanatory error
 //     and logged as non-compliance for operator visibility.
-//   - Honest-labeled — file is downloaded, operator submits via HPMS.
+//   - Honest-labeled : file is downloaded, operator submits via HPMS.
 // ─────────────────────────────────────────────────────────────────────────────
 
 namespace App\Http\Controllers;
@@ -91,9 +91,9 @@ class CmsAuditUniverseController extends Controller
                 tenantId: $u->tenant_id, userId: $u->id,
                 resourceType: 'cms_audit',
                 resourceId: 0,
-                description: "Universe {$universe} for audit {$auditId} blocked — already at {$priorAttempts} attempts (CMS max 3).",
+                description: "Universe {$universe} for audit {$auditId} blocked : already at {$priorAttempts} attempts (CMS max 3).",
             );
-            abort(409, "Maximum 3 universe submission attempts have been used for {$auditId}/{$universe}. Logged as non-compliance — escalate to compliance officer.");
+            abort(409, "Maximum 3 universe submission attempts have been used for {$auditId}/{$universe}. Logged as non-compliance : escalate to compliance officer.");
         }
 
         [$rows, $errors] = match ($universe) {

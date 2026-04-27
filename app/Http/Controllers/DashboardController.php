@@ -13,7 +13,7 @@
 //  - Regular user: must match own department or 403 (logged to AuditLog).
 //
 // Notable rules:
-//  - 42 CFR §460.91 PACE access controls — regular users cannot peek at other
+//  - 42 CFR §460.91 PACE access controls : regular users cannot peek at other
 //    departments' dashboards; mismatch is recorded as an unauthorized_access
 //    AuditLog entry for compliance review.
 // ─────────────────────────────────────────────────────────────────────────────
@@ -42,7 +42,7 @@ class DashboardController extends Controller
         if ($user->isDeptSuperAdmin()) {
             // Nostos SA dept users can view any department's dashboard.
             // Default to 'super_admin' (their own dashboard) if accessing root.
-            // No impersonation system for dept SA — they see raw data across tenants.
+            // No impersonation system for dept SA : they see raw data across tenants.
         } elseif ($user->isExecutive()) {
             // Executives can only access their own executive dashboard.
             if ($department !== 'executive') {
@@ -55,7 +55,7 @@ class DashboardController extends Controller
                 if ($effective && $department !== $effective->department) {
                     return Inertia::location("/dashboard/{$effective->department}");
                 }
-                // Already on the correct dept — render it
+                // Already on the correct dept : render it
             } else {
                 // No impersonation: use "Dashboard View" selector context (defaults to 'it_admin')
                 $department = $this->impersonation->getViewAsDepartment();

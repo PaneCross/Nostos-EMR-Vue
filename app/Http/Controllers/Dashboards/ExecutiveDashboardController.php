@@ -1,7 +1,7 @@
 <?php
 
 // ─── ExecutiveDashboardController ────────────────────────────────────────────
-// Phase 10B — JSON widget endpoints for the Executive dashboard.
+// Phase 10B : JSON widget endpoints for the Executive dashboard.
 //
 // All 4 endpoints return pure JSON (not Inertia). They are loaded in parallel
 // by ExecutiveDashboard.tsx via Promise.all on component mount.
@@ -11,10 +11,10 @@
 //   - role='super_admin' or department='super_admin': all tenants (cross-tenant)
 //
 // Routes (all GET, under /dashboards/executive/):
-//   GET /dashboards/executive/org-overview      — org-wide participant + enrollment stats
-//   GET /dashboards/executive/site-comparison   — per-site participant + care-plan counts
-//   GET /dashboards/executive/financial-overview — capitation totals per site
-//   GET /dashboards/executive/sites-list        — all tenant sites for the site switcher
+//   GET /dashboards/executive/org-overview      : org-wide participant + enrollment stats
+//   GET /dashboards/executive/site-comparison   : per-site participant + care-plan counts
+//   GET /dashboards/executive/financial-overview : capitation totals per site
+//   GET /dashboards/executive/sites-list        : all tenant sites for the site switcher
 // ─────────────────────────────────────────────────────────────────────────────
 
 namespace App\Http\Controllers\Dashboards;

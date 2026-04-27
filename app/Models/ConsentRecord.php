@@ -12,10 +12,10 @@
 //     npp_acknowledgment record.
 //
 // status values:
-//   pending          — created but not yet obtained (auto-created at enrollment)
-//   acknowledged     — participant/rep signed or verbally confirmed
-//   refused          — participant explicitly declined to sign
-//   unable_to_consent — cognitive/physical incapacity documented
+//   pending          : created but not yet obtained (auto-created at enrollment)
+//   acknowledged     : participant/rep signed or verbally confirmed
+//   refused          : participant explicitly declined to sign
+//   unable_to_consent : cognitive/physical incapacity documented
 // ─────────────────────────────────────────────────────────────────────────────
 
 namespace App\Models;
@@ -72,7 +72,7 @@ class ConsentRecord extends Model
         'consent_type', 'document_title', 'document_version', 'document_path',
         'status', 'acknowledged_by', 'acknowledged_at', 'representative_type',
         'expiration_date', 'notes', 'created_by_user_id',
-        // Phase B8a — e-signature fields
+        // Phase B8a : e-signature fields
         'signature_image_blob', 'signed_by_participant',
         'proxy_signer_name', 'proxy_relationship',
         'signed_ip_address', 'esign_disclaimer_version', 'signed_at',
@@ -121,7 +121,7 @@ class ConsentRecord extends Model
         return $query->where('tenant_id', $tenantId);
     }
 
-    /** Pending (not yet obtained) NPP acknowledgments — QA compliance gap */
+    /** Pending (not yet obtained) NPP acknowledgments : QA compliance gap */
     public function scopePendingNpp($query)
     {
         return $query->where('consent_type', self::NPP_TYPE)

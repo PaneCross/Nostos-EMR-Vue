@@ -39,11 +39,11 @@ class GrievanceOverdueJob implements ShouldQueue
                 $counts = $service->checkOverdue($tenant->id);
 
                 if ($counts['urgent'] > 0 || $counts['standard'] > 0) {
-                    Log::info("GrievanceOverdueJob: tenant #{$tenant->id} — "
+                    Log::info("GrievanceOverdueJob: tenant #{$tenant->id} : "
                         . "{$counts['urgent']} urgent, {$counts['standard']} standard overdue alerts created.");
                 }
             } catch (\Throwable $e) {
-                // Log and continue — don't abort entire batch for one tenant
+                // Log and continue : don't abort entire batch for one tenant
                 Log::error("GrievanceOverdueJob: failed for tenant #{$tenant->id}", [
                     'error' => $e->getMessage(),
                 ]);

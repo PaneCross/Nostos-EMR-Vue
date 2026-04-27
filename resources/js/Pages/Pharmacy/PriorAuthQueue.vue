@@ -1,6 +1,6 @@
 <script setup lang="ts">
 // ─── Pharmacy/PriorAuthQueue ────────────────────────────────────────────────
-// Internal queue of medications awaiting prior authorization (PA) — surfaces
+// Internal queue of medications awaiting prior authorization (PA): surfaces
 // when the formulary marks a drug PA-required so Pharmacy can submit the
 // auth request to the payer before dispense.
 //
@@ -9,7 +9,7 @@
 // Notable rules:
 //   - Auto-suggested by MedicationController::store when formulary flags PA.
 //   - PAYWALL-DEFERRED: real payer-direct PA submission (CoverMyMeds, etc.)
-//     is paywall item 17. Today this is an internal worklist only — staff
+//     is paywall item 17. Today this is an internal worklist only: staff
 //     still submit PAs via the payer's existing portal/fax.
 // ────────────────────────────────────────────────────────────────────────────
 import { ref } from 'vue'
@@ -47,7 +47,7 @@ async function transition(req: any, status: string) {
     await axios.post(`/prior-auth/${req.id}/transition`, payload)
     router.reload({ only: ['requests'] })
   } catch (e: any) {
-    // Phase V4 — surface per-field 422 errors instead of a generic alert.
+    // Phase V4: surface per-field 422 errors instead of a generic alert.
     const errs = e?.response?.data?.errors ?? null
     const msg = (errs && Object.keys(errs).length)
       ? Object.values(errs).flat().join('; ')
@@ -92,8 +92,8 @@ async function transition(req: any, status: string) {
               <td class="px-3 py-2">
                 <span class="inline-block rounded px-2 py-0.5 text-xs" :class="statusColor(r.status)">{{ r.status }}</span>
               </td>
-              <td class="px-3 py-2 text-xs">{{ r.submitted_at?.slice(0, 10) ?? '—' }}</td>
-              <td class="px-3 py-2 text-xs">{{ r.decision_at?.slice(0, 10) ?? '—' }}</td>
+              <td class="px-3 py-2 text-xs">{{ r.submitted_at?.slice(0, 10) ?? '-' }}</td>
+              <td class="px-3 py-2 text-xs">{{ r.decision_at?.slice(0, 10) ?? '-' }}</td>
               <td class="px-3 py-2 space-x-2 text-xs">
                 <button v-if="r.status === 'draft'" class="text-blue-600 hover:underline" @click="transition(r, 'submitted')">Submit</button>
                 <button v-if="r.status === 'submitted'" class="text-green-600 hover:underline" @click="transition(r, 'approved')">Approve</button>

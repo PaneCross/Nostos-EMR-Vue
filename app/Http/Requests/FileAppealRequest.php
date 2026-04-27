@@ -10,9 +10,9 @@
 //            controller.
 // Validates: service_denial_notice_id (must exist), type and filed_by
 //            (enums on Appeal model), optional filer name + reason, and
-//            continuation_of_benefits — whether services keep flowing while
+//            continuation_of_benefits : whether services keep flowing while
 //            the appeal is pending.
-// Notable rules: 42 CFR §460.122 — appellants generally have 60 days to
+// Notable rules: 42 CFR §460.122 : appellants generally have 60 days to
 //                file from the date of the denial notice.
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -44,7 +44,7 @@ class FileAppealRequest extends FormRequest
     }
 
     /**
-     * Phase W3 — messages cite 42 CFR §460.122 (appeals workflow) so users see
+     * Phase W3 : messages cite 42 CFR §460.122 (appeals workflow) so users see
      * regulatory context, not generic Laravel defaults.
      * (Restored in Z7 after Z2 header-pass clobbered it.)
      */

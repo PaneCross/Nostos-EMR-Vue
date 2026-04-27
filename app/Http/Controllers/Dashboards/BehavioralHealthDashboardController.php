@@ -6,10 +6,10 @@
 // (or super_admin).
 //
 // Routes (GET, all under /dashboards/behavioral-health/):
-//   schedule      — Today's behavioral health appointments
-//   assessments   — PHQ-9 depression + GAD-7 anxiety screens overdue or due soon
-//   sdrs          — Open/overdue SDRs assigned to behavioral_health
-//   goals         — Active care plan goals in the behavioral domain
+//   schedule      : Today's behavioral health appointments
+//   assessments   : PHQ-9 depression + GAD-7 anxiety screens overdue or due soon
+//   sdrs          : Open/overdue SDRs assigned to behavioral_health
+//   goals         : Active care plan goals in the behavioral domain
 // ─────────────────────────────────────────────────────────────────────────────
 
 namespace App\Http\Controllers\Dashboards;

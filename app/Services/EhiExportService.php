@@ -1,12 +1,12 @@
 <?php
 
 // ─── EhiExportService ─────────────────────────────────────────────────────────
-// 21st Century Cures Act § 4004 — Electronic Health Information (EHI) Export.
+// 21st Century Cures Act § 4004 : Electronic Health Information (EHI) Export.
 // Generates a ZIP archive containing all FHIR R4 resources + non-FHIR clinical
 // data for a participant, suitable for patient access requests.
 //
 // Export contents:
-//   fhir/                — FHIR R4 resources as individual JSON files
+//   fhir/                : FHIR R4 resources as individual JSON files
 //     Patient.json
 //     Observations.json  (vitals + SDOH)
 //     Conditions.json
@@ -16,13 +16,13 @@
 //     Immunizations.json
 //     Procedures.json
 //     Appointments.json
-//   clinical/            — non-FHIR clinical data (JSON arrays)
+//   clinical/            : non-FHIR clinical data (JSON arrays)
 //     clinical_notes.json
 //     assessments.json
 //     adl_records.json
 //     sdrs.json
 //     incidents.json
-//   manifest.json        — export metadata (participant info, timestamps, content summary)
+//   manifest.json        : export metadata (participant info, timestamps, content summary)
 //
 // The ZIP is written to storage/app/ehi_exports/{exportId}_{mrn}.zip.
 // The EhiExport record tracks the token, file_path, status, and expiry.
@@ -95,7 +95,7 @@ class EhiExportService
             json_encode(PatientMapper::toFhir($participant), JSON_PRETTY_PRINT)
         );
 
-        // Observations — vitals
+        // Observations : vitals
         $vitals = Vital::where('participant_id', $participant->id)
             ->orderBy('recorded_at', 'desc')->limit(500)->get();
         $vitalsObs = [];
@@ -105,7 +105,7 @@ class EhiExportService
             }
         }
 
-        // Observations — SDOH screenings
+        // Observations : SDOH screenings
         $screenings = SocialDeterminant::where('participant_id', $participant->id)
             ->orderBy('assessed_at', 'desc')->get();
         $sdohObs = [];

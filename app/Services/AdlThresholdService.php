@@ -37,7 +37,7 @@ class AdlThresholdService
             ->first();
 
         if (! $threshold) {
-            return false;  // No threshold configured — no breach possible
+            return false;  // No threshold configured : no breach possible
         }
 
         // Higher LEVELS index = more dependent = worse function
@@ -61,7 +61,7 @@ class AdlThresholdService
             ->first();
 
         $message = sprintf(
-            'ADL decline detected: %s — %s now "%s" (threshold: "%s")',
+            'ADL decline detected: %s : %s now "%s" (threshold: "%s")',
             $participant->fullName(),
             ucwords(str_replace('_', ' ', $record->adl_category)),
             $record->independence_level,
@@ -98,7 +98,7 @@ class AdlThresholdService
             'source_module'      => 'adl',
             'alert_type'         => 'adl_decline',
             'severity'           => $record->independence_level === 'total_dependent' ? 'critical' : 'warning',
-            'title'              => 'ADL Decline — ' . ucwords(str_replace('_', ' ', $record->adl_category)),
+            'title'              => 'ADL Decline - ' . ucwords(str_replace('_', ' ', $record->adl_category)),
             'message'            => $message,
             'target_departments' => ['primary_care', 'social_work'],
             'created_by_system'  => true,

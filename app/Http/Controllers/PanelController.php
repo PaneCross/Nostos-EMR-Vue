@@ -64,7 +64,7 @@ class PanelController extends Controller
     }
 
     /**
-     * QAPI panel-size widget — panel sizes across all PCPs in tenant.
+     * QAPI panel-size widget : panel sizes across all PCPs in tenant.
      * GET /panel/sizes
      */
     public function sizes(Request $request): JsonResponse

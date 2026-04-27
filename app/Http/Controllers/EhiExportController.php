@@ -1,19 +1,19 @@
 <?php
 
 // ─── EhiExportController ──────────────────────────────────────────────────────
-// 21st Century Cures Act — Electronic Health Information (EHI) export.
+// 21st Century Cures Act : Electronic Health Information (EHI) export.
 // EHI = Electronic Health Information (the patient's full electronic record; 21st Century Cures Act gives them the right to export it).
 // Generates a ZIP of all FHIR R4 resources + non-FHIR clinical data for a participant.
 //
 // POST /participants/{id}/ehi-export                            → request()
-//   Dispatches EhiExportService synchronously (demo env — no queue needed).
+//   Dispatches EhiExportService synchronously (demo env : no queue needed).
 //   Returns 202 with download URL. Logs ehi_export_generated.
 //
 // GET  /participants/{id}/ehi-export                            → index()   (Phase 5 MVP roadmap)
 //   Inertia page listing past exports + request button.
 //
 // GET  /participants/{id}/ehi-export/history                    → history() (Phase 5)
-//   JSON list of past exports — consumed by the Vue page.
+//   JSON list of past exports : consumed by the Vue page.
 //
 // GET  /participants/{id}/ehi-export/{token}/download           → download()
 //   Validates token (not expired, not already downloaded), streams ZIP.
@@ -70,7 +70,7 @@ class EhiExportController extends Controller
 
     /**
      * Phase 5 (MVP roadmap): GET /participants/{participant}/ehi-export/history
-     * JSON list of past exports — consumed by the Vue page on refresh.
+     * JSON list of past exports : consumed by the Vue page on refresh.
      */
     public function history(Request $request, Participant $participant): JsonResponse
     {
@@ -172,13 +172,13 @@ class EhiExportController extends Controller
             description:  "EHI export downloaded for {$participant->mrn}",
         );
 
-        // Phase P2 — HIPAA §164.528 Accounting of Disclosures.
+        // Phase P2 : HIPAA §164.528 Accounting of Disclosures.
         app(\App\Services\PhiDisclosureService::class)->record(
             tenantId:         $user->tenant_id,
             participantId:    $participant->id,
             recipientType:    'patient_self',
             recipientName:    $participant->first_name . ' ' . $participant->last_name,
-            purpose:          '21st Century Cures Act EHI export — patient right of access',
+            purpose:          '21st Century Cures Act EHI export : patient right of access',
             method:           'portal',
             recordsDescribed: 'Full EHI ZIP export (FHIR Bundle + facesheet PDF)',
             disclosedByUserId: $user->id,

@@ -6,10 +6,10 @@
 // (or super_admin).
 //
 // Routes (GET, all under /dashboards/social-work/):
-//   schedule   — Today's social work / home visit appointments
-//   alerts     — Active alerts targeting social_work (incl. HL7 ADT admissions)
-//   sdrs       — Open/overdue SDRs assigned to social_work
-//   incidents  — Recent open incidents (social work monitors adverse events)
+//   schedule   : Today's social work / home visit appointments
+//   alerts     : Active alerts targeting social_work (incl. HL7 ADT admissions)
+//   sdrs       : Open/overdue SDRs assigned to social_work
+//   incidents  : Recent open incidents (social work monitors adverse events)
 // ─────────────────────────────────────────────────────────────────────────────
 
 namespace App\Http\Controllers\Dashboards;

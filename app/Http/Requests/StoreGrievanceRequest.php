@@ -1,7 +1,7 @@
 <?php
 
 // ─── StoreGrievanceRequest ───────────────────────────────────────────────────
-// Validates logging a new Grievance — a formal complaint by or on behalf of
+// Validates logging a new Grievance : a formal complaint by or on behalf of
 // a participant about the PACE program (quality of care, staff behavior,
 // access, billing, etc.). Distinct from an Appeal, which specifically
 // contests a service-denial decision.
@@ -12,7 +12,7 @@
 //            (participant / family / staff / etc.), category (enum),
 //            description ≥10 chars, optional priority, optional assignee,
 //            cms_reportable flag.
-// Notable rules: 42 CFR §460.120 — PACE grievance process. Must be tracked
+// Notable rules: 42 CFR §460.120 : PACE grievance process. Must be tracked
 //                with 30-day aging and resolution documentation; some
 //                categories are reportable to CMS.
 // ─────────────────────────────────────────────────────────────────────────────
@@ -42,7 +42,7 @@ class StoreGrievanceRequest extends FormRequest
     }
 
     /**
-     * Phase W3 — domain-aware messages tied to 42 CFR §460.122 (grievance procedures).
+     * Phase W3 : domain-aware messages tied to 42 CFR §460.122 (grievance procedures).
      * (Restored in Z7 after Z2 header-pass clobbered it.)
      */
     public function messages(): array

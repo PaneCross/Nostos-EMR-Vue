@@ -4,18 +4,18 @@
 // Participant appointment scheduling across all PACE service types.
 //
 // Appointment types cover all care delivery modalities in a PACE program:
-//   clinic_visit        — PCP/NP visit at the PACE center
-//   therapy_pt/ot/st    — Physical, Occupational, Speech therapy
-//   social_work         — Social work counseling/assessment
-//   behavioral_health   — Behavioral/mental health visit
-//   dietary_consult     — Dietitian consultation
-//   home_visit          — Any discipline visiting participant at home
-//   external_referral   — Community specialist referral
-//   specialist          — Contracted specialist visit (at PACE or offsite)
-//   lab / imaging       — Diagnostics
-//   activities          — Day center group/individual activity
-//   telehealth          — Video/phone visit (any discipline)
-//   day_center_attendance — Standard day center attendance day (blocks slot)
+//   clinic_visit        : PCP/NP visit at the PACE center
+//   therapy_pt/ot/st    : Physical, Occupational, Speech therapy
+//   social_work         : Social work counseling/assessment
+//   behavioral_health   : Behavioral/mental health visit
+//   dietary_consult     : Dietitian consultation
+//   home_visit          : Any discipline visiting participant at home
+//   external_referral   : Community specialist referral
+//   specialist          : Contracted specialist visit (at PACE or offsite)
+//   lab / imaging       : Diagnostics
+//   activities          : Day center group/individual activity
+//   telehealth          : Video/phone visit (any discipline)
+//   day_center_attendance : Standard day center attendance day (blocks slot)
 //
 // Status lifecycle:
 //   scheduled → confirmed → completed
@@ -27,7 +27,7 @@
 //   participant. Cancelled appointments are excluded from conflict checks.
 //   Conflict detection uses half-open intervals: [start, end). Two appointments at 10:00–11:00 and 11:00–12:00 do NOT conflict.
 //
-// transport_request_id references transport.transport_requests (NO FK constraint —
+// transport_request_id references transport.transport_requests (NO FK constraint :
 // cross-app reference, transport tables are read-only in the EMR app).
 // Populated via TransportBridgeService when transport is arranged.
 //
@@ -220,7 +220,7 @@ class Appointment extends Model
 
     /**
      * Cancel the appointment with a mandatory reason.
-     * Cancellation_reason is required by the PACE scheduling policy — this is
+     * Cancellation_reason is required by the PACE scheduling policy : this is
      * enforced by StoreAppointmentRequest as well, but asserted here defensively.
      */
     public function cancel(string $reason): void

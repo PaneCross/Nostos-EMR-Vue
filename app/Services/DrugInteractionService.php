@@ -98,7 +98,7 @@ class DrugInteractionService
                 'severity'       => $interaction->severity,
             ]);
 
-            // Phase SS2 — optional Pharmacy Director routing per Org Settings.
+            // Phase SS2 : optional Pharmacy Director routing per Org Settings.
             // Major/contraindicated severity → notify Pharmacy Director if the
             // org has opted into this preference. Default OFF.
             if (in_array($interaction->severity, ['major', 'contraindicated'], true)) {
@@ -113,7 +113,7 @@ class DrugInteractionService
                             'tenant_id'          => $participant->tenant_id,
                             'participant_id'     => $participant->id,
                             'alert_type'         => 'pharmacy_director_drug_interaction',
-                            'title'              => "Drug interaction ({$interaction->severity}) — pharmacy review",
+                            'title'              => "Drug interaction ({$interaction->severity}) : pharmacy review",
                             'message'            => "Major drug interaction surfaced for {$participant->first_name} {$participant->last_name}: {$newMed->drug_name} + {$existingMed->drug_name}.",
                             'severity'           => 'critical',
                             'source_module'      => 'pharmacy',
@@ -151,7 +151,7 @@ class DrugInteractionService
                 })
                 ->first();
         } catch (\Throwable $e) {
-            // Reference table may not exist in all environments — fail safe
+            // Reference table may not exist in all environments : fail safe
             Log::warning('DrugInteractionService: could not query reference table', [
                 'error' => $e->getMessage(),
             ]);

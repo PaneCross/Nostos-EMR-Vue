@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// ─── Portal/Login.vue — I4 password + L1 OTP ────────────────────────────────
+// ─── Portal/Login.vue: I4 password + L1 OTP ────────────────────────────────
 // Login page for the participant + caregiver Portal (separate from the staff
 // EMR login). Supports two modes: password and email OTP. Rate-limited.
 // ─────────────────────────────────────────────────────────────────────────────
@@ -53,7 +53,7 @@ async function verifyOtp() {
 </script>
 
 <template>
-  <Head title="Participant Portal — Sign in" />
+  <Head title="Participant Portal: Sign in" />
   <div class="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 px-4">
     <div class="w-full max-w-md">
       <div class="text-center mb-6">

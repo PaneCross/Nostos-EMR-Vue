@@ -4,10 +4,10 @@
 // Manages the full lifecycle of participant site transfers.
 //
 // Workflow:
-//   1. requestTransfer()  — creates pending transfer record
-//   2. approveTransfer()  — marks approved, sets approved_by + approved_at
-//   3. cancelTransfer()   — marks cancelled (only when pending or approved)
-//   4. completeTransfer() — moves participant to new site, sends IDT notifications,
+//   1. requestTransfer()  : creates pending transfer record
+//   2. approveTransfer()  : marks approved, sets approved_by + approved_at
+//   3. cancelTransfer()   : marks cancelled (only when pending or approved)
+//   4. completeTransfer() : moves participant to new site, sends IDT notifications,
 //                           marks completed. Called by TransferCompletionJob.
 //
 // Data visibility after completion:
@@ -186,7 +186,7 @@ class TransferService
             AuditLog::record(
                 action: 'participant.transfer.completed',
                 tenantId: $transfer->tenant_id,
-                userId: null,   // system job — no active user
+                userId: null,   // system job : no active user
                 resourceType: 'participant',
                 resourceId: $participant->id,
                 description: "Transfer #{$transfer->id} completed: {$participantName} moved {$fromSiteName} → {$toSiteName} (effective {$transfer->effective_date->format('Y-m-d')})",

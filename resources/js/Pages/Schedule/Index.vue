@@ -1,5 +1,5 @@
 <!--
-  Schedule/Index — Week-view appointment calendar.
+  Schedule/Index: Week-view appointment calendar.
 
   Shows a 7-column grid (Sunday through Saturday) with hour rows from 8 AM to 6 PM.
   Each appointment is rendered as a color-coded block positioned by its UTC start/end
@@ -9,8 +9,8 @@
 
   Clicking an appointment block opens a slide-over detail panel on the right.
   The "New Appointment" button opens a two-step booking modal:
-    Step 1 — participant typeahead search (debounced, min 2 chars)
-    Step 2 — appointment details form (type, start/end, location, transport, notes)
+    Step 1: participant typeahead search (debounced, min 2 chars)
+    Step 2: appointment details form (type, start/end, location, transport, notes)
 
   Appointments are loaded client-side via GET /schedule/appointments?start_date=&end_date=
   on mount and whenever the week or filter changes. The initial Inertia response only
@@ -21,7 +21,7 @@
 -->
 <script setup lang="ts">
 // ─── Schedule/Index ─────────────────────────────────────────────────────────
-// Org-wide week-view appointment calendar — clinical visits, IDT meetings,
+// Org-wide week-view appointment calendar: clinical visits, IDT meetings,
 // transport pickups, etc. New-appointment modal includes participant
 // typeahead + transport-need flag.
 //
@@ -224,7 +224,7 @@ const weekStart    = ref<Date>(getWeekStart(new Date()))
 const appointments = ref<AppointmentItem[]>([])
 const loading      = ref(false)
 // Multi-select type filter. selectedTypes holds the types to SHOW.
-// Defaults to all types — each type is a checkbox; uncheck to hide that type.
+// Defaults to all types: each type is a checkbox; uncheck to hide that type.
 const selectedTypes    = ref<Set<string>>(new Set(props.appointmentTypes))
 const typeFilterOpen   = ref(false)
 const typeFilterRootEl = ref<HTMLElement | null>(null)
@@ -487,7 +487,7 @@ const crossSiteInfo = computed(() => {
 async function submitBooking() {
   if (!selectedParticipant.value) { bookingError.value = 'Please select a participant first.'; return }
 
-  // Cross-site interstitial — user must explicitly confirm before the POST fires.
+  // Cross-site interstitial: user must explicitly confirm before the POST fires.
   if (crossSiteInfo.value && !crossSiteConfirmed.value) {
     showCrossSiteConfirm.value = true
     return
@@ -699,7 +699,7 @@ async function submitBooking() {
                 :style="{ top: `${hi * 64}px`, height: '64px' }"
               />
 
-              <!-- Current time indicator — red line on today's column only.
+              <!-- Current time indicator: red line on today's column only.
                    pointer-events-none so it never blocks appointment clicks. -->
               <div
                 v-if="formatDateParam(day) === today && showNowLine"
@@ -713,7 +713,7 @@ async function submitBooking() {
                 />
               </div>
 
-              <!-- Appointment blocks — laid out side-by-side for overlapping slots -->
+              <!-- Appointment blocks: laid out side-by-side for overlapping slots -->
               <button
                 v-for="appt in layoutDayAppointments(appointmentsForDay(day))"
                 :key="appt.id"
@@ -1038,7 +1038,7 @@ async function submitBooking() {
               <LocationCombobox
                 :locations="props.locations"
                 :model-value="bookingForm.location_id || null"
-                placeholder="Search locations — type to filter..."
+                placeholder="Search locations: type to filter..."
                 @update:model-value="bookingForm.location_id = $event == null ? '' : String($event)"
               />
             </div>

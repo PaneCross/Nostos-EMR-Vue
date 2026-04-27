@@ -58,7 +58,7 @@ onMounted(() => {
 
 const medwatchItems = computed<ActionItem[]>(() =>
     medwatchRows.value.map(a => ({
-        label: `${a.participant?.name ?? '-'} — ${a.medication ?? '-'}`,
+        label: `${a.participant?.name ?? '-'}: ${a.medication ?? '-'}`,
         sublabel: `Onset ${a.onset_date ?? '-'} · ${a.days_since_onset ?? '?'}d since`,
         badge: a.overdue ? 'OVERDUE' : a.severity,
         badgeColor: a.overdue
@@ -80,14 +80,14 @@ const polyItems = computed<ActionItem[]>(() =>
 
 const medChangeItems = computed<ActionItem[]>(() => {
     const newItems: ActionItem[] = newOrders.value.map(m => ({
-        label: `${m.participant?.name ?? '-'} — ${m.drug_name ?? '-'}`,
+        label: `${m.participant?.name ?? '-'}: ${m.drug_name ?? '-'}`,
         sublabel: m.prescriber ?? undefined,
         badge: 'New',
         badgeColor: 'bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300',
         href: m.href ?? (m.participant?.id ? `/participants/${m.participant.id}` : '/clinical/medications'),
     }))
     const dcItems: ActionItem[] = discontinued.value.map(m => ({
-        label: `${m.participant?.name ?? '-'} — ${m.drug_name ?? '-'}`,
+        label: `${m.participant?.name ?? '-'}: ${m.drug_name ?? '-'}`,
         sublabel: m.discontinued_reason ?? undefined,
         badge: 'D/C',
         badgeColor: 'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300',
@@ -143,7 +143,7 @@ const refillItems = computed<ActionItem[]>(() =>
 
 const orderItems = computed<ActionItem[]>(() =>
     orders.value.map(o => ({
-        label: `${o.participant_first_name ?? ''} ${o.participant_last_name ?? ''} — ${o.order_type_label ?? '-'}`.trim(),
+        label: `${o.participant_first_name ?? ''} ${o.participant_last_name ?? ''}: ${o.order_type_label ?? '-'}`.trim(),
         sublabel: o.is_overdue ? 'OVERDUE' : (o.status ?? undefined),
         badge: o.priority?.toUpperCase() ?? '-',
         badgeColor: o.priority === 'stat'
@@ -224,7 +224,7 @@ const orderItems = computed<ActionItem[]>(() =>
         <div class="rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4 shadow-sm">
             <div class="flex items-baseline justify-between mb-3">
                 <h3 class="text-sm font-semibold text-gray-900 dark:text-slate-100">Beers PIM Rollup</h3>
-                <!-- Phase P11 — honest empty-state when tenant has no enrolled participants -->
+                <!-- Phase P11: honest empty-state when tenant has no enrolled participants -->
                 <span v-if="beersRollup.enrolled_total > 0" class="text-xs text-gray-500 dark:text-slate-400">
                     {{ beersRollup.participants_with_pims }}/{{ beersRollup.enrolled_total }} enrolled
                 </span>
@@ -249,7 +249,7 @@ const orderItems = computed<ActionItem[]>(() =>
 
         <div class="rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4 shadow-sm">
             <div class="flex items-baseline justify-between mb-3">
-                <h3 class="text-sm font-semibold text-gray-900 dark:text-slate-100">BCMA Overrides — Last 7 Days</h3>
+                <h3 class="text-sm font-semibold text-gray-900 dark:text-slate-100">BCMA Overrides: Last 7 Days</h3>
                 <span class="text-xs text-gray-500 dark:text-slate-400">Total: {{ bcmaOverrides.total }}</span>
             </div>
             <ul v-if="bcmaOverrides.rows?.length" class="text-sm space-y-1">

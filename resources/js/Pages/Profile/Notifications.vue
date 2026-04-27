@@ -74,7 +74,7 @@ async function handleSave() {
     saving.value = true
     saveError.value = null
     try {
-        // Phase U2 — was axios.patch which 405'd against the PUT-only route;
+        // Phase U2: was axios.patch which 405'd against the PUT-only route;
         // route now accepts both PUT and PATCH. Frontend uses PUT for clarity.
         await axios.put('/profile/notifications', { preferences: prefs.value })
         saved.value = true

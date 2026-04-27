@@ -46,7 +46,7 @@ class VitalController extends Controller
 
     /**
      * POST /participants/{participant}/vitals
-     * Records a new vitals entry. Append-only — no update or delete.
+     * Records a new vitals entry. Append-only : no update or delete.
      * Only clinical departments that perform direct patient care may record vitals.
      */
     public function store(StoreVitalRequest $request, Participant $participant): JsonResponse
@@ -97,7 +97,7 @@ class VitalController extends Controller
     }
 
     /**
-     * Phase J5 — List pending critical-value acknowledgments for a participant.
+     * Phase J5 : List pending critical-value acknowledgments for a participant.
      *
      * GET /participants/{participant}/critical-values
      */
@@ -113,7 +113,7 @@ class VitalController extends Controller
     }
 
     /**
-     * Phase B6 — Acknowledge a flagged critical/warning value.
+     * Phase B6 : Acknowledge a flagged critical/warning value.
      * Gate: primary_care (assigned-provider workflow); QA + exec can also ack
      * to close out after escalation.
      *

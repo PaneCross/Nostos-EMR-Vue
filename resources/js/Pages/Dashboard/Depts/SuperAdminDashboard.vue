@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // ─── SuperAdminDashboard.vue ───────────────────────────────────────────────────
 // Dashboard for Nostos Super Admin users. SuperAdmin is a Nostos-internal role
-// that can act ACROSS tenants — every other user is hard-scoped to one tenant
+// that can act ACROSS tenants: every other user is hard-scoped to one tenant
 // org. Provides quick-launch to the full Super Admin panel (tenant management,
 // system health monitoring, new-tenant onboarding wizard).
 // ─────────────────────────────────────────────────────────────────────────────

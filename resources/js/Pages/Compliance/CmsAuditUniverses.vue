@@ -1,6 +1,6 @@
 <script setup lang="ts">
 // ─── Compliance/CmsAuditUniverses ───────────────────────────────────────────
-// Centralised workspace for generating CMS audit "universes" — the standard
+// Centralised workspace for generating CMS audit "universes": the standard
 // data extracts a CMS (Centers for Medicare & Medicaid Services) surveyor
 // requests during a PACE audit (one CSV per protocol section).
 //
@@ -8,7 +8,7 @@
 // is returned if a generation job is already in progress for that universe.
 //
 // Notable rules:
-//   - CMS PACE Audit Protocol 2.0 — defines the universe formats.
+//   - CMS PACE Audit Protocol 2.0: defines the universe formats.
 //   - Each universe is an append-only snapshot pinned to its run timestamp;
 //     do not mutate stored CSVs after the fact.
 // ────────────────────────────────────────────────────────────────────────────
@@ -41,7 +41,7 @@ const LABELS: Record<string, string> = {
   appeals: 'Appeals',
 }
 
-// Phase V3 — Audit-10 H2: Generate via axios so 409 max-attempts and 422
+// Phase V3: Audit-10 H2: Generate via axios so 409 max-attempts and 422
 // validation errors render inline rather than a raw browser tab.
 const generating = ref<string | null>(null)
 const cardError = ref<Record<string, string>>({})
@@ -69,7 +69,7 @@ async function generate(universe: string) {
     // Reload to refresh attempts_used + last_passed status.
     router.reload({ only: ['universes'] })
   } catch (e: any) {
-    // Server error responses come back as a Blob too — read and parse.
+    // Server error responses come back as a Blob too: read and parse.
     let message = ''
     if (e?.response?.data instanceof Blob) {
       try {

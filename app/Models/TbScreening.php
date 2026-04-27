@@ -1,7 +1,7 @@
 <?php
 
 // ─── TbScreening ─────────────────────────────────────────────────────────────
-// Phase C2a. §460.71 — annual TB screening documentation.
+// Phase C2a. §460.71 : annual TB screening documentation.
 // ─────────────────────────────────────────────────────────────────────────────
 
 namespace App\Models;

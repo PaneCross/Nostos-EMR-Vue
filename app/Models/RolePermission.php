@@ -8,12 +8,12 @@
 // Roughly: 14 clinical/operational departments (primary_care, therapies,
 // social_work, behavioral_health, dietary, activities, home_care,
 // transportation, pharmacy, idt, enrollment, finance, qa_compliance,
-// it_admin — plus executive + super_admin) × 2 roles per dept (admin /
+// it_admin : plus executive + super_admin) × 2 roles per dept (admin /
 // member) × ~34 modules => the seeded matrix consulted by middleware on
 // every request. Lookups are cached for 1 hour and flushed on edit.
 //
 // Notable rules:
-//  - 42 CFR §460.91 PACE personnel access requirements — this table is the
+//  - 42 CFR §460.91 PACE personnel access requirements : this table is the
 //    enforceable record of who can see and change what.
 //  - Cache MUST be flushed (clearCache) whenever a row is added or changed.
 // ─────────────────────────────────────────────────────────────────────────────

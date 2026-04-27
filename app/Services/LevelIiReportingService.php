@@ -42,7 +42,7 @@ class LevelIiReportingService
 
     /**
      * Generate (or regenerate) a quarterly submission for a tenant.
-     * Idempotent per (tenant, year, quarter) — keeps the submitted stamp.
+     * Idempotent per (tenant, year, quarter) : keeps the submitted stamp.
      */
     public function generate(Tenant $tenant, int $year, int $quarter, User $actor): LevelIiSubmission
     {
@@ -83,7 +83,7 @@ class LevelIiReportingService
 
     /**
      * Honest-labeling stamp: "Mark CMS Submitted". Records upload timestamp
-     * + actor to audit log — does NOT actually transmit to CMS HPMS.
+     * + actor to audit log : does NOT actually transmit to CMS HPMS.
      */
     public function markCmsSubmitted(LevelIiSubmission $submission, User $actor, ?string $notes = null): LevelIiSubmission
     {
@@ -99,13 +99,13 @@ class LevelIiReportingService
             userId:       $actor->id,
             resourceType: 'level_ii_submission',
             resourceId:   $submission->id,
-            description:  "Marked as CMS-submitted (Q{$submission->quarter} {$submission->year}) — manual flag, no automated transmission.",
+            description:  "Marked as CMS-submitted (Q{$submission->quarter} {$submission->year}) : manual flag, no automated transmission.",
         );
 
         return $submission->fresh();
     }
 
-    // ── Indicator compilation (pure functions — testable) ───────────────────
+    // ── Indicator compilation (pure functions : testable) ───────────────────
 
     /**
      * Compile every Level I/II indicator for a tenant over a period.
@@ -239,7 +239,7 @@ class LevelIiReportingService
 
     public function countBurns(int $tenantId, Carbon $start, Carbon $end): int
     {
-        // No dedicated 'burn' incident type — filter 'injury' incidents by narrative.
+        // No dedicated 'burn' incident type : filter 'injury' incidents by narrative.
         // MVP approximation; long-term a dedicated 'burn' type is a Phase 13 polish item.
         return Incident::where('tenant_id', $tenantId)
             ->where('incident_type', 'injury')
@@ -255,7 +255,7 @@ class LevelIiReportingService
      * Approximate average daily enrolled census over the period.
      * Used as the denominator for vaccination rates.
      * Calculation: midpoint-of-period count of enrolled participants.
-     * This is a simplified proxy — true ADC requires daily enrollment snapshots
+     * This is a simplified proxy : true ADC requires daily enrollment snapshots
      * (deferred as Phase 15 "member months" work).
      */
     public function averageDailyEnrolledCensus(int $tenantId, Carbon $start, Carbon $end): float

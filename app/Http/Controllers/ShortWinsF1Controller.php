@@ -1,12 +1,12 @@
 <?php
 
 // ─── ShortWinsF1Controller ───────────────────────────────────────────────────
-// Phase F1 — batches 5 lightweight surfaces:
+// Phase F1 : batches 5 lightweight surfaces:
 //   - Immunization forecasting widget (flu shots due in 30d)
 //   - Wound-photo attachments (CRUD)
 //   - Goals-of-care conversation log
 //   - Late-dose trend widget (30-day eMAR late count)
-//   - (Critical-value ack already shipped in B6 — cross-reference only)
+//   - (Critical-value ack already shipped in B6 : cross-reference only)
 // ─────────────────────────────────────────────────────────────────────────────
 
 namespace App\Http\Controllers;
@@ -31,7 +31,7 @@ class ShortWinsF1Controller extends Controller
         abort_if(!$u, 401);
     }
 
-    /** GET /widgets/immunization-forecast — shots due in next 30 days. */
+    /** GET /widgets/immunization-forecast : shots due in next 30 days. */
     public function immunizationForecast(Request $request): JsonResponse
     {
         $this->gate();
@@ -51,7 +51,7 @@ class ShortWinsF1Controller extends Controller
         ]);
     }
 
-    /** GET /widgets/late-doses — EmarRecord status='late' in last 30 days, grouped by day. */
+    /** GET /widgets/late-doses : EmarRecord status='late' in last 30 days, grouped by day. */
     public function lateDoseTrend(Request $request): JsonResponse
     {
         $this->gate();

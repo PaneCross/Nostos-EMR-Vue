@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // ─── TransportationDashboard.vue ──────────────────────────────────────────────
 // Transportation department dashboard. Will surface today's pickups + drop-offs
-// for PACE day-center transport. Currently a placeholder — the live transport
+// for PACE day-center transport. Currently a placeholder: the live transport
 // bridge integration is pending Nostos deployment.
 // ─────────────────────────────────────────────────────────────────────────────
 defineProps<{ departmentLabel: string; role: string }>()

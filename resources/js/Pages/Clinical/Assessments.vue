@@ -7,7 +7,7 @@
 // Audience: Clinical staff (Primary Care, Behavioral Health, Social Work).
 //
 // Notable rules:
-//   - 42 CFR §460.104 — comprehensive assessment at enrollment + every 6
+//   - 42 CFR §460.104: comprehensive assessment at enrollment + every 6
 //     months minimum (or after significant change).
 //   - Overdue rows are clickable into the participant chart for completion.
 // ────────────────────────────────────────────────────────────────────────────

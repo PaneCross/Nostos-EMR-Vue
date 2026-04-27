@@ -6,7 +6,7 @@
 // not-applicable) and last-completed date when known.
 //
 // Read-only here. Closing a gap happens via the underlying clinical
-// action (placing the order, charting the result) — this tab just
+// action (placing the order, charting the result): this tab just
 // surfaces the worklist.
 // ───────────────────────────────────────────────────────────────────────────
 import { ref, onMounted } from 'vue'
@@ -46,8 +46,8 @@ onMounted(() => {
                 {{ g.satisfied ? 'Satisfied' : 'Open' }}
               </span>
             </td>
-            <td class="px-3 py-2">{{ g.next_due_date ?? '—' }}</td>
-            <td class="px-3 py-2 text-gray-500 dark:text-slate-400">{{ g.reason_open ?? '—' }}</td>
+            <td class="px-3 py-2">{{ g.next_due_date ?? '-' }}</td>
+            <td class="px-3 py-2 text-gray-500 dark:text-slate-400">{{ g.reason_open ?? '-' }}</td>
           </tr>
           <tr v-if="!loading && gaps.length === 0">
             <td colspan="4" class="px-3 py-4 text-center text-gray-500 dark:text-slate-400">No care gaps evaluated.</td>

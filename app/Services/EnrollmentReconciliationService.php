@@ -10,14 +10,14 @@
 //   + special case: unmatched MBI (no local participant for this MBI)
 //
 // Also identifies members CMS has that we don't have locally AT ALL for the
-// period (generates synthetic open-discrepancy rows? no — those already are
+// period (generates synthetic open-discrepancy rows? no : those already are
 // the "unmatched_mbi" discrepancy).
 //
 // Conversely: a "local enrolled, missing on MMR" gap is NOT a per-record
-// discrepancy — it's a file-level summary reported alongside the worklist
+// discrepancy : it's a file-level summary reported alongside the worklist
 // (see reconciliationSummary()).
 //
-// The service is intentionally pure on the MMR side — it only reads local
+// The service is intentionally pure on the MMR side : it only reads local
 // roster, never writes to Participant.
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -31,7 +31,7 @@ use App\Models\Participant;
 class EnrollmentReconciliationService
 {
     /**
-     * Capitation variance threshold — absolute dollar delta between CMS-paid
+     * Capitation variance threshold : absolute dollar delta between CMS-paid
      * capitation and the local expected capitation above which we flag a
      * discrepancy. Under this threshold we treat as rounding / acceptable drift.
      */
@@ -93,14 +93,14 @@ class EnrollmentReconciliationService
                     . '"; local record is still enrolled.';
             }
 
-            // Retroactive adjustment check — overrides only if no status mismatch flagged above.
+            // Retroactive adjustment check : overrides only if no status mismatch flagged above.
             if ($disc === null && abs((float) $record->adjustment_amount) > 0.01) {
                 $disc = MmrRecord::DISC_RETROACTIVE_ADJUSTMENT;
                 $note = 'Retroactive adjustment of $' . number_format((float) $record->adjustment_amount, 2)
                     . ' for prior-period correction.';
             }
 
-            // Capitation variance — only if the member is CMS-active and no more
+            // Capitation variance : only if the member is CMS-active and no more
             // severe discrepancy already found.
             if ($disc === null && $cmsEnrolled) {
                 $expected = $expectedCapByParticipant[$matched->id] ?? null;

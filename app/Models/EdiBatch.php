@@ -3,19 +3,19 @@
 // ─── EdiBatch ─────────────────────────────────────────────────────────────────
 // One EDI (Electronic Data Interchange) batch file destined for CMS
 // (Centers for Medicare & Medicaid Services). The EDI standard used is the
-// X12 5010A1 family — the federal format for healthcare claims and encounter
+// X12 5010A1 family : the federal format for healthcare claims and encounter
 // data. Each batch aggregates many EncounterLog rows into a single file.
 //
 // batch_type:
-//   edr = Encounter Data Records — external services where a claim exists.
-//   crr = Chart Review Records   — PACE day-center services, no outside claim.
-//   pde = Prescription Drug Event — Part D drug submissions.
+//   edr = Encounter Data Records : external services where a claim exists.
+//   crr = Chart Review Records   : PACE day-center services, no outside claim.
+//   pde = Prescription Drug Event : Part D drug submissions.
 // Lifecycle: draft → submitted → acknowledged | partially_accepted | rejected.
 //
 // Notable rules:
 //  - Only `draft` batches are editable; once submitted they are locked.
 //  - file_content holds the raw X12 text; download is gated through
-//    EdiBatchController (no direct storage URLs) — PHI must stay tenant-scoped.
+//    EdiBatchController (no direct storage URLs) : PHI must stay tenant-scoped.
 // ─────────────────────────────────────────────────────────────────────────────
 
 namespace App\Models;

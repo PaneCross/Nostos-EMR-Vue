@@ -30,7 +30,7 @@ const props = withDefaults(
         title?: string
         height?: number
         colorScheme?: ColorScheme
-        /** Fill the area under the line — useful for single-series trend charts */
+        /** Fill the area under the line: useful for single-series trend charts */
         fill?: boolean
     }>(),
     {

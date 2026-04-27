@@ -13,12 +13,12 @@
 //   HIPAA = Health Insurance Portability and Accountability Act (federal patient-
 //           privacy law). Has two main rules: Privacy Rule (who can see PHI)
 //           and Security Rule (technical/admin/physical safeguards).
-//   PHI   = Protected Health Information — anything that identifies a patient
+//   PHI   = Protected Health Information : anything that identifies a patient
 //           combined with a clinical fact.
-//   BAA   = Business Associate Agreement — HIPAA-required contract with any
+//   BAA   = Business Associate Agreement : HIPAA-required contract with any
 //           vendor that touches PHI on our behalf (cloud host, billing service,
 //           lab, etc.). 45 CFR §164.502(e).
-//   SRA   = Security Risk Analysis — the annual self-audit of where PHI lives
+//   SRA   = Security Risk Analysis : the annual self-audit of where PHI lives
 //           and what could go wrong. 45 CFR §164.308(a)(1)(ii)(A) requires it.
 //   "Break-the-glass" = the security pattern where any clinician CAN reach a
 //                       restricted record in an emergency, but the access is
@@ -29,7 +29,7 @@
 // from the 2026-03-31 compliance audit.
 //
 // Route list:
-//   GET  /it-admin/security          → index()     (Inertia — 3-tab page)
+//   GET  /it-admin/security          → index()     (Inertia : 3-tab page)
 //   POST /it-admin/baa               → baaStore()  (create BAA record)
 //   PUT  /it-admin/baa/{baa}         → baaUpdate() (update BAA record)
 //   POST /it-admin/sra               → sraStore()  (create SRA record)
@@ -38,7 +38,7 @@
 // Authorization: all endpoints require department='it_admin'.
 // Tenant isolation: baaUpdate/sraUpdate abort 403 on cross-tenant access.
 //
-// Encryption status is computed at runtime from live config() values —
+// Encryption status is computed at runtime from live config() values :
 // no DB storage needed. Each check returns a pass/warn/fail status so the
 // UI can render appropriate badge colors.
 // ─────────────────────────────────────────────────────────────────────────────
@@ -90,7 +90,7 @@ class SecurityComplianceController extends Controller
             ->get()
             ->map->toApiArray();
 
-        // Runtime encryption checklist — re-evaluated on every page load
+        // Runtime encryption checklist : re-evaluated on every page load
         $encryptionStatus = $this->buildEncryptionStatus();
 
         // Compliance posture summary for the page header chips
@@ -258,8 +258,8 @@ class SecurityComplianceController extends Controller
                 'value'  => (bool) $sessionEncrypt,
                 'status' => $sessionEncrypt ? 'pass' : 'fail',
                 'note'   => $sessionEncrypt
-                    ? 'SESSION_ENCRYPT=true — session data encrypted with APP_KEY (AES-256-CBC).'
-                    : 'SESSION_ENCRYPT=false — session data stored as plaintext. '
+                    ? 'SESSION_ENCRYPT=true : session data encrypted with APP_KEY (AES-256-CBC).'
+                    : 'SESSION_ENCRYPT=false : session data stored as plaintext. '
                       . 'Set SESSION_ENCRYPT=true in production .env (HIPAA §164.312(a)(2)(iv)).',
             ],
             'db_ssl' => [
@@ -272,12 +272,12 @@ class SecurityComplianceController extends Controller
                 },
                 'note'   => match ($sslMode) {
                     'require', 'verify-ca', 'verify-full'
-                        => "DB_SSLMODE={$sslMode} — all PostgreSQL connections use TLS.",
+                        => "DB_SSLMODE={$sslMode} : all PostgreSQL connections use TLS.",
                     'prefer'
-                        => 'DB_SSLMODE=prefer — connection may fall back to plaintext. '
+                        => 'DB_SSLMODE=prefer : connection may fall back to plaintext. '
                            . 'Set DB_SSLMODE=require in production (HIPAA §164.312(e)(1)).',
                     default
-                        => "DB_SSLMODE={$sslMode} — plaintext connections allowed. "
+                        => "DB_SSLMODE={$sslMode} : plaintext connections allowed. "
                            . 'Set DB_SSLMODE=require in production immediately.',
                 },
             ],
@@ -297,7 +297,7 @@ class SecurityComplianceController extends Controller
                 'value'  => $filesystemDisk,
                 'status' => $filesystemDisk === 's3' ? 'pass' : 'warn',
                 'note'   => $filesystemDisk === 's3'
-                    ? 'Documents stored on S3 — ensure SSE-KMS is enabled on the bucket for encryption at rest.'
+                    ? 'Documents stored on S3 : ensure SSE-KMS is enabled on the bucket for encryption at rest.'
                     : "Documents stored on '{$filesystemDisk}' disk (local storage, unencrypted). "
                       . 'Set FILESYSTEM_DISK=s3 with SSE-KMS enabled in production (DEBT-021).',
             ],

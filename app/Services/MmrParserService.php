@@ -3,7 +3,7 @@
 // ─── MmrParserService ─────────────────────────────────────────────────────────
 // Parses an uploaded CMS MMR (Monthly Membership Report) file.
 //
-// Expected format (honest-labeled — real CMS format lives behind the HPMS portal;
+// Expected format (honest-labeled : real CMS format lives behind the HPMS portal;
 // Phase 12 will adapter-swap for the real specification):
 //
 //   HEADER|<contract_id>|<period_yyyymm>
@@ -117,7 +117,7 @@ class MmrParserService
                 $headerContractId = $parts[1] ?? null;
                 continue;
             }
-            // TRAILER — ignored for parsing purposes; verify optional.
+            // TRAILER : ignored for parsing purposes; verify optional.
             if (($parts[0] ?? '') === 'TRAILER') continue;
 
             // Data row: mbi|name|status|from|through|capitation|adjustment

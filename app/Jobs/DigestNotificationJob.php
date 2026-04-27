@@ -6,7 +6,7 @@
 // NotificationDispatcher::queueForDigest) and sends each a single
 // DigestNotificationMail with the count of pending items.
 //
-// HIPAA: Email contains ZERO PHI — only the count of notifications.
+// HIPAA: Email contains ZERO PHI : only the count of notifications.
 //
 // After sending, clears the cache counter so the next 2-hour window starts fresh.
 //

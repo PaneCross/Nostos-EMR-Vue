@@ -31,7 +31,7 @@ interface Grievance {
   cms_reportable: boolean
 }
 
-// Phase 13.5 — aging band color classes for the standard-30-day clock.
+// Phase 13.5: aging band color classes for the standard-30-day clock.
 const AGING_BAND_CLASS: Record<string, string> = {
   green:   'border-l-4 border-l-emerald-400',
   yellow:  'border-l-4 border-l-amber-400',

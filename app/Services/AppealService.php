@@ -258,7 +258,7 @@ class AppealService
         return $this->genericTransition($appeal, Appeal::STATUS_WITHDRAWN, $actor, $narrative, AppealEvent::EVENT_WITHDRAWN);
     }
 
-    /** Close the appeal — no further actions after this. */
+    /** Close the appeal : no further actions after this. */
     public function close(Appeal $appeal, User $actor, ?string $narrative = null): Appeal
     {
         return $this->genericTransition($appeal, Appeal::STATUS_CLOSED, $actor, $narrative, AppealEvent::EVENT_CLOSED);
@@ -337,7 +337,7 @@ class AppealService
             'file_type'           => 'pdf',
             'file_size_bytes'     => strlen($pdfBinary),
             'document_category'   => 'legal',
-            'description'         => "Appeal Acknowledgment — APPEAL-{$appeal->id}",
+            'description'         => "Appeal Acknowledgment : APPEAL-{$appeal->id}",
         ]);
     }
 
@@ -379,7 +379,7 @@ class AppealService
             'file_type'           => 'pdf',
             'file_size_bytes'     => strlen($pdfBinary),
             'document_category'   => 'legal',
-            'description'         => "Appeal Decision ({$templateOutcome}) — APPEAL-{$appeal->id}",
+            'description'         => "Appeal Decision ({$templateOutcome}) : APPEAL-{$appeal->id}",
         ]);
     }
 

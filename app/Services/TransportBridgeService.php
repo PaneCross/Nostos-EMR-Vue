@@ -5,7 +5,7 @@
 //
 // Architecture:
 //   transport_* tables are owned by the transport app (read-only from EMR).
-//   All writes to transport data go through this service via DB::table() only —
+//   All writes to transport data go through this service via DB::table() only :
 //   no Eloquent models exist for transport tables in the EMR codebase.
 //
 // Workflow for a transport request:
@@ -17,7 +17,7 @@
 //   6. Job calls updateTripStatus() to sync status back to emr_transport_requests
 //
 // Failure handling:
-//   All methods wrap in try/catch — if transport tables are unavailable, a
+//   All methods wrap in try/catch : if transport tables are unavailable, a
 //   warning is logged and execution continues. Transport outages must NOT
 //   break EMR clinical workflows.
 // ──────────────────────────────────────────────────────────────────────────────
@@ -57,7 +57,7 @@ class TransportBridgeService
                 ]);
             });
         } catch (Throwable $e) {
-            Log::warning('[TransportBridge] syncParticipant failed — transport unavailable', [
+            Log::warning('[TransportBridge] syncParticipant failed : transport unavailable', [
                 'participant_id' => $ppt->id,
                 'error'          => $e->getMessage(),
             ]);
@@ -97,7 +97,7 @@ class TransportBridgeService
                 ]);
             });
         } catch (Throwable $e) {
-            Log::warning('[TransportBridge] syncFlags failed — transport unavailable', [
+            Log::warning('[TransportBridge] syncFlags failed : transport unavailable', [
                 'participant_id' => $ppt->id,
                 'error'          => $e->getMessage(),
             ]);
@@ -111,7 +111,7 @@ class TransportBridgeService
      * On success, stores transport_trip_id back on the emr_transport_requests record.
      * Returns the transport trip ID, or null if the transport app is unavailable.
      *
-     * The mobility_flags_snapshot is already stored on the TransportRequest model —
+     * The mobility_flags_snapshot is already stored on the TransportRequest model :
      * this method sends the pickup/dropoff/time data to the transport side.
      */
     public function createTripRequest(TransportRequest $request): ?int
@@ -145,7 +145,7 @@ class TransportBridgeService
 
             return $tripId;
         } catch (Throwable $e) {
-            Log::warning('[TransportBridge] createTripRequest failed — transport unavailable', [
+            Log::warning('[TransportBridge] createTripRequest failed : transport unavailable', [
                 'transport_request_id' => $request->id,
                 'error'                => $e->getMessage(),
             ]);
@@ -167,7 +167,7 @@ class TransportBridgeService
             $request = TransportRequest::where('transport_trip_id', $transportTripId)->first();
 
             if (! $request) {
-                Log::warning('[TransportBridge] updateTripStatus — no matching TransportRequest', [
+                Log::warning('[TransportBridge] updateTripStatus : no matching TransportRequest', [
                     'transport_trip_id' => $transportTripId,
                     'new_status'        => $newStatus,
                 ]);
@@ -228,7 +228,7 @@ class TransportBridgeService
                         ]);
                 });
             } catch (Throwable $e) {
-                Log::warning('[TransportBridge] cancelTrip (transport app) failed — transport unavailable', [
+                Log::warning('[TransportBridge] cancelTrip (transport app) failed : transport unavailable', [
                     'trip_id' => $transportTripId,
                     'error'   => $e->getMessage(),
                 ]);
@@ -257,7 +257,7 @@ class TransportBridgeService
         $secret = config('services.transport.webhook_secret');
 
         if (! $secret) {
-            Log::error('[TransportBridge] webhook_secret not configured — all webhooks rejected');
+            Log::error('[TransportBridge] webhook_secret not configured : all webhooks rejected');
             return false;
         }
 

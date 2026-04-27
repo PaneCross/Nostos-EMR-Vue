@@ -1,6 +1,6 @@
 <?php
 
-// ─── ContractedProvider — Phase S2 ──────────────────────────────────────────
+// ─── ContractedProvider : Phase S2 ──────────────────────────────────────────
 // Network of external specialists/hospitals/SNFs/imaging/labs/etc. that the
 // PACE program contracts with for participant care.
 // ─────────────────────────────────────────────────────────────────────────────

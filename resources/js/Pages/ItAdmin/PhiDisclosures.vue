@@ -1,15 +1,15 @@
 <script setup lang="ts">
 // ─── ItAdmin/PhiDisclosures ─────────────────────────────────────────────────
-// HIPAA "Accounting of Disclosures" viewer — every time PHI was shared with
+// HIPAA "Accounting of Disclosures" viewer: every time PHI was shared with
 // an outside party (other than for treatment/payment/operations) is logged
 // here, so a participant can request the list at any time.
 //
 // Audience: IT Admin / Privacy Officer.
 //
 // Notable rules:
-//   - HIPAA §164.528 — covered entity must be able to produce a list of
+//   - HIPAA §164.528: covered entity must be able to produce a list of
 //     disclosures for the previous 6 years on participant request.
-//   - Append-only — entries are immutable. Captured automatically by the
+//   - Append-only: entries are immutable. Captured automatically by the
 //     PhiDisclosureService when CCDA / FHIR / Bulk Export / amendment
 //     §164.526(c)(3) downstream notifications fire.
 // ────────────────────────────────────────────────────────────────────────────
@@ -40,7 +40,7 @@ function recipientColor(t: string): string {
         <h1 class="text-xl font-semibold text-gray-900 dark:text-slate-100">PHI Accounting of Disclosures</h1>
       </div>
       <p class="text-sm text-gray-500 dark:text-slate-400">
-        HIPAA §164.528 — every disclosure of protected health information to a third party.
+        HIPAA §164.528: every disclosure of protected health information to a third party.
         Accounting period is 6 years; older entries are excluded by scope.
       </p>
 

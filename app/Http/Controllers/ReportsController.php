@@ -1,16 +1,16 @@
 <?php
 
 // ─── ReportsController ────────────────────────────────────────────────────────
-// Reports landing page — tabbed catalog of available reports with CSV export links.
+// Reports landing page : tabbed catalog of available reports with CSV export links.
 // Aggregates from existing controllers: Finance, QA, IDT data.
 // Access: all authenticated departments (filtered by role)
 //
 // Routes:
-//   GET /reports             — Inertia page (tabbed report catalog)
-//   GET /reports/data        — JSON: summary counts for KPI row
-//   GET /reports/export      — CSV download (?type=census|disenrollments|sdr_compliance|care_plan_status)
-//   GET /reports/site-transfers        — JSON: participants with completed site transfers
-//   GET /reports/site-transfers/export — CSV download of site transfer report
+//   GET /reports             : Inertia page (tabbed report catalog)
+//   GET /reports/data        : JSON: summary counts for KPI row
+//   GET /reports/export      : CSV download (?type=census|disenrollments|sdr_compliance|care_plan_status)
+//   GET /reports/site-transfers        : JSON: participants with completed site transfers
+//   GET /reports/site-transfers/export : CSV download of site transfer report
 // ─────────────────────────────────────────────────────────────────────────────
 
 namespace App\Http\Controllers;
@@ -36,7 +36,7 @@ class ReportsController extends Controller
 {
     /**
      * GET /reports
-     * Inertia reports landing page — catalog of available reports by category.
+     * Inertia reports landing page : catalog of available reports by category.
      */
     public function index(Request $request): Response
     {
@@ -174,7 +174,7 @@ class ReportsController extends Controller
             [
                 'id'          => 'care_plan_status',
                 'title'       => 'Care Plan Status',
-                'description' => 'Care plan review schedule — upcoming reviews, overdue, and approval status.',
+                'description' => 'Care plan review schedule : upcoming reviews, overdue, and approval status.',
                 'category'    => 'Clinical',
                 'depts'       => ['idt', 'primary_care', 'qa_compliance', 'it_admin'],
                 'export_url'  => '/reports/export?type=care_plan_status',
@@ -517,7 +517,7 @@ class ReportsController extends Controller
     }
 
     /**
-     * CSV: Cross-site attendance — participants who attended a PACE site other
+     * CSV: Cross-site attendance : participants who attended a PACE site other
      * than their enrolled home site. Uses the participant.cross_site_attendance
      * audit entries as the source of truth (one per attendance event).
      *

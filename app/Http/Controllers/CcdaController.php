@@ -2,7 +2,7 @@
 
 // ─── CcdaController ──────────────────────────────────────────────────────────
 // Phase 8 (MVP roadmap). Export a participant's C-CDA (R2.1 CCD) and import a
-// received C-CDA for review. Import returns parsed summary only — staff then
+// received C-CDA for review. Import returns parsed summary only : staff then
 // drives reconciliation through existing MedReconciliation workflow.
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -50,7 +50,7 @@ class CcdaController extends Controller
             description: 'C-CDA export',
         );
 
-        // Phase Q2 — HIPAA §164.528 Accounting of Disclosures
+        // Phase Q2 : HIPAA §164.528 Accounting of Disclosures
         $this->disclosures->record(
             tenantId: $u->tenant_id,
             participantId: $participant->id,
@@ -101,7 +101,7 @@ class CcdaController extends Controller
 
         return response()->json([
             'summary'     => $summary,
-            'honest_label' => 'Parsed preview only — nothing was written to the chart. '
+            'honest_label' => 'Parsed preview only : nothing was written to the chart. '
                             . 'Use the MedReconciliation workflow to accept entries.',
         ]);
     }

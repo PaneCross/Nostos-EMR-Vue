@@ -2,7 +2,7 @@
 
 // ─── ProcedureController ──────────────────────────────────────────────────────
 // Manages procedure history for PACE participants (USCDI v3 Procedures).
-// Distinct from encounter_log — stores the full procedure narrative with CPT/SNOMED.
+// Distinct from encounter_log : stores the full procedure narrative with CPT/SNOMED.
 //
 // GET  /participants/{id}/procedures      → index()  JSON list (newest first)
 // POST /participants/{id}/procedures      → store()  Record new procedure

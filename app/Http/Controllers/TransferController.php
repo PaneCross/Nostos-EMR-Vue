@@ -4,8 +4,8 @@
 // Handles site-to-site participant transfer CRUD.
 //
 // Endpoints:
-//   GET    /participants/{participant}/transfers         — transfer history
-//   POST   /participants/{participant}/transfers         — request new transfer
+//   GET    /participants/{participant}/transfers         : transfer history
+//   POST   /participants/{participant}/transfers         : request new transfer
 //   POST   /participants/{participant}/transfers/{id}/approve
 //   POST   /participants/{participant}/transfers/{id}/cancel
 //
@@ -16,7 +16,7 @@
 //   - Cancel: enrollment + it_admin + super_admin
 //   - View history: any authenticated dept (read-only preview)
 //
-// Phase 10A — W3-6 adds summary() and verify()
+// Phase 10A : W3-6 adds summary() and verify()
 // ─────────────────────────────────────────────────────────────────────────────
 
 namespace App\Http\Controllers;

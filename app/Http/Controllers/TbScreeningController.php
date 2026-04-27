@@ -1,7 +1,7 @@
 <?php
 
 // ─── TbScreeningController ───────────────────────────────────────────────────
-// Phase C2a. TB screening CRUD. 42 CFR §460.71 — annual cadence.
+// Phase C2a. TB screening CRUD. 42 CFR §460.71 : annual cadence.
 //
 // Routes:
 //   GET  /participants/{p}/tb-screenings        index()

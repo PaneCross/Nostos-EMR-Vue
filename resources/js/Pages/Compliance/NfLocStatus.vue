@@ -1,15 +1,15 @@
 <script setup lang="ts">
 // ─── Compliance/NfLocStatus ─────────────────────────────────────────────────
-// Audit universe for NF-LOC (Nursing Facility Level of Care) — the state
+// Audit universe for NF-LOC (Nursing Facility Level of Care): the state
 // medical-eligibility determination that every enrolled PACE participant
 // must hold and renew annually to remain enrolled.
 //
 // Audience: QA Compliance, Enrollment.
 //
 // Notable rules:
-//   - 42 CFR §460.160(b)(2) — annual NF-LOC recertification required.
+//   - 42 CFR §460.160(b)(2): annual NF-LOC recertification required.
 //   - Lapse triggers an involuntary disenrollment workflow (do not let
-//     this page rot — it is a CMS surveyor target).
+//     this page rot: it is a CMS surveyor target).
 // ────────────────────────────────────────────────────────────────────────────
 import { ref, computed } from 'vue'
 import { Head, Link } from '@inertiajs/vue3'
@@ -76,7 +76,7 @@ function statusLabel(s: string): string {
             <div>
                 <h1 class="text-xl font-semibold text-slate-900 dark:text-slate-100">NF-LOC Recertification Status</h1>
                 <p class="text-sm text-slate-500 dark:text-slate-400">
-                    42 CFR §460.160(b)(2) — annual nursing-facility level-of-care recertification. Every enrolled participant needs a current NF-LOC determination on file.
+                    42 CFR §460.160(b)(2): annual nursing-facility level-of-care recertification. Every enrolled participant needs a current NF-LOC determination on file.
                 </p>
             </div>
 
@@ -137,9 +137,9 @@ function statusLabel(s: string): string {
                                 <Link :href="r.href" class="text-blue-600 dark:text-blue-400 hover:underline">{{ r.name }}</Link>
                             </td>
                             <td class="px-3 py-2 text-slate-500">{{ r.mrn }}</td>
-                            <td class="px-3 py-2 text-slate-600 dark:text-slate-300">{{ r.nf_certification_date ?? '—' }}</td>
-                            <td class="px-3 py-2 text-slate-600 dark:text-slate-300">{{ r.nf_expires_at ?? '—' }}</td>
-                            <td class="px-3 py-2 text-right text-slate-600 dark:text-slate-300">{{ r.days_remaining ?? '—' }}</td>
+                            <td class="px-3 py-2 text-slate-600 dark:text-slate-300">{{ r.nf_certification_date ?? '-' }}</td>
+                            <td class="px-3 py-2 text-slate-600 dark:text-slate-300">{{ r.nf_expires_at ?? '-' }}</td>
+                            <td class="px-3 py-2 text-right text-slate-600 dark:text-slate-300">{{ r.days_remaining ?? '-' }}</td>
                             <td class="px-3 py-2">
                                 <span :class="['inline-flex px-2 py-0.5 rounded text-xs', STATUS_CLASS[r.status] ?? '']">
                                     {{ statusLabel(r.status) }}

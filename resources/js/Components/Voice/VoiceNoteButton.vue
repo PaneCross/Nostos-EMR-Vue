@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// ─── VoiceNoteButton.vue — Phase M5 ─────────────────────────────────────────
+// ─── VoiceNoteButton.vue: Phase M5 ─────────────────────────────────────────
 // Uses the browser SpeechRecognition API (free, built-in on Chrome/Edge/Safari).
 // Emits `transcript` on each final recognition result. Graceful no-op when the
 // API isn't available.
@@ -64,13 +64,13 @@ onBeforeUnmount(stop)
       <MicrophoneIcon v-else class="h-4 w-4" />
       {{ recording ? 'Stop' : 'Dictate' }}
     </button>
-    <!-- Phase O11 — visible fallback message instead of silent disable -->
+    <!-- Phase O11: visible fallback message instead of silent disable -->
     <span
       v-if="!supported"
       class="text-[10px] text-amber-700 dark:text-amber-400"
       data-testid="voice-note-unsupported"
     >
-      Voice entry not supported — try Chrome / Edge / Safari Desktop.
+      Voice entry not supported: try Chrome / Edge / Safari Desktop.
     </span>
     <span v-if="error" class="sr-only">{{ error }}</span>
   </div>

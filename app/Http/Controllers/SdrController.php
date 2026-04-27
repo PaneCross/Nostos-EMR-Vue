@@ -4,14 +4,14 @@
 // Manages Service Delivery Requests (SDRs) with 72-hour enforcement.
 //
 // Routes:
-//   GET  /sdrs               — Inertia page: SDR index with tabs
-//   POST /sdrs               — submit a new SDR
-//   GET  /sdrs/{id}          — SDR detail (JSON)
-//   PATCH /sdrs/{id}         — update status / assign / completion notes
-//   DELETE /sdrs/{id}        — soft delete (cancel)
+//   GET  /sdrs               : Inertia page: SDR index with tabs
+//   POST /sdrs               : submit a new SDR
+//   GET  /sdrs/{id}          : SDR detail (JSON)
+//   PATCH /sdrs/{id}         : update status / assign / completion notes
+//   DELETE /sdrs/{id}        : soft delete (cancel)
 //
 // Broadcasts SdrCreatedEvent on submission for real-time dept queue update.
-// 72-hour due_at is enforced by Sdr model boot() — cannot be overridden.
+// 72-hour due_at is enforced by Sdr model boot() : cannot be overridden.
 // ──────────────────────────────────────────────────────────────────────────────
 
 namespace App\Http\Controllers;

@@ -17,7 +17,7 @@ class PredictiveRiskController extends Controller
         abort_if(!$u, 401);
     }
 
-    /** GET /participants/{p}/predictive-risk — latest scores. */
+    /** GET /participants/{p}/predictive-risk : latest scores. */
     public function forParticipant(Request $request, Participant $participant, PredictiveRiskService $svc): JsonResponse
     {
         $this->gate();
@@ -35,7 +35,7 @@ class PredictiveRiskController extends Controller
         ]);
     }
 
-    /** POST /participants/{p}/predictive-risk/compute — on-demand. */
+    /** POST /participants/{p}/predictive-risk/compute : on-demand. */
     public function compute(Request $request, Participant $participant, PredictiveRiskService $svc): JsonResponse
     {
         $this->gate();
@@ -46,7 +46,7 @@ class PredictiveRiskController extends Controller
     }
 
     /**
-     * GET /dashboards/high-risk — top-N high risk across tenant.
+     * GET /dashboards/high-risk : top-N high risk across tenant.
      * Phase O3: dual-serve JSON + Inertia via wantsJson() branch.
      */
     public function highRisk(Request $request): JsonResponse|\Inertia\Response
@@ -54,7 +54,7 @@ class PredictiveRiskController extends Controller
         $this->gate();
         $u = Auth::user();
         if (! $request->wantsJson()) return \Inertia\Inertia::render('Dashboards/HighRisk');
-        // latest row per participant per risk_type — cheap approximation:
+        // latest row per participant per risk_type : cheap approximation:
         // grab scores from last 24h only, since job runs daily.
         $rows = PredictiveRiskScore::forTenant($u->tenant_id)
             ->high()

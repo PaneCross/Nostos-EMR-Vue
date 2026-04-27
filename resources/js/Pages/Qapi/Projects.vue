@@ -1,5 +1,5 @@
 <!--
-  QAPI Projects Board — Quality Assurance and Performance Improvement.
+  QAPI Projects Board: Quality Assurance and Performance Improvement.
   Displays a Kanban board with 5 status columns per 42 CFR §460.136-§460.140.
   QA admins can create, edit, advance status, or suspend projects.
   A compliance banner shows whether the minimum active project count is met.
@@ -7,13 +7,13 @@
 <script setup lang="ts">
 // ─── Qapi/Projects ──────────────────────────────────────────────────────────
 // Kanban of active QAPI (Quality Assessment / Performance Improvement)
-// improvement projects — each project addresses a specific quality gap with
+// improvement projects: each project addresses a specific quality gap with
 // goals, interventions, and measured outcomes.
 //
 // Audience: QA Compliance.
 //
 // Notable rules:
-//   - 42 CFR §460.136-§460.140 — PACE programs must run an active QAPI
+//   - 42 CFR §460.136-§460.140: PACE programs must run an active QAPI
 //     program. The compliance banner flags if the minimum active project
 //     count for the org isn't met.
 //   - Five status columns: proposed -> in progress -> measuring ->
@@ -72,7 +72,7 @@ const isQaAdmin = computed(() =>
 )
 
 // ── Status rows (ladder layout) ───────────────────────────────────────────
-// Displayed as a vertical stack — one row per status. Cards within a row
+// Displayed as a vertical stack: one row per status. Cards within a row
 // wrap responsively to fit the available width. This avoids the horizontal
 // scrollbar the old Kanban-columns layout produced on standard displays.
 
@@ -243,7 +243,7 @@ function fmt(d: string | null): string {
       <div class="flex items-center justify-between">
         <div>
           <h1 class="text-2xl font-bold text-gray-900 dark:text-slate-100">QAPI Projects</h1>
-          <p class="mt-1 text-sm text-gray-500 dark:text-slate-400">Quality Assurance and Performance Improvement — 42 CFR §460.136–§460.140</p>
+          <p class="mt-1 text-sm text-gray-500 dark:text-slate-400">Quality Assurance and Performance Improvement: 42 CFR §460.136–§460.140</p>
         </div>
         <button
           v-if="isQaAdmin"
@@ -270,7 +270,7 @@ function fmt(d: string | null): string {
           <span class="font-semibold">
             {{ props.meets_minimum ? 'Compliance Minimum Met' : 'Below Compliance Minimum' }}
           </span>
-          — {{ props.active_count }} active project{{ props.active_count !== 1 ? 's' : '' }}
+         : {{ props.active_count }} active project{{ props.active_count !== 1 ? 's' : '' }}
           (minimum required: {{ props.min_required }})
         </div>
       </div>
@@ -292,7 +292,7 @@ function fmt(d: string | null): string {
             </div>
           </div>
 
-          <!-- Cards grid — responsive: 1 col mobile, 2 md, 3 lg, 4 xl -->
+          <!-- Cards grid: responsive: 1 col mobile, 2 md, 3 lg, 4 xl -->
           <div class="px-4 py-4">
             <div
               v-if="projectsInColumn(col.key).length === 0"

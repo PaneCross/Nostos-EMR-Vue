@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>@yield('title') — {{ $participant->first_name }} {{ $participant->last_name }}</title>
+<title>@yield('title'): {{ $participant->first_name }} {{ $participant->last_name }}</title>
 <style>
     @page { margin: 0.6in 0.6in 0.9in 0.6in; }
     body { font-family: DejaVu Sans, sans-serif; font-size: 10pt; color: #0f172a; margin: 0; padding: 0; }
@@ -32,24 +32,24 @@
 <h1>@yield('title')</h1>
 <div class="sub">
     {{ $participant->first_name }} {{ $participant->last_name }}
-    &nbsp;·&nbsp; MRN: {{ $participant->mrn ?? '—' }}
-    &nbsp;·&nbsp; DOB: {{ optional($participant->dob)->format('Y-m-d') ?: '—' }}
+    &nbsp;·&nbsp; MRN: {{ $participant->mrn ?? '-' }}
+    &nbsp;·&nbsp; DOB: {{ optional($participant->dob)->format('Y-m-d') ?: '-' }}
     &nbsp;·&nbsp; Generated {{ $generated_at->format('Y-m-d H:i') }}
 </div>
 
 <table class="demographics">
     <tr><td class="k">Enrollment</td><td>{{ ucfirst(str_replace('_', ' ', (string) $participant->enrollment_status)) }}</td>
-        <td class="k">Site</td><td>{{ $participant->site?->name ?? '—' }}</td></tr>
-    <tr><td class="k">Gender</td><td>{{ ucfirst((string)($participant->gender ?? '—')) }}</td>
-        <td class="k">Language</td><td>{{ $participant->primary_language ?? '—' }}</td></tr>
-    <tr><td class="k">Medicare ID</td><td>{{ $participant->medicare_id ?? '—' }}</td>
-        <td class="k">Medicaid ID</td><td>{{ $participant->medicaid_id ?? '—' }}</td></tr>
+        <td class="k">Site</td><td>{{ $participant->site?->name ?? '-' }}</td></tr>
+    <tr><td class="k">Gender</td><td>{{ ucfirst((string)($participant->gender ?? '-')) }}</td>
+        <td class="k">Language</td><td>{{ $participant->primary_language ?? '-' }}</td></tr>
+    <tr><td class="k">Medicare ID</td><td>{{ $participant->medicare_id ?? '-' }}</td>
+        <td class="k">Medicaid ID</td><td>{{ $participant->medicaid_id ?? '-' }}</td></tr>
 </table>
 
 @yield('content')
 
 <div class="footer">
-    NostosEMR · Protected Health Information (PHI) — HIPAA safeguards apply · Page @yield('page', '1')
+    NostosEMR · Protected Health Information (PHI): HIPAA safeguards apply · Page @yield('page', '1')
 </div>
 </body>
 </html>

@@ -139,7 +139,7 @@ async function loadMessages(channelId: number, pageNum = 1) {
         })
         const incoming: Message[] = data.messages ?? []
         if (pageNum === 1) {
-            // Newest-first from API — reverse to oldest-first for display
+            // Newest-first from API: reverse to oldest-first for display
             messages.value = incoming.slice().reverse()
         } else {
             // Prepend older messages at the top
@@ -231,7 +231,7 @@ watch(channels, (val) => {
     }
 })
 
-// ── DM search — 300ms debounce, min 2 chars ───────────────────────────────────
+// ── DM search: 300ms debounce, min 2 chars ───────────────────────────────────
 
 let dmTimer: ReturnType<typeof setTimeout> | null = null
 

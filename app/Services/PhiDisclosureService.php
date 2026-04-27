@@ -1,8 +1,8 @@
 <?php
 
-// ─── PhiDisclosureService — Phase P2 ────────────────────────────────────────
+// ─── PhiDisclosureService : Phase P2 ────────────────────────────────────────
 // Helper to record a HIPAA Accounting of Disclosures entry. Callers anywhere
-// PHI leaves the EMR should call ::record(...) — ROI fulfillment, EHI export
+// PHI leaves the EMR should call ::record(...) : ROI fulfillment, EHI export
 // download, FHIR API access, HIE publish, CCDA export, etc.
 // ─────────────────────────────────────────────────────────────────────────────
 

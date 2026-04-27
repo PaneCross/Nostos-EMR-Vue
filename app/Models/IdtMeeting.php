@@ -48,7 +48,7 @@ class IdtMeeting extends Model
         'minutes_text',
         'decisions',
         'status',
-        // Phase R7 — concurrent-edit guard
+        // Phase R7 : concurrent-edit guard
         'revision',
         'last_edited_at',
         'last_edited_by_user_id',

@@ -1,13 +1,13 @@
 <script setup lang="ts">
 // ─── Qapi/Evaluations ───────────────────────────────────────────────────────
 // QAPI (Quality Assessment / Performance Improvement) annual evaluation
-// artifact — the year-end document the governing body must review and sign.
+// artifact: the year-end document the governing body must review and sign.
 //
 // Audience: QA Compliance authors; IT Admin + Super Admin can edit; the
 // governing body reads + signs.
 //
 // Notable rules:
-//   - 42 CFR §460.200 — annual QAPI evaluation must be performed and
+//   - 42 CFR §460.200: annual QAPI evaluation must be performed and
 //     reviewed by the governing body.
 //   - One evaluation per program-year (DB-enforced unique constraint).
 // ────────────────────────────────────────────────────────────────────────────
@@ -85,7 +85,7 @@ async function submitReview() {
 }
 
 function fmt(d: string | null): string {
-    if (!d) return '—'
+    if (!d) return '-'
     return new Date(d).toLocaleString()
 }
 </script>
@@ -102,7 +102,7 @@ function fmt(d: string | null): string {
                     <div>
                         <h1 class="text-xl font-semibold text-slate-900 dark:text-slate-100">QAPI Annual Evaluations</h1>
                         <p class="text-sm text-slate-500 dark:text-slate-400">
-                            Annual compliance artifact submitted to governing body — 42 CFR §460.200
+                            Annual compliance artifact submitted to governing body: 42 CFR §460.200
                         </p>
                     </div>
                 </div>
@@ -132,7 +132,7 @@ function fmt(d: string | null): string {
                         {{ generating ? 'Generating...' : 'Generate / Regenerate' }}
                     </button>
                     <p class="text-xs text-slate-500 dark:text-slate-400 flex-1">
-                        Regeneration preserves an existing governing body review stamp — only the PDF and metric snapshot refresh.
+                        Regeneration preserves an existing governing body review stamp: only the PDF and metric snapshot refresh.
                     </p>
                 </div>
             </div>

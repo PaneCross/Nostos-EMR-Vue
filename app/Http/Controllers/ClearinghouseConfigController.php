@@ -4,7 +4,7 @@
 // Phase 12. IT-admin-only CRUD for per-tenant clearinghouse configuration.
 // Mirrors the StateMedicaidConfigController pattern.
 //
-// Only ONE row per tenant may be active at a time — activating a new config
+// Only ONE row per tenant may be active at a time : activating a new config
 // deactivates any existing active row inside the same transaction.
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -48,7 +48,7 @@ class ClearinghouseConfigController extends Controller
                 'configs'          => $rows,
                 'available_adapters' => ClearinghouseConfig::ADAPTER_LABELS,
                 'environments'     => ClearinghouseConfig::ENVIRONMENTS,
-                'honest_label'     => 'The default "No vendor — manual upload" adapter is active by default. '
+                'honest_label'     => 'The default "No vendor : manual upload" adapter is active by default. '
                     . 'Activating a real vendor adapter requires a signed trading-partner agreement. '
                     . 'Until then, all 837P batches are staged for manual upload.',
             ]);
@@ -58,7 +58,7 @@ class ClearinghouseConfigController extends Controller
             'configs'           => $rows,
             'availableAdapters' => ClearinghouseConfig::ADAPTER_LABELS,
             'environments'      => ClearinghouseConfig::ENVIRONMENTS,
-            'honestLabel'       => 'Default is "No vendor — manual upload." A real adapter requires a signed trading-partner agreement.',
+            'honestLabel'       => 'Default is "No vendor : manual upload." A real adapter requires a signed trading-partner agreement.',
         ]);
     }
 
@@ -162,7 +162,7 @@ class ClearinghouseConfigController extends Controller
             'adapter' => $gateway->name(),
             'message' => $ok
                 ? 'Adapter reports healthy.'
-                : 'Adapter is a scaffold — activation requires a signed vendor contract.',
+                : 'Adapter is a scaffold : activation requires a signed vendor contract.',
         ]);
     }
 

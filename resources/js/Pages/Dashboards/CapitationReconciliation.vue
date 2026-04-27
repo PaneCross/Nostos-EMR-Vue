@@ -4,7 +4,7 @@
 // against the org's expected capitation (member months x rate), so finance
 // can spot under/over-payment from CMS by month and follow up.
 // CMS = Centers for Medicare & Medicaid Services.
-// Data: GET /billing/capitation-reconciliation.json — bar chart + table.
+// Data: GET /billing/capitation-reconciliation.json: bar chart + table.
 // ─────────────────────────────────────────────────────────────────────────────
 import { ref, computed, onMounted } from 'vue'
 import { Head } from '@inertiajs/vue3'

@@ -22,7 +22,7 @@ class ApproveReconciliationRequest extends FormRequest
 
     public function rules(): array
     {
-        // No body fields required — the provider's identity comes from the auth user
+        // No body fields required : the provider's identity comes from the auth user
         return [];
     }
 

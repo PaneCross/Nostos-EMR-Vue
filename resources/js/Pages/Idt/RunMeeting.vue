@@ -1,5 +1,5 @@
 <!--
-  IDT Run Meeting — Interactive meeting conductor page.
+  IDT Run Meeting: Interactive meeting conductor page.
   Left rail: participant queue sorted by queue_order; active participant highlighted blue;
   reviewed participants show a green checkmark.
   Right panel: ReviewPanel for the selected participant with auto-save (2s debounce),
@@ -20,10 +20,10 @@
 // other team members observe in the same browser session via Reverb.
 //
 // Notable rules:
-//   - 42 CFR §460.102 — every plan-of-care review must be evidenced.
+//   - 42 CFR §460.102: every plan-of-care review must be evidenced.
 //   - Auto-save: per-participant review @ 2s debounce, minutes @ 3s debounce
 //     to survive accidental tab-closes mid-meeting.
-//   - Completed meetings are fully locked (read-only) — past records cannot
+//   - Completed meetings are fully locked (read-only): past records cannot
 //     be altered (CMS audit trail integrity).
 // ────────────────────────────────────────────────────────────────────────────
 import { ref, computed, watch } from 'vue'
@@ -64,7 +64,7 @@ interface IdtMeeting {
   minutes_text: string | null
   facilitator: { id: number; first_name: string; last_name: string } | null
   participant_reviews: ParticipantReview[]
-  // Phase U3 — attendees JSONB: map of user_id → { status, recorded_at, recorded_by }
+  // Phase U3: attendees JSONB: map of user_id → { status, recorded_at, recorded_by }
   attendees: Record<string, { status: string; recorded_at: string | null; recorded_by: number | null }> | null
 }
 
@@ -123,7 +123,7 @@ const selectedReview = computed<ParticipantReview | null>(
 const summaryText = ref('')
 const actionItems = ref<ActionItem[]>([])
 
-// ── Phase U3 — attendance ─────────────────────────────────────────────────────
+// ── Phase U3: attendance ─────────────────────────────────────────────────────
 const attendeesMap = ref<Record<string, { status: string; recorded_at: string | null; recorded_by: number | null }>>(
   (props.meeting.attendees && !Array.isArray(props.meeting.attendees)) ? { ...props.meeting.attendees } : {},
 )
@@ -159,7 +159,7 @@ const reviewSaving = ref(false)
 const reviewSaved = ref(false)
 const minutesSaving = ref(false)
 const minutesSaved = ref(false)
-// Phase V2 — Audit-10 H1: surface auto-save failures so chart data isn't lost silently.
+// Phase V2: Audit-10 H1: surface auto-save failures so chart data isn't lost silently.
 const reviewSaveError = ref<string | null>(null)
 const minutesSaveError = ref<string | null>(null)
 const markingReviewed = ref(false)
@@ -206,8 +206,8 @@ async function saveReviewNow() {
     reviewSaved.value = true
     setTimeout(() => { reviewSaved.value = false }, 2500)
   } catch (e: any) {
-    // Phase V2 — non-blocking, but visible. Audit-10 H1.
-    reviewSaveError.value = `Auto-save failed (${e?.response?.status ?? 'network'}). Your changes are still in the form — try saving again.`
+    // Phase V2: non-blocking, but visible. Audit-10 H1.
+    reviewSaveError.value = `Auto-save failed (${e?.response?.status ?? 'network'}). Your changes are still in the form: try saving again.`
   } finally {
     reviewSaving.value = false
   }
@@ -266,7 +266,7 @@ async function saveMinutesNow() {
     minutesSaved.value = true
     setTimeout(() => { minutesSaved.value = false }, 2500)
   } catch (e: any) {
-    minutesSaveError.value = `Auto-save failed (${e?.response?.status ?? 'network'}). Minutes are still in the textarea — click outside to retry.`
+    minutesSaveError.value = `Auto-save failed (${e?.response?.status ?? 'network'}). Minutes are still in the textarea: click outside to retry.`
   } finally {
     minutesSaving.value = false
   }
@@ -560,7 +560,7 @@ function fmtDate(dateStr: string): string {
             </div>
           </template>
 
-          <!-- Phase U3 — Attendance roster -->
+          <!-- Phase U3: Attendance roster -->
           <div class="border-t border-gray-100 dark:border-slate-700 pt-6 mb-6" data-testid="idt-attendance">
             <div class="flex items-center justify-between mb-2">
               <label class="text-sm font-medium text-gray-700 dark:text-slate-300">Attendance</label>
@@ -602,7 +602,7 @@ function fmtDate(dateStr: string): string {
               </div>
             </div>
             <p v-if="tenant_users.length === 0" class="text-sm text-gray-500 dark:text-slate-400 mt-2">
-              No clinical users in this tenant — attendance roster is empty.
+              No clinical users in this tenant: attendance roster is empty.
             </p>
           </div>
 

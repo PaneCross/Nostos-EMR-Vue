@@ -2,7 +2,7 @@
 
 // ─── RecordEmarAdministrationRequest ─────────────────────────────────────────
 // Validates logging a single medication-pass event on the eMAR. eMAR =
-// Electronic Medication Administration Record — the per-dose log of which
+// Electronic Medication Administration Record : the per-dose log of which
 // nurse gave (or didn't give) which medication to which participant at
 // what time. Each scheduled dose generates an eMAR row; this endpoint
 // records the outcome.
@@ -48,7 +48,7 @@ class RecordEmarAdministrationRequest extends FormRequest
     }
 
     /**
-     * Phase W3 — messages emphasize the medication-administration audit trail.
+     * Phase W3 : messages emphasize the medication-administration audit trail.
      * (Restored in Z7 after Z2 header-pass clobbered it.)
      */
     public function messages(): array

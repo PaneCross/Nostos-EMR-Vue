@@ -6,7 +6,7 @@
 // the AppShell nav without polling.
 //
 // Channel: private-user.{userId}  (one per user)
-// Payload: { channel_id } — no PHI, just enough for the frontend to know
+// Payload: { channel_id } : no PHI, just enough for the frontend to know
 //          which channel has new activity so it can refresh its count.
 //
 // Dispatched from: ChatController::send() for each channel member.

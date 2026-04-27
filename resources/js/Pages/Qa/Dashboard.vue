@@ -1,5 +1,5 @@
 <!--
-  QA/Compliance Dashboard — qa_compliance department view.
+  QA/Compliance Dashboard: qa_compliance department view.
   Displays 11 KPI cards pre-loaded from server, an open-incident queue,
   four lazy-loaded compliance tabs (incidents, unsigned notes, overdue
   assessments, grievances), a security posture widget, and CSV exports.
@@ -59,7 +59,7 @@ interface IncidentRow {
   status: string
   rca_required: boolean
   rca_completed_at: string | null
-  // Phase I2 — sentinel classification state
+  // Phase I2: sentinel classification state
   is_sentinel?: boolean | null
   sentinel_classified_at?: string | null
 }
@@ -115,7 +115,7 @@ const props = defineProps<{
 const page = usePage()
 const user = computed(() => (page.props.auth as any)?.user)
 
-// ── Phase I2 — Sentinel classify ───────────────────────────────────────────
+// ── Phase I2: Sentinel classify ───────────────────────────────────────────
 const canClassifySentinel = computed(() => {
   const u = user.value
   if (!u) return false
@@ -673,7 +673,7 @@ function fmt(dateStr: string | null): string {
 
     </div>
 
-    <!-- Phase I2 — Sentinel classify modal -->
+    <!-- Phase I2: Sentinel classify modal -->
     <Teleport to="body">
       <div v-if="sentinelOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" @click.self="closeSentinelModal">
         <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-lg p-6">

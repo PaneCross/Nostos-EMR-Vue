@@ -1,6 +1,6 @@
 <?php
 
-// ─── PredictiveModelTrainingService — Phase M4 ──────────────────────────────
+// ─── PredictiveModelTrainingService : Phase M4 ──────────────────────────────
 // Trains a minimal logistic-regression model from historical PredictiveRiskScore
 // rows + actual outcomes. MVP implements a lightweight in-house fit (gradient
 // descent over a small feature vector) so we don't add rubix/ml as a dependency
@@ -21,7 +21,7 @@ class PredictiveModelTrainingService
         // Pull historical scores and join against actual outcomes.
         $samples = $this->collectSamples($tenantId, $riskType);
 
-        // Degenerate case — no data. Persist a zero-weight "model" so
+        // Degenerate case : no data. Persist a zero-weight "model" so
         // downstream scoring can still load a version.
         if (count($samples) === 0) {
             return $this->persist($tenantId, $riskType, [], 0.0, 0);

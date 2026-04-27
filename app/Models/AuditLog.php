@@ -10,7 +10,7 @@ class AuditLog extends Model
 {
     protected $table = 'shared_audit_logs';
 
-    // Append-only — disable update/delete at model level too
+    // Append-only : disable update/delete at model level too
     public $timestamps = false;
 
     protected $fillable = [

@@ -1,7 +1,7 @@
 <?php
 
 // ─── Vital Model ─────────────────────────────────────────────────────────────────
-// Append-only vitals record. No SoftDeletes — each row is an immutable snapshot
+// Append-only vitals record. No SoftDeletes : each row is an immutable snapshot
 // of measured values at a point in time.
 // isOutOfRange() returns which fields fall outside clinical normal ranges for PACE.
 // ──────────────────────────────────────────────────────────────────────────────
@@ -81,7 +81,7 @@ class Vital extends Model
     /**
      * Compute BMI from weight_lbs and height_in.
      * Formula: weight_kg / height_m². Returns null when either field is absent.
-     * QW-01 — surfaced on Vitals tab, Dietary dashboard, and Facesheet.
+     * QW-01 : surfaced on Vitals tab, Dietary dashboard, and Facesheet.
      */
     public function getBmiAttribute(): ?float
     {

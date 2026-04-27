@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// ─── Dashboards/QualityMeasures.vue — Phase K1 ───────────────────────────────
+// ─── Dashboards/QualityMeasures.vue: Phase K1 ───────────────────────────────
 // Quality measures dashboard. Tracks HEDIS/CMS Stars rates over time
 // (numerator/denominator with trendlines) so QA + leadership can see whether
 // quality scores are improving or backsliding month-over-month.
@@ -71,7 +71,7 @@ const byCategory = computed(() => {
             <div class="flex items-baseline justify-between mb-2">
               <h3 class="text-sm font-semibold text-gray-900 dark:text-slate-100">{{ m.name ?? m.measure_id }}</h3>
               <span class="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                {{ latestRate(m.measure_id) ?? '—' }}
+                {{ latestRate(m.measure_id) ?? '-' }}
               </span>
             </div>
             <LineChart

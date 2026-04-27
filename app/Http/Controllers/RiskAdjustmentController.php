@@ -4,10 +4,10 @@
 // REST API for CMS-HCC risk adjustment tracking.
 //
 // Route list:
-//   GET  /billing/risk-adjustment                    → index()      — Inertia page (summary + gap table)
-//   GET  /billing/risk-adjustment/data               → data()       — JSON KPIs + gaps (live refresh)
-//   GET  /billing/risk-adjustment/participant/{id}   → participant() — Per-participant RAF detail + diagnosis list
-//   POST /billing/risk-adjustment/recalculate/{id}   → recalculate() — Trigger RAF recalculation for one participant
+//   GET  /billing/risk-adjustment                    → index()      : Inertia page (summary + gap table)
+//   GET  /billing/risk-adjustment/data               → data()       : JSON KPIs + gaps (live refresh)
+//   GET  /billing/risk-adjustment/participant/{id}   → participant() : Per-participant RAF detail + diagnosis list
+//   POST /billing/risk-adjustment/recalculate/{id}   → recalculate() : Trigger RAF recalculation for one participant
 //
 // Department access: finance only (+ super_admin, it_admin).
 // ─────────────────────────────────────────────────────────────────────────────

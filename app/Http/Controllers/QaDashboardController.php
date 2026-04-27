@@ -12,12 +12,12 @@
 //
 // Acronym glossary used in this file:
 //   QA   = Quality Assurance.
-//   QAPI = Quality Assurance / Performance Improvement — the formal PACE
+//   QAPI = Quality Assurance / Performance Improvement : the formal PACE
 //          quality program. 42 CFR §460.136-140 require an organized QAPI
 //          program with annual self-evaluation per §460.200.
-//   BAA  = Business Associate Agreement — HIPAA-required contract with any
+//   BAA  = Business Associate Agreement : HIPAA-required contract with any
 //          vendor that touches PHI on our behalf (e.g. our cloud host).
-//   SRA  = Security Risk Analysis — annual HIPAA §164.308(a)(1)(ii)(A) audit
+//   SRA  = Security Risk Analysis : annual HIPAA §164.308(a)(1)(ii)(A) audit
 //          of where PHI lives and how it's protected.
 //   PHI  = Protected Health Information (HIPAA-covered patient data).
 //   KPI  = Key Performance Indicator (a single tracked metric).
@@ -92,7 +92,7 @@ class QaDashboardController extends Controller
             'active_qapi_count'               => QapiProject::forTenant($tenantId)->active()->count(),
         ];
 
-        // Open incidents for the incident queue table (full load — typically <50)
+        // Open incidents for the incident queue table (full load : typically <50)
         $openIncidents = Incident::forTenant($tenantId)
             ->open()
             ->with(['participant:id,mrn,first_name,last_name', 'reportedBy:id,first_name,last_name'])
@@ -173,15 +173,15 @@ class QaDashboardController extends Controller
      * so QA / Compliance staff can spot-check HIPAA posture without navigating
      * to the full Security & Compliance page (/it-admin/security).
      *
-     * No PHI is included — all fields are counts or boolean flags.
+     * No PHI is included : all fields are counts or boolean flags.
      */
     private function buildCompliancePosture(int $tenantId): array
     {
-        // BAA coverage — HIPAA 45 CFR §164.308(b)(1)
+        // BAA coverage : HIPAA 45 CFR §164.308(b)(1)
         $expiredBaaCount   = BaaRecord::forTenant($tenantId)->expired()->count();
         $expiringSoonCount = BaaRecord::forTenant($tenantId)->expiringSoon()->count();
 
-        // SRA currency — HIPAA 45 CFR §164.308(a)(1): annual update required
+        // SRA currency : HIPAA 45 CFR §164.308(a)(1): annual update required
         $latestSra  = SraRecord::forTenant($tenantId)
             ->completed()
             ->orderBy('sra_date', 'desc')
@@ -189,7 +189,7 @@ class QaDashboardController extends Controller
         // No completed SRA on record = overdue by definition
         $sraOverdue = $latestSra ? $latestSra->isOverdue() : true;
 
-        // Encryption at rest — HIPAA 45 CFR §164.312(a)(2)(iv)
+        // Encryption at rest : HIPAA 45 CFR §164.312(a)(2)(iv)
         $sessionEncrypted = config('session.encrypt', false) === true;
         $dbSslMode        = config('database.connections.pgsql.sslmode', 'prefer');
         $casts            = (new Participant())->getCasts();

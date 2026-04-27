@@ -17,7 +17,7 @@ class SendTestMail extends Command
         $this->info("Sending test email to {$to}...");
 
         Mail::raw(
-            "Gmail SMTP is wired up for NostosEMR.\n\nYou will now receive email notifications when Claude steps away to run long tasks.\n\n— NostosEMR",
+            "Gmail SMTP is wired up for NostosEMR.\n\nYou will now receive email notifications when Claude steps away to run long tasks.\n\n: NostosEMR",
             function ($message) use ($to) {
                 $message->to($to)
                         ->subject('NostosEMR: Gmail SMTP Connected Successfully');

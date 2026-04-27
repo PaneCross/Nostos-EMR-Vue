@@ -111,7 +111,7 @@ async function signNote(noteId: number) {
     const idx = notes.value.findIndex(n => n.id === noteId)
     if (idx !== -1) notes.value[idx] = { ...notes.value[idx], ...data }
   } catch {
-    // sign failed — leave note open
+    // sign failed: leave note open
   } finally {
     signingId.value = null
   }
@@ -199,7 +199,7 @@ async function loadTemplatesAndProblems() {
     }
     templatesLoaded.value = true
   } catch {
-    // fail silently — form still usable without template/problem helpers
+    // fail silently: form still usable without template/problem helpers
   }
 }
 
@@ -231,7 +231,7 @@ async function applyTemplate() {
 }
 
 function availableTemplates(): NoteTemplateMeta[] {
-  // Filter by current note type if set (soft filter — shows all for 'addendum'/other)
+  // Filter by current note type if set (soft filter: shows all for 'addendum'/other)
   if (!noteForm.value.note_type) return templates.value
   return templates.value.filter(t => t.note_type === noteForm.value.note_type)
     .concat(templates.value.filter(t => t.note_type !== noteForm.value.note_type))
@@ -273,7 +273,7 @@ async function submitNote() {
     } else {
       payload.content = { notes: noteForm.value.content_notes }
     }
-    // Phase I3 — template + problem linkage
+    // Phase I3: template + problem linkage
     if (selectedTemplateId.value) payload.note_template_id = Number(selectedTemplateId.value)
     if (primaryProblemId.value)   payload.primary_problem_id = Number(primaryProblemId.value)
     if (secondaryProblemIds.value.length > 0) {
@@ -349,12 +349,12 @@ async function submitNote() {
     >
       <h3 class="text-sm font-semibold text-gray-900 dark:text-slate-100">New Clinical Note</h3>
 
-      <!-- Phase I3 — Template picker -->
+      <!-- Phase I3: Template picker -->
       <div v-if="templates.length > 0" class="flex items-end gap-2">
         <div class="flex-1">
           <label class="text-xs font-medium text-gray-600 dark:text-slate-400">Start from template (optional)</label>
           <select v-model="selectedTemplateId" class="w-full mt-1 text-sm border border-gray-300 dark:border-slate-600 rounded px-2 py-1.5 bg-white dark:bg-slate-800 dark:text-slate-200" data-testid="note-template-picker">
-            <option value="">— No template —</option>
+            <option value="">- No template -</option>
             <option v-for="t in availableTemplates()" :key="t.id" :value="t.id">
               {{ t.name }} · {{ t.note_type }}{{ t.is_system ? ' · system' : '' }}
             </option>
@@ -385,12 +385,12 @@ async function submitNote() {
         </div>
       </div>
 
-      <!-- Phase I3 — Problem linkage -->
+      <!-- Phase I3: Problem linkage -->
       <div v-if="problems.length > 0" class="grid grid-cols-2 gap-3">
         <div>
           <label class="text-xs font-medium text-gray-600 dark:text-slate-400">Primary problem (optional)</label>
           <select v-model="primaryProblemId" class="w-full mt-1 text-sm border border-gray-300 dark:border-slate-600 rounded px-2 py-1.5 bg-white dark:bg-slate-800 dark:text-slate-200" data-testid="note-primary-problem">
-            <option value="">— None —</option>
+            <option value="">- None -</option>
             <option v-for="p in problems" :key="p.id" :value="p.id">
               {{ p.icd10_description }} ({{ p.icd10_code }})
             </option>
@@ -558,7 +558,7 @@ async function submitNote() {
       </div>
     </div>
 
-    <!-- Phase I3 — Addendum compose modal -->
+    <!-- Phase I3: Addendum compose modal -->
     <Teleport to="body">
       <div v-if="addendumComposeOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" @click.self="closeAddendumCompose">
         <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-lg p-6">

@@ -4,8 +4,8 @@
 // Powers the Revenue Integrity Dashboard for the Finance department.
 //
 // Route list:
-//   GET /billing/revenue-integrity       → index()  — Inertia page
-//   GET /billing/revenue-integrity/data  → data()   — JSON KPIs + HCC gap summary
+//   GET /billing/revenue-integrity       → index()  : Inertia page
+//   GET /billing/revenue-integrity/data  → data()   : JSON KPIs + HCC gap summary
 //
 // Combines RevenueIntegrityService (6 billing KPIs + denial KPIs) with
 // HccRiskScoringService (org-wide HCC gap analysis) into a single dashboard.
@@ -57,7 +57,7 @@ class RevenueIntegrityController extends Controller
     }
 
     /**
-     * Build the HCC gap list — per-participant gap objects with participant info.
+     * Build the HCC gap list : per-participant gap objects with participant info.
      * Returns up to 50 gaps sorted by estimated monthly revenue impact (desc).
      */
     private function buildGaps(int $tenantId, int $year): array
@@ -84,7 +84,7 @@ class RevenueIntegrityController extends Controller
     }
 
     /**
-     * Build the pending encounters list — encounters missing required 837P fields.
+     * Build the pending encounters list : encounters missing required 837P fields.
      * Returns up to 50 pending encounters with a missing_fields diagnostic array.
      */
     private function buildPending(int $tenantId): array

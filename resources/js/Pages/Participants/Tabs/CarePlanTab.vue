@@ -102,7 +102,7 @@ onMounted(async () => {
     const r = await axios.get(`/participants/${props.participant.id}/careplan`)
     plan.value = r.data
   } catch {
-    // plan stays null — show create button
+    // plan stays null: show create button
   } finally {
     loading.value = false
   }

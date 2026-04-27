@@ -7,19 +7,19 @@
 // when a CLP02 claim status of '3' (denied) is encountered in an 835 ERA file.
 //
 // 120-day deadline = Medicare appeal window per 42 CFR §405.942.
-// The denial lifecycle (42 CFR §405.942 — 120-day CMS Medicare appeal deadline):
+// The denial lifecycle (42 CFR §405.942 : 120-day CMS Medicare appeal deadline):
 //   open → appealing → won | lost | written_off
 //
 // Route list:
-//   GET  /finance/denials                    → index()   — Inertia list page
-//   GET  /finance/denials/{denial}           → show()    — JSON detail
-//   PATCH /finance/denials/{denial}          → update()  — update notes/assignment
-//   POST  /finance/denials/{denial}/appeal   → appeal()  — mark as appealing
-//   POST  /finance/denials/{denial}/write-off → writeOff() — write off denial
+//   GET  /finance/denials                    → index()   : Inertia list page
+//   GET  /finance/denials/{denial}           → show()    : JSON detail
+//   PATCH /finance/denials/{denial}          → update()  : update notes/assignment
+//   POST  /finance/denials/{denial}/appeal   → appeal()  : mark as appealing
+//   POST  /finance/denials/{denial}/write-off → writeOff() : write off denial
 //
 // Authorization:
 //   All endpoints: finance, it_admin, super_admin
-//   write-off requires finance (revenue cycle decision — not it_admin)
+//   write-off requires finance (revenue cycle decision : not it_admin)
 // ─────────────────────────────────────────────────────────────────────────────
 
 namespace App\Http\Controllers;
@@ -47,7 +47,7 @@ class DenialController extends Controller
     }
 
     /**
-     * Write-off is restricted to finance staff only — this is a revenue cycle
+     * Write-off is restricted to finance staff only : this is a revenue cycle
      * decision that should not be delegated to IT admins.
      */
     private function authorizeWriteOff(Request $request): void
@@ -66,9 +66,9 @@ class DenialController extends Controller
      * Render the Inertia denial management list page.
      *
      * Supports filters:
-     *   ?status=   — open, appealing, won, lost, written_off
-     *   ?category= — authorization, coding_error, timely_filing, duplicate, etc.
-     *   ?overdue=1 — only denials past their 120-day appeal deadline
+     *   ?status=   : open, appealing, won, lost, written_off
+     *   ?category= : authorization, coding_error, timely_filing, duplicate, etc.
+     *   ?overdue=1 : only denials past their 120-day appeal deadline
      *
      * Returns paginated denials (25 per page) with aggregate KPIs.
      *

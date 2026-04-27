@@ -263,7 +263,7 @@ const auth = computed(() => (page.props as Record<string, unknown>).auth as { us
             @tab-change="switchTab"
           />
 
-          <!-- Life-threatening allergy banner — persists across all tabs -->
+          <!-- Life-threatening allergy banner: persists across all tabs -->
           <div
             v-if="hasLifeThreateningAllergy"
             role="alert"

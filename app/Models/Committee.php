@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-// Phase 15.8 — Governance / committee root model.
+// Phase 15.8 : Governance / committee root model.
 class Committee extends Model
 {
     protected $table = 'emr_committees';

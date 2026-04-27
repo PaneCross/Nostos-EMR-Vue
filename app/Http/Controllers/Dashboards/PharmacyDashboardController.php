@@ -5,10 +5,10 @@
 // All endpoints require the pharmacy department (or super_admin).
 //
 // Routes (GET, all under /dashboards/pharmacy/):
-//   med-changes    — medications created or discontinued today (grouped)
-//   interactions   — unacknowledged drug interaction alerts across all participants
-//   controlled     — eMAR records for controlled substances administered today
-//   refills        — medications requiring refill (0 remaining or last filled >28 days)
+//   med-changes    : medications created or discontinued today (grouped)
+//   interactions   : unacknowledged drug interaction alerts across all participants
+//   controlled     : eMAR records for controlled substances administered today
+//   refills        : medications requiring refill (0 remaining or last filled >28 days)
 // ─────────────────────────────────────────────────────────────────────────────
 
 namespace App\Http\Controllers\Dashboards;
@@ -151,7 +151,7 @@ class PharmacyDashboardController extends Controller
 
     /**
      * Controlled substance eMAR records administered today.
-     * DEA Schedule II/III meds require witness co-signature — flagged here if missing.
+     * DEA Schedule II/III meds require witness co-signature : flagged here if missing.
      * Used for pharmacy compliance monitoring.
      */
     public function controlled(): JsonResponse
@@ -297,7 +297,7 @@ class PharmacyDashboardController extends Controller
     }
 
     /**
-     * Phase I6 — BCMA override trend (last 7 days, grouped by day).
+     * Phase I6 : BCMA override trend (last 7 days, grouped by day).
      * Counts EmarRecord rows with barcode_mismatch_overridden_by_user_id set.
      */
     public function bcmaOverrides(): JsonResponse
@@ -317,7 +317,7 @@ class PharmacyDashboardController extends Controller
     }
 
     /**
-     * Phase I6 — Beers PIM rollup.
+     * Phase I6 : Beers PIM rollup.
      * Count of participants with at least one active medication flagged by
      * Beers Criteria. Top 10 PIMs with participant counts.
      */
@@ -328,7 +328,7 @@ class PharmacyDashboardController extends Controller
         $enrolled = \App\Models\Participant::forTenant($tenantId)
             ->where('enrollment_status', 'enrolled')->get(['id']);
 
-        // Phase P8 — batch path: O(1) queries instead of O(N participants).
+        // Phase P8 : batch path: O(1) queries instead of O(N participants).
         $batch = $beers->evaluateBatch($enrolled);
         $participantsWithPims = count($batch);
         $pimCounts = [];
@@ -353,7 +353,7 @@ class PharmacyDashboardController extends Controller
     }
 
     /**
-     * Phase I6 — MedWatch deadlines approaching or overdue.
+     * Phase I6 : MedWatch deadlines approaching or overdue.
      * Lists ADE rows that still require MedWatch reporting.
      */
     public function medwatchDeadlines(): JsonResponse
@@ -384,7 +384,7 @@ class PharmacyDashboardController extends Controller
     }
 
     /**
-     * Phase I6 — Pending polypharmacy reviews.
+     * Phase I6 : Pending polypharmacy reviews.
      */
     public function polypharmacyQueue(): JsonResponse
     {

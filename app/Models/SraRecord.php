@@ -84,7 +84,7 @@ class SraRecord extends Model
         return $query->where('tenant_id', $tenantId);
     }
 
-    /** Completed SRAs only — used to find the most recent completed cycle */
+    /** Completed SRAs only : used to find the most recent completed cycle */
     public function scopeCompleted($query)
     {
         return $query->where('status', 'completed');

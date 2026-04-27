@@ -23,7 +23,7 @@ class StoreDocumentRequest extends FormRequest
     public function authorize(): bool
     {
         // Tenant isolation is enforced in DocumentController::store() via
-        // participantForTenant() — the form request itself allows any authed user.
+        // participantForTenant() : the form request itself allows any authed user.
         return auth()->check();
     }
 
@@ -34,7 +34,7 @@ class StoreDocumentRequest extends FormRequest
                 'required',
                 'file',
                 'max:20480',                            // 20 MB in kilobytes
-                // Phase X2 — Audit-12 H2: validate by real MIME content
+                // Phase X2 : Audit-12 H2: validate by real MIME content
                 // (mimetypes:) rather than client-supplied extension (mimes:).
                 // Prevents an attacker from renaming payload.html → payload.pdf
                 // and having it accepted.

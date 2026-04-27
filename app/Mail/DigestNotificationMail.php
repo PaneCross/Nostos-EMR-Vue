@@ -4,7 +4,7 @@
 // Sent by DigestNotificationJob every 2 hours for users who prefer 'email_digest'.
 //
 // HIPAA COMPLIANCE: Zero PHI in subject or body.
-// Subject: "You have {N} new notifications — NostosEMR"
+// Subject: "You have {N} new notifications : NostosEMR"
 // Body:    Generic prompt to log in. No alert types, patient names, or clinical data.
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -30,7 +30,7 @@ class DigestNotificationMail extends Mailable
     {
         $plural = $this->count === 1 ? 'notification' : 'notifications';
         return new Envelope(
-            subject: "You have {$this->count} new {$plural} — NostosEMR"
+            subject: "You have {$this->count} new {$plural} : NostosEMR"
         );
     }
 

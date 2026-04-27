@@ -5,15 +5,15 @@
 // IDT = Interdisciplinary Team (the clinical group that meets weekly to plan each member's care; PACE's central care coordination forum).
 //
 // Routes (/idt/meetings):
-//   GET  /idt/meetings               — upcoming + recent meetings
-//   POST /idt/meetings               — schedule a new meeting
-//   GET  /idt/meetings/{id}          — meeting detail with participant queue
-//   PUT  /idt/meetings/{id}          — update meeting details (not completed)
-//   POST /idt/meetings/{id}/start    — set status = in_progress
-//   POST /idt/meetings/{id}/complete — lock meeting, set status = completed
-//   POST /idt/meetings/{id}/participants    — add participant to review queue
-//   PATCH /idt/meetings/{id}/participants/{review} — update review notes
-//   POST  /idt/meetings/{id}/participants/{review}/reviewed — mark as reviewed
+//   GET  /idt/meetings               : upcoming + recent meetings
+//   POST /idt/meetings               : schedule a new meeting
+//   GET  /idt/meetings/{id}          : meeting detail with participant queue
+//   PUT  /idt/meetings/{id}          : update meeting details (not completed)
+//   POST /idt/meetings/{id}/start    : set status = in_progress
+//   POST /idt/meetings/{id}/complete : lock meeting, set status = completed
+//   POST /idt/meetings/{id}/participants    : add participant to review queue
+//   PATCH /idt/meetings/{id}/participants/{review} : update review notes
+//   POST  /idt/meetings/{id}/participants/{review}/reviewed : mark as reviewed
 // ──────────────────────────────────────────────────────────────────────────────
 
 namespace App\Http\Controllers;
@@ -147,7 +147,7 @@ class IdtMeetingController extends Controller
             'participantReviews.participant:id,mrn,first_name,last_name,dob',
         ]);
 
-        // Phase U3 — pass tenant clinical users so the Run-Meeting page can
+        // Phase U3 : pass tenant clinical users so the Run-Meeting page can
         // render the attendance roster + present/absent toggles.
         $tenantUsers = \App\Models\User::where('tenant_id', $request->user()->tenant_id)
             ->where('is_active', true)
@@ -167,7 +167,7 @@ class IdtMeetingController extends Controller
      * Update meeting details (minutes, decisions, attendees). Not allowed on completed.
      */
     /**
-     * Phase R7 — POST /idt/meetings/{meeting}/attendance
+     * Phase R7 : POST /idt/meetings/{meeting}/attendance
      * Mark a user attended (or absent) at this meeting. Stored in attendees
      * JSONB as an associative map of user_id → {status, recorded_at}.
      */
@@ -214,7 +214,7 @@ class IdtMeetingController extends Controller
             'decisions'         => ['nullable', 'array'],
             'attendees'         => ['nullable', 'array'],
             'attendees.*'       => ['integer', 'exists:shared_users,id'],
-            // Phase R7 — concurrent-edit guard. Client must echo back the
+            // Phase R7 : concurrent-edit guard. Client must echo back the
             // revision it loaded; if the DB has advanced, return 409.
             'expected_revision' => ['nullable', 'integer'],
         ]);

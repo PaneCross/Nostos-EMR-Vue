@@ -7,7 +7,7 @@
 //     per-user preference saved in localStorage).
 //   - The top app bar (tenant + site context, user menu, dark-mode toggle,
 //     notifications bell, Cmd+K global search).
-//   - The Toaster component (V5/W2 — surfaces axios errors as toasts).
+//   - The Toaster component (V5/W2: surfaces axios errors as toasts).
 //   - The IdleWarningModal (HIPAA-required inactivity warning + auto-logout).
 //
 // Nav style: when expanded, the sidebar shows a group-accordion. When
@@ -289,7 +289,7 @@ function toggleSidebar() {
 }
 
 // ── Group accordion ────────────────────────────────────────────────────────────
-// NOTE: Vue 3 ref<Set> does NOT trigger reactivity on .add()/.delete() —
+// NOTE: Vue 3 ref<Set> does NOT trigger reactivity on .add()/.delete():
 //       use a plain string[] array which IS deeply reactive.
 const expandedGroups = ref<string[]>([])
 
@@ -405,7 +405,7 @@ function handleActivity() {
 }
 
 async function stayLoggedIn() {
-    // Phase P1 — hit /auth/heartbeat so the BACKEND session is extended,
+    // Phase P1: hit /auth/heartbeat so the BACKEND session is extended,
     // not just the JS timer. Without this, the modal resets but the server
     // session can still expire silently mid-session.
     try {
@@ -485,7 +485,7 @@ function handleGlobalKey(e: KeyboardEvent) {
         @stay-logged-in="stayLoggedIn"
     />
 
-    <!-- Phase V5 — global toast surface for axios errors + ad-hoc emits -->
+    <!-- Phase V5: global toast surface for axios errors + ad-hoc emits -->
     <Toaster />
 
     <!-- Impersonation banner -->
@@ -528,7 +528,7 @@ function handleGlobalKey(e: KeyboardEvent) {
 
             <!-- Nav -->
             <nav class="flex-1 overflow-y-auto py-3 px-2 space-y-0.5" aria-label="Main navigation">
-                <!-- Dashboard — top-level fixed item -->
+                <!-- Dashboard: top-level fixed item -->
                 <button
                     :class="[
                         'w-full flex items-center gap-3 px-2 py-2 rounded-md text-sm font-medium transition-colors',
@@ -991,7 +991,7 @@ function handleGlobalKey(e: KeyboardEvent) {
 
                 <!-- Phase 5 (MVP roadmap): policy surface links. Low-chrome footer. -->
                 <footer class="mt-auto border-t border-slate-200 dark:border-slate-700/50 bg-slate-50 dark:bg-slate-900/40 px-6 py-3 text-xs text-slate-500 dark:text-slate-400 flex flex-wrap items-center justify-between gap-2 print:hidden">
-                    <span>Confidential — 42 CFR §460.210</span>
+                    <span>Confidential: 42 CFR §460.210</span>
                     <nav class="flex flex-wrap items-center gap-x-4 gap-y-1">
                         <a href="/policies/npp" class="hover:text-indigo-600 dark:hover:text-indigo-400 hover:underline">Notice of Privacy Practices</a>
                         <a href="/policies/info-blocking" class="hover:text-indigo-600 dark:hover:text-indigo-400 hover:underline">Information Blocking</a>

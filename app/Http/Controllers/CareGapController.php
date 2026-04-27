@@ -18,7 +18,7 @@ class CareGapController extends Controller
         abort_if(!$u, 401);
     }
 
-    /** GET /care-gaps/summary — tenant-wide by measure. */
+    /** GET /care-gaps/summary : tenant-wide by measure. */
     public function summary(Request $request): JsonResponse
     {
         $this->gate();
@@ -32,7 +32,7 @@ class CareGapController extends Controller
         return response()->json(['rows' => $rows]);
     }
 
-    /** GET /care-gaps/my-panel — for a PCP. */
+    /** GET /care-gaps/my-panel : for a PCP. */
     public function myPanel(Request $request): JsonResponse
     {
         $this->gate();
@@ -60,7 +60,7 @@ class CareGapController extends Controller
         ]);
     }
 
-    /** GET /dashboards/readmission-risk — high LACE+ flagged. */
+    /** GET /dashboards/readmission-risk : high LACE+ flagged. */
     public function readmissionRisk(Request $request): JsonResponse
     {
         $this->gate();

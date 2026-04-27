@@ -3,7 +3,7 @@
 // ─── Transport Dashboard ───────────────────────────────────────────────────────
 // Shows participant transport needs across the entire census:
 // mobility equipment flags, behavioral flags, and address information.
-// This is a read-only operational view — trip scheduling lives in a future phase.
+// This is a read-only operational view : trip scheduling lives in a future phase.
 // Route: GET /transport → Inertia::render('Transport/Dashboard')
 // ─────────────────────────────────────────────────────────────────────────────
 

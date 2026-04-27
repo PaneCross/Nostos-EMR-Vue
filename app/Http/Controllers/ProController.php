@@ -26,7 +26,7 @@ class ProController extends Controller
         return response()->json(['surveys' => ProSurvey::whereNull('tenant_id')->get()]);
     }
 
-    /** POST /pro/responses — staff logs participant response (or portal calls same). */
+    /** POST /pro/responses : staff logs participant response (or portal calls same). */
     public function storeResponse(Request $request): JsonResponse
     {
         $this->gate();

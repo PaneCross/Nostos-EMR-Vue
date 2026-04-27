@@ -12,7 +12,7 @@
 // Only one version per participant can be 'active' at any time.
 // Creating a new version archives the current active plan.
 //
-// 42 CFR §460.104(d) — Participant Acknowledgment:
+// 42 CFR §460.104(d) : Participant Acknowledgment:
 //   Approval now requires that the participant was offered the opportunity to
 //   participate in care plan development. Fields:
 //   participant_offered_participation, participant_response, offered_at,
@@ -53,7 +53,7 @@ class CarePlan extends Model
         'participant_response',
         'offered_at',
         'offered_by_user_id',
-        // Phase X3 — Audit-12 H3: optimistic-lock counter for concurrent edits.
+        // Phase X3 : Audit-12 H3: optimistic-lock counter for concurrent edits.
         'revision',
         'last_edited_at',
         'last_edited_by_user_id',
@@ -66,7 +66,7 @@ class CarePlan extends Model
         // W4-5: participant acknowledgment casts
         'participant_offered_participation' => 'boolean',
         'offered_at'                        => 'datetime',
-        // Phase X3 — optimistic-lock casts
+        // Phase X3 : optimistic-lock casts
         'revision'                          => 'integer',
         'last_edited_at'                    => 'datetime',
     ];
@@ -218,7 +218,7 @@ class CarePlan extends Model
             ]);
         }
 
-        // Archive the source plan — the new draft supersedes it
+        // Archive the source plan : the new draft supersedes it
         $this->update(['status' => 'archived']);
 
         return $newPlan;

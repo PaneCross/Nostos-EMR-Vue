@@ -8,7 +8,7 @@
 //
 // Auth gate: Any authenticated user; finer-grained checks are in the
 //            controller (typically transportation dispatch staff).
-// Validates: participant_id, trip_type (enum on TransportRequest model —
+// Validates: participant_id, trip_type (enum on TransportRequest model :
 //            e.g. day-center, medical-appointment, home-return),
 //            pickup + dropoff location IDs (must exist in emr_locations),
 //            requested_pickup_time (date/time), optional appointment_id

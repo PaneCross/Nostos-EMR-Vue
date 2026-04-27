@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // Errors/503.vue
 // Full-page 503 Service Unavailable screen. Shown during maintenance windows
-// or when the application is temporarily down. No AppShell — renders as a
+// or when the application is temporarily down. No AppShell: renders as a
 // standalone centered layout. Provides a Refresh button using window.location.reload().
 // Route: rendered by Inertia on 503 responses (e.g. maintenance mode).
 
@@ -21,7 +21,7 @@ import { ClockIcon } from '@heroicons/vue/24/outline'
 
             <!-- Error code -->
             <p class="text-sm font-semibold text-blue-500 dark:text-blue-400 uppercase tracking-widest mb-2">
-                503 — Service Unavailable
+                503: Service Unavailable
             </p>
 
             <!-- Heading -->

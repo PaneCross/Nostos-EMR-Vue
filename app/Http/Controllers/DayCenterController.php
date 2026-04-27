@@ -5,11 +5,11 @@
 // Access: activities, it_admin, super_admin (other depts can view)
 //
 // Routes:
-//   GET  /scheduling/day-center            — attendance page (Inertia)
-//   GET  /scheduling/day-center/roster     — JSON: enrolled participants for a date/site
-//   POST /scheduling/day-center/check-in   — mark participant present / check-in time
-//   POST /scheduling/day-center/absent     — mark participant absent with reason
-//   GET  /scheduling/day-center/summary    — JSON: attendance summary counts for date range
+//   GET  /scheduling/day-center            : attendance page (Inertia)
+//   GET  /scheduling/day-center/roster     : JSON: enrolled participants for a date/site
+//   POST /scheduling/day-center/check-in   : mark participant present / check-in time
+//   POST /scheduling/day-center/absent     : mark participant absent with reason
+//   GET  /scheduling/day-center/summary    : JSON: attendance summary counts for date range
 // ─────────────────────────────────────────────────────────────────────────────
 
 namespace App\Http\Controllers;
@@ -92,7 +92,7 @@ class DayCenterController extends Controller
             ->get();
 
         // ── Home-site day_center_attendance appointments for this date ───────
-        // (Any location — overrides recurring pattern.)
+        // (Any location : overrides recurring pattern.)
         $homeApptIds = Appointment::where('tenant_id', $user->tenant_id)
             ->where('appointment_type', 'day_center_attendance')
             ->whereDate('scheduled_start', $date)
@@ -149,7 +149,7 @@ class DayCenterController extends Controller
                 'preferred_name' => $p->preferred_name,
                 'attendance'     => $records[$p->id] ?? null,
                 'source'         => $source,
-                'home_site'      => null, // Home-site — no chip needed
+                'home_site'      => null, // Home-site : no chip needed
             ];
         });
 
@@ -157,7 +157,7 @@ class DayCenterController extends Controller
         $crossSiteIds = $crossSiteApptParticipants->pluck('site_id')->unique()->toArray();
         $sitesById = Site::whereIn('id', $crossSiteIds)->pluck('name', 'id')->toArray();
 
-        // Cross-site visitor rows — participants at OTHER sites with appts at THIS site
+        // Cross-site visitor rows : participants at OTHER sites with appts at THIS site
         $crossRoster = $crossSiteApptParticipants->map(function ($p) use ($records, $sitesById) {
             return [
                 'id'             => $p->id,
@@ -174,7 +174,7 @@ class DayCenterController extends Controller
         });
 
         // Union, de-dup by participant id (cross-site wins over home if any
-        // conflict — shouldn't happen since cross-site filters by site_id != host).
+        // conflict : shouldn't happen since cross-site filters by site_id != host).
         $roster = $homeRoster
             ->concat($crossRoster)
             ->unique('id')
@@ -278,7 +278,7 @@ class DayCenterController extends Controller
             newValues: ['status' => $validated['status'], 'reason' => $validated['absent_reason']],
         );
 
-        // Phase SS2 — workflow preference: notify Social Work on day-center no-shows.
+        // Phase SS2 : workflow preference: notify Social Work on day-center no-shows.
         // Default ON. Tenants can disable via Org Settings if their workflow uses
         // a different recipient (e.g. an activities coordinator handles outreach).
         $prefs = app(\App\Services\NotificationPreferenceService::class);
@@ -288,7 +288,7 @@ class DayCenterController extends Controller
                 'participant_id'     => $validated['participant_id'],
                 'alert_type'         => 'day_center_absence',
                 'title'              => 'Day-center no-show',
-                'message'            => 'Participant marked absent from day center on ' . $validated['attendance_date'] . ($validated['absent_reason'] ? " — reason: {$validated['absent_reason']}" : ''),
+                'message'            => 'Participant marked absent from day center on ' . $validated['attendance_date'] . ($validated['absent_reason'] ? " - reason: {$validated['absent_reason']}" : ''),
                 'severity'           => 'info',
                 'source_module'      => 'day_center',
                 'target_departments' => ['social_work'],
@@ -324,7 +324,7 @@ class DayCenterController extends Controller
             userId:       $user->id,
             resourceType: 'participant',
             resourceId:   $participant->id,
-            description:  sprintf('Attended at %s (home: %s) on %s — status: %s',
+            description:  sprintf('Attended at %s (home: %s) on %s : status: %s',
                 $hostSite?->name ?? "Site {$attendedSiteId}",
                 $homeSite?->name ?? "Site {$participant->site_id}",
                 $date,
@@ -343,7 +343,7 @@ class DayCenterController extends Controller
 
     /**
      * GET /scheduling/day-center/summary
-     * JSON: attendance counts per day for a date range — used for calendar heat-map.
+     * JSON: attendance counts per day for a date range : used for calendar heat-map.
      */
     public function summary(Request $request): JsonResponse
     {
@@ -370,7 +370,7 @@ class DayCenterController extends Controller
     }
 
     /**
-     * Phase R6 — POST /scheduling/day-center/check-out
+     * Phase R6 : POST /scheduling/day-center/check-out
      * Records check-out time on an existing attendance record.
      */
     public function checkOut(Request $request): JsonResponse
@@ -411,7 +411,7 @@ class DayCenterController extends Controller
     }
 
     /**
-     * Phase R6 — GET /scheduling/day-center/event-status
+     * Phase R6 : GET /scheduling/day-center/event-status
      * Live event-status snapshot grouped into the four CareHub-style buckets:
      *   scheduled (no record yet), arrived (checked-in, not checked-out),
      *   checked_out, absent_or_cancelled.
@@ -485,7 +485,7 @@ class DayCenterController extends Controller
     }
 
     /**
-     * Phase R6 — GET /scheduling/day-center/roster.pdf
+     * Phase R6 : GET /scheduling/day-center/roster.pdf
      * Printable attendance roster (PDF) for a given date + site.
      */
     public function rosterPdf(Request $request)

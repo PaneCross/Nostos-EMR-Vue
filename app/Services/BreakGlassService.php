@@ -40,7 +40,7 @@ class BreakGlassService
      */
     public function requestAccess(User $user, Participant $participant, string $justification, ?string $ipAddress = null): BreakGlassEvent
     {
-        // Validate justification length — must be clinically meaningful
+        // Validate justification length : must be clinically meaningful
         if (strlen(trim($justification)) < 20) {
             throw ValidationException::withMessages([
                 'justification' => ['Justification must be at least 20 characters.'],
@@ -71,7 +71,7 @@ class BreakGlassService
             'ip_address'        => $ipAddress,
         ]);
 
-        // Immutable audit record — severity=critical, records full context
+        // Immutable audit record : severity=critical, records full context
         AuditLog::record(
             action:      'break_glass_access',
             tenantId:    $user->tenant_id,
@@ -83,7 +83,7 @@ class BreakGlassService
             newValues:   ['expanded_scope' => 'read_all_participant_modules', 'access_expires_at' => $expiresAt->toIso8601String(), 'justification' => $justification],
         );
 
-        // Critical alert to IT Admin and QA — requires supervisor acknowledgment
+        // Critical alert to IT Admin and QA : requires supervisor acknowledgment
         $participantName = $participant->first_name . ' ' . $participant->last_name;
         $userName        = $user->first_name . ' ' . $user->last_name;
 
@@ -130,7 +130,7 @@ class BreakGlassService
      */
     public function revokeAccess(BreakGlassEvent $event, User $supervisor): void
     {
-        // Append-only model — we update expiry only (not a full record mutation)
+        // Append-only model : we update expiry only (not a full record mutation)
         \Illuminate\Support\Facades\DB::table('emr_break_glass_events')
             ->where('id', $event->id)
             ->update(['access_expires_at' => now()]);

@@ -2,7 +2,7 @@
 
 // ─── CriticalValueEscalationJob ──────────────────────────────────────────────
 // Phase B6. Hourly. Finds unacknowledged critical acks past their deadline_at,
-// stamps escalated_at (idempotent — only stamps once), and emits a critical
+// stamps escalated_at (idempotent : only stamps once), and emits a critical
 // escalation alert to executive + qa_compliance.
 // ─────────────────────────────────────────────────────────────────────────────
 

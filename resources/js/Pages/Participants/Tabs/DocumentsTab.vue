@@ -101,11 +101,11 @@ async function uploadDocument() {
 }
 
 function downloadDocument(doc: ParticipantDocument) {
-  // Controller streams the file — navigate directly to the download route
+  // Controller streams the file: navigate directly to the download route
   window.open(`/participants/${props.participant.id}/documents/${doc.id}/download`, '_blank')
 }
 
-// Phase 8 (MVP roadmap): C-CDA import — parse-only preview
+// Phase 8 (MVP roadmap): C-CDA import: parse-only preview
 async function importCcda(e: Event) {
   const input = e.target as HTMLInputElement
   const file = input.files?.[0]

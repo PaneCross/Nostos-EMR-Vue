@@ -11,7 +11,7 @@
 //   5. Immunizations
 //   6. Procedures
 //   7. Plan of Care
-//   8. Vital Signs (stub — emitted empty if none)
+//   8. Vital Signs (stub : emitted empty if none)
 //
 // Empty sections carry the CDA null-flavor "NI" (No Information), which is
 // conformant per C-CDA §1.1. Downstream validators (ETT, NIST) accept this.
@@ -168,7 +168,7 @@ class CcdaExportService
 
     private function resultsSection($p): string
     {
-        // Intentionally lightweight — full LabResult model lives behind an
+        // Intentionally lightweight : full LabResult model lives behind an
         // aggregate; emit NI if we can't express results simply.
         $body = '<text>No results available.</text>';
         return $this->section('Results', '30954-2',

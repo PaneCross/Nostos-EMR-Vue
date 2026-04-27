@@ -3,7 +3,7 @@
 namespace App\Services\Ocr;
 
 /**
- * Google Document AI OCR gateway stub — Phase M4.
+ * Google Document AI OCR gateway stub : Phase M4.
  * Activated when GCP SDK + service-account key land. Throws until configured.
  */
 class GoogleDocumentAiOcrGateway implements OcrGateway

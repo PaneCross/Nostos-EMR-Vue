@@ -1,7 +1,7 @@
 <?php
 
 // ─── ReportDefinitionController ──────────────────────────────────────────────
-// Phase 15.3 — CRUD + run + CSV export for custom report definitions.
+// Phase 15.3 : CRUD + run + CSV export for custom report definitions.
 // ─────────────────────────────────────────────────────────────────────────────
 
 namespace App\Http\Controllers;
@@ -37,7 +37,7 @@ class ReportDefinitionController extends Controller
         return response()->json(['reports' => $rows]);
     }
 
-    /** Phase 15-UI — custom report builder Inertia page. */
+    /** Phase 15-UI : custom report builder Inertia page. */
     public function builder()
     {
         $this->gate();

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 // ─── Enrollment/Transfers ───────────────────────────────────────────────────
-// Admin view for participant site transfers — when an enrolled member moves
+// Admin view for participant site transfers: when an enrolled member moves
 // between PACE day-center sites within the organization (relocation, capacity
 // rebalancing, family preference).
 //

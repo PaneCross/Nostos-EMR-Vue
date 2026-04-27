@@ -2,7 +2,7 @@
 
 // ─── User ─────────────────────────────────────────────────────────────────────
 // Staff account. Represents a clinician or administrator who logs in to the
-// EMR. (Participants — the elderly people receiving care — are NOT users;
+// EMR. (Participants : the elderly people receiving care : are NOT users;
 // they live in the Participant model. Optional participant portal logins are
 // a separate, narrower auth surface.)
 //
@@ -14,8 +14,8 @@
 // person rather than the whole department.
 //
 // Notable rules:
-//  - 42 CFR §460.91 — RBAC is mandatory; `department` + `role` are the keys.
-//  - Account lockout after 5 failed attempts (30 min) — HIPAA §164.308 safeguard.
+//  - 42 CFR §460.91 : RBAC is mandatory; `department` + `role` are the keys.
+//  - Account lockout after 5 failed attempts (30 min) : HIPAA §164.308 safeguard.
 //  - `is_super_admin` flips during impersonation: the IMPERSONATED user never
 //    appears as super-admin to the UI, only the real authenticated user does.
 // ─────────────────────────────────────────────────────────────────────────────
@@ -39,7 +39,7 @@ class User extends Authenticatable
     // ── Designations ──────────────────────────────────────────────────────────
 
     /**
-     * Sub-role designations — identify specific functional accountability roles
+     * Sub-role designations : identify specific functional accountability roles
      * within a department. Used for targeted alerting and workflow routing.
      *
      * Unlike departments (which control access), designations control WHO gets
@@ -71,19 +71,19 @@ class User extends Authenticatable
     ];
 
     /**
-     * Designation behavior detail — what each designation actually triggers in
+     * Designation behavior detail : what each designation actually triggers in
      * the codebase today. Surfaced in the IT Admin → Users detail modal so
      * administrators making assignments know exactly what notifications +
      * approval workflows the user will pick up.
      *
      * Structure:
-     *   permissions   — static list. Approval gates / abilities the designation
+     *   permissions   : static list. Approval gates / abilities the designation
      *                   grants regardless of Org Settings (RBAC-level).
-     *   notifications — list of {key, text}. Each entry is keyed to a
+     *   notifications : list of {key, text}. Each entry is keyed to a
      *                   preference in NotificationPreferenceService. The
      *                   IT-admin Users modal filters this list at render time
      *                   to show ONLY notifications currently enabled for the
-     *                   tenant + the user's site (cascade aware) — so admins
+     *                   tenant + the user's site (cascade aware) : so admins
      *                   see what THIS designation actually routes today, not
      *                   what's theoretically possible.
      *
@@ -97,7 +97,7 @@ class User extends Authenticatable
             'summary' => 'Top clinical authority. Approves service denials and appeals; receives critical clinical-safety alerts.',
             'permissions' => [
                 'Can issue a Service Delivery Request denial (§460.122 denial notice generated for the participant).',
-                'Can decide a §460.122 appeal — uphold or overturn the original denial.',
+                'Can decide a §460.122 appeal : uphold or overturn the original denial.',
                 'Listed in the grievance-escalation assignee picker.',
             ],
             'notifications' => [
@@ -111,7 +111,7 @@ class User extends Authenticatable
             'label'   => 'Compliance Officer',
             'summary' => 'Owns the grievance + appeals workflow. Auto-named in escalations and overdue alerts.',
             'permissions' => [
-                'Can decide a §460.122 appeal — uphold or overturn.',
+                'Can decide a §460.122 appeal : uphold or overturn.',
                 'Listed in the grievance-escalation assignee picker.',
             ],
             'notifications' => [
@@ -207,7 +207,7 @@ class User extends Authenticatable
         'designations'               => 'array',
     ];
 
-    // Passwordless — no password column needed
+    // Passwordless : no password column needed
     public function getAuthPassword(): string
     {
         return '';

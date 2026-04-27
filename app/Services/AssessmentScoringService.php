@@ -12,12 +12,12 @@
 //
 // Four instruments implemented (MVP set):
 //   - PHQ-9 (depression, 9 items, 0-27)
-//   - Mini-Cog (cognitive screen, 3 items, 0-5) — license-free
+//   - Mini-Cog (cognitive screen, 3 items, 0-5) : license-free
 //     alternative to MoCA
 //   - Morse Fall Scale (6 items, 0-125)
 //   - Katz ADL (6 items, 0-6)
 //
-// The existing emr_assessments table stores responses as JSONB — answers go
+// The existing emr_assessments table stores responses as JSONB : answers go
 // in `responses`, scoring outputs go in the same row's `total_score` +
 // `interpretation` columns if present, else inside `responses['_score']`.
 // ─────────────────────────────────────────────────────────────────────────────
@@ -31,14 +31,14 @@ class AssessmentScoringService
         'mini_cog',
         'fall_risk_morse',
         'katz_adl',
-        // Phase C2b — substance-use screening
+        // Phase C2b : substance-use screening
         'audit_c_alcohol',
         'cage_alcohol',
         'dast10_substance',
     ];
 
     /**
-     * Phase C2b — Care-plan referral suggestions on positive screens.
+     * Phase C2b : Care-plan referral suggestions on positive screens.
      * Map of (instrument, band) → referral hint.
      */
     public const REFERRAL_SUGGESTIONS = [
@@ -62,7 +62,7 @@ class AssessmentScoringService
     }
 
     /**
-     * Instrument definition — questions, options, score weights.
+     * Instrument definition : questions, options, score weights.
      * Safe to expose to the browser.
      */
     public function definition(string $instrument): ?array
@@ -119,43 +119,43 @@ class AssessmentScoringService
     private function bandFor(string $instrument, int $total): array
     {
         return match ($instrument) {
-            // Phase C2b — substance-use screening
+            // Phase C2b : substance-use screening
             'audit_c_alcohol' => match (true) {
                 // Unified ≥4 cutoff for screening inclusivity (see memory note).
                 $total >= 4 => ['band' => 'positive', 'interpretation' => 'Positive screen for at-risk drinking (AUDIT-C ≥4). Confirmatory evaluation recommended.'],
                 default     => ['band' => 'negative', 'interpretation' => 'Negative screen (AUDIT-C 0–3).'],
             },
             'cage_alcohol' => match (true) {
-                $total >= 2 => ['band' => 'positive', 'interpretation' => 'Positive CAGE screen (≥2) — alcohol-use evaluation indicated.'],
+                $total >= 2 => ['band' => 'positive', 'interpretation' => 'Positive CAGE screen (≥2) : alcohol-use evaluation indicated.'],
                 default     => ['band' => 'negative', 'interpretation' => 'Negative CAGE screen (0–1).'],
             },
             'dast10_substance' => match (true) {
                 $total === 0 => ['band' => 'none',         'interpretation' => 'No substance-use concerns (DAST-10 = 0).'],
                 $total <= 2  => ['band' => 'low',          'interpretation' => 'Low level of problems (DAST-10 1–2).'],
-                $total <= 5  => ['band' => 'moderate',     'interpretation' => 'Moderate level of problems (DAST-10 3–5) — further assessment advised.'],
-                $total <= 8  => ['band' => 'substantial',  'interpretation' => 'Substantial level of problems (DAST-10 6–8) — assessment + treatment referral.'],
-                default      => ['band' => 'severe',       'interpretation' => 'Severe level of problems (DAST-10 9–10) — intensive intervention required.'],
+                $total <= 5  => ['band' => 'moderate',     'interpretation' => 'Moderate level of problems (DAST-10 3–5) : further assessment advised.'],
+                $total <= 8  => ['band' => 'substantial',  'interpretation' => 'Substantial level of problems (DAST-10 6–8) : assessment + treatment referral.'],
+                default      => ['band' => 'severe',       'interpretation' => 'Severe level of problems (DAST-10 9–10) : intensive intervention required.'],
             },
             'phq9_depression' => match (true) {
                 $total <= 4  => ['band' => 'minimal',          'interpretation' => 'Minimal or no depression (0–4)'],
                 $total <= 9  => ['band' => 'mild',             'interpretation' => 'Mild depression (5–9)'],
                 $total <= 14 => ['band' => 'moderate',         'interpretation' => 'Moderate depression (10–14)'],
                 $total <= 19 => ['band' => 'moderately_severe','interpretation' => 'Moderately severe depression (15–19)'],
-                default      => ['band' => 'severe',           'interpretation' => 'Severe depression (20–27) — evaluate urgently'],
+                default      => ['band' => 'severe',           'interpretation' => 'Severe depression (20–27) : evaluate urgently'],
             },
             'mini_cog' => match (true) {
                 $total <= 2  => ['band' => 'positive', 'interpretation' => 'Positive screen for cognitive impairment (0–2)'],
-                default      => ['band' => 'negative', 'interpretation' => 'Negative screen — no impairment detected (3–5)'],
+                default      => ['band' => 'negative', 'interpretation' => 'Negative screen : no impairment detected (3–5)'],
             },
             'fall_risk_morse' => match (true) {
                 $total <= 24  => ['band' => 'low',    'interpretation' => 'Low fall risk (0–24)'],
                 $total <= 44  => ['band' => 'medium', 'interpretation' => 'Moderate fall risk (25–44)'],
-                default       => ['band' => 'high',   'interpretation' => 'High fall risk (≥45) — implement interventions'],
+                default       => ['band' => 'high',   'interpretation' => 'High fall risk (≥45) : implement interventions'],
             },
             'katz_adl' => match (true) {
                 $total >= 6 => ['band' => 'independent',       'interpretation' => 'Fully independent in all ADLs (6/6)'],
                 $total >= 4 => ['band' => 'moderate',          'interpretation' => 'Moderate functional impairment'],
-                default     => ['band' => 'severe',            'interpretation' => 'Severe functional impairment — care plan review indicated'],
+                default     => ['band' => 'severe',            'interpretation' => 'Severe functional impairment : care plan review indicated'],
             },
             default => ['band' => 'unknown', 'interpretation' => ''],
         };
@@ -191,7 +191,7 @@ class AssessmentScoringService
         return [
             'instrument'  => 'audit_c_alcohol',
             'title'       => 'AUDIT-C (Alcohol Use Screening)',
-            'description' => 'WHO AUDIT-C — 3-item alcohol-use screen. Positive ≥4.',
+            'description' => 'WHO AUDIT-C : 3-item alcohol-use screen. Positive ≥4.',
             'max_score'   => 12,
             'questions'   => [
                 ['id' => 'q1', 'text' => 'How often do you have a drink containing alcohol?', 'options' => $freq],
@@ -307,7 +307,7 @@ class AssessmentScoringService
                 ],
                 [
                     'id' => 'q2',
-                    'text' => 'Clock draw — numbers in correct position',
+                    'text' => 'Clock draw : numbers in correct position',
                     'options' => [
                         ['value' => 0, 'label' => 'Not correct', 'weight' => 0],
                         ['value' => 1, 'label' => 'Correct',     'weight' => 1],
@@ -315,7 +315,7 @@ class AssessmentScoringService
                 ],
                 [
                     'id' => 'q3',
-                    'text' => 'Clock draw — hands set to 11:10 correctly',
+                    'text' => 'Clock draw : hands set to 11:10 correctly',
                     'options' => [
                         ['value' => 0, 'label' => 'Not correct', 'weight' => 0],
                         ['value' => 1, 'label' => 'Correct',     'weight' => 1],

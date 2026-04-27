@@ -5,9 +5,9 @@
 // and CMS PACE Manual Ch. 4.
 //
 // Reasons split into three types:
-//   death       — §460.160(b): terminates enrollment on actual date of death.
-//   voluntary   — §460.162: participant-initiated, no cause required.
-//   involuntary — §460.164(b): PACE-initiated from an enumerated list.
+//   death       : §460.160(b): terminates enrollment on actual date of death.
+//   voluntary   : §460.162: participant-initiated, no cause required.
+//   involuntary : §460.164(b): PACE-initiated from an enumerated list.
 //
 // See memory: feedback_pace_disenrollment_taxonomy.md
 // ──────────────────────────────────────────────────────────────────────────────
@@ -40,7 +40,7 @@ class DisenrollmentTaxonomy
         'voluntary_elected_hospice_outside_pace' => self::TYPE_VOLUNTARY,
         'voluntary_other'                        => self::TYPE_VOLUNTARY,
 
-        // ── Involuntary (§460.164(b) — enumerated list) ────────────────────
+        // ── Involuntary (§460.164(b) : enumerated list) ────────────────────
         'involuntary_nonpayment_premium'            => self::TYPE_INVOLUNTARY,
         'involuntary_nonpayment_medicaid_liability' => self::TYPE_INVOLUNTARY,
         'involuntary_disruptive_participant'        => self::TYPE_INVOLUNTARY,

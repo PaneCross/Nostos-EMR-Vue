@@ -1,13 +1,13 @@
 <script setup lang="ts">
 // ─── Bi/ReportBuilder ───────────────────────────────────────────────────────
-// Self-service report builder — pick a domain (encounters / participants /
+// Self-service report builder: pick a domain (encounters / participants /
 // quality indicators / capitation), filter, group, and visualize. Saved
 // reports become reusable widgets in Bi/Dashboards.vue.
 //
 // Audience: BI editors (typically QA Compliance + Finance + Exec).
 //
 // Notable rules:
-//   - Queries run via a server-side allowlisted query builder — users
+//   - Queries run via a server-side allowlisted query builder: users
 //     cannot inject arbitrary SQL.
 //   - Tenant-scoped at every level; cross-tenant data leakage is impossible
 //     by design.
@@ -88,14 +88,14 @@ function downloadCsv() {
           <div>
             <label class="block text-xs mb-1">Entity</label>
             <select v-model="entity" class="w-full rounded border-gray-300 dark:border-slate-600 text-sm">
-              <option value="">— select —</option>
+              <option value="">- select -</option>
               <option v-for="e in entities" :key="e" :value="e">{{ e }}</option>
             </select>
           </div>
           <div>
             <label class="block text-xs mb-1">Dimension</label>
             <select v-model="dimension" :disabled="!entity" class="w-full rounded border-gray-300 dark:border-slate-600 text-sm">
-              <option value="">— select —</option>
+              <option value="">- select -</option>
               <option v-for="d in dimensions" :key="d" :value="d">{{ d }}</option>
             </select>
           </div>

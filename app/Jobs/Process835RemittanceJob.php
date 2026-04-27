@@ -45,7 +45,7 @@ class Process835RemittanceJob implements ShouldQueue
     public int $tries = 3;
 
     /**
-     * Phase Y4 (Audit-13 M4): cap at 10 min — 835 files can be MB-scale and
+     * Phase Y4 (Audit-13 M4): cap at 10 min : 835 files can be MB-scale and
      * the parser runs inside a transaction (see line ~90). Without a timeout
      * Laravel's worker default (60s) can kill mid-transaction on large files.
      */
@@ -238,7 +238,7 @@ class Process835RemittanceJob implements ShouldQueue
         $severity   = $hasDenials ? 'warning' : 'info';
 
         $denialNote = $hasDenials
-            ? " {$deniedCount} claim(s) denied — review required."
+            ? " {$deniedCount} claim(s) denied : review required."
             : ' All claims processed successfully.';
 
         $alertService->create([
@@ -277,6 +277,6 @@ class Process835RemittanceJob implements ShouldQueue
             return "CARC {$reasonCode}: {$carc->description}";
         }
 
-        return "Claim denied — reason code {$reasonCode} ({$categoryLabel}).";
+        return "Claim denied : reason code {$reasonCode} ({$categoryLabel}).";
     }
 }

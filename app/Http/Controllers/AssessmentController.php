@@ -77,11 +77,11 @@ class AssessmentController extends Controller
         // W4-4: Create clinical alert when a scored assessment crosses a threshold.
         $this->maybeCreateAssessmentAlert($assessment, $participant, $user->tenant_id);
 
-        // Phase R3 — Auto-create a StaffTask when AssessmentScoringService
+        // Phase R3 : Auto-create a StaffTask when AssessmentScoringService
         // has a referral suggestion for this (instrument, band) combination.
         $this->maybeAutoReferral($assessment, $participant, $user);
 
-        // Phase W1 — optional Nursing Director routing per Org Settings preference.
+        // Phase W1 : optional Nursing Director routing per Org Settings preference.
         // Morse fall scale >= 45 (High Risk band) → ping nursing_director if the
         // org (or this site) has the preference enabled. Default OFF.
         $this->maybeNotifyNursingDirectorOnFallRisk($assessment, $participant, $user);
@@ -115,7 +115,7 @@ class AssessmentController extends Controller
             'tenant_id'          => $user->tenant_id,
             'participant_id'     => $participant->id,
             'alert_type'         => 'nursing_director_fall_risk',
-            'title'              => "Fall risk High — Nursing Director review",
+            'title'              => "Fall risk High : Nursing Director review",
             'message'            => "Morse Fall Scale {$assessment->score} for {$name}: High Risk band. Forwarded for nursing oversight.",
             'severity'           => 'warning',
             'source_module'      => 'assessments',
@@ -162,9 +162,9 @@ class AssessmentController extends Controller
      * Standard types (Braden/MoCA/OHAT): single operator/value threshold → warning.
      *
      * Special cases:
-     *   fall_history     — response-based: alert when responses.falls_12_months >= 2 (warning).
+     *   fall_history     : response-based: alert when responses.falls_12_months >= 2 (warning).
      *                      No numeric score is required.
-     *   lace_plus_index  — dual threshold: score >= 10 = critical, 5-9 = warning, <5 = no alert.
+     *   lace_plus_index  : dual threshold: score >= 10 = critical, 5-9 = warning, <5 = no alert.
      */
     private function maybeCreateAssessmentAlert(Assessment $assessment, Participant $participant, int $tenantId): void
     {

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // Errors/500.vue
 // Full-page 500 Server Error screen. Shown when an unhandled exception or
-// unexpected server-side error occurs. No AppShell — renders as a standalone
+// unexpected server-side error occurs. No AppShell: renders as a standalone
 // centered layout. Provides a Reload button and a Go to Dashboard fallback.
 // Route: rendered by Inertia on 500 responses.
 
@@ -22,7 +22,7 @@ import { ExclamationCircleIcon } from '@heroicons/vue/24/outline'
 
             <!-- Error code -->
             <p class="text-sm font-semibold text-amber-500 dark:text-amber-400 uppercase tracking-widest mb-2">
-                500 — Server Error
+                500: Server Error
             </p>
 
             <!-- Heading -->

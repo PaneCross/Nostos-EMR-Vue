@@ -1,9 +1,9 @@
 <?php
 
 // ─── SamlController ──────────────────────────────────────────────────────────
-// Phase 15.2 — SAML 2.0 SP endpoint scaffold. Publishes SP metadata and
+// Phase 15.2 : SAML 2.0 SP endpoint scaffold. Publishes SP metadata and
 // exposes stubs for login / ACS / SLO. Real assertion handling requires
-// installing `laravel-saml2` or equivalent PHP SAML library — documented
+// installing `laravel-saml2` or equivalent PHP SAML library : documented
 // in the honest-label response.
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -17,7 +17,7 @@ use Illuminate\Http\Response;
 
 class SamlController extends Controller
 {
-    /** GET /saml/{tenantId}/metadata — SP entity descriptor XML. */
+    /** GET /saml/{tenantId}/metadata : SP entity descriptor XML. */
     public function metadata(int $tenantId, Request $request): Response
     {
         $idp = SamlIdentityProvider::forTenant($tenantId)->active()->first();
@@ -43,7 +43,7 @@ XML;
         return response($xml, 200, ['Content-Type' => 'application/samlmetadata+xml']);
     }
 
-    /** GET /saml/{tenantId}/login — initiate SSO (stub). */
+    /** GET /saml/{tenantId}/login : initiate SSO (stub). */
     public function login(int $tenantId): JsonResponse
     {
         $idp = SamlIdentityProvider::forTenant($tenantId)->active()->first();
@@ -59,17 +59,17 @@ XML;
             'sso_url'     => $idp->sso_url,
             'honest_label'=> 'SAML SP is scaffolded. Install `aacotroneo/laravel-saml2` (or equivalent) '
                             . 'and wire IdP-specific AuthnRequest generation. This endpoint currently '
-                            . 'returns configuration only — it does NOT redirect the browser to the IdP.',
+                            . 'returns configuration only : it does NOT redirect the browser to the IdP.',
         ], 501);
     }
 
-    /** POST /saml/{tenantId}/acs — assertion consumer (stub). */
+    /** POST /saml/{tenantId}/acs : assertion consumer (stub). */
     public function acs(Request $request, int $tenantId): JsonResponse
     {
         AuditLog::record(
             action: 'saml.acs_stub_hit',
             tenantId: $tenantId,
-            description: 'SAML ACS endpoint hit (scaffold — not processing assertion)',
+            description: 'SAML ACS endpoint hit (scaffold : not processing assertion)',
         );
         return response()->json([
             'scaffold'     => true,
@@ -79,7 +79,7 @@ XML;
         ], 501);
     }
 
-    /** GET /saml/{tenantId}/slo — single logout (stub). */
+    /** GET /saml/{tenantId}/slo : single logout (stub). */
     public function slo(Request $request, int $tenantId): JsonResponse
     {
         return response()->json([

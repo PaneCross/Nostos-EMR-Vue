@@ -7,12 +7,12 @@
 // between the submitted amount and what the payer actually paid.
 //
 // X12 adjustment group codes:
-//   CO — Contractual Obligation: payer contract write-off (non-actionable)
-//   OA — Other Adjustment: various payer-initiated reductions
-//   PI — Payer Initiated Reductions: payer's own error or policy
-//   PR — Patient Responsibility: copay, deductible, or coinsurance owed by patient
+//   CO : Contractual Obligation: payer contract write-off (non-actionable)
+//   OA : Other Adjustment: various payer-initiated reductions
+//   PI : Payer Initiated Reductions: payer's own error or policy
+//   PR : Patient Responsibility: copay, deductible, or coinsurance owed by patient
 //
-// Append-only (UPDATED_AT = null) — CAS data is immutable once parsed from 835.
+// Append-only (UPDATED_AT = null) : CAS data is immutable once parsed from 835.
 
 namespace App\Models;
 
@@ -26,7 +26,7 @@ class RemittanceAdjustment extends Model
 
     protected $table = 'emr_remittance_adjustments';
 
-    /** Disable updated_at — 835 CAS data is append-only. */
+    /** Disable updated_at : 835 CAS data is append-only. */
     public const UPDATED_AT = null;
 
     // ── Adjustment group code constants ───────────────────────────────────────
@@ -88,13 +88,13 @@ class RemittanceAdjustment extends Model
         return $query->where('remittance_claim_id', $claimId);
     }
 
-    /** Contractual write-offs — expected, non-actionable reductions. */
+    /** Contractual write-offs : expected, non-actionable reductions. */
     public function scopeContractual($query)
     {
         return $query->where('adjustment_group_code', 'CO');
     }
 
-    /** Patient responsibility amounts — copay/deductible/coinsurance. */
+    /** Patient responsibility amounts : copay/deductible/coinsurance. */
     public function scopePatientResponsibility($query)
     {
         return $query->where('adjustment_group_code', 'PR');

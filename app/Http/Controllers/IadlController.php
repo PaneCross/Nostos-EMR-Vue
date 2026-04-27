@@ -4,7 +4,7 @@
 // Phase C1. Lawton IADL assessment CRUD.
 //
 // Routes:
-//   GET  /participants/{participant}/iadl          index()  — history + trend
+//   GET  /participants/{participant}/iadl          index()  : history + trend
 //   POST /participants/{participant}/iadl          store()
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -106,7 +106,7 @@ class IadlController extends Controller
             description: "IADL recorded for participant #{$participant->id}: {$scored['total']}/8 ({$scored['interpretation']}).",
         );
 
-        // Phase R3 — auto-create one StaffTask per impaired-item referral
+        // Phase R3 : auto-create one StaffTask per impaired-item referral
         // suggestion so the right department picks it up via the tasks queue.
         $tasksCreated = [];
         foreach ($record->referralSuggestions() as $sugg) {
@@ -116,7 +116,7 @@ class IadlController extends Controller
                 'assigned_to_department' => $sugg['dept'],
                 'created_by_user_id'     => $u->id,
                 'title'                  => "IADL referral: {$sugg['item']}",
-                'description'            => $sugg['goal'] . " (Auto-created from IADL record #{$record->id}; total {$scored['total']}/8 — {$scored['interpretation']}.)",
+                'description'            => $sugg['goal'] . " (Auto-created from IADL record #{$record->id}; total {$scored['total']}/8 : {$scored['interpretation']}.)",
                 'priority'               => $scored['interpretation'] === 'severe_impairment' ? 'high' : 'normal',
                 'status'                 => 'pending',
                 'related_to_type'        => IadlRecord::class,

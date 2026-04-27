@@ -3,7 +3,7 @@
 // Unified chronological feed of everything that happened to this
 // participant: notes, orders, vitals, meds, encounters, incidents,
 // transfers, etc. Server-merged from multiple tables and color-coded
-// by `kind`. Read-only — clicks deep-link to the source record.
+// by `kind`. Read-only: clicks deep-link to the source record.
 //
 // Useful as the "what's been going on" view for IDT (Interdisciplinary
 // Team) huddles and for new staff orienting to a chart.
@@ -36,10 +36,10 @@ function kindColor(k: string): string {
 function label(e: any): string {
   const d = e.data ?? {}
   switch (e.kind) {
-    case 'note':        return `${d.note_type ?? 'Note'} — ${d.status ?? ''}`
-    case 'order':       return `${d.order_type ?? 'Order'} — ${d.status ?? ''}`
+    case 'note':        return `${d.note_type ?? 'Note'}: ${d.status ?? ''}`
+    case 'order':       return `${d.order_type ?? 'Order'}: ${d.status ?? ''}`
     case 'vitals':      return `Vitals: BP ${d.bp_systolic ?? '-'}/${d.bp_diastolic ?? '-'}, HR ${d.pulse ?? '-'}`
-    case 'appointment': return `${d.appointment_type ?? 'Appt'} — ${d.status ?? ''}`
+    case 'appointment': return `${d.appointment_type ?? 'Appt'}: ${d.status ?? ''}`
     default:            return e.kind
   }
 }

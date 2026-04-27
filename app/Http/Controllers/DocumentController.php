@@ -4,15 +4,15 @@
 // Manages participant-level document uploads, listing, streaming, and deletion.
 //
 // Routes (all nested under /participants/{participant}):
-//   GET    /documents                  → index()    — paginated list, optional ?category= filter
-//   POST   /documents                  → store()    — upload file (multipart/form-data)
-//   GET    /documents/{document}       → download() — stream file to browser
-//   DELETE /documents/{document}       → destroy()  — soft-delete (HIPAA: never hard-delete)
+//   GET    /documents                  → index()    : paginated list, optional ?category= filter
+//   POST   /documents                  → store()    : upload file (multipart/form-data)
+//   GET    /documents/{document}       → download() : stream file to browser
+//   DELETE /documents/{document}       → destroy()  : soft-delete (HIPAA: never hard-delete)
 //
 // Security:
 //   - All routes are inside the 'auth' middleware group.
 //   - Tenant isolation: participant must belong to auth user's tenant.
-//   - File path is NEVER exposed in API responses — download goes through controller.
+//   - File path is NEVER exposed in API responses : download goes through controller.
 //   - Soft-delete only. Hard delete is prohibited.
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -35,8 +35,8 @@ class DocumentController extends Controller
      * Return a paginated JSON list of documents for a participant.
      *
      * Query params:
-     *   category — optional filter (must match Document::VALID_CATEGORIES)
-     *   per_page — optional page size (default 20, max 100)
+     *   category : optional filter (must match Document::VALID_CATEGORIES)
+     *   per_page : optional page size (default 20, max 100)
      */
     public function index(Request $request, Participant $participant): JsonResponse
     {
@@ -81,7 +81,7 @@ class DocumentController extends Controller
         $fileType   = $ext === 'jpg' ? 'jpeg' : $ext;
         $storagePath = "participants/{$participant->id}/" . uniqid('doc_', true) . ".{$ext}";
 
-        // Store file on local disk — path is relative to storage/app/
+        // Store file on local disk : path is relative to storage/app/
         Storage::disk('local')->put($storagePath, file_get_contents($file->getRealPath()));
 
         $document = Document::create([
@@ -125,7 +125,7 @@ class DocumentController extends Controller
      * Sets Content-Disposition: inline for PDFs and images (browser preview),
      * attachment for DOCX (force download).
      *
-     * The file path is NEVER exposed — client only knows the document ID.
+     * The file path is NEVER exposed : client only knows the document ID.
      */
     public function download(Participant $participant, Document $document): StreamedResponse
     {
@@ -191,7 +191,7 @@ class DocumentController extends Controller
             newValues: ['file_name' => $document->file_name]
         );
 
-        $document->delete(); // Soft delete — file bytes retained on disk
+        $document->delete(); // Soft delete : file bytes retained on disk
 
         return response()->json(['message' => 'Document removed.']);
     }
@@ -200,7 +200,7 @@ class DocumentController extends Controller
 
     /**
      * Confirm the participant belongs to the authenticated user's tenant.
-     * Aborts 403 if not — prevents cross-tenant access.
+     * Aborts 403 if not : prevents cross-tenant access.
      */
     private function participantForTenant(Participant $participant): void
     {
@@ -213,7 +213,7 @@ class DocumentController extends Controller
 
     /**
      * Confirm the document belongs to the given participant.
-     * Aborts 404 if not — prevents probing other participants' documents.
+     * Aborts 404 if not : prevents probing other participants' documents.
      */
     private function documentBelongsToParticipant(Document $document, Participant $participant): void
     {

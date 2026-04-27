@@ -3,7 +3,7 @@
 // ─── NotificationPreference ──────────────────────────────────────────────────
 // One row per (tenant, preference_key). Governs OPTIONAL alert + workflow
 // routing. CMS-required notifications are hardwired in code and do NOT use
-// this table — see NotificationPreferenceService::shouldNotify() for the
+// this table : see NotificationPreferenceService::shouldNotify() for the
 // short-circuit logic. Mostly read via the service; rarely queried directly.
 // ─────────────────────────────────────────────────────────────────────────────
 

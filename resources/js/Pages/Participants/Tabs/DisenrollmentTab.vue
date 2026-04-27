@@ -92,7 +92,7 @@ function fmtDate(val: string | null): string {
 const showDisenrollModal = ref(false)
 const disenrollSaving    = ref(false)
 const disenrollError     = ref('')
-// Default reason is a canonical voluntary code — staff pick the specific
+// Default reason is a canonical voluntary code: staff pick the specific
 // sub-reason from the grouped dropdown.
 const disenrollForm = ref({
   reason:                    'voluntary_other',
@@ -113,7 +113,7 @@ function openDisenrollModal() {
 }
 
 // When the chosen reason is 'death', relax the effective-date rule per
-// 42 CFR §460.160(b) — date of death is the canonical disenrollment date.
+// 42 CFR §460.160(b): date of death is the canonical disenrollment date.
 const isDeathReason = computed(() => disenrollForm.value.reason === 'death')
 
 async function submitDisenroll() {

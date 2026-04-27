@@ -2,13 +2,13 @@
 
 // ─── Procedure Model ───────────────────────────────────────────────────────────
 // Standalone procedure history for PACE participants (USCDI v3 Procedures).
-// Distinct from encounter_log.procedure_code — this tracks the full procedure
+// Distinct from encounter_log.procedure_code : this tracks the full procedure
 // narrative with CPT/SNOMED coding for FHIR R4 Procedure resource mapping.
 //
 // source enum:
-//   internal        — documented by PACE staff during a visit
-//   external_report — received from hospital/specialist report
-//   patient_reported — self-reported by participant or caregiver
+//   internal        : documented by PACE staff during a visit
+//   external_report : received from hospital/specialist report
+//   patient_reported : self-reported by participant or caregiver
 // ─────────────────────────────────────────────────────────────────────────────
 
 namespace App\Models;

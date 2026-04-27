@@ -118,7 +118,7 @@ class Referral extends Model
     ];
 
     /**
-     * Display name of the potential enrollee — falls back when not yet set.
+     * Display name of the potential enrollee : falls back when not yet set.
      *
      * NPA/CMS terminology note: "potential enrollee" is the 42 CFR §460.154 term
      * for a pre-enrollment individual. Internal DB columns use the shorter
@@ -165,7 +165,7 @@ class Referral extends Model
 
     /**
      * Chronological thread of notes attached to this referral (newest first).
-     * NOTE: the relationship is named `referralNotes` — NOT `notes` — because
+     * NOTE: the relationship is named `referralNotes` : NOT `notes` : because
      * `emr_referrals` has an existing `notes` TEXT column for the initial
      * referral narrative, and Eloquent resolves attributes before relationship
      * methods. Calling `$referral->notes` returns the string; call
@@ -199,7 +199,7 @@ class Referral extends Model
     /** Human-readable label for the referral source. */
     public function sourceLabel(): string
     {
-        return self::SOURCE_LABELS[$this->referral_source] ?? $this->referral_source ?? '—';
+        return self::SOURCE_LABELS[$this->referral_source] ?? $this->referral_source ?? ':';
     }
 
     // ── Scopes ────────────────────────────────────────────────────────────────

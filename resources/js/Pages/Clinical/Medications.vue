@@ -10,7 +10,7 @@
 //   - Beers Criteria + polypharmacy alerts are evaluated against the active
 //     med list; rows with open alerts get an amber left border.
 //   - Controlled-substance counts trip ePrescribing/EPCS workflows (DrFirst
-//     Rcopia integration is paywall-deferred — current state surfaces
+//     Rcopia integration is paywall-deferred: current state surfaces
 //     internal records only).
 // ────────────────────────────────────────────────────────────────────────────
 

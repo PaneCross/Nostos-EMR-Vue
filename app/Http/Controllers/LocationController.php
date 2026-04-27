@@ -173,7 +173,7 @@ class LocationController extends Controller
 
     /**
      * DELETE /locations/{location}
-     * Soft-deletes (deactivates) a location. Transportation Team only — other
+     * Soft-deletes (deactivates) a location. Transportation Team only : other
      * staff can add addresses but should not be able to remove records they
      * didn't originate. Past appointments referencing this location are preserved.
      */

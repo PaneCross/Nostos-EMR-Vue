@@ -1,13 +1,13 @@
 <?php
 
-// ─── IbnrEstimateService — Phase S5 ─────────────────────────────────────────
+// ─── IbnrEstimateService : Phase S5 ─────────────────────────────────────────
 // Lag-based IBNR (Incurred But Not Reported) estimation. For each prior
 // service month, we observe how many encounters were ultimately billed/
 // submitted within (1, 2, 3, 6, 12) months of the service date. Completion
 // factors derived from the trailing 12 months are applied to the current
 // month's incomplete encounters to estimate pending claim liability.
 //
-// Free-tier methodology — this is a directional estimator suitable for
+// Free-tier methodology : this is a directional estimator suitable for
 // finance-team monthly close, not actuarial-grade. A real actuarial IBNR
 // model would use development triangles, exposure-base smoothing, and
 // payer-specific lag patterns. Mark this as "directional" in UI.

@@ -7,7 +7,7 @@
 // Audience: IT Admin / HR / Center Manager.
 //
 // Notable rules:
-//   - 42 CFR §460.64-71 — staff qualification + training requirements;
+//   - 42 CFR §460.64-71: staff qualification + training requirements;
 //     CMS surveyors will pull credentials per personnel audit protocol.
 //   - Daily expiration alert job warns at T-30/T-7 and escalates after lapse.
 //   - Append-only credential history; superseded rows retained.
@@ -182,7 +182,7 @@ const expiringCount = computed(() =>
 
 <template>
     <AppShell>
-        <Head :title="`Credentials — ${staff.first_name} ${staff.last_name}`" />
+        <Head :title="`Credentials: ${staff.first_name} ${staff.last_name}`" />
 
         <div class="px-6 py-6 max-w-6xl mx-auto space-y-6">
             <!-- Header -->
@@ -197,7 +197,7 @@ const expiringCount = computed(() =>
                             {{ staff.last_name }}, {{ staff.first_name }}
                         </h1>
                         <p class="text-sm text-slate-500 dark:text-slate-400">
-                            Staff credentials &amp; training — 42 CFR §460.64-71
+                            Staff credentials &amp; training: 42 CFR §460.64-71
                             · <span class="capitalize">{{ staff.department.replace('_', ' ') }}</span>
                             · <span class="capitalize">{{ staff.role }}</span>
                         </p>
@@ -250,7 +250,7 @@ const expiringCount = computed(() =>
                         </div>
                         <div>
                             <label class="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">Title</label>
-                            <input v-model="credForm.title" placeholder="e.g. RN License — CA"
+                            <input v-model="credForm.title" placeholder="e.g. RN License: CA"
                                 class="w-full text-sm rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-700 px-3 py-2" />
                         </div>
                         <div>
@@ -311,11 +311,11 @@ const expiringCount = computed(() =>
                                 <template v-if="c.license_state || c.license_number">
                                     {{ c.license_state ?? '' }} {{ c.license_number ?? '' }}
                                 </template>
-                                <span v-else class="text-slate-400">—</span>
+                                <span v-else class="text-slate-400">-</span>
                             </td>
-                            <td class="px-5 py-3 text-slate-500 dark:text-slate-400 text-xs">{{ c.issued_at ?? '—' }}</td>
+                            <td class="px-5 py-3 text-slate-500 dark:text-slate-400 text-xs">{{ c.issued_at ?? '-' }}</td>
                             <td class="px-5 py-3 text-slate-700 dark:text-slate-200 text-xs">
-                                {{ c.expires_at ?? '—' }}
+                                {{ c.expires_at ?? '-' }}
                                 <span v-if="c.days_remaining !== null" class="block text-slate-400">
                                     {{ c.days_remaining < 0
                                         ? `${Math.abs(c.days_remaining)}d overdue`
@@ -416,7 +416,7 @@ const expiringCount = computed(() =>
                             <td class="px-5 py-3 font-medium text-slate-800 dark:text-slate-100">{{ t.training_name }}</td>
                             <td class="px-5 py-3 text-slate-600 dark:text-slate-300 text-xs">{{ t.category_label }}</td>
                             <td class="px-5 py-3 tabular-nums">{{ t.training_hours }}</td>
-                            <td class="px-5 py-3 text-slate-500 dark:text-slate-400 text-xs">{{ t.completed_at ?? '—' }}</td>
+                            <td class="px-5 py-3 text-slate-500 dark:text-slate-400 text-xs">{{ t.completed_at ?? '-' }}</td>
                             <td class="px-5 py-3 text-right">
                                 <button @click="deleteTraining(t)" class="text-slate-400 hover:text-red-600 dark:hover:text-red-400">
                                     <TrashIcon class="w-4 h-4" />

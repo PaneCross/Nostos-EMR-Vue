@@ -4,12 +4,12 @@
 // Credentials + training-record CRUD on a single staff user.
 //
 // Routes:
-//   GET  /it-admin/users/{user}/credentials      — Inertia page
-//   POST /it-admin/users/{user}/credentials      — add credential
-//   PATCH /staff-credentials/{credential}        — update credential
-//   DELETE /staff-credentials/{credential}       — soft-delete
-//   POST /it-admin/users/{user}/training         — add training record
-//   DELETE /staff-training/{record}              — soft-delete
+//   GET  /it-admin/users/{user}/credentials      : Inertia page
+//   POST /it-admin/users/{user}/credentials      : add credential
+//   PATCH /staff-credentials/{credential}        : update credential
+//   DELETE /staff-credentials/{credential}       : soft-delete
+//   POST /it-admin/users/{user}/training         : add training record
+//   DELETE /staff-training/{record}              : soft-delete
 // ─────────────────────────────────────────────────────────────────────────────
 
 namespace App\Http\Controllers;

@@ -7,7 +7,7 @@
 // `canViewAudit` (it_admin / qa_compliance / executive only).
 //
 // HIPAA §164.528 (accounting of disclosures): members can request who
-// saw their PHI — this log is the source of that report.
+// saw their PHI: this log is the source of that report.
 // ───────────────────────────────────────────────────────────────────────────
 import { ref, computed } from 'vue'
 import { ShieldCheckIcon, MagnifyingGlassIcon } from '@heroicons/vue/24/outline'

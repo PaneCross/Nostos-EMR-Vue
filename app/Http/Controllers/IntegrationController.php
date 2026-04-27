@@ -3,14 +3,14 @@
 // ─── IntegrationController ────────────────────────────────────────────────────
 // Handles inbound integration payloads from external systems (HL7, Lab).
 //
-// Routes (PUBLIC — outside 'auth' session middleware, API-key authenticated):
+// Routes (PUBLIC : outside 'auth' session middleware, API-key authenticated):
 //   POST /integrations/hl7/adt          → adtMessage()
 //   POST /integrations/labs/result      → labResult()
 //
 // Authentication:
 //   Requests must include X-Integration-Tenant header with a valid tenant_id.
 //   For production, this would be an API key. For Phase 6D, tenant resolution
-//   is done via X-Integration-Tenant header (simplified — upgrade in Phase 7).
+//   is done via X-Integration-Tenant header (simplified : upgrade in Phase 7).
 //
 // Design:
 //   - Validate → log → dispatch job → return 202 immediately

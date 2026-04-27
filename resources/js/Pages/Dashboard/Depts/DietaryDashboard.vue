@@ -144,7 +144,7 @@ const sdrItems = computed<ActionItem[]>(() =>
 
         <ActionWidget
             :title="`IADL Food-Prep Candidates (${foodPrepCandidates.length})`"
-            description="Participants with recent IADL food-prep impairment — dietary consult candidates."
+            description="Participants with recent IADL food-prep impairment: dietary consult candidates."
             :items="foodPrepItems"
             emptyMessage="No food-prep impairments on latest IADL records."
             viewAllHref="/participants"

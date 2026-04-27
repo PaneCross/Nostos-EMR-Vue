@@ -2,7 +2,7 @@
 
 // ─── ChatService ──────────────────────────────────────────────────────────────
 // Handles channel lifecycle:
-//   - createDepartmentChannels(): called on tenant setup — 14 dept channels + 1 broadcast
+//   - createDepartmentChannels(): called on tenant setup : 14 dept channels + 1 broadcast
 //   - createParticipantIdtChannel(): called on participant enrollment
 //   - getOrCreateDmChannel(): finds or creates a DM channel between two users
 //   - addMembersToChannel(): bulk-adds users to a channel
@@ -96,7 +96,7 @@ class ChatService
      */
     public function createParticipantIdtChannel(Participant $participant, User $createdBy): ChatChannel
     {
-        $channelName = trim($participant->first_name . ' ' . $participant->last_name) . ' — IDT';
+        $channelName = trim($participant->first_name . ' ' . $participant->last_name) . ' : IDT';
 
         $channel = ChatChannel::firstOrCreate(
             [

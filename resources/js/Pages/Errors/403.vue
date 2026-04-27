@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // Errors/403.vue
 // Full-page 403 Access Denied error screen. Shown when the authenticated user
-// lacks the required role or department permission for a page. No AppShell —
+// lacks the required role or department permission for a page. No AppShell:
 // renders as a standalone centered layout. Provides a Back button that returns
 // the user to the previous page via router.go(-1).
 // Route: rendered by Inertia on 403 responses (see HandleInertiaRequests or custom middleware).
@@ -23,7 +23,7 @@ import { ShieldExclamationIcon } from '@heroicons/vue/24/outline'
 
             <!-- Error code -->
             <p class="text-sm font-semibold text-red-500 dark:text-red-400 uppercase tracking-widest mb-2">
-                403 — Access Denied
+                403: Access Denied
             </p>
 
             <!-- Heading -->

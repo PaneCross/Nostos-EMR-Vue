@@ -1,7 +1,7 @@
 <!-- ItAdmin/Users.vue -->
 <!-- IT Admin user management page. Lists all provisioned users for the tenant
      with search + department + status filters. Clicking a row opens the
-     UserDetailsModal — credentials summary, designations management, activity
+     UserDetailsModal: credentials summary, designations management, activity
      feed (data-mutating actions only), and admin actions (deactivate / reset
      access) all in one place. -->
 
@@ -16,10 +16,10 @@
 // Notable rules:
 //   - Department + designation drive feature gating across the EMR; pay
 //     attention to the `shared_users_department_check` enum (canonical
-//     departments). Nurses currently sit under primary_care/home_care —
+//     departments). Nurses currently sit under primary_care/home_care:
 //     no `nursing` enum value yet.
 //   - Active toggle is reversible; deletion is intentionally not exposed
-//     (audit trail integrity — flip to inactive instead).
+//     (audit trail integrity: flip to inactive instead).
 //   - The detail modal's activity feed filters out pure-read actions
 //     (page views, navigation, searches). Filter list lives server-side
 //     in UserProvisioningController::ACTIVITY_FEED_EXCLUDE_PATTERNS.
@@ -318,15 +318,15 @@ async function submitProvision() {
 // ── Formatting helpers ──────────────────────────────────────────────────────
 
 const formatDate = (iso: string | null | undefined) =>
-    iso ? new Date(iso).toLocaleDateString(undefined, { dateStyle: 'short' }) : '—'
+    iso ? new Date(iso).toLocaleDateString(undefined, { dateStyle: 'short' }) : '-'
 
 const formatDateTime = (iso: string | null | undefined) =>
-    iso ? new Date(iso).toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' }) : '—'
+    iso ? new Date(iso).toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' }) : '-'
 
 function relativeTime(iso: string | null | undefined): string {
-    if (!iso) return '—'
+    if (!iso) return '-'
     const t = new Date(iso).getTime()
-    if (isNaN(t)) return '—'
+    if (isNaN(t)) return '-'
     const diff = (Date.now() - t) / 1000  // seconds
     if (diff < 60) return 'just now'
     if (diff < 3600) return `${Math.floor(diff / 60)}m ago`
@@ -395,7 +395,7 @@ function humanizeAction(action: string): string {
                 </select>
             </div>
 
-            <!-- Table — Actions column removed; whole row is clickable -->
+            <!-- Table: Actions column removed; whole row is clickable -->
             <div class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 overflow-hidden shadow-sm">
                 <table class="w-full text-sm">
                     <thead class="bg-gray-50 dark:bg-slate-700/50">
@@ -531,8 +531,8 @@ function humanizeAction(action: string): string {
                         <dl class="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
                             <div><dt class="text-gray-500 dark:text-slate-400">Last login</dt><dd class="text-gray-900 dark:text-slate-100">{{ formatDateTime(detail.user.last_login_at) }}<span v-if="detail.user.last_login_at" class="text-xs text-gray-500 dark:text-slate-400 ml-1">({{ relativeTime(detail.user.last_login_at) }})</span></dd></div>
                             <div><dt class="text-gray-500 dark:text-slate-400">Joined</dt><dd class="text-gray-900 dark:text-slate-100">{{ formatDate(detail.user.created_at) }}</dd></div>
-                            <div><dt class="text-gray-500 dark:text-slate-400">Provisioned by</dt><dd class="text-gray-900 dark:text-slate-100">{{ detail.user.provisioned_by ?? '—' }}</dd></div>
-                            <div><dt class="text-gray-500 dark:text-slate-400">Site</dt><dd class="text-gray-900 dark:text-slate-100">{{ detail.user.site?.name ?? '—' }}</dd></div>
+                            <div><dt class="text-gray-500 dark:text-slate-400">Provisioned by</dt><dd class="text-gray-900 dark:text-slate-100">{{ detail.user.provisioned_by ?? '-' }}</dd></div>
+                            <div><dt class="text-gray-500 dark:text-slate-400">Site</dt><dd class="text-gray-900 dark:text-slate-100">{{ detail.user.site?.name ?? '-' }}</dd></div>
                             <div><dt class="text-gray-500 dark:text-slate-400">Failed login attempts</dt><dd :class="detail.user.failed_login_attempts > 0 ? 'text-amber-700 dark:text-amber-300 font-medium' : 'text-gray-900 dark:text-slate-100'">{{ detail.user.failed_login_attempts }}</dd></div>
                             <div v-if="detail.user.locked_until && new Date(detail.user.locked_until) > new Date()">
                                 <dt class="text-gray-500 dark:text-slate-400">Locked until</dt>
@@ -579,7 +579,7 @@ function humanizeAction(action: string): string {
                         </div>
                     </div>
 
-                    <!-- Designations — collapsible cards w/ dynamic notifications -->
+                    <!-- Designations: collapsible cards w/ dynamic notifications -->
                     <div class="p-6">
                         <h3 class="text-xs uppercase tracking-wide font-semibold text-gray-500 dark:text-slate-400 mb-3 flex items-center gap-1.5">
                             <ShieldCheckIcon class="w-3.5 h-3.5" />
@@ -590,7 +590,7 @@ function humanizeAction(action: string): string {
                             Designations control who is notified for specific events and who can approve specific workflows
                             (they do <em>not</em> affect general department access). A user may hold multiple. Click a card's
                             arrow to preview its permissions + notifications before assigning. The notifications shown reflect
-                            your current Org Settings — toggling settings on
+                            your current Org Settings: toggling settings on
                             <a href="/executive/org-settings" class="text-indigo-600 dark:text-indigo-400 hover:underline">Org Settings</a>
                             updates this view.
                         </p>
@@ -641,7 +641,7 @@ function humanizeAction(action: string): string {
                                     v-if="isDesignationExpanded(key) && detail.designation_routing?.[key]"
                                     class="px-3 pb-3 ml-6 space-y-2 text-xs border-t border-gray-100 dark:border-slate-700/50 pt-2"
                                 >
-                                    <!-- Permissions (static — independent of Org Settings) -->
+                                    <!-- Permissions (static: independent of Org Settings) -->
                                     <div v-if="detail.designation_routing[key].permissions.length > 0">
                                         <div class="font-semibold text-emerald-700 dark:text-emerald-400 mb-1">
                                             Permissions
@@ -656,7 +656,7 @@ function humanizeAction(action: string): string {
                                         <div class="font-semibold text-blue-700 dark:text-blue-400 mb-1 flex items-center gap-1">
                                             Notifications
                                             <span class="font-normal text-blue-700/70 dark:text-blue-400/70 italic normal-case">
-                                                — {{ detail.designation_routing[key].notifications.length }} of
+                                               : {{ detail.designation_routing[key].notifications.length }} of
                                                 {{ detail.designation_routing[key].total_notifications_in_catalog }} active
                                             </span>
                                         </div>
@@ -665,7 +665,7 @@ function humanizeAction(action: string): string {
                                         </ul>
                                     </div>
 
-                                    <!-- No active notifications — show how to enable -->
+                                    <!-- No active notifications: show how to enable -->
                                     <div v-else-if="detail.designation_routing[key].total_notifications_in_catalog > 0"
                                         class="text-gray-500 dark:text-slate-400 italic">
                                         No notifications active for this designation. Enable them on
@@ -688,7 +688,7 @@ function humanizeAction(action: string): string {
                             <BoltIcon class="w-3.5 h-3.5" /> Activity
                         </h3>
                         <p class="text-xs text-gray-500 dark:text-slate-400 mb-3">
-                            Data-mutating actions only — page views, navigation, and searches are excluded.
+                            Data-mutating actions only: page views, navigation, and searches are excluded.
                         </p>
 
                         <!-- Stats -->

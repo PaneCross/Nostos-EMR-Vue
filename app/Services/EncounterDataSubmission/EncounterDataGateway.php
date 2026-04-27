@@ -1,8 +1,8 @@
 <?php
 
-// ─── EncounterDataGateway (interface) — Phase S4 ────────────────────────────
+// ─── EncounterDataGateway (interface) : Phase S4 ────────────────────────────
 // Vendor-agnostic CMS Encounter Data Submission contract. NullEncounter is
-// the safe default — stages 837P file for manual upload + returns honest
+// the safe default : stages 837P file for manual upload + returns honest
 // submission stub. Real adapters (DirectCMS, Availity, ChangeHealthcare)
 // require contract + credentials.
 // ─────────────────────────────────────────────────────────────────────────────

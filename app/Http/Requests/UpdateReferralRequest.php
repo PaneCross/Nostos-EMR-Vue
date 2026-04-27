@@ -1,7 +1,7 @@
 <?php
 
 // ─── UpdateReferralRequest ────────────────────────────────────────────────────
-// Validates referral updates (not status transitions — those use TransitionRequest).
+// Validates referral updates (not status transitions : those use TransitionRequest).
 // ──────────────────────────────────────────────────────────────────────────────
 
 namespace App\Http\Requests;

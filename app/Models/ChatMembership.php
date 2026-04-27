@@ -4,7 +4,7 @@
 // Links a user to a channel. Tracks when they last read the channel
 // so the UI can show unread badges.
 //
-// UNIQUE: (channel_id, user_id) — one membership record per user per channel.
+// UNIQUE: (channel_id, user_id) : one membership record per user per channel.
 // ──────────────────────────────────────────────────────────────────────────────
 
 namespace App\Models;

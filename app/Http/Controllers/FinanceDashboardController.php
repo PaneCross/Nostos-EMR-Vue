@@ -8,10 +8,10 @@
 //   GET /finance/reports/export        → exportCsv()   (CSV download)
 //
 // Dashboard KPIs (server-side):
-//   1. Total capitation this month      — sum of total_capitation for current YYYY-MM
-//   2. Authorizations expiring 30d      — count of active auths ending within 30 days
-//   3. Encounters this month            — count of encounter_log rows for current month
-//   4. Active participants              — count of enrolled participants in tenant
+//   1. Total capitation this month      : sum of total_capitation for current YYYY-MM
+//   2. Authorizations expiring 30d      : count of active auths ending within 30 days
+//   3. Encounters this month            : count of encounter_log rows for current month
+//   4. Active participants              : count of enrolled participants in tenant
 //
 // Access: finance department only (enforced in route group by CheckDepartmentAccess).
 // ─────────────────────────────────────────────────────────────────────────────
@@ -75,7 +75,7 @@ class FinanceDashboardController extends Controller
             ])
             ->values();
 
-        // Authorizations expiring soon — full list for the table
+        // Authorizations expiring soon : full list for the table
         $expiringAuths = Authorization::forTenant($tenantId)
             ->expiringWithin(30)
             ->with('participant:id,mrn,first_name,last_name')

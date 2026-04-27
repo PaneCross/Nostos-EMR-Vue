@@ -54,13 +54,13 @@ class IntegrationStatusController extends Controller
             ->limit(20)
             ->get(['id', 'connector_type', 'direction', 'status', 'error_message', 'retry_count', 'created_at', 'processed_at']);
 
-        // Phase Q4 — eligibility driver visibility for IT admin
+        // Phase Q4 : eligibility driver visibility for IT admin
         $eligibilityDriver = config('services.eligibility.driver', 'null');
         $eligibility = [
             'driver'           => $eligibilityDriver,
             'driver_label'     => match ($eligibilityDriver) {
-                'availity'           => 'Availity (X12 270/271 — paywall item 16)',
-                'change_healthcare'  => 'Change Healthcare (X12 270/271 — paywall item 16)',
+                'availity'           => 'Availity (X12 270/271 : paywall item 16)',
+                'change_healthcare'  => 'Change Healthcare (X12 270/271 : paywall item 16)',
                 default              => 'Null gateway (no real eligibility verification)',
             },
             'is_real_vendor'   => in_array($eligibilityDriver, ['availity', 'change_healthcare'], true),

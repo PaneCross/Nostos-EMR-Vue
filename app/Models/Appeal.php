@@ -152,7 +152,7 @@ class Appeal extends Model
         return $this->isOpen() && $this->internal_decision_due_at && $this->internal_decision_due_at->isPast();
     }
 
-    /** Percent of the decision window consumed — used by the UI timer/color. */
+    /** Percent of the decision window consumed : used by the UI timer/color. */
     public function windowElapsedPercent(): int
     {
         $total = $this->filed_at->diffInSeconds($this->internal_decision_due_at);

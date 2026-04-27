@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// ─── Toaster.vue — Phase V5 ────────────────────────────────────────────────
+// ─── Toaster.vue: Phase V5 ────────────────────────────────────────────────
 // Global toast surface for the axios response interceptor + ad-hoc emits.
 // Mounted once in AppShell.vue. Listens for window 'nostos:toast' CustomEvents
 // with detail {message, severity?: 'info'|'warning'|'error', timeout?: ms}.

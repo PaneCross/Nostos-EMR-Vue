@@ -1,5 +1,5 @@
 <!--
-  LocationCombobox — filterable dropdown for selecting an appointment location.
+  LocationCombobox: filterable dropdown for selecting an appointment location.
   Groups locations into "PACE Sites" (where site_id != null) first, then by
   location_type (Hospital, Dialysis, Specialist, Lab, Pharmacy, Day Program, ACS,
   Other). Each group sorted alphabetically by name. Partial-match filter on typing
@@ -29,7 +29,7 @@ const emit = defineEmits<{
     'update:modelValue': [value: number | null]
 }>()
 
-// ── Label map — matches Location::TYPE_LABELS server-side ─────────────────────
+// ── Label map: matches Location::TYPE_LABELS server-side ─────────────────────
 const TYPE_LABELS: Record<string, string> = {
     pace_center:    'PACE Center',
     acs_location:   'ACS Location',
@@ -74,7 +74,7 @@ const groups = computed<Group[]>(() => {
             || (l.city ?? '').toLowerCase().includes(q)
         )
 
-    // PACE sites (site_id != null) — one combined group, sorted by name
+    // PACE sites (site_id != null): one combined group, sorted by name
     const pace = filtered
         .filter(l => l.site_id != null)
         .sort((a, b) => a.name.localeCompare(b.name))

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 // ─── TherapiesDashboard.vue ───────────────────────────────────────────────────
-// Therapies department live dashboard (PT / OT / ST — Physical, Occupational,
+// Therapies department live dashboard (PT / OT / ST: Physical, Occupational,
 // Speech). Today's schedule, therapy goals, open SDRs, unsigned therapy notes,
 // and active therapy orders.
 // Endpoints:
@@ -44,7 +44,7 @@ onMounted(() => {
 
 const scheduleItems = computed<ActionItem[]>(() =>
     appointments.value.map(a => ({
-        label: `${a.participant?.name ?? '-'} — ${a.type_label ?? '-'}`,
+        label: `${a.participant?.name ?? '-'}: ${a.type_label ?? '-'}`,
         sublabel: a.scheduled_start ?? undefined,
         badge: a.status === 'confirmed' ? 'Confirmed'
             : a.status === 'scheduled' ? 'Scheduled'
@@ -62,7 +62,7 @@ const goalItems = computed<ActionItem[]>(() =>
         if (g.discipline) parts.push(g.discipline)
         if (g.target_date) parts.push(g.target_date)
         return {
-            label: `${g.participant?.name ?? '-'} — ${(g.goal_text ?? '').slice(0, 40)}`,
+            label: `${g.participant?.name ?? '-'}: ${(g.goal_text ?? '').slice(0, 40)}`,
             sublabel: parts.join(' | ') || undefined,
             badge: g.status === 'on_track' ? 'On Track'
                 : g.status === 'at_risk' ? 'At Risk'
@@ -82,7 +82,7 @@ const sdrItems = computed<ActionItem[]>(() =>
     sdrs.value.map(s => {
         const isOverdue = s.hours_overdue != null && s.hours_overdue > 0
         return {
-            label: `${s.participant?.name ?? '-'} — ${s.type_label ?? '-'}`,
+            label: `${s.participant?.name ?? '-'}: ${s.type_label ?? '-'}`,
             sublabel: s.due_at ?? undefined,
             badge: isOverdue ? `${s.hours_overdue}h overdue` : (s.status ?? '-'),
             badgeColor: isOverdue
@@ -95,7 +95,7 @@ const sdrItems = computed<ActionItem[]>(() =>
 
 const noteItems = computed<ActionItem[]>(() =>
     unsignedNotes.value.map(n => ({
-        label: `${n.participant?.name ?? '-'} — ${n.type_label ?? '-'}`,
+        label: `${n.participant?.name ?? '-'}: ${n.type_label ?? '-'}`,
         sublabel: n.visit_date ?? n.created_at ?? undefined,
         badge: n.author ? undefined : 'Unassigned',
         badgeColor: 'bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300',
@@ -105,7 +105,7 @@ const noteItems = computed<ActionItem[]>(() =>
 
 const orderItems = computed<ActionItem[]>(() =>
     orders.value.map(o => ({
-        label: `${o.participant_first_name ?? ''} ${o.participant_last_name ?? ''} — ${o.order_type_label ?? '-'}`.trim(),
+        label: `${o.participant_first_name ?? ''} ${o.participant_last_name ?? ''}: ${o.order_type_label ?? '-'}`.trim(),
         sublabel: o.is_overdue ? 'OVERDUE' : (o.status ?? undefined),
         badge: o.priority?.toUpperCase() ?? '-',
         badgeColor: o.priority === 'stat'

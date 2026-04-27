@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-// Phase 15.10 — Participant-specific coverage determination (Part D).
+// Phase 15.10 : Participant-specific coverage determination (Part D).
 class CoverageDetermination extends Model
 {
     protected $table = 'emr_coverage_determinations';

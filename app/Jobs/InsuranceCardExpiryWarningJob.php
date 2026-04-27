@@ -1,7 +1,7 @@
 <?php
 
 // ─── InsuranceCardExpiryWarningJob ───────────────────────────────────────────
-// Daily — finds insurance coverage records with termination_date approaching
+// Daily : finds insurance coverage records with termination_date approaching
 // within the org-tunable window. Routes to Finance.
 //
 // Preference: workflow.insurance_card.expiry_warning

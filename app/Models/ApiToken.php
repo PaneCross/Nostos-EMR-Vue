@@ -4,7 +4,7 @@
 // FHIR R4 API bearer tokens for external system access.
 //
 // Tokens are stored as SHA-256 hashes. The plaintext token is only shown once
-// at creation — NostosEMR cannot recover it after that.
+// at creation : NostosEMR cannot recover it after that.
 //
 // Used by FhirAuthMiddleware to authenticate incoming /fhir/R4/* requests.
 // All reads via FHIR API are logged to shared_audit_logs with source='fhir_api'.
@@ -73,7 +73,7 @@ class ApiToken extends Model
 
     /**
      * Hash a plaintext token for storage/lookup.
-     * Uses SHA-256 — fast enough for internal lookup, not suitable for passwords.
+     * Uses SHA-256 : fast enough for internal lookup, not suitable for passwords.
      */
     public static function hashToken(string $plaintext): string
     {
@@ -126,7 +126,7 @@ class ApiToken extends Model
             if (preg_match('#^(patient|user|system)/\*\.read$#', (string) $g)) {
                 if (str_ends_with($scope, '.read')) return true;
             }
-            // patient/Patient.read etc. — exact FHIR-resource match
+            // patient/Patient.read etc. : exact FHIR-resource match
             if (preg_match('#^(patient|user|system)/(\w+)\.(read|write|\*)$#', (string) $g, $m)) {
                 [$_, $ctx, $resource, $op] = $m;
                 $legacy = self::smartResourceToLegacy($resource);
@@ -199,7 +199,7 @@ class ApiToken extends Model
         };
     }
 
-    /** Mark this token as used right now. Avoid overriding Model::touch() — use markUsed() instead. */
+    /** Mark this token as used right now. Avoid overriding Model::touch() : use markUsed() instead. */
     public function markUsed(): bool
     {
         return $this->update(['last_used_at' => now()]);

@@ -1,12 +1,12 @@
 <script setup lang="ts">
 // ─── Compliance/AmendmentRequests ───────────────────────────────────────────
-// Staff queue for HIPAA record-amendment requests — when a participant asks
+// Staff queue for HIPAA record-amendment requests: when a participant asks
 // the PACE program to correct or augment something in their medical record.
 //
 // Audience: QA Compliance, Health Information Management.
 //
 // Notable rules:
-//   - HIPAA §164.526 — amendment requests must be answered within 60 days
+//   - HIPAA §164.526: amendment requests must be answered within 60 days
 //     (one 30-day extension allowed).
 //   - A denial requires a written rationale; if granted, downstream parties
 //     who previously received the disclosed PHI must be notified per
@@ -49,7 +49,7 @@ async function decide(req: any, status: string) {
     })
     router.reload({ only: ['requests'] })
   } catch (e: any) {
-    // Phase V4 — surface per-field 422 errors. Critical for the deny path:
+    // Phase V4: surface per-field 422 errors. Critical for the deny path:
     // §164.526(d)(1)(ii) requires decision_rationale; users must see WHY their
     // submit was rejected, not just a generic "Failed".
     const errs = e?.response?.data?.errors ?? null
@@ -61,7 +61,7 @@ async function decide(req: any, status: string) {
 }
 
 function daysRemaining(deadline: string | null): string {
-  if (!deadline) return '—'
+  if (!deadline) return '-'
   const ms = new Date(deadline).getTime() - Date.now()
   const days = Math.floor(ms / 86400000)
   if (days < 0) return `${Math.abs(days)}d overdue`
@@ -78,7 +78,7 @@ function daysRemaining(deadline: string | null): string {
         <h1 class="text-xl font-semibold text-gray-900 dark:text-slate-100">Amendment Requests</h1>
       </div>
       <p class="text-sm text-gray-500 dark:text-slate-400">
-        HIPAA §164.526 — covered entity has 60 days to decide (30-day extension allowed).
+        HIPAA §164.526: covered entity has 60 days to decide (30-day extension allowed).
       </p>
 
       <div class="rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 overflow-hidden">
@@ -102,8 +102,8 @@ function daysRemaining(deadline: string | null): string {
                 <span class="text-xs text-gray-500 ml-1">{{ r.participant?.mrn }}</span>
               </td>
               <td class="px-3 py-2 text-xs">
-                <div>{{ r.target_record_type ?? '—' }} <span v-if="r.target_record_id">#{{ r.target_record_id }}</span></div>
-                <div class="text-gray-500 dark:text-slate-400">{{ r.target_field_or_section ?? '—' }}</div>
+                <div>{{ r.target_record_type ?? '-' }} <span v-if="r.target_record_id">#{{ r.target_record_id }}</span></div>
+                <div class="text-gray-500 dark:text-slate-400">{{ r.target_field_or_section ?? '-' }}</div>
               </td>
               <td class="px-3 py-2 max-w-md truncate text-gray-700 dark:text-slate-300">{{ r.requested_change }}</td>
               <td class="px-3 py-2">
@@ -116,7 +116,7 @@ function daysRemaining(deadline: string | null): string {
                   <button class="text-xs text-green-600 dark:text-green-400 hover:underline" :disabled="decidingId === r.id" @click="decide(r, 'accepted')">Accept</button>
                   <button class="text-xs text-red-600 dark:text-red-400 hover:underline" :disabled="decidingId === r.id" @click="decide(r, 'denied')">Deny</button>
                 </div>
-                <span v-else class="text-xs text-gray-400">—</span>
+                <span v-else class="text-xs text-gray-400">-</span>
               </td>
             </tr>
             <tr v-if="!list?.length">

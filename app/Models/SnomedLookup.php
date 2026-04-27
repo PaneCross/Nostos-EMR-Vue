@@ -3,7 +3,7 @@
 // ─── SnomedLookup ────────────────────────────────────────────────────────────
 // Phase 13.1. Tiny shared lookup table of SNOMED CT codes relevant to PACE
 // participants (cardio, diabetes, dementia, frailty, fall-related). Not a
-// full SNOMED distribution — licensing + size make that untenable for MVP.
+// full SNOMED distribution : licensing + size make that untenable for MVP.
 // Used to autocomplete the SNOMED field on the Problem list.
 // ─────────────────────────────────────────────────────────────────────────────
 

@@ -10,7 +10,7 @@
 // The risk_score (RAF) × frailty_score × county base rate = capitation payment.
 // Tracking this allows the organization to detect CMS underpayments.
 //
-// Phase 9C — Part A (Risk Adjustment Tracking)
+// Phase 9C : Part A (Risk Adjustment Tracking)
 // ─────────────────────────────────────────────────────────────────────────────
 
 namespace App\Models;
@@ -77,7 +77,7 @@ class ParticipantRiskScore extends Model
 
     // ── Scopes ────────────────────────────────────────────────────────────────
 
-    /** Filter by tenant — required on all EMR queries (multi-tenant isolation) */
+    /** Filter by tenant : required on all EMR queries (multi-tenant isolation) */
     public function scopeForTenant($query, int $tenantId)
     {
         return $query->where('tenant_id', $tenantId);

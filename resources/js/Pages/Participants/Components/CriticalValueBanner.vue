@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// ─── CriticalValueBanner.vue — Phase J5 ──────────────────────────────────────
+// ─── CriticalValueBanner.vue: Phase J5 ──────────────────────────────────────
 import { ref, onMounted } from 'vue'
 import axios from 'axios'
 
