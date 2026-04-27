@@ -100,6 +100,8 @@ class PermissionSeeder extends Seeder
 
         // Phase 10B — Executive + Nostos SA
         'executive_overview'       => 'Executive Overview',
+        // Phase SS — Site Settings (notification + workflow preferences)
+        'site_settings'            => 'Site Settings',
         'tenant_management'        => 'Tenant Management',
     ];
 
@@ -462,6 +464,10 @@ class PermissionSeeder extends Seeder
         }
         // Executives also get read access to the executive module itself
         $executiveBase['executive_overview'] = $read();
+        // Phase SS — Site Settings is the executive's own write surface for
+        // notification + workflow preferences. Full CRUD here (the only place
+        // they get write access) so they can flip toggles and save.
+        $executiveBase['site_settings'] = $full();
 
         // ─── Phase 10B: Super Admin dept — full access on all modules ────────
         // Nostos staff with cross-tenant support access (distinct from role='super_admin').
@@ -472,6 +478,7 @@ class PermissionSeeder extends Seeder
         }
         $superAdminDeptBase['tenant_management'] = $full();
         $superAdminDeptBase['executive_overview'] = $full();
+        $superAdminDeptBase['site_settings']     = $full();
 
         // ─── Assemble final matrix — admin always gets full, standard gets base
         // (Admin within a dept can do everything their dept has access to)

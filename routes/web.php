@@ -89,6 +89,7 @@ use App\Http\Controllers\TransferAdminController;
 use App\Http\Controllers\SiteContextController;
 use App\Http\Controllers\SuperAdminPanelController;
 use App\Http\Controllers\Dashboards\ExecutiveDashboardController;
+use App\Http\Controllers\SiteSettingsController;
 use App\Http\Controllers\IntegrationController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ThemePreferenceController;
@@ -362,6 +363,10 @@ Route::middleware('auth')->group(function () {
             Route::get('/dept-compliance',   [ExecutiveDashboardController::class, 'deptCompliance'])->name('dashboards.executive.dept-compliance');
         });
     });
+
+    // ─── Phase SS — Site Settings (executive-level notification preferences) ──
+    Route::get ('/executive/site-settings', [SiteSettingsController::class, 'index'])->name('executive.site-settings.index');
+    Route::post('/executive/site-settings', [SiteSettingsController::class, 'update'])->name('executive.site-settings.update');
 
     // ─── Participant Module ───────────────────────────────────────────────────
 
