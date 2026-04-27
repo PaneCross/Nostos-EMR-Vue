@@ -41,8 +41,11 @@ class NotificationPreferenceService
     public const STATUS_RESERVED = 'reserved'; // planned; setting saves but no code wired yet
 
     // ── Preference kinds ──────────────────────────────────────────────────────
-    public const KIND_BOOLEAN = 'boolean'; // simple on/off toggle (default)
-    public const KIND_NUMERIC = 'numeric'; // boolean enable + numeric `value.days`
+    public const KIND_BOOLEAN           = 'boolean';            // simple on/off toggle (default)
+    public const KIND_NUMERIC           = 'numeric';            // boolean enable + numeric `value.days`
+    public const KIND_NUMERIC_THRESHOLD = 'numeric_threshold';  // boolean enable + value.events_count + value.window_days
+                                                                // (used by pattern detectors so each org can tune
+                                                                //  what counts as "concerning frequency" for them)
 
     /** Internal sentinel for the org-level row (since SQL NULL can't be an array key). */
     private const ORG_LEVEL = 0;
@@ -126,6 +129,55 @@ class NotificationPreferenceService
         }
         // Catalog default
         return (int) ($entry['numeric_default'] ?? 0);
+    }
+
+    /**
+     * For KIND_NUMERIC_THRESHOLD prefs — return the tuned (events_count,
+     * window_days) for this tenant + (optional) site. Same cascade as
+     * shouldNotify(). Returns null when the pref is disabled or not the
+     * threshold kind.
+     *
+     * Pattern detectors should call shouldNotify() first to gate, then call
+     * this for the threshold values.
+     *
+     * @return array{events_count:int, window_days:int}|null
+     */
+    public function thresholdValue(int $tenantId, string $key, ?int $siteId = null): ?array
+    {
+        $catalog = self::catalog();
+        $entry = $catalog[$key] ?? null;
+        if (! $entry || ($entry['kind'] ?? self::KIND_BOOLEAN) !== self::KIND_NUMERIC_THRESHOLD) {
+            return null;
+        }
+        if (! $this->shouldNotify($tenantId, $key, $siteId)) {
+            return null;
+        }
+
+        $this->primeCache($tenantId);
+
+        // Site-level override
+        if ($siteId !== null) {
+            $siteRow = $this->cache[$tenantId][$siteId][$key] ?? null;
+            if ($siteRow !== null && is_array($siteRow['value'] ?? null)) {
+                $v = $siteRow['value'];
+                if (isset($v['events_count'], $v['window_days'])) {
+                    return ['events_count' => (int) $v['events_count'], 'window_days' => (int) $v['window_days']];
+                }
+            }
+        }
+        // Org-level
+        $orgRow = $this->cache[$tenantId][self::ORG_LEVEL][$key] ?? null;
+        if ($orgRow !== null && is_array($orgRow['value'] ?? null)) {
+            $v = $orgRow['value'];
+            if (isset($v['events_count'], $v['window_days'])) {
+                return ['events_count' => (int) $v['events_count'], 'window_days' => (int) $v['window_days']];
+            }
+        }
+        // Catalog default
+        return [
+            'events_count' => (int) ($entry['threshold_default_count']  ?? 3),
+            'window_days'  => (int) ($entry['threshold_default_window'] ?? 7),
+        ];
     }
 
     /** Load every row for a tenant into the in-request cache. */
@@ -334,15 +386,35 @@ class NotificationPreferenceService
                 'preference_key' => $key,
                 'enabled'        => (bool) ($entry['default'] ?? false),
             ];
-            // Numeric prefs: seed the catalog default day-count
-            if (($entry['kind'] ?? self::KIND_BOOLEAN) === self::KIND_NUMERIC) {
+            $kind = $entry['kind'] ?? self::KIND_BOOLEAN;
+            if ($kind === self::KIND_NUMERIC) {
                 $row['value'] = ['days' => (int) ($entry['numeric_default'] ?? 0)];
+            } elseif ($kind === self::KIND_NUMERIC_THRESHOLD) {
+                $row['value'] = [
+                    'events_count' => (int) ($entry['threshold_default_count']  ?? 3),
+                    'window_days'  => (int) ($entry['threshold_default_window'] ?? 7),
+                ];
             }
             NotificationPreference::create($row);
             $created++;
         }
         $this->clearCache($tenantId);
         return $created;
+    }
+
+    /** Catalog-default value payload by kind — used by effectiveSettingsForTenant. */
+    private function catalogDefaultValue(array $entry, string $kind): ?array
+    {
+        if ($kind === self::KIND_NUMERIC) {
+            return ['days' => (int) ($entry['numeric_default'] ?? 0)];
+        }
+        if ($kind === self::KIND_NUMERIC_THRESHOLD) {
+            return [
+                'events_count' => (int) ($entry['threshold_default_count']  ?? 3),
+                'window_days'  => (int) ($entry['threshold_default_window'] ?? 7),
+            ];
+        }
+        return null;
     }
 
     public function clearCache(?int $tenantId = null): void
@@ -399,21 +471,17 @@ class NotificationPreferenceService
 
             if ($entry['status'] === self::STATUS_REQUIRED) {
                 $enabled = true;
-                if ($kind === self::KIND_NUMERIC) {
-                    $value = ['days' => (int) ($entry['numeric_default'] ?? 0)];
-                }
+                $value = $this->catalogDefaultValue($entry, $kind);
             } elseif ($siteId !== null && isset($siteByKey[$key])) {
                 $enabled = $siteByKey[$key]['enabled'];
-                $value   = $siteByKey[$key]['value'];
+                $value   = $siteByKey[$key]['value'] ?? $this->catalogDefaultValue($entry, $kind);
                 $inheritsFromOrg = false;
             } elseif (isset($orgByKey[$key])) {
                 $enabled = $orgByKey[$key]['enabled'];
-                $value   = $orgByKey[$key]['value'];
+                $value   = $orgByKey[$key]['value'] ?? $this->catalogDefaultValue($entry, $kind);
             } else {
                 $enabled = (bool) ($entry['default'] ?? false);
-                if ($kind === self::KIND_NUMERIC) {
-                    $value = ['days' => (int) ($entry['numeric_default'] ?? 0)];
-                }
+                $value = $this->catalogDefaultValue($entry, $kind);
             }
 
             $out[$key] = array_merge($entry, [
@@ -538,29 +606,56 @@ class NotificationPreferenceService
             'designation.nursing_director.late_emar_pattern' => [
                 'group'       => 'Nursing Director',
                 'label'       => 'Late EMAR-pass pattern',
-                'description' => 'Alert when the same nurse triggers ≥3 late medication doses within 7 days. Pattern-detection job pending.',
+                'description' => 'Alert when the same nurse triggers a concerning number of late medication doses within a recent window. You set "concerning" — see threshold controls.',
                 'status'      => self::STATUS_OPTIONAL,
                 'default'     => false,
                 'cms_ref'     => null,
                 'wired'       => false,
+                'kind'                       => self::KIND_NUMERIC_THRESHOLD,
+                'threshold_default_count'    => 3,
+                'threshold_default_window'   => 7,
+                'threshold_count_min'        => 1,
+                'threshold_count_max'        => 50,
+                'threshold_window_min'       => 1,
+                'threshold_window_max'       => 90,
+                'threshold_event_unit'       => 'late doses',
             ],
             'designation.nursing_director.bcma_override_pattern' => [
                 'group'       => 'Nursing Director',
                 'label'       => 'BCMA override pattern',
-                'description' => 'Alert when the same nurse triggers ≥3 barcode-medication-administration overrides within 7 days. Pattern-detection job pending.',
+                'description' => 'Alert when the same nurse triggers a concerning number of barcode-medication-administration overrides within a recent window. Tune both numbers below.',
                 'status'      => self::STATUS_OPTIONAL,
                 'default'     => false,
                 'cms_ref'     => null,
                 'wired'       => false,
+                'kind'                       => self::KIND_NUMERIC_THRESHOLD,
+                'threshold_default_count'    => 3,
+                'threshold_default_window'   => 7,
+                'threshold_count_min'        => 1,
+                'threshold_count_max'        => 50,
+                'threshold_window_min'       => 1,
+                'threshold_window_max'       => 90,
+                'threshold_event_unit'       => 'overrides',
             ],
             'designation.nursing_director.critical_value_unacked' => [
                 'group'       => 'Nursing Director',
                 'label'       => 'Critical lab value unacknowledged',
-                'description' => 'Escalation alert when a critical lab value has not been acknowledged within policy hours. Escalation timer pending.',
+                'description' => 'Escalation alert when a critical lab value has not been acknowledged within a tunable window. Set how many hours to wait before escalating to nursing leadership.',
                 'status'      => self::STATUS_OPTIONAL,
                 'default'     => false,
                 'cms_ref'     => null,
                 'wired'       => false,
+                'kind'                       => self::KIND_NUMERIC_THRESHOLD,
+                // For this one, "events_count" is unused (always 1 event = one
+                // unacked lab); window_days is repurposed as window_hours via
+                // the unit label. Job logic just reads window_days as hours.
+                'threshold_default_count'    => 1,
+                'threshold_default_window'   => 4,    // hours
+                'threshold_count_min'        => 1,
+                'threshold_count_max'        => 1,
+                'threshold_window_min'       => 1,
+                'threshold_window_max'       => 24,
+                'threshold_event_unit'       => 'unacked critical (hours window)',
             ],
 
             // ── Pharmacy Director ─────────────────────────────────────────
@@ -576,11 +671,19 @@ class NotificationPreferenceService
             'designation.pharmacy_director.controlled_substance_pattern' => [
                 'group'       => 'Pharmacy Director',
                 'label'       => 'Controlled-substance prescribing pattern',
-                'description' => 'Alert when a single prescriber issues ≥5 controlled-substance prescriptions in 14 days. Pattern-detection job pending.',
+                'description' => 'Alert when a single prescriber issues a concerning number of controlled-substance prescriptions within a recent window. Tune both numbers below.',
                 'status'      => self::STATUS_OPTIONAL,
                 'default'     => false,
                 'cms_ref'     => null,
                 'wired'       => false,
+                'kind'                       => self::KIND_NUMERIC_THRESHOLD,
+                'threshold_default_count'    => 5,
+                'threshold_default_window'   => 14,
+                'threshold_count_min'        => 1,
+                'threshold_count_max'        => 100,
+                'threshold_window_min'       => 1,
+                'threshold_window_max'       => 90,
+                'threshold_event_unit'       => 'controlled-Rx',
             ],
             'designation.pharmacy_director.bcma_override_review' => [
                 'group'       => 'Pharmacy Director',

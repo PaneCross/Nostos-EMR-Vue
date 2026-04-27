@@ -261,4 +261,69 @@ class NotificationPreferenceServiceTest extends TestCase
         $this->assertFalse($svc->shouldNotify($t->id, $key));
         $this->assertNull($svc->numericValue($t->id, $key));
     }
+
+    // ── KIND_NUMERIC_THRESHOLD tests ───────────────────────────────────────────
+
+    public function test_threshold_value_returns_catalog_default_when_no_row(): void
+    {
+        [$t] = $this->tenantWithUser();
+        $svc = app(NotificationPreferenceService::class);
+        $key = 'designation.nursing_director.late_emar_pattern';
+
+        // Disabled by default → null
+        $this->assertNull($svc->thresholdValue($t->id, $key));
+    }
+
+    public function test_threshold_value_persists_count_and_window(): void
+    {
+        [$t, $u] = $this->tenantWithUser();
+        $svc = app(NotificationPreferenceService::class);
+        $key = 'designation.nursing_director.late_emar_pattern';
+
+        // Enable + override default 3/7d → 5/14d at org level
+        $svc->set($t->id, $key, true, $u->id, null, ['events_count' => 5, 'window_days' => 14]);
+        $svc->clearCache($t->id);
+
+        $val = $svc->thresholdValue($t->id, $key);
+        $this->assertEquals(['events_count' => 5, 'window_days' => 14], $val);
+    }
+
+    public function test_threshold_value_falls_through_site_to_org_to_default(): void
+    {
+        [$t, $u] = $this->tenantWithUser();
+        $svc = app(NotificationPreferenceService::class);
+        $key = 'designation.nursing_director.late_emar_pattern';
+        $site = Site::factory()->create(['tenant_id' => $t->id, 'mrn_prefix' => 'TH1']);
+
+        // No rows at all → enabled=false (default) → null
+        $this->assertNull($svc->thresholdValue($t->id, $key, $site->id));
+
+        // Enable at org with custom values
+        $svc->set($t->id, $key, true, $u->id, null, ['events_count' => 4, 'window_days' => 10]);
+        $svc->clearCache($t->id);
+        $this->assertEquals(['events_count' => 4, 'window_days' => 10], $svc->thresholdValue($t->id, $key, $site->id));
+
+        // Override at site level with different values — site wins
+        $svc->set($t->id, $key, true, $u->id, $site->id, ['events_count' => 2, 'window_days' => 5]);
+        $svc->clearCache($t->id);
+        $this->assertEquals(['events_count' => 2, 'window_days' => 5], $svc->thresholdValue($t->id, $key, $site->id));
+        // Org-level still 4/10
+        $this->assertEquals(['events_count' => 4, 'window_days' => 10], $svc->thresholdValue($t->id, $key));
+    }
+
+    public function test_threshold_value_returns_null_when_disabled(): void
+    {
+        [$t, $u] = $this->tenantWithUser();
+        $svc = app(NotificationPreferenceService::class);
+        $key = 'designation.nursing_director.late_emar_pattern';
+
+        $svc->set($t->id, $key, true, $u->id, null, ['events_count' => 5, 'window_days' => 14]);
+        $svc->clearCache($t->id);
+        $this->assertNotNull($svc->thresholdValue($t->id, $key));
+
+        // Disable
+        $svc->set($t->id, $key, false, $u->id);
+        $svc->clearCache($t->id);
+        $this->assertNull($svc->thresholdValue($t->id, $key));
+    }
 }

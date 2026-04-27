@@ -70,16 +70,31 @@ class OrgSettingsController extends Controller
         $sites = Site::where('tenant_id', $tenantId)
             ->where('is_active', true)
             ->orderBy('name')
-            ->get(['id', 'name']);
+            ->get(['id', 'name', 'address', 'city', 'state']);
 
-        // Sites that already have at least one override row — these get tabs.
-        $sitesWithOverrides = \App\Models\NotificationPreference::query()
+        // Per-site override counts so the picker cards can show "3 overrides"
+        // chips. Computed once at index time; cheap (one query per tenant).
+        $overrideCounts = \App\Models\NotificationPreference::query()
             ->where('tenant_id', $tenantId)
             ->whereNotNull('site_id')
-            ->select('site_id')
-            ->distinct()
-            ->pluck('site_id')
+            ->selectRaw('site_id, COUNT(*) as cnt')
+            ->groupBy('site_id')
+            ->pluck('cnt', 'site_id')
+            ->map(fn ($c) => (int) $c)
             ->toArray();
+
+        // Decorate sites with override count for the picker
+        $sites = $sites->map(fn ($s) => [
+            'id'             => $s->id,
+            'name'           => $s->name,
+            'address'        => $s->address,
+            'city'           => $s->city,
+            'state'          => $s->state,
+            'override_count' => $overrideCounts[$s->id] ?? 0,
+        ]);
+
+        // Sites that already have at least one override row — these get tabs.
+        $sitesWithOverrides = array_keys($overrideCounts);
 
         return Inertia::render('Executive/OrgSettings', [
             'orgGrouped'         => $this->groupedFor($tenantId, null, $svc),

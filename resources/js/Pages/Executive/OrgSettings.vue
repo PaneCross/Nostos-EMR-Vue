@@ -33,16 +33,33 @@ interface PreferenceEntry {
     enabled: boolean
     cms_ref: string | null
     wired: boolean
-    kind?: 'boolean' | 'numeric'
+    // KIND_BOOLEAN: simple toggle
+    // KIND_NUMERIC: toggle + days input
+    // KIND_NUMERIC_THRESHOLD: toggle + (events_count, window_days) inputs
+    kind?: 'boolean' | 'numeric' | 'numeric_threshold'
     numeric_default?: number
     numeric_min?: number
     numeric_max?: number
     numeric_unit?: string
-    value?: { days?: number } | null
+    threshold_default_count?: number
+    threshold_default_window?: number
+    threshold_count_min?: number
+    threshold_count_max?: number
+    threshold_window_min?: number
+    threshold_window_max?: number
+    threshold_event_unit?: string
+    value?: { days?: number; events_count?: number; window_days?: number } | null
     inherits_from_org?: boolean
 }
 type GroupedPrefs = Record<string, PreferenceEntry[]>
-interface SiteSummary { id: number; name: string }
+interface SiteSummary {
+    id: number
+    name: string
+    address?: string | null
+    city?: string | null
+    state?: string | null
+    override_count?: number
+}
 interface Props {
     orgGrouped: GroupedPrefs
     sites: SiteSummary[]
@@ -54,7 +71,13 @@ const props = defineProps<Props>()
 
 // ── Tabs ────────────────────────────────────────────────────────────────────
 const activeTab = ref<number | null>(null) // null = org defaults
-type LocalEntry = boolean | { enabled: boolean; value: { days: number } | null }
+// LocalEntry shapes by kind:
+//   boolean kind            → bool
+//   numeric kind            → { enabled, value: { days } }
+//   numeric_threshold kind  → { enabled, value: { events_count, window_days } }
+type LocalEntry =
+    | boolean
+    | { enabled: boolean; value: { days?: number; events_count?: number; window_days?: number } | null }
 type LocalState = Record<string, LocalEntry>
 interface TabData { grouped: GroupedPrefs; initial: LocalState; state: LocalState; siteName?: string }
 const tabs = ref<Record<string, TabData>>({})
@@ -71,6 +94,14 @@ function snapshotState(grouped: GroupedPrefs): LocalState {
     Object.values(grouped).flat().forEach(p => {
         if (p.kind === 'numeric') {
             out[p.key] = { enabled: p.enabled, value: p.value ?? { days: p.numeric_default ?? 0 } }
+        } else if (p.kind === 'numeric_threshold') {
+            out[p.key] = {
+                enabled: p.enabled,
+                value: p.value ?? {
+                    events_count: p.threshold_default_count ?? 3,
+                    window_days:  p.threshold_default_window ?? 7,
+                },
+            }
         } else {
             out[p.key] = p.enabled
         }
@@ -90,8 +121,14 @@ onMounted(() => {
 onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
 
 function onKeydown(e: KeyboardEvent) {
-    if (e.key === 'Escape' && showSitePicker.value) showSitePicker.value = false
+    if (e.key === 'Escape' && showSitePicker.value) {
+        showSitePicker.value = false
+        sitePickerSearch.value = ''
+    }
 }
+
+// ── Site-picker modal state ─────────────────────────────────────────────────
+const sitePickerSearch = ref('')
 
 async function loadSiteTab(siteId: number) {
     if (tabs.value[tabKey(siteId)]) return
@@ -139,7 +176,13 @@ const dirtyKeys = computed<string[]>(() => {
         const a = data.state[k]; const b = data.initial[k]
         if (typeof a === 'boolean' && typeof b === 'boolean') return a !== b
         if (typeof a === 'object' && typeof b === 'object' && a && b) {
-            return a.enabled !== b.enabled || (a.value?.days ?? null) !== (b.value?.days ?? null)
+            if (a.enabled !== b.enabled) return true
+            // Compare value subfields that may exist by kind
+            const av = a.value ?? {}, bv = b.value ?? {}
+            if ((av.days ?? null) !== (bv.days ?? null)) return true
+            if ((av.events_count ?? null) !== (bv.events_count ?? null)) return true
+            if ((av.window_days ?? null) !== (bv.window_days ?? null)) return true
+            return false
         }
         return true
     })
@@ -150,7 +193,7 @@ function toggle(entry: PreferenceEntry) {
     const data = activeTabData.value
     if (! data) return
     const current = data.state[entry.key]
-    if (entry.kind === 'numeric' && typeof current === 'object' && current) {
+    if ((entry.kind === 'numeric' || entry.kind === 'numeric_threshold') && typeof current === 'object' && current) {
         data.state[entry.key] = { enabled: ! current.enabled, value: current.value }
     } else {
         data.state[entry.key] = ! (current as boolean)
@@ -167,6 +210,43 @@ function setNumericDays(entry: PreferenceEntry, days: number) {
     data.state[entry.key] = { enabled: current.enabled, value: { days } }
     successMessage.value = null
     errorMessage.value = null
+}
+
+function setThresholdField(entry: PreferenceEntry, field: 'events_count' | 'window_days', n: number) {
+    const data = activeTabData.value
+    if (! data) return
+    const current = data.state[entry.key]
+    if (typeof current !== 'object' || ! current) return
+    const v = (current.value ?? {}) as Record<string, number>
+    data.state[entry.key] = {
+        enabled: current.enabled,
+        value: {
+            events_count: field === 'events_count' ? n : (v.events_count ?? entry.threshold_default_count ?? 3),
+            window_days:  field === 'window_days'  ? n : (v.window_days  ?? entry.threshold_default_window ?? 7),
+        },
+    }
+    successMessage.value = null
+    errorMessage.value = null
+}
+
+function getThresholdState(entry: PreferenceEntry): { enabled: boolean; events_count: number; window_days: number } {
+    const data = activeTabData.value
+    const fallback = {
+        enabled: entry.enabled,
+        events_count: entry.threshold_default_count ?? 3,
+        window_days:  entry.threshold_default_window ?? 7,
+    }
+    if (! data) return fallback
+    const v = data.state[entry.key]
+    if (typeof v === 'object' && v) {
+        const value = v.value ?? {}
+        return {
+            enabled: v.enabled,
+            events_count: (value as { events_count?: number }).events_count ?? entry.threshold_default_count ?? 3,
+            window_days:  (value as { window_days?: number }).window_days  ?? entry.threshold_default_window ?? 7,
+        }
+    }
+    return fallback
 }
 
 async function save() {
@@ -240,6 +320,16 @@ function closeSiteTab(siteId: number) {
 const sitesAvailableForOverride = computed(() =>
     props.sites.filter(s => ! tabs.value[tabKey(s.id)])
 )
+
+const sitePickerFiltered = computed(() => {
+    const q = sitePickerSearch.value.trim().toLowerCase()
+    if (! q) return sitesAvailableForOverride.value
+    return sitesAvailableForOverride.value.filter(s =>
+        s.name.toLowerCase().includes(q)
+        || (s.city ?? '').toLowerCase().includes(q)
+        || (s.state ?? '').toLowerCase().includes(q)
+    )
+})
 
 const statusBadge = (status: string) => {
     if (status === 'required') return { label: 'Required by CMS', cls: 'bg-rose-100 dark:bg-rose-900/30 text-rose-700 dark:text-rose-300' }
@@ -340,34 +430,105 @@ function getBooleanState(entry: PreferenceEntry): boolean {
                     </div>
                 </template>
 
-                <div class="ml-auto relative">
+                <div class="ml-auto">
                     <button
                         v-if="sitesAvailableForOverride.length > 0"
                         type="button"
-                        @click="showSitePicker = !showSitePicker"
+                        @click="showSitePicker = true"
                         class="text-xs px-3 py-1.5 rounded-lg border border-indigo-300 dark:border-indigo-700 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-950/30 transition-colors inline-flex items-center gap-1.5"
                     >
                         <PlusIcon class="w-3.5 h-3.5" />
                         Add site override
                     </button>
-                    <div v-if="showSitePicker"
-                         class="absolute right-0 mt-1 w-64 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg shadow-lg z-20 max-h-72 overflow-y-auto"
-                         role="menu"
-                    >
-                        <p class="px-3 py-2 text-xs text-gray-500 dark:text-slate-400 border-b border-gray-100 dark:border-slate-700">
-                            Pick a site to customize:
-                        </p>
+                </div>
+            </div>
+
+            <!-- Site picker MODAL — replaces the cramped dropdown so multi-site
+                 orgs can scan + filter sites comfortably. -->
+            <div
+                v-if="showSitePicker"
+                class="fixed inset-0 z-50 flex items-start justify-center bg-black/50 overflow-y-auto py-12 px-4"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="site-picker-heading"
+                @click.self="showSitePicker = false; sitePickerSearch = ''"
+            >
+                <div class="bg-white dark:bg-slate-800 rounded-xl shadow-xl w-full max-w-3xl">
+                    <header class="px-6 py-4 flex items-start justify-between border-b border-gray-200 dark:border-slate-700">
+                        <div>
+                            <h2 id="site-picker-heading" class="text-lg font-bold text-gray-900 dark:text-slate-100">
+                                Add site override
+                            </h2>
+                            <p class="text-sm text-gray-500 dark:text-slate-400 mt-0.5">
+                                Pick a site to open a per-site override tab. Existing org defaults are inherited until you change them on the new tab.
+                            </p>
+                        </div>
                         <button
-                            v-for="s in sitesAvailableForOverride"
-                            :key="s.id"
-                            type="button"
-                            @click="addSiteOverride(s.id)"
-                            class="block w-full text-left px-3 py-2 text-sm text-gray-800 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-indigo-950/30"
+                            @click="showSitePicker = false; sitePickerSearch = ''"
+                            class="text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-300 shrink-0 ml-3"
+                            aria-label="Close site picker"
                         >
-                            {{ s.name }}
-                            <span v-if="loadingSiteId === s.id" class="text-xs text-gray-400 ml-1">loading…</span>
+                            <XMarkIcon class="w-5 h-5" />
                         </button>
+                    </header>
+
+                    <!-- Search bar (shown only when there are >5 sites to scan) -->
+                    <div v-if="sitesAvailableForOverride.length > 5" class="px-6 py-3 border-b border-gray-100 dark:border-slate-700/50">
+                        <input
+                            v-model="sitePickerSearch"
+                            type="text"
+                            placeholder="Search by site name, city, or state..."
+                            class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            aria-label="Filter sites"
+                        />
                     </div>
+
+                    <!-- Site card grid — 1 col mobile, 2 col tablet, 3 col desktop -->
+                    <div class="p-6 max-h-[60vh] overflow-y-auto">
+                        <div v-if="sitePickerFiltered.length === 0" class="text-center py-12 text-gray-500 dark:text-slate-400 text-sm">
+                            <span v-if="sitePickerSearch">No sites match "{{ sitePickerSearch }}".</span>
+                            <span v-else>No sites available — every active site already has an open override tab.</span>
+                        </div>
+
+                        <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                            <button
+                                v-for="s in sitePickerFiltered"
+                                :key="s.id"
+                                type="button"
+                                @click="addSiteOverride(s.id); sitePickerSearch = ''"
+                                :disabled="loadingSiteId === s.id"
+                                class="text-left p-4 rounded-lg border-2 border-gray-200 dark:border-slate-700 hover:border-indigo-400 dark:hover:border-indigo-500 hover:bg-indigo-50/30 dark:hover:bg-indigo-950/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                :aria-label="`Open override tab for ${s.name}`"
+                            >
+                                <div class="flex items-start justify-between gap-2 mb-1">
+                                    <span class="font-semibold text-gray-900 dark:text-slate-100 truncate">{{ s.name }}</span>
+                                    <span
+                                        v-if="(s.override_count ?? 0) > 0"
+                                        class="shrink-0 text-[10px] px-1.5 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 font-semibold"
+                                        :title="`${s.override_count} preference${s.override_count === 1 ? '' : 's'} currently overridden at this site`"
+                                    >
+                                        {{ s.override_count }} override{{ s.override_count === 1 ? '' : 's' }}
+                                    </span>
+                                </div>
+                                <div v-if="s.address || s.city || s.state" class="text-xs text-gray-500 dark:text-slate-400 leading-snug">
+                                    <div v-if="s.address" class="truncate">{{ s.address }}</div>
+                                    <div v-if="s.city || s.state">{{ [s.city, s.state].filter(Boolean).join(', ') }}</div>
+                                </div>
+                                <div v-else class="text-xs text-gray-400 dark:text-slate-500 italic">No address on file</div>
+                                <div v-if="loadingSiteId === s.id" class="mt-2 text-xs text-indigo-600 dark:text-indigo-400">Loading…</div>
+                            </button>
+                        </div>
+                    </div>
+
+                    <footer class="px-6 py-3 border-t border-gray-200 dark:border-slate-700 flex items-center justify-between gap-3 text-xs text-gray-500 dark:text-slate-400">
+                        <span>{{ sitePickerFiltered.length }} of {{ sitesAvailableForOverride.length }} site{{ sitesAvailableForOverride.length === 1 ? '' : 's' }}</span>
+                        <button
+                            @click="showSitePicker = false; sitePickerSearch = ''"
+                            class="px-3 py-1.5 rounded-lg text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-200"
+                        >
+                            Cancel
+                        </button>
+                    </footer>
                 </div>
             </div>
 
@@ -452,6 +613,33 @@ function getBooleanState(entry: PreferenceEntry): boolean {
                                         :aria-label="`Number of ${entry.numeric_unit ?? 'days'} for ${entry.label}`"
                                     />
                                     <span class="text-xs text-gray-500 dark:text-slate-400">{{ entry.numeric_unit ?? 'days' }}</span>
+                                </div>
+
+                                <!-- KIND_NUMERIC_THRESHOLD: tunable count + window for pattern detectors -->
+                                <div v-if="entry.kind === 'numeric_threshold'" class="mt-2 flex flex-wrap items-center gap-2 text-sm">
+                                    <span class="text-gray-700 dark:text-slate-300">Alert when</span>
+                                    <input
+                                        type="number"
+                                        :value="getThresholdState(entry).events_count"
+                                        :min="entry.threshold_count_min ?? 1"
+                                        :max="entry.threshold_count_max ?? 999"
+                                        :disabled="!getThresholdState(entry).enabled || entry.status === 'required'"
+                                        @input="(e) => setThresholdField(entry, 'events_count', Number((e.target as HTMLInputElement).value))"
+                                        class="w-20 px-2 py-1 rounded border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 disabled:opacity-50"
+                                        :aria-label="`${entry.threshold_event_unit ?? 'events'} count for ${entry.label}`"
+                                    />
+                                    <span class="text-gray-700 dark:text-slate-300">{{ entry.threshold_event_unit ?? 'events' }} occur within</span>
+                                    <input
+                                        type="number"
+                                        :value="getThresholdState(entry).window_days"
+                                        :min="entry.threshold_window_min ?? 1"
+                                        :max="entry.threshold_window_max ?? 999"
+                                        :disabled="!getThresholdState(entry).enabled || entry.status === 'required'"
+                                        @input="(e) => setThresholdField(entry, 'window_days', Number((e.target as HTMLInputElement).value))"
+                                        class="w-20 px-2 py-1 rounded border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 disabled:opacity-50"
+                                        :aria-label="`Window for ${entry.label}`"
+                                    />
+                                    <span class="text-gray-700 dark:text-slate-300">{{ entry.threshold_event_unit?.includes('hours') ? 'hours' : 'days' }}</span>
                                 </div>
                             </div>
 
