@@ -364,9 +364,14 @@ Route::middleware('auth')->group(function () {
         });
     });
 
-    // ─── Phase SS — Org Settings (executive-level notification preferences) ──
-    Route::get ('/executive/org-settings', [OrgSettingsController::class, 'index'])->name('executive.org-settings.index');
-    Route::post('/executive/org-settings', [OrgSettingsController::class, 'update'])->name('executive.org-settings.update');
+    // ─── Phase OS — Org Settings (executive-level notification preferences) ──
+    // Cascade: org-level row (default tab) → optional per-site override rows
+    // (additional tabs). See docs/internal/org-settings-design.md.
+    Route::get   ('/executive/org-settings',                       [OrgSettingsController::class, 'index'])         ->name('executive.org-settings.index');
+    Route::get   ('/executive/org-settings/site/{site}',           [OrgSettingsController::class, 'siteEffective']) ->name('executive.org-settings.site.effective');
+    Route::post  ('/executive/org-settings',                       [OrgSettingsController::class, 'update'])        ->name('executive.org-settings.update');
+    Route::delete('/executive/org-settings/site/{site}/key/{key}', [OrgSettingsController::class, 'clearOverride']) ->name('executive.org-settings.clear-override')
+        ->where('key', '[a-z0-9_.]+');
 
     // ─── Participant Module ───────────────────────────────────────────────────
 

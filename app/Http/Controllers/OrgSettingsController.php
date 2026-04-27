@@ -10,13 +10,22 @@
 // Auth gate: super_admin role OR department=executive AND role=admin.
 // Tenant-scoped: every request reads/writes only the calling user's tenant.
 //
-// Routes (defined under the auth middleware group in routes/web.php):
-//   GET  /executive/org-settings   → index() — Inertia render
-//   POST /executive/org-settings   → update() — bulk save
+// OS3 — Per-site override capability:
+//   The page is tabbed. The default "Org Defaults" tab edits the tenant-wide
+//   row (site_id NULL). Optional per-site tabs edit site-specific overrides.
+//   Save bodies include an explicit `site_id` (null or numeric); the service
+//   routes the bulkSet to the right cascade level.
+//
+// Routes:
+//   GET    /executive/org-settings                                 → index()
+//   GET    /executive/org-settings/site/{site}                     → siteEffective()
+//   POST   /executive/org-settings                                 → update()
+//   DELETE /executive/org-settings/site/{site}/key/{key}           → clearOverride()
 // ─────────────────────────────────────────────────────────────────────────────
 
 namespace App\Http\Controllers;
 
+use App\Models\Site;
 use App\Services\NotificationPreferenceService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -35,6 +44,20 @@ class OrgSettingsController extends Controller
         abort_unless($allowed, 403, 'Org Settings is restricted to executive leadership.');
     }
 
+    /** Build the grouped catalog payload for one cascade level (org or site). */
+    private function groupedFor(int $tenantId, ?int $siteId, NotificationPreferenceService $svc): array
+    {
+        $effective = $svc->effectiveSettingsForTenant($tenantId, $siteId);
+
+        $grouped = [];
+        foreach ($effective as $key => $entry) {
+            $g = $entry['group'];
+            if (! isset($grouped[$g])) $grouped[$g] = [];
+            $grouped[$g][] = array_merge(['key' => $key], $entry);
+        }
+        return $grouped;
+    }
+
     public function index(Request $request): InertiaResponse
     {
         $this->requireExecutiveAccess($request);
@@ -42,22 +65,44 @@ class OrgSettingsController extends Controller
 
         /** @var NotificationPreferenceService $svc */
         $svc = app(NotificationPreferenceService::class);
-        $effective = $svc->effectiveSettingsForTenant($tenantId);
 
-        // Group by the catalog `group` field for UI rendering.
-        $grouped = [];
-        foreach ($effective as $key => $entry) {
-            $g = $entry['group'];
-            if (! isset($grouped[$g])) {
-                $grouped[$g] = [];
-            }
-            $grouped[$g][] = array_merge(['key' => $key], $entry);
-        }
+        // All sites in the tenant (drives the "Add site override" picker).
+        $sites = Site::where('tenant_id', $tenantId)
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get(['id', 'name']);
+
+        // Sites that already have at least one override row — these get tabs.
+        $sitesWithOverrides = \App\Models\NotificationPreference::query()
+            ->where('tenant_id', $tenantId)
+            ->whereNotNull('site_id')
+            ->select('site_id')
+            ->distinct()
+            ->pluck('site_id')
+            ->toArray();
 
         return Inertia::render('Executive/OrgSettings', [
-            'grouped'    => $grouped,
-            'tenantName' => $request->user()->tenant?->name,
-            'updatedAt'  => now()->toIso8601String(),
+            'orgGrouped'         => $this->groupedFor($tenantId, null, $svc),
+            'sites'              => $sites,
+            'sitesWithOverrides' => $sitesWithOverrides,
+            'tenantName'         => $request->user()->tenant?->name,
+            'updatedAt'          => now()->toIso8601String(),
+        ]);
+    }
+
+    /** JSON: effective state for a specific site tab (lazy-loaded by the UI). */
+    public function siteEffective(Request $request, Site $site): JsonResponse
+    {
+        $this->requireExecutiveAccess($request);
+        $tenantId = $request->user()->tenant_id;
+        abort_if($site->tenant_id !== $tenantId, 403);
+
+        /** @var NotificationPreferenceService $svc */
+        $svc = app(NotificationPreferenceService::class);
+        return response()->json([
+            'siteId'   => $site->id,
+            'siteName' => $site->name,
+            'grouped'  => $this->groupedFor($tenantId, $site->id, $svc),
         ]);
     }
 
@@ -66,16 +111,28 @@ class OrgSettingsController extends Controller
         $this->requireExecutiveAccess($request);
         $tenantId = $request->user()->tenant_id;
 
-        // Accept a flat map of {preference_key: enabled} pairs. Unknown or
-        // Required keys are silently ignored by the service.
+        // Accept site_id (null = org-level) + flat map of {key: bool|{enabled,value}}.
         $validated = $request->validate([
+            'site_id'       => ['nullable', 'integer', 'exists:shared_sites,id'],
             'preferences'   => ['required', 'array'],
-            'preferences.*' => ['boolean'],
+            // Each entry can be a bool or an object {enabled, value}; the service
+            // normalizes both shapes and ignores unknown keys.
+            'preferences.*' => ['nullable'],
         ]);
+
+        if (! empty($validated['site_id'])) {
+            $site = Site::find($validated['site_id']);
+            abort_if(! $site || $site->tenant_id !== $tenantId, 403);
+        }
 
         /** @var NotificationPreferenceService $svc */
         $svc = app(NotificationPreferenceService::class);
-        $changed = $svc->bulkSet($tenantId, $validated['preferences'], $request->user()->id);
+        $changed = $svc->bulkSet(
+            $tenantId,
+            $validated['preferences'],
+            $request->user()->id,
+            $validated['site_id'] ?? null,
+        );
 
         return response()->json([
             'changed' => $changed,
@@ -83,5 +140,19 @@ class OrgSettingsController extends Controller
                 ? 'No changes (everything was already in the requested state).'
                 : "Saved {$changed} preference change" . ($changed === 1 ? '' : 's') . '.',
         ]);
+    }
+
+    /** Remove a single site-level override row so it falls back to inheriting org. */
+    public function clearOverride(Request $request, Site $site, string $key): JsonResponse
+    {
+        $this->requireExecutiveAccess($request);
+        $tenantId = $request->user()->tenant_id;
+        abort_if($site->tenant_id !== $tenantId, 403);
+
+        /** @var NotificationPreferenceService $svc */
+        $svc = app(NotificationPreferenceService::class);
+        $cleared = $svc->clearSiteOverride($tenantId, $site->id, $key, $request->user()->id);
+
+        return response()->json(['cleared' => $cleared]);
     }
 }

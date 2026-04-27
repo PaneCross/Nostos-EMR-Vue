@@ -67,11 +67,77 @@ class OrgSettingsPageTest extends TestCase
         $r->assertOk();
         $r->assertInertia(fn ($page) => $page
             ->component('Executive/OrgSettings')
-            ->has('grouped')
-            ->has('grouped.Medical Director')
-            ->has('grouped.Compliance Officer')
-            ->has('grouped.Workflow')
+            ->has('orgGrouped')
+            ->has('orgGrouped.Medical Director')
+            ->has('orgGrouped.Compliance Officer')
+            ->has('orgGrouped.Workflow')
+            ->has('sites')
+            ->has('sitesWithOverrides')
         );
+    }
+
+    public function test_site_effective_endpoint_returns_per_site_view(): void
+    {
+        [$t, $exec] = $this->executiveAdmin();
+        $site = \App\Models\Site::factory()->create(['tenant_id' => $t->id, 'mrn_prefix' => 'EFF']);
+
+        $r = $this->actingAs($exec)->getJson("/executive/org-settings/site/{$site->id}");
+        $r->assertOk()
+            ->assertJsonStructure([
+                'siteId', 'siteName',
+                'grouped' => ['Medical Director', 'Compliance Officer', 'Workflow'],
+            ]);
+        $this->assertEquals($site->id, $r->json('siteId'));
+    }
+
+    public function test_site_effective_blocks_cross_tenant(): void
+    {
+        [, $exec] = $this->executiveAdmin();
+        $other = Tenant::factory()->create();
+        $otherSite = \App\Models\Site::factory()->create(['tenant_id' => $other->id, 'mrn_prefix' => 'XOX']);
+
+        $this->actingAs($exec)->getJson("/executive/org-settings/site/{$otherSite->id}")
+            ->assertStatus(403);
+    }
+
+    public function test_save_with_site_id_creates_per_site_override(): void
+    {
+        [$t, $exec] = $this->executiveAdmin();
+        $site = \App\Models\Site::factory()->create(['tenant_id' => $t->id, 'mrn_prefix' => 'OVR']);
+
+        $r = $this->actingAs($exec)->postJson('/executive/org-settings', [
+            'site_id'     => $site->id,
+            'preferences' => [
+                'designation.nursing_director.fall_risk_threshold' => true,
+            ],
+        ]);
+        $r->assertOk()->assertJson(['changed' => 1]);
+
+        $this->assertEquals(1, \App\Models\NotificationPreference::where('tenant_id', $t->id)
+            ->where('site_id', $site->id)
+            ->where('preference_key', 'designation.nursing_director.fall_risk_threshold')
+            ->where('enabled', true)
+            ->count());
+    }
+
+    public function test_clear_override_removes_the_row(): void
+    {
+        [$t, $exec] = $this->executiveAdmin();
+        $site = \App\Models\Site::factory()->create(['tenant_id' => $t->id, 'mrn_prefix' => 'CLR']);
+        $key = 'designation.nursing_director.fall_risk_threshold';
+
+        // Create an override
+        $svc = app(\App\Services\NotificationPreferenceService::class);
+        $svc->set($t->id, $key, true, $exec->id, $site->id);
+
+        // Now clear it via the endpoint
+        $r = $this->actingAs($exec)->deleteJson("/executive/org-settings/site/{$site->id}/key/{$key}");
+        $r->assertOk()->assertJson(['cleared' => true]);
+
+        $this->assertNull(\App\Models\NotificationPreference::where('tenant_id', $t->id)
+            ->where('site_id', $site->id)
+            ->where('preference_key', $key)
+            ->first());
     }
 
     public function test_index_renders_for_super_admin(): void
