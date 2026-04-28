@@ -50,6 +50,46 @@ const errorMessage = ref<string | null>(null)
 const editing = ref<Definition | null>(null)
 const isNew = ref(false)
 const cadenceInput = ref('90,30,14,0')
+const customCadenceDays = ref('')
+
+// Standard cadence steps with descriptions of who gets notified at each.
+// These mirror the layered-escalation logic in CredentialExpirationAlertJob :
+// 90/60/30 → user only, 14 → user + supervisor, 0/-N → user + supervisor + QA.
+const STANDARD_CADENCE_STEPS: { days: number, label: string, recipients: string }[] = [
+    { days: 120, label: '120 days before',  recipients: 'Email staff member only' },
+    { days: 90,  label: '90 days before',   recipients: 'Email staff member only' },
+    { days: 60,  label: '60 days before',   recipients: 'Email staff member only' },
+    { days: 30,  label: '30 days before',   recipients: 'Email staff member only' },
+    { days: 14,  label: '14 days before',   recipients: 'Email staff + supervisor' },
+    { days: 7,   label: '7 days before',    recipients: 'Email staff + supervisor' },
+    { days: 0,   label: 'Day of expiration',recipients: 'Email staff + supervisor + QA Compliance alert (REQUIRED)' },
+    { days: -7,  label: '7 days overdue',   recipients: 'Re-alert all parties + QA Compliance escalation' },
+    { days: -14, label: '14 days overdue',  recipients: 'Re-alert all parties + QA Compliance escalation' },
+    { days: -30, label: '30 days overdue',  recipients: 'Re-alert all parties + QA Compliance escalation' },
+]
+
+function isCadenceStepActive(days: number): boolean {
+    return parseCadence().includes(days)
+}
+
+function toggleCadenceStep(days: number) {
+    const current = new Set(parseCadence())
+    if (current.has(days)) current.delete(days)
+    else current.add(days)
+    cadenceInput.value = Array.from(current).sort((a, b) => b - a).join(',')
+}
+
+function addCustomCadenceStep() {
+    const n = parseInt(customCadenceDays.value, 10)
+    if (isNaN(n) || n < -30 || n > 365) {
+        customCadenceDays.value = ''
+        return
+    }
+    const current = new Set(parseCadence())
+    current.add(n)
+    cadenceInput.value = Array.from(current).sort((a, b) => b - a).join(',')
+    customCadenceDays.value = ''
+}
 
 const sortedDefs = computed(() => [...definitions.value].sort((a, b) =>
     a.sort_order - b.sort_order || a.title.localeCompare(b.title)
@@ -357,11 +397,37 @@ onMounted(load)
                             <span class="text-sm text-gray-700 dark:text-slate-300">Active (untick to retire without deleting)</span>
                         </label>
                     </div>
-                    <label class="block mb-4">
-                        <span class="text-xs font-medium text-gray-700 dark:text-slate-300">Reminder cadence (days before expiration, comma-separated)</span>
-                        <input v-model="cadenceInput" placeholder="90,30,14,0" class="w-full mt-1 px-3 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm font-mono" />
-                        <p class="text-xs text-gray-500 dark:text-slate-400 mt-1">Negative values = post-expiration follow-up. Example : <code>90,30,14,0,-7</code> sends reminders at 90/30/14 days out, day-of, then 7 days overdue.</p>
-                    </label>
+                    <div class="block mb-4">
+                        <span class="text-xs font-medium text-gray-700 dark:text-slate-300">Reminder cadence : when reminders fire and who gets them</span>
+                        <p class="text-xs text-gray-500 dark:text-slate-400 mt-0.5 mb-2">
+                            Toggle each step on or off. Recipients escalate as the deadline approaches : staff only at the early steps, supervisor added at 14d, QA Compliance + dept alert at day-of and overdue.
+                        </p>
+                        <div class="space-y-1.5 rounded-lg border border-gray-200 dark:border-slate-700 p-2 max-h-72 overflow-y-auto">
+                            <label v-for="step in STANDARD_CADENCE_STEPS" :key="step.days"
+                                   class="flex items-start gap-3 px-2 py-1.5 rounded hover:bg-gray-50 dark:hover:bg-slate-800 cursor-pointer">
+                                <input type="checkbox" :checked="isCadenceStepActive(step.days)" @change="toggleCadenceStep(step.days)"
+                                    class="rounded text-indigo-600 mt-0.5 shrink-0" />
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex items-center gap-2 flex-wrap">
+                                        <span class="text-xs font-semibold text-gray-900 dark:text-slate-100">{{ step.label }}</span>
+                                        <span v-if="step.days <= 0" class="px-1.5 py-0.5 rounded text-[10px] bg-rose-100 dark:bg-rose-900/40 text-rose-700 dark:text-rose-300">{{ step.days === 0 ? 'expiry' : 'overdue' }}</span>
+                                    </div>
+                                    <p class="text-[11px] text-gray-500 dark:text-slate-400 mt-0.5">{{ step.recipients }}</p>
+                                </div>
+                            </label>
+                        </div>
+                        <div class="mt-2 flex items-center gap-2">
+                            <input v-model="customCadenceDays" type="number" min="-30" max="365" placeholder="custom days (e.g. 45)"
+                                class="flex-1 px-3 py-1.5 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-xs font-mono" />
+                            <button @click="addCustomCadenceStep" type="button"
+                                class="px-3 py-1.5 rounded-lg border border-indigo-300 dark:border-indigo-700 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 text-xs font-medium">
+                                Add custom step
+                            </button>
+                        </div>
+                        <p v-if="cadenceInput" class="text-[11px] text-gray-500 dark:text-slate-400 mt-2">
+                            Active : <code class="font-mono">{{ cadenceInput }}</code>
+                        </p>
+                    </div>
                     <label class="block mb-4">
                         <span class="text-xs font-medium text-gray-700 dark:text-slate-300">CEU hours required per renewal cycle (0 = no CEU tracking)</span>
                         <input v-model.number="editing.ceu_hours_required" type="number" min="0" max="999" class="w-full mt-1 px-3 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm" />

@@ -75,7 +75,12 @@ class CredentialsDashboardController extends Controller
             ->map(function (User $u) use ($heldByUser, $bucket) {
                 $cred = $heldByUser[$u->id] ?? null;
                 $b = $this->classify($cred);
-                if ($b !== $bucket) return null;
+
+                // 'all' or 'users_required' returns every user in the cell.
+                // Specific buckets filter to that classification only.
+                if ($bucket !== 'all' && $bucket !== 'users_required' && $b !== $bucket) {
+                    return null;
+                }
 
                 return [
                     'user_id'      => $u->id,
@@ -85,9 +90,19 @@ class CredentialsDashboardController extends Controller
                     'expires_at'   => $cred?->expires_at?->toDateString(),
                     'cms_status'   => $cred?->cms_status,
                     'days_remaining' => $cred?->daysUntilExpiration(),
+                    'bucket'       => $b,
                 ];
             })
             ->filter()
+            ->sortBy(fn ($u) => match ($u['bucket']) {
+                // missing / invalid first, compliant last
+                'users_missing'      => 0,
+                'users_invalid'      => 1,
+                'users_expired'      => 2,
+                'users_expiring_30d' => 3,
+                'users_compliant'    => 4,
+                default              => 5,
+            })
             ->values();
 
         return response()->json([

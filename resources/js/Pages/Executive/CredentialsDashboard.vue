@@ -45,9 +45,10 @@ const props = defineProps<{ matrix: Matrix }>()
 const filterDefId = ref<number | 'all'>('all')
 const filterDept  = ref<string | 'all'>('all')
 const drilldown = ref<{
-    title: string, dept: string, bucket: string, users: any[],
+    rowId: number, title: string, dept: string, bucket: string, users: any[],
 } | null>(null)
 const drilldownLoading = ref(false)
+const drilldownFilter = ref<'all'|'users_missing'|'users_invalid'|'users_expired'|'users_expiring_30d'|'users_compliant'>('all')
 
 const filteredRows = computed(() => {
     if (filterDefId.value === 'all') return props.matrix.rows
@@ -71,23 +72,42 @@ function compliancePct(b: Bucket): number {
 function cellClass(b: Bucket): string {
     if (b.users_required === 0) return 'bg-gray-50 dark:bg-slate-900/40 text-gray-400'
     const pct = compliancePct(b)
-    if (b.users_missing > 0 || b.users_invalid > 0) return 'bg-rose-50 dark:bg-rose-950/40'
-    if (b.users_expired > 0) return 'bg-rose-50 dark:bg-rose-950/30'
-    if (pct < 70) return 'bg-amber-50 dark:bg-amber-950/40'
-    if (pct < 100) return 'bg-amber-50 dark:bg-amber-950/20'
-    return 'bg-emerald-50 dark:bg-emerald-950/30'
+    if (b.users_missing > 0 || b.users_invalid > 0) return 'bg-rose-200 dark:bg-rose-900/60 hover:bg-rose-300 dark:hover:bg-rose-900/80'
+    if (b.users_expired > 0) return 'bg-rose-100 dark:bg-rose-900/40 hover:bg-rose-200 dark:hover:bg-rose-900/60'
+    if (pct < 70) return 'bg-amber-200 dark:bg-amber-900/50 hover:bg-amber-300 dark:hover:bg-amber-900/70'
+    if (pct < 100) return 'bg-amber-100 dark:bg-amber-900/30 hover:bg-amber-200 dark:hover:bg-amber-900/50'
+    return 'bg-emerald-100 dark:bg-emerald-900/40 hover:bg-emerald-200 dark:hover:bg-emerald-900/60'
 }
 
-async function openDrilldown(row: Row, dept: string, bucket: keyof Bucket) {
+async function openDrilldown(row: Row, dept: string, bucket: keyof Bucket | 'all' = 'all') {
     drilldownLoading.value = true
-    drilldown.value = { title: row.title, dept, bucket, users: [] }
+    drilldownFilter.value = bucket === 'users_required' ? 'all' : (bucket as any)
+    drilldown.value = { rowId: row.definition_id, title: row.title, dept, bucket: 'all', users: [] }
     try {
-        const { data } = await axios.get(`/executive/credentials-dashboard/drilldown/${row.definition_id}/${dept}/${bucket}`)
-        drilldown.value = { title: row.title, dept, bucket, users: data.users }
+        const { data } = await axios.get(`/executive/credentials-dashboard/drilldown/${row.definition_id}/${dept}/all`)
+        drilldown.value = { rowId: row.definition_id, title: row.title, dept, bucket: 'all', users: data.users }
     } finally {
         drilldownLoading.value = false
     }
 }
+
+const filteredDrilldownUsers = computed(() => {
+    if (!drilldown.value) return []
+    if (drilldownFilter.value === 'all') return drilldown.value.users
+    return drilldown.value.users.filter(u => u.bucket === drilldownFilter.value)
+})
+
+const drilldownBucketCounts = computed(() => {
+    const counts: Record<string, number> = {
+        users_missing: 0, users_invalid: 0, users_expired: 0,
+        users_expiring_30d: 0, users_compliant: 0,
+    }
+    if (!drilldown.value) return counts
+    for (const u of drilldown.value.users) {
+        if (counts[u.bucket] !== undefined) counts[u.bucket]++
+    }
+    return counts
+})
 
 async function exportPerUserCsv() {
     // Per-user view : each row is a (user, credential) gap. Useful for HR / QA
@@ -176,7 +196,7 @@ const bucketLabels: Record<string, string> = {
     <AppShell>
         <Head title="Credentials Dashboard" />
 
-        <div class="max-w-7xl mx-auto px-6 py-8">
+        <div class="mx-auto px-6 py-8" style="max-width: min(1800px, calc(100vw - 80px));">
             <div class="flex items-start justify-between mb-6 flex-wrap gap-4">
                 <div>
                     <h1 class="text-2xl font-bold text-gray-900 dark:text-slate-100 flex items-center gap-2">
@@ -201,25 +221,25 @@ const bucketLabels: Record<string, string> = {
 
             <!-- Summary cards -->
             <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
-                <div class="rounded-xl border border-emerald-200 dark:border-emerald-900/40 bg-emerald-50 dark:bg-emerald-950/30 p-4">
-                    <p class="text-xs uppercase tracking-wide text-emerald-700 dark:text-emerald-300">Compliant</p>
-                    <p class="text-2xl font-bold text-emerald-800 dark:text-emerald-200 tabular-nums">{{ matrix.summary.users_compliant }}</p>
+                <div class="rounded-xl border border-emerald-300 dark:border-emerald-700 bg-emerald-100 dark:bg-emerald-900/50 p-4 shadow-sm">
+                    <p class="text-xs uppercase tracking-wide font-semibold text-emerald-800 dark:text-emerald-200">Compliant</p>
+                    <p class="text-2xl font-bold text-emerald-900 dark:text-emerald-100 tabular-nums">{{ matrix.summary.users_compliant }}</p>
                 </div>
-                <div class="rounded-xl border border-amber-200 dark:border-amber-900/40 bg-amber-50 dark:bg-amber-950/30 p-4">
-                    <p class="text-xs uppercase tracking-wide text-amber-700 dark:text-amber-300">Expiring 30d</p>
-                    <p class="text-2xl font-bold text-amber-800 dark:text-amber-200 tabular-nums">{{ matrix.summary.users_expiring_30d }}</p>
+                <div class="rounded-xl border border-amber-300 dark:border-amber-700 bg-amber-100 dark:bg-amber-900/50 p-4 shadow-sm">
+                    <p class="text-xs uppercase tracking-wide font-semibold text-amber-800 dark:text-amber-200">Expiring 30d</p>
+                    <p class="text-2xl font-bold text-amber-900 dark:text-amber-100 tabular-nums">{{ matrix.summary.users_expiring_30d }}</p>
                 </div>
-                <div class="rounded-xl border border-rose-200 dark:border-rose-900/40 bg-rose-50 dark:bg-rose-950/30 p-4">
-                    <p class="text-xs uppercase tracking-wide text-rose-700 dark:text-rose-300">Expired</p>
-                    <p class="text-2xl font-bold text-rose-800 dark:text-rose-200 tabular-nums">{{ matrix.summary.users_expired }}</p>
+                <div class="rounded-xl border border-rose-300 dark:border-rose-700 bg-rose-100 dark:bg-rose-900/50 p-4 shadow-sm">
+                    <p class="text-xs uppercase tracking-wide font-semibold text-rose-800 dark:text-rose-200">Expired</p>
+                    <p class="text-2xl font-bold text-rose-900 dark:text-rose-100 tabular-nums">{{ matrix.summary.users_expired }}</p>
                 </div>
-                <div class="rounded-xl border border-rose-300 dark:border-rose-800 bg-rose-100 dark:bg-rose-950/50 p-4">
-                    <p class="text-xs uppercase tracking-wide text-rose-700 dark:text-rose-300">Invalid</p>
-                    <p class="text-2xl font-bold text-rose-800 dark:text-rose-200 tabular-nums">{{ matrix.summary.users_invalid }}</p>
+                <div class="rounded-xl border border-rose-400 dark:border-rose-600 bg-rose-200 dark:bg-rose-900/70 p-4 shadow-sm">
+                    <p class="text-xs uppercase tracking-wide font-semibold text-rose-800 dark:text-rose-100">Invalid</p>
+                    <p class="text-2xl font-bold text-rose-900 dark:text-rose-50 tabular-nums">{{ matrix.summary.users_invalid }}</p>
                 </div>
-                <div class="rounded-xl border border-rose-300 dark:border-rose-800 bg-rose-100 dark:bg-rose-950/50 p-4">
-                    <p class="text-xs uppercase tracking-wide text-rose-700 dark:text-rose-300">Missing</p>
-                    <p class="text-2xl font-bold text-rose-800 dark:text-rose-200 tabular-nums">{{ matrix.summary.users_missing }}</p>
+                <div class="rounded-xl border border-rose-400 dark:border-rose-600 bg-rose-200 dark:bg-rose-900/70 p-4 shadow-sm">
+                    <p class="text-xs uppercase tracking-wide font-semibold text-rose-800 dark:text-rose-100">Missing</p>
+                    <p class="text-2xl font-bold text-rose-900 dark:text-rose-50 tabular-nums">{{ matrix.summary.users_missing }}</p>
                 </div>
             </div>
 
@@ -259,7 +279,13 @@ const bucketLabels: Record<string, string> = {
                     <thead class="bg-gray-50 dark:bg-slate-800 text-gray-700 dark:text-slate-300 sticky top-0">
                         <tr>
                             <th class="text-left px-3 py-2 font-medium sticky left-0 bg-gray-50 dark:bg-slate-800 z-10 min-w-[260px]">Credential</th>
-                            <th v-for="d in visibleDepts" :key="d" class="px-2 py-2 font-medium text-center whitespace-nowrap">{{ deptLabel(d) }}</th>
+                            <th v-for="d in visibleDepts" :key="d"
+                                @click="filterDept = filterDept === d ? 'all' : d"
+                                :title="filterDept === d ? 'Click to clear filter' : `Click to filter to ${deptLabel(d)} only`"
+                                :class="['px-2 py-2 font-medium text-center whitespace-nowrap cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-700/60 transition-colors',
+                                    filterDept === d ? 'bg-indigo-100 dark:bg-indigo-900/40 text-indigo-800 dark:text-indigo-200' : '']">
+                                {{ deptLabel(d) }}
+                            </th>
                             <th class="px-2 py-2 font-medium text-center bg-gray-100 dark:bg-slate-700/50">Total</th>
                         </tr>
                     </thead>
@@ -273,8 +299,8 @@ const bucketLabels: Record<string, string> = {
                             </td>
                             <td v-for="d in visibleDepts" :key="d"
                                 :class="[cellClass(row.cells[d]), 'px-2 py-2 text-center cursor-pointer transition-colors']"
-                                @click="(row.cells[d]?.users_required ?? 0) > 0 ? openDrilldown(row, d, 'users_required') : null"
-                                :title="(row.cells[d]?.users_required ?? 0) > 0 ? `${row.cells[d].users_compliant}/${row.cells[d].users_required} compliant` : 'N/A'">
+                                @click="(row.cells[d]?.users_required ?? 0) > 0 ? openDrilldown(row, d, 'all') : null"
+                                :title="(row.cells[d]?.users_required ?? 0) > 0 ? `${row.cells[d].users_compliant}/${row.cells[d].users_required} compliant - click to see users` : 'N/A'">
                                 <template v-if="(row.cells[d]?.users_required ?? 0) > 0">
                                     <div class="text-sm font-semibold tabular-nums text-gray-900 dark:text-slate-100">
                                         {{ row.cells[d].users_compliant }}/{{ row.cells[d].users_required }}
@@ -297,32 +323,77 @@ const bucketLabels: Record<string, string> = {
 
             <!-- Drilldown modal -->
             <div v-if="drilldown" class="fixed inset-0 bg-black/50 z-40 flex items-center justify-center p-4 overflow-y-auto" @click.self="drilldown = null">
-                <div class="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-700 max-w-2xl w-full p-6 my-8 max-h-[90vh] overflow-y-auto">
+                <div class="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-700 max-w-3xl w-full p-6 my-8 max-h-[90vh] overflow-y-auto">
                     <div class="flex items-center justify-between mb-4">
                         <div>
                             <h2 class="text-lg font-bold text-gray-900 dark:text-slate-100">{{ drilldown.title }}</h2>
                             <p class="text-xs text-gray-500 dark:text-slate-400 mt-0.5">
-                                {{ deptLabel(drilldown.dept) }} ·
-                                {{ bucketLabels[drilldown.bucket] ?? drilldown.bucket.replace('users_','') }}
+                                {{ deptLabel(drilldown.dept) }} · {{ drilldown.users.length }} user(s) required
                             </p>
                         </div>
                         <button @click="drilldown = null" class="text-gray-400 hover:text-gray-600 dark:hover:text-slate-200"><XMarkIcon class="w-5 h-5" /></button>
                     </div>
+
+                    <!-- Quick-filter chips by bucket -->
+                    <div v-if="!drilldownLoading && drilldown.users.length > 0" class="flex flex-wrap gap-2 mb-4">
+                        <button @click="drilldownFilter = 'all'" :class="['px-3 py-1 rounded-full text-xs font-medium transition-colors',
+                            drilldownFilter === 'all' ? 'bg-indigo-600 text-white' : 'bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-700']">
+                            All ({{ drilldown.users.length }})
+                        </button>
+                        <button v-if="drilldownBucketCounts.users_missing > 0" @click="drilldownFilter = 'users_missing'"
+                            :class="['px-3 py-1 rounded-full text-xs font-medium transition-colors',
+                                drilldownFilter === 'users_missing' ? 'bg-rose-600 text-white' : 'bg-rose-100 dark:bg-rose-900/40 text-rose-700 dark:text-rose-300 hover:bg-rose-200 dark:hover:bg-rose-900/60']">
+                            Missing ({{ drilldownBucketCounts.users_missing }})
+                        </button>
+                        <button v-if="drilldownBucketCounts.users_invalid > 0" @click="drilldownFilter = 'users_invalid'"
+                            :class="['px-3 py-1 rounded-full text-xs font-medium transition-colors',
+                                drilldownFilter === 'users_invalid' ? 'bg-rose-700 text-white' : 'bg-rose-200 dark:bg-rose-900/60 text-rose-800 dark:text-rose-200 hover:bg-rose-300 dark:hover:bg-rose-900/80']">
+                            Invalid ({{ drilldownBucketCounts.users_invalid }})
+                        </button>
+                        <button v-if="drilldownBucketCounts.users_expired > 0" @click="drilldownFilter = 'users_expired'"
+                            :class="['px-3 py-1 rounded-full text-xs font-medium transition-colors',
+                                drilldownFilter === 'users_expired' ? 'bg-rose-500 text-white' : 'bg-rose-100 dark:bg-rose-900/40 text-rose-700 dark:text-rose-300 hover:bg-rose-200 dark:hover:bg-rose-900/60']">
+                            Expired ({{ drilldownBucketCounts.users_expired }})
+                        </button>
+                        <button v-if="drilldownBucketCounts.users_expiring_30d > 0" @click="drilldownFilter = 'users_expiring_30d'"
+                            :class="['px-3 py-1 rounded-full text-xs font-medium transition-colors',
+                                drilldownFilter === 'users_expiring_30d' ? 'bg-amber-500 text-white' : 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-900/60']">
+                            Expiring 30d ({{ drilldownBucketCounts.users_expiring_30d }})
+                        </button>
+                        <button v-if="drilldownBucketCounts.users_compliant > 0" @click="drilldownFilter = 'users_compliant'"
+                            :class="['px-3 py-1 rounded-full text-xs font-medium transition-colors',
+                                drilldownFilter === 'users_compliant' ? 'bg-emerald-600 text-white' : 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-200 dark:hover:bg-emerald-900/60']">
+                            Compliant ({{ drilldownBucketCounts.users_compliant }})
+                        </button>
+                    </div>
+
                     <div v-if="drilldownLoading" class="text-center py-6 text-gray-500 dark:text-slate-400">Loading...</div>
-                    <div v-else-if="drilldown.users.length === 0" class="text-center py-6 text-gray-500 dark:text-slate-400">No users in this bucket.</div>
+                    <div v-else-if="drilldown.users.length === 0" class="text-center py-6 text-gray-500 dark:text-slate-400">No users matched this credential's targeting in {{ deptLabel(drilldown.dept) }}.</div>
+                    <div v-else-if="filteredDrilldownUsers.length === 0" class="text-center py-6 text-gray-500 dark:text-slate-400">No users in this bucket. Try another filter above.</div>
                     <table v-else class="w-full text-sm">
                         <thead class="bg-gray-50 dark:bg-slate-800 text-xs text-gray-700 dark:text-slate-300">
                             <tr>
                                 <th class="text-left px-3 py-2 font-medium">User</th>
                                 <th class="text-left px-3 py-2 font-medium">Job Title</th>
+                                <th class="text-left px-3 py-2 font-medium">Bucket</th>
                                 <th class="text-left px-3 py-2 font-medium">Expires</th>
                                 <th class="text-left px-3 py-2 font-medium">Status</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-100 dark:divide-slate-800">
-                            <tr v-for="u in drilldown.users" :key="u.user_id">
+                            <tr v-for="u in filteredDrilldownUsers" :key="u.user_id">
                                 <td class="px-3 py-2 text-gray-900 dark:text-slate-100">{{ u.name }}</td>
                                 <td class="px-3 py-2 text-gray-600 dark:text-slate-300">{{ u.job_title ?? '-' }}</td>
+                                <td class="px-3 py-2 text-xs">
+                                    <span :class="[
+                                        'inline-block px-2 py-0.5 rounded-full text-[10px] font-medium',
+                                        u.bucket === 'users_compliant' ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300' :
+                                        u.bucket === 'users_expiring_30d' ? 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300' :
+                                        u.bucket === 'users_expired' ? 'bg-rose-100 dark:bg-rose-900/40 text-rose-700 dark:text-rose-300' :
+                                        u.bucket === 'users_invalid' ? 'bg-rose-200 dark:bg-rose-900/60 text-rose-800 dark:text-rose-200' :
+                                        'bg-rose-100 dark:bg-rose-900/40 text-rose-700 dark:text-rose-300'
+                                    ]">{{ (bucketLabels[u.bucket] ?? u.bucket.replace('users_','')) }}</span>
+                                </td>
                                 <td class="px-3 py-2 text-gray-600 dark:text-slate-300 text-xs">
                                     {{ u.expires_at ?? '-' }}
                                     <span v-if="u.days_remaining !== null && u.days_remaining !== undefined" class="block text-gray-400">
