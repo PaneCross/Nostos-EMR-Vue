@@ -190,6 +190,8 @@ class User extends Authenticatable
         'notification_preferences',
         'theme_preference',
         'designations',
+        'job_title',
+        'supervisor_user_id',
     ];
 
     protected $hidden = [
@@ -231,6 +233,21 @@ class User extends Authenticatable
     public function provisionedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'provisioned_by_user_id');
+    }
+
+    public function supervisor(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'supervisor_user_id');
+    }
+
+    public function directReports(): HasMany
+    {
+        return $this->hasMany(User::class, 'supervisor_user_id');
+    }
+
+    public function staffCredentials(): HasMany
+    {
+        return $this->hasMany(StaffCredential::class, 'user_id');
     }
 
     // ─── Helpers ──────────────────────────────────────────────────────────────

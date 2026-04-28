@@ -311,6 +311,11 @@ class DemoEnvironmentSeeder extends Seeder
         // for every active staff user so the credentials UI + IT admin widget
         // show realistic data.
         $this->command->info('');
+        $this->command->info('  Seeding job titles + CMS-mandatory credential definitions...');
+        $this->call(JobTitleBaselineSeeder::class);
+        $this->call(CmsCredentialBaselineSeeder::class);
+
+        $this->command->info('');
         $this->command->info('  Seeding staff credentials + training...');
         $this->call(StaffCredentialSeeder::class);
 

@@ -49,9 +49,28 @@ class StaffCredential extends Model
     /** Alert threshold windows (days out from expires_at) that drive widgets + job. */
     public const ALERT_DAYS = [60, 30, 14, 0];
 
+    /** Verification source : how the credential was primary-source-verified per §460.64(c). */
+    public const VERIFICATION_SOURCES = [
+        'state_board'      => 'State Licensing Board',
+        'npdb'             => 'NPDB Lookup',
+        'uploaded_doc'     => 'Uploaded Document',
+        'self_attestation' => 'Self-Attestation',
+        'other'            => 'Other',
+    ];
+
+    /** Status overrides ; allows recording suspended/revoked even before expiration. */
+    public const CMS_STATUSES = [
+        'active'    => 'Active',
+        'expired'   => 'Expired',
+        'suspended' => 'Suspended',
+        'revoked'   => 'Revoked',
+        'pending'   => 'Pending',
+    ];
+
     protected $fillable = [
         'tenant_id',
         'user_id',
+        'credential_definition_id',
         'credential_type',
         'title',
         'license_state',
@@ -60,6 +79,9 @@ class StaffCredential extends Model
         'expires_at',
         'verified_at',
         'verified_by_user_id',
+        'verification_source',
+        'cms_status',
+        'replaced_by_credential_id',
         'document_path',
         'document_filename',
         'notes',
@@ -76,6 +98,8 @@ class StaffCredential extends Model
     public function tenant(): BelongsTo     { return $this->belongsTo(Tenant::class); }
     public function user(): BelongsTo       { return $this->belongsTo(User::class, 'user_id'); }
     public function verifiedBy(): BelongsTo { return $this->belongsTo(User::class, 'verified_by_user_id'); }
+    public function definition(): BelongsTo { return $this->belongsTo(CredentialDefinition::class, 'credential_definition_id'); }
+    public function replacedBy(): BelongsTo { return $this->belongsTo(self::class, 'replaced_by_credential_id'); }
 
     // ── Scopes ────────────────────────────────────────────────────────────────
 
@@ -115,9 +139,14 @@ class StaffCredential extends Model
         return $d !== null && $d >= 0 && $d <= $days;
     }
 
-    /** Severity bucket for UI coloring. */
+    /** Severity bucket for UI coloring. Honors cms_status overrides (suspended/revoked). */
     public function status(): string
     {
+        // Explicit overrides take precedence over date math.
+        if ($this->cms_status === 'suspended') return 'suspended';
+        if ($this->cms_status === 'revoked')   return 'revoked';
+        if ($this->cms_status === 'pending')   return 'pending';
+
         $d = $this->daysUntilExpiration();
         if ($d === null) return 'no_expiry';
         if ($d < 0)      return 'expired';
@@ -126,5 +155,11 @@ class StaffCredential extends Model
         if ($d <= 30)    return 'due_30';
         if ($d <= 60)    return 'due_60';
         return 'current';
+    }
+
+    /** True when cms_status indicates the credential is unusable regardless of dates. */
+    public function isInvalidStatus(): bool
+    {
+        return in_array($this->cms_status, ['suspended', 'revoked', 'pending'], true);
     }
 }
