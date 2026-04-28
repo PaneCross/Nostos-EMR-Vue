@@ -81,7 +81,8 @@ class StaffCredentialTest extends TestCase
 
         $this->assertEquals(2, Alert::where('tenant_id', $this->tenant->id)->count());
         $this->assertTrue(Alert::where('alert_type', 'staff_credential_30d')->exists());
-        $this->assertTrue(Alert::where('alert_type', 'staff_credential_expired')->exists());
+        // Credentials V1 renamed expired alerts to "overdue" for clearer escalation.
+        $this->assertTrue(Alert::where('alert_type', 'staff_credential_overdue')->exists());
     }
 
     public function test_job_dedupes_per_credential(): void

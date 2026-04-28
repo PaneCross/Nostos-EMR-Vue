@@ -827,6 +827,44 @@ class NotificationPreferenceService
                 'numeric_max'    => 180,
                 'numeric_unit'   => 'days before expiry',
             ],
+
+            // ── Credentials V1 (staff credential reminders) ────────────────
+            'credential_self_reminder' => [
+                'group'       => 'Staff Credentials',
+                'label'       => 'Email staff member when their credential is approaching expiration',
+                'description' => 'Sends the staff member a courtesy email at each cadence step (90/60/30/14/0 days). Honors per-definition cadence if set.',
+                'status'      => self::STATUS_OPTIONAL,
+                'default'     => true,
+                'cms_ref'     => null,
+                'wired'       => true,
+            ],
+            'credential_supervisor_cc_14d' => [
+                'group'       => 'Staff Credentials',
+                'label'       => 'CC supervisor on credential reminders at 14 days + overdue',
+                'description' => 'When a credential is 14 days from expiration (or already overdue), CC the staff member supervisor on the reminder email.',
+                'status'      => self::STATUS_OPTIONAL,
+                'default'     => true,
+                'cms_ref'     => null,
+                'wired'       => true,
+            ],
+            'credential_overdue_qa_alert' => [
+                'group'       => 'Staff Credentials',
+                'label'       => 'QA Compliance alert on credential overdue',
+                'description' => 'Alerts QA Compliance department when a staff credential expires without renewal. Required by §460.71. Cannot be disabled.',
+                'status'      => self::STATUS_REQUIRED,
+                'default'     => true,
+                'cms_ref'     => '42 CFR §460.71 + CMS Personnel Audit',
+                'wired'       => true,
+            ],
+            'credential_weekly_digest' => [
+                'group'       => 'Staff Credentials',
+                'label'       => 'Weekly digest to IT Admin + QA Compliance',
+                'description' => 'Monday 06:00 rollup : credentials expiring in next 30 days, currently overdue, and required-but-missing per department.',
+                'status'      => self::STATUS_OPTIONAL,
+                'default'     => true,
+                'cms_ref'     => null,
+                'wired'       => true,
+            ],
         ];
     }
 }

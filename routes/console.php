@@ -150,6 +150,14 @@ Schedule::job(\App\Jobs\CredentialExpirationAlertJob::class, 'compliance')->dail
     ->name('staff-credential-expiration')
     ->withoutOverlapping();
 
+// ─── Credentials V1 : weekly digest to IT Admin + QA Compliance ──────────────
+// Monday 06:00 rollup of expiring/overdue/missing credentials per tenant.
+// Acts as the no-silent-fail safety net for layered per-user reminders.
+Schedule::job(\App\Jobs\WeeklyCredentialDigestJob::class, 'compliance')
+    ->mondays()->at('06:00')
+    ->name('credential-weekly-digest')
+    ->withoutOverlapping();
+
 // ─── Phase B1: Restraint monitoring + IDT review deadline enforcement ────────
 // Checks all active restraint episodes every 15 minutes:
 //   - Monitoring observation > 4h absent → warning alert to nursing
