@@ -31,9 +31,18 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Inertia\Inertia;
+use Inertia\Response as InertiaResponse;
 
 class CredentialDefinitionController extends Controller
 {
+    /** Inertia page : the actual catalog UI. Loads data via JSON endpoints. */
+    public function page(Request $request): InertiaResponse
+    {
+        $this->gate($request);
+        return Inertia::render('Executive/CredentialsCatalog');
+    }
+
     private function gate(Request $request): void
     {
         $u = $request->user();

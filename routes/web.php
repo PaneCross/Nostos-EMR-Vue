@@ -380,6 +380,7 @@ Route::middleware('auth')->group(function () {
     Route::patch ('/executive/job-titles/{jobTitle}',                       [\App\Http\Controllers\JobTitleController::class, 'update']) ->name('executive.job-titles.update');
     Route::delete('/executive/job-titles/{jobTitle}',                       [\App\Http\Controllers\JobTitleController::class, 'destroy'])->name('executive.job-titles.destroy');
 
+    Route::get   ('/executive/credentials-catalog',                                                     [\App\Http\Controllers\CredentialDefinitionController::class, 'page'])   ->name('executive.credentials-catalog.page');
     Route::get   ('/executive/credential-definitions',                                                  [\App\Http\Controllers\CredentialDefinitionController::class, 'index'])  ->name('executive.credential-definitions.index');
     Route::post  ('/executive/credential-definitions',                                                  [\App\Http\Controllers\CredentialDefinitionController::class, 'store'])  ->name('executive.credential-definitions.store');
     Route::patch ('/executive/credential-definitions/{credentialDefinition}',                           [\App\Http\Controllers\CredentialDefinitionController::class, 'update']) ->name('executive.credential-definitions.update');
