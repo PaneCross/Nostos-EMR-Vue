@@ -25,6 +25,11 @@ import {
     ExclamationTriangleIcon,
     CheckCircleIcon,
     TrashIcon,
+    PencilSquareIcon,
+    DocumentArrowUpIcon,
+    DocumentArrowDownIcon,
+    ShieldCheckIcon,
+    XMarkIcon,
 } from '@heroicons/vue/24/outline'
 
 interface Credential {
@@ -37,9 +42,28 @@ interface Credential {
     issued_at: string | null
     expires_at: string | null
     days_remaining: number | null
-    status: 'current' | 'due_60' | 'due_30' | 'due_14' | 'due_today' | 'expired' | 'no_expiry'
+    status: string
     verified_at: string | null
     notes: string | null
+    document_url?: string | null
+    credential_definition_id?: number | null
+    verification_source?: string | null
+    cms_status?: string | null
+}
+interface ApplicableDefinition {
+    id: number
+    code: string
+    title: string
+    credential_type: string
+    requires_psv: boolean
+    is_cms_mandatory: boolean
+    default_doc_required: boolean
+}
+interface MissingDefinition {
+    id: number
+    code: string
+    title: string
+    is_cms_mandatory: boolean
 }
 
 interface Training {
@@ -54,46 +78,87 @@ interface Training {
 }
 
 const props = defineProps<{
-    staff: { id: number; first_name: string; last_name: string; email: string; department: string; role: string; is_active: boolean }
+    staff: { id: number; first_name: string; last_name: string; email: string; department: string; role: string; job_title: string | null; is_active: boolean }
     credentials: Credential[]
     training: Training[]
     hoursByCategory: Record<string, number>
     totalHours12mo: number
     credentialTypes: Record<string, string>
     trainingCategories: Record<string, string>
+    applicableDefinitions?: ApplicableDefinition[]
+    missingDefinitions?: MissingDefinition[]
+    verificationSources?: Record<string, string>
+    cmsStatuses?: Record<string, string>
 }>()
 
 // ── Credential form ──────────────────────────────────────────────────────────
 
 const showCredForm = ref(false)
 const credSaving = ref(false)
+const editingCred = ref<Credential | null>(null)
+const credFile = ref<File | null>(null)
 const credForm = ref({
+    credential_definition_id: '' as string | number,
     credential_type: 'license',
     title: '',
     license_state: '',
     license_number: '',
     issued_at: '',
     expires_at: '',
+    verification_source: '',
+    cms_status: 'active',
     notes: '',
 })
 
 function resetCred() {
     credForm.value = {
+        credential_definition_id: '',
         credential_type: 'license',
         title: '',
         license_state: '',
         license_number: '',
         issued_at: '',
         expires_at: '',
+        verification_source: '',
+        cms_status: 'active',
         notes: '',
     }
+    credFile.value = null
+}
+
+// When user picks a definition from the dropdown, prefill type + title
+function onDefinitionChange() {
+    const id = Number(credForm.value.credential_definition_id)
+    if (!id) return
+    const def = props.applicableDefinitions?.find(d => d.id === id)
+    if (def) {
+        credForm.value.credential_type = def.credential_type
+        credForm.value.title = def.title
+        if (def.requires_psv && !credForm.value.verification_source) {
+            credForm.value.verification_source = 'state_board'
+        }
+    }
+}
+
+function buildFormData(form: any): FormData {
+    const fd = new FormData()
+    Object.entries(form).forEach(([k, v]) => {
+        if (v === null || v === undefined || v === '') return
+        fd.append(k, String(v))
+    })
+    if (credFile.value) fd.append('document', credFile.value)
+    return fd
 }
 
 async function submitCred() {
     if (!credForm.value.title.trim()) { alert('Title is required'); return }
     credSaving.value = true
     try {
-        await axios.post(`/it-admin/users/${props.staff.id}/credentials`, credForm.value)
+        await axios.post(
+            `/it-admin/users/${props.staff.id}/credentials`,
+            buildFormData(credForm.value),
+            { headers: { 'Content-Type': 'multipart/form-data' } }
+        )
         showCredForm.value = false
         resetCred()
         router.reload()
@@ -104,10 +169,57 @@ async function submitCred() {
     }
 }
 
+function startEditCred(c: Credential) {
+    editingCred.value = { ...c }
+    credFile.value = null
+}
+
+async function submitEditCred() {
+    if (!editingCred.value) return
+    credSaving.value = true
+    try {
+        const payload = {
+            credential_definition_id: editingCred.value.credential_definition_id ?? '',
+            title: editingCred.value.title,
+            license_state: editingCred.value.license_state ?? '',
+            license_number: editingCred.value.license_number ?? '',
+            issued_at: editingCred.value.issued_at ?? '',
+            expires_at: editingCred.value.expires_at ?? '',
+            verification_source: editingCred.value.verification_source ?? '',
+            cms_status: editingCred.value.cms_status ?? 'active',
+            notes: editingCred.value.notes ?? '',
+        }
+        const fd = new FormData()
+        Object.entries(payload).forEach(([k, v]) => {
+            if (v === null || v === undefined || v === '') return
+            fd.append(k, String(v))
+        })
+        if (credFile.value) fd.append('document', credFile.value)
+        // Laravel needs _method=PATCH for multipart on POST
+        fd.append('_method', 'PATCH')
+        await axios.post(
+            `/it-admin/staff-credentials/${editingCred.value.id}`,
+            fd,
+            { headers: { 'Content-Type': 'multipart/form-data' } }
+        )
+        editingCred.value = null
+        router.reload()
+    } catch (err: any) {
+        alert(err?.response?.data?.message ?? 'Failed to update credential.')
+    } finally {
+        credSaving.value = false
+    }
+}
+
 async function deleteCred(c: Credential) {
     if (!confirm(`Remove credential "${c.title}"?`)) return
     await axios.delete(`/it-admin/staff-credentials/${c.id}`)
     router.reload()
+}
+
+function onFilePick(e: Event) {
+    const input = e.target as HTMLInputElement
+    credFile.value = input.files?.[0] ?? null
 }
 
 // ── Training form ────────────────────────────────────────────────────────────
@@ -163,6 +275,9 @@ const STATUS_LABELS: Record<string, string> = {
     due_today: 'Due today',
     expired: 'EXPIRED',
     no_expiry: 'No expiry',
+    suspended: 'SUSPENDED',
+    revoked: 'REVOKED',
+    pending: 'Pending verify',
 }
 
 const STATUS_CLASSES: Record<string, string> = {
@@ -173,6 +288,9 @@ const STATUS_CLASSES: Record<string, string> = {
     due_14:    'bg-orange-100 dark:bg-orange-900/60 text-orange-700 dark:text-orange-300',
     due_today: 'bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300',
     expired:   'bg-red-600 text-white',
+    suspended: 'bg-rose-700 text-white',
+    revoked:   'bg-rose-900 text-white',
+    pending:   'bg-amber-200 dark:bg-amber-900/60 text-amber-800 dark:text-amber-200',
 }
 
 const expiringCount = computed(() =>
@@ -226,6 +344,23 @@ const expiringCount = computed(() =>
                 </div>
             </div>
 
+            <!-- Missing-required banner -->
+            <div v-if="(missingDefinitions?.length ?? 0) > 0"
+                 class="rounded-xl border border-rose-300 dark:border-rose-700 bg-rose-50 dark:bg-rose-950/30 px-5 py-4 text-sm">
+                <div class="flex items-start gap-3">
+                    <ExclamationTriangleIcon class="w-5 h-5 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
+                    <div class="text-rose-800 dark:text-rose-200">
+                        <p class="font-semibold mb-1">{{ missingDefinitions!.length }} required credential(s) missing for this user.</p>
+                        <ul class="list-disc list-outside ml-5 space-y-0.5">
+                            <li v-for="m in missingDefinitions" :key="m.id">
+                                {{ m.title }}
+                                <span v-if="m.is_cms_mandatory" class="ml-1 inline-block px-1.5 py-0.5 rounded text-xs bg-rose-200 dark:bg-rose-900/60 text-rose-800 dark:text-rose-200">CMS-mandatory</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
             <!-- Credentials -->
             <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
                 <div class="flex items-center justify-between px-5 py-3 border-b border-slate-200 dark:border-slate-700">
@@ -241,6 +376,18 @@ const expiringCount = computed(() =>
 
                 <!-- Add form -->
                 <div v-if="showCredForm" class="px-5 py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/30 space-y-3">
+                    <!-- Definition picker (prefills type+title from catalog) -->
+                    <div v-if="(applicableDefinitions?.length ?? 0) > 0">
+                        <label class="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">Pick from catalog (recommended)</label>
+                        <select v-model="credForm.credential_definition_id" @change="onDefinitionChange"
+                            class="w-full text-sm rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-700 px-3 py-2">
+                            <option value="">Custom (free-form, not linked to catalog)</option>
+                            <option v-for="d in applicableDefinitions" :key="d.id" :value="d.id">
+                                {{ d.title }}{{ d.is_cms_mandatory ? ' [CMS-mandatory]' : '' }}{{ d.requires_psv ? ' [PSV]' : '' }}
+                            </option>
+                        </select>
+                    </div>
+
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
                             <label class="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">Type</label>
@@ -273,7 +420,32 @@ const expiringCount = computed(() =>
                             <input v-model="credForm.expires_at" type="date"
                                 class="w-full text-sm rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-700 px-3 py-2" />
                         </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1">
+                                <ShieldCheckIcon class="w-3.5 h-3.5" /> Verification source (PSV)
+                            </label>
+                            <select v-model="credForm.verification_source" class="w-full text-sm rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-700 px-3 py-2">
+                                <option value="">- not yet verified -</option>
+                                <option v-for="(label, key) in verificationSources ?? {}" :key="key" :value="key">{{ label }}</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">Status</label>
+                            <select v-model="credForm.cms_status" class="w-full text-sm rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-700 px-3 py-2">
+                                <option v-for="(label, key) in cmsStatuses ?? {}" :key="key" :value="key">{{ label }}</option>
+                            </select>
+                        </div>
                     </div>
+
+                    <div>
+                        <label class="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1">
+                            <DocumentArrowUpIcon class="w-3.5 h-3.5" /> Supporting document (PDF / JPG / PNG, max 10 MB)
+                        </label>
+                        <input type="file" accept="application/pdf,image/jpeg,image/png" @change="onFilePick"
+                               class="block w-full text-xs text-slate-500 dark:text-slate-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 dark:file:bg-indigo-900/40 dark:file:text-indigo-300" />
+                        <p v-if="credFile" class="mt-1 text-xs text-slate-600 dark:text-slate-300">Selected: {{ credFile.name }}</p>
+                    </div>
+
                     <div>
                         <label class="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">Notes</label>
                         <textarea v-model="credForm.notes" rows="2"
@@ -328,7 +500,14 @@ const expiringCount = computed(() =>
                                     {{ STATUS_LABELS[c.status] }}
                                 </span>
                             </td>
-                            <td class="px-5 py-3 text-right">
+                            <td class="px-5 py-3 text-right whitespace-nowrap">
+                                <a v-if="c.document_url" :href="c.document_url" target="_blank"
+                                    class="text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 inline-block mr-1" title="Open document">
+                                    <DocumentArrowDownIcon class="w-4 h-4" />
+                                </a>
+                                <button @click="startEditCred(c)" class="text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 mr-1" title="Edit">
+                                    <PencilSquareIcon class="w-4 h-4" />
+                                </button>
                                 <button @click="deleteCred(c)" class="text-slate-400 hover:text-red-600 dark:hover:text-red-400" title="Remove">
                                     <TrashIcon class="w-4 h-4" />
                                 </button>
@@ -336,6 +515,69 @@ const expiringCount = computed(() =>
                         </tr>
                     </tbody>
                 </table>
+            </div>
+
+            <!-- Edit modal -->
+            <div v-if="editingCred" class="fixed inset-0 bg-black/50 z-40 flex items-center justify-center p-4 overflow-y-auto" @click.self="editingCred = null">
+                <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 max-w-2xl w-full p-6 my-8 max-h-[90vh] overflow-y-auto">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-lg font-bold text-slate-900 dark:text-slate-100">Edit credential</h2>
+                        <button @click="editingCred = null" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"><XMarkIcon class="w-5 h-5" /></button>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3 mb-3">
+                        <label class="block col-span-2">
+                            <span class="text-xs font-medium text-slate-700 dark:text-slate-300">Title</span>
+                            <input v-model="editingCred.title" class="w-full mt-1 px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-700 text-sm" />
+                        </label>
+                        <label class="block">
+                            <span class="text-xs font-medium text-slate-700 dark:text-slate-300">License State</span>
+                            <input v-model="editingCred.license_state" maxlength="2" class="w-full mt-1 px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-700 text-sm" />
+                        </label>
+                        <label class="block">
+                            <span class="text-xs font-medium text-slate-700 dark:text-slate-300">License Number</span>
+                            <input v-model="editingCred.license_number" class="w-full mt-1 px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-700 text-sm" />
+                        </label>
+                        <label class="block">
+                            <span class="text-xs font-medium text-slate-700 dark:text-slate-300">Issued</span>
+                            <input v-model="editingCred.issued_at" type="date" class="w-full mt-1 px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-700 text-sm" />
+                        </label>
+                        <label class="block">
+                            <span class="text-xs font-medium text-slate-700 dark:text-slate-300">Expires</span>
+                            <input v-model="editingCred.expires_at" type="date" class="w-full mt-1 px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-700 text-sm" />
+                        </label>
+                        <label class="block">
+                            <span class="text-xs font-medium text-slate-700 dark:text-slate-300">Verification source</span>
+                            <select v-model="editingCred.verification_source" class="w-full mt-1 px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-700 text-sm">
+                                <option value="">- not verified -</option>
+                                <option v-for="(label, key) in verificationSources ?? {}" :key="key" :value="key">{{ label }}</option>
+                            </select>
+                        </label>
+                        <label class="block">
+                            <span class="text-xs font-medium text-slate-700 dark:text-slate-300">Status</span>
+                            <select v-model="editingCred.cms_status" class="w-full mt-1 px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-700 text-sm">
+                                <option v-for="(label, key) in cmsStatuses ?? {}" :key="key" :value="key">{{ label }}</option>
+                            </select>
+                        </label>
+                        <label class="block col-span-2">
+                            <span class="text-xs font-medium text-slate-700 dark:text-slate-300 flex items-center gap-1">
+                                <DocumentArrowUpIcon class="w-3.5 h-3.5" /> Replace document (optional)
+                            </span>
+                            <input type="file" accept="application/pdf,image/jpeg,image/png" @change="onFilePick"
+                                   class="mt-1 block w-full text-xs text-slate-500 dark:text-slate-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 dark:file:bg-indigo-900/40 dark:file:text-indigo-300" />
+                            <a v-if="editingCred.document_url" :href="editingCred.document_url" target="_blank" class="text-xs text-indigo-600 dark:text-indigo-400 hover:underline mt-1 inline-block">View current document</a>
+                        </label>
+                        <label class="block col-span-2">
+                            <span class="text-xs font-medium text-slate-700 dark:text-slate-300">Notes</span>
+                            <textarea v-model="editingCred.notes" rows="2" class="w-full mt-1 px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-700 text-sm"></textarea>
+                        </label>
+                    </div>
+                    <div class="flex justify-end gap-2 pt-3 border-t border-slate-200 dark:border-slate-700">
+                        <button @click="editingCred = null" class="px-4 py-2 rounded-lg text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800">Cancel</button>
+                        <button @click="submitEditCred" :disabled="credSaving" class="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium disabled:opacity-50">
+                            {{ credSaving ? 'Saving...' : 'Save changes' }}
+                        </button>
+                    </div>
+                </div>
             </div>
 
             <!-- Training -->
