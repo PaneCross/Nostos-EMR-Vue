@@ -84,13 +84,18 @@ class StaffCredential extends Model
         'replaced_by_credential_id',
         'document_path',
         'document_filename',
+        'dot_medical_card_expires_at',
+        'mvr_check_date',
+        'vehicle_class_endorsements',
         'notes',
     ];
 
     protected $casts = [
-        'issued_at'   => 'date',
-        'expires_at'  => 'date',
-        'verified_at' => 'datetime',
+        'issued_at'                   => 'date',
+        'expires_at'                  => 'date',
+        'verified_at'                 => 'datetime',
+        'dot_medical_card_expires_at' => 'date',
+        'mvr_check_date'              => 'date',
     ];
 
     // ── Relationships ─────────────────────────────────────────────────────────
@@ -100,6 +105,20 @@ class StaffCredential extends Model
     public function verifiedBy(): BelongsTo { return $this->belongsTo(User::class, 'verified_by_user_id'); }
     public function definition(): BelongsTo { return $this->belongsTo(CredentialDefinition::class, 'credential_definition_id'); }
     public function replacedBy(): BelongsTo { return $this->belongsTo(self::class, 'replaced_by_credential_id'); }
+    /** Training records that count CEU hours toward this credential's renewal (V2). */
+    public function trainingRecords(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(StaffTrainingRecord::class, 'credential_id');
+    }
+
+    /** Sum of CEU hours logged toward this credential since last issued_at. */
+    public function ceuHoursLogged(): float
+    {
+        $since = $this->issued_at ?? now()->subYears(2);
+        return (float) StaffTrainingRecord::where('credential_id', $this->id)
+            ->where('completed_at', '>=', $since)
+            ->sum('training_hours');
+    }
 
     // ── Scopes ────────────────────────────────────────────────────────────────
 

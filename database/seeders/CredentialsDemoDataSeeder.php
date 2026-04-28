@@ -1,0 +1,144 @@
+<?php
+
+// ─── CredentialsDemoDataSeeder ───────────────────────────────────────────────
+// Seeds realistic StaffCredential rows for every active demo user, linked to
+// the catalog (definition_id set) so the dashboard, missing-banners, and
+// renewal flows have meaningful data to demo against.
+//
+// Strategy : for each (user, applicable definition):
+//   - 70% : current (expires_at 30-700 days out, status=active)
+//   - 12% : expiring within 30 days
+//   - 8%  : expired (1-90 days past expires_at)
+//   - 5%  : pending (renewal uploaded, awaiting verification)
+//   - 5%  : missing entirely (no credential row created)
+//
+// Distribution is deterministic per (user_id, definition_id) so re-running the
+// seeder doesn't shuffle the dashboard — same demo experience each time.
+//
+// Wipes all existing demo StaffCredential rows for the tenant first to keep
+// idempotency. Adds DOT med card / MVR fields for driver records.
+// ─────────────────────────────────────────────────────────────────────────────
+
+namespace Database\Seeders;
+
+use App\Models\CredentialDefinition;
+use App\Models\StaffCredential;
+use App\Models\Tenant;
+use App\Models\User;
+use App\Services\Credentials\CredentialDefinitionService;
+use Illuminate\Database\Seeder;
+use Illuminate\Support\Carbon;
+
+class CredentialsDemoDataSeeder extends Seeder
+{
+    public function run(): void
+    {
+        /** @var CredentialDefinitionService $svc */
+        $svc = app(CredentialDefinitionService::class);
+
+        Tenant::all()->each(function (Tenant $tenant) use ($svc) {
+            // Wipe existing tenant credentials (clean re-seed)
+            StaffCredential::where('tenant_id', $tenant->id)->forceDelete();
+
+            $users = User::where('tenant_id', $tenant->id)->where('is_active', true)->get();
+
+            foreach ($users as $user) {
+                $applicable = $svc->activeForUser($user);
+                foreach ($applicable as $def) {
+                    // Deterministic seed : same user+def always lands in same bucket
+                    $bucket = $this->bucketFor($user->id, $def->id);
+
+                    if ($bucket === 'missing') continue; // no row created
+
+                    $cred = $this->createCredential($user, $def, $bucket);
+                    $this->maybeAddDriverFields($cred, $def);
+                }
+            }
+        });
+    }
+
+    /** Stable bucket assignment : seed-then-mod gives reproducible spread. */
+    private function bucketFor(int $userId, int $defId): string
+    {
+        $hash = ($userId * 31 + $defId * 7) % 100;
+        if ($hash < 70) return 'current';
+        if ($hash < 82) return 'expiring_30d';
+        if ($hash < 90) return 'expired';
+        if ($hash < 95) return 'pending';
+        return 'missing';
+    }
+
+    private function createCredential(User $user, CredentialDefinition $def, string $bucket): StaffCredential
+    {
+        // Pick reasonable cycle length per type
+        $cycleDays = match ($def->credential_type) {
+            'license'        => 730,  // 2y typical
+            'driver_record'  => $def->code === 'dot_medical_card' ? 730 : 365,
+            'certification'  => 730,
+            'training'       => 365,
+            'tb_clearance'   => 365,
+            'background_check' => 730,
+            default          => 365,
+        };
+
+        // Deterministic offset within bucket
+        $offset = ($user->id * 13 + $def->id * 5) % 100;
+
+        $expiresAt = match ($bucket) {
+            'current'      => now()->addDays(60 + $offset * ($cycleDays / 100)),
+            'expiring_30d' => now()->addDays(($offset % 28) + 1),
+            'expired'      => now()->subDays(($offset % 80) + 5),
+            'pending'      => now()->addDays(60 + $offset),
+            default        => now()->addYear(),
+        };
+
+        $issuedAt = $expiresAt->copy()->subDays($cycleDays);
+
+        $licenseState = null;
+        $licenseNumber = null;
+        if (str_contains($def->code, 'license') || $def->credential_type === 'license' || $def->code === 'cdl') {
+            $licenseState = 'CA';
+            $licenseNumber = strtoupper(substr($def->code, 0, 3)) . str_pad((string) ($user->id * 1234 % 99999), 5, '0', STR_PAD_LEFT);
+        }
+
+        $verificationSource = $bucket === 'pending'
+            ? 'self_attestation'
+            : ($def->requires_psv ? 'state_board' : 'uploaded_doc');
+
+        return StaffCredential::create([
+            'tenant_id'                => $user->tenant_id,
+            'user_id'                  => $user->id,
+            'credential_definition_id' => $def->id,
+            'credential_type'          => $def->credential_type,
+            'title'                    => $def->title,
+            'license_state'            => $licenseState,
+            'license_number'           => $licenseNumber,
+            'issued_at'                => $issuedAt->toDateString(),
+            'expires_at'               => $expiresAt->toDateString(),
+            'verified_at'              => $bucket === 'pending' ? null : now()->subDays(rand(1, 90)),
+            'verification_source'      => $verificationSource,
+            'cms_status'               => $bucket === 'pending' ? 'pending' : 'active',
+            'notes'                    => "Demo seed : bucket={$bucket}",
+        ]);
+    }
+
+    /** For driver-record definitions, populate the FMCSA-specific fields. */
+    private function maybeAddDriverFields(StaffCredential $cred, CredentialDefinition $def): void
+    {
+        if ($def->credential_type !== 'driver_record') return;
+
+        $patch = [];
+        if ($def->code === 'cdl') {
+            $patch['vehicle_class_endorsements'] = 'Class B + P (passenger)';
+        }
+        if ($def->code === 'dot_medical_card') {
+            $patch['dot_medical_card_expires_at'] = $cred->expires_at;
+        }
+        if ($def->code === 'mvr_check') {
+            $patch['mvr_check_date'] = $cred->issued_at;
+        }
+        if (! empty($patch)) {
+            $cred->update($patch);
+        }
+    }
+}

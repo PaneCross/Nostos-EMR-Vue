@@ -48,6 +48,7 @@ class StaffTrainingRecord extends Model
     protected $fillable = [
         'tenant_id',
         'user_id',
+        'credential_id',
         'training_name',
         'category',
         'training_hours',
@@ -68,6 +69,8 @@ class StaffTrainingRecord extends Model
     public function tenant(): BelongsTo     { return $this->belongsTo(Tenant::class); }
     public function user(): BelongsTo       { return $this->belongsTo(User::class, 'user_id'); }
     public function verifiedBy(): BelongsTo { return $this->belongsTo(User::class, 'verified_by_user_id'); }
+    /** Optional credential this training counts CEU hours toward (V2 linkage). */
+    public function credential(): BelongsTo { return $this->belongsTo(StaffCredential::class, 'credential_id'); }
 
     public function scopeForTenant(Builder $q, int $tenantId): Builder
     {

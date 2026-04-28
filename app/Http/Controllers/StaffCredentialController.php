@@ -60,6 +60,7 @@ class StaffCredentialController extends Controller
             ->get()
             ->map(fn (StaffCredential $c) => [
                 'id'               => $c->id,
+                'credential_definition_id' => $c->credential_definition_id,
                 'credential_type'  => $c->credential_type,
                 'type_label'       => StaffCredential::TYPE_LABELS[$c->credential_type] ?? $c->credential_type,
                 'title'            => $c->title,
@@ -69,7 +70,14 @@ class StaffCredentialController extends Controller
                 'expires_at'       => $c->expires_at?->toDateString(),
                 'days_remaining'   => $c->daysUntilExpiration(),
                 'status'           => $c->status(),
+                'cms_status'       => $c->cms_status,
+                'verification_source' => $c->verification_source,
                 'verified_at'      => $c->verified_at?->toIso8601String(),
+                // V2: driver-specific fields (only meaningful for type=driver_record)
+                'dot_medical_card_expires_at' => $c->dot_medical_card_expires_at?->toDateString(),
+                'mvr_check_date'              => $c->mvr_check_date?->toDateString(),
+                'vehicle_class_endorsements'  => $c->vehicle_class_endorsements,
+                'ceu_hours_logged' => $c->ceuHoursLogged(),
                 'notes'            => $c->notes,
             ]);
 
@@ -185,6 +193,9 @@ class StaffCredentialController extends Controller
             'expires_at'      => ['nullable', 'date', 'after_or_equal:issued_at'],
             'verification_source' => ['nullable', Rule::in(array_keys(StaffCredential::VERIFICATION_SOURCES))],
             'cms_status'      => ['nullable', Rule::in(array_keys(StaffCredential::CMS_STATUSES))],
+            'dot_medical_card_expires_at' => ['nullable', 'date'],
+            'mvr_check_date'              => ['nullable', 'date'],
+            'vehicle_class_endorsements'  => ['nullable', 'string', 'max:200'],
             'notes'           => ['nullable', 'string', 'max:4000'],
             'document'        => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:10240'],
         ]);
@@ -231,6 +242,9 @@ class StaffCredentialController extends Controller
             'expires_at'     => ['nullable', 'date'],
             'verification_source' => ['nullable', Rule::in(array_keys(StaffCredential::VERIFICATION_SOURCES))],
             'cms_status'     => ['nullable', Rule::in(array_keys(StaffCredential::CMS_STATUSES))],
+            'dot_medical_card_expires_at' => ['nullable', 'date'],
+            'mvr_check_date'              => ['nullable', 'date'],
+            'vehicle_class_endorsements'  => ['nullable', 'string', 'max:200'],
             'notes'          => ['nullable', 'string', 'max:4000'],
             'document'       => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:10240'],
         ]);

@@ -314,10 +314,18 @@ class DemoEnvironmentSeeder extends Seeder
         $this->command->info('  Seeding job titles + CMS-mandatory credential definitions...');
         $this->call(JobTitleBaselineSeeder::class);
         $this->call(CmsCredentialBaselineSeeder::class);
+        // V2 : add 18 role-specific catalog rows (RN/MD/PT/DEA/CDL/etc.)
+        $this->call(RoleSpecificCredentialSeeder::class);
+        // V2 : assign job titles + supervisor chain on existing demo users
+        $this->call(AssignDemoJobTitlesSeeder::class);
 
         $this->command->info('');
         $this->command->info('  Seeding staff credentials + training...');
         $this->call(StaffCredentialSeeder::class);
+        // V2 : realistic catalog-linked spread (current / expiring / expired /
+        // pending / missing). Wipes the prior free-form rows so the dashboard
+        // shows clean linked-credential coverage, then seeds 70/12/8/5/5 split.
+        $this->call(CredentialsDemoDataSeeder::class);
 
         // ─── Phase 6 (MVP roadmap): CMS MMR/TRR reconciliation demo data ──────
         // Generates a synthetic MMR + TRR for last month per tenant, with

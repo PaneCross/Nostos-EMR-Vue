@@ -398,6 +398,10 @@ Route::middleware('auth')->group(function () {
     Route::get ('/my-credentials',                              [\App\Http\Controllers\MyCredentialsController::class, 'index'])         ->name('my-credentials.index');
     Route::post('/my-credentials/{credential}/renewal',         [\App\Http\Controllers\MyCredentialsController::class, 'uploadRenewal'])->name('my-credentials.renewal');
 
+    // V2: Bulk credentials CSV import (IT Admin only)
+    Route::get ('/it-admin/credentials/bulk-import',            [\App\Http\Controllers\CredentialBulkImportController::class, 'page'])  ->name('it-admin.credentials.bulk-import.page');
+    Route::post('/it-admin/credentials/bulk-import',            [\App\Http\Controllers\CredentialBulkImportController::class, 'import'])->name('it-admin.credentials.bulk-import.run');
+
     // ─── Participant Module ───────────────────────────────────────────────────
 
     // Global search (JSON) — must be before the resource routes to avoid {id} conflict

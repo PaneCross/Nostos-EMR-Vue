@@ -49,6 +49,10 @@ interface Credential {
     credential_definition_id?: number | null
     verification_source?: string | null
     cms_status?: string | null
+    dot_medical_card_expires_at?: string | null
+    mvr_check_date?: string | null
+    vehicle_class_endorsements?: string | null
+    ceu_hours_logged?: number
 }
 interface ApplicableDefinition {
     id: number
@@ -107,6 +111,9 @@ const credForm = ref({
     expires_at: '',
     verification_source: '',
     cms_status: 'active',
+    dot_medical_card_expires_at: '',
+    mvr_check_date: '',
+    vehicle_class_endorsements: '',
     notes: '',
 })
 
@@ -121,6 +128,9 @@ function resetCred() {
         expires_at: '',
         verification_source: '',
         cms_status: 'active',
+        dot_medical_card_expires_at: '',
+        mvr_check_date: '',
+        vehicle_class_endorsements: '',
         notes: '',
     }
     credFile.value = null
@@ -187,6 +197,9 @@ async function submitEditCred() {
             expires_at: editingCred.value.expires_at ?? '',
             verification_source: editingCred.value.verification_source ?? '',
             cms_status: editingCred.value.cms_status ?? 'active',
+            dot_medical_card_expires_at: editingCred.value.dot_medical_card_expires_at ?? '',
+            mvr_check_date: editingCred.value.mvr_check_date ?? '',
+            vehicle_class_endorsements: editingCred.value.vehicle_class_endorsements ?? '',
             notes: editingCred.value.notes ?? '',
         }
         const fd = new FormData()
@@ -437,6 +450,28 @@ const expiringCount = computed(() =>
                         </div>
                     </div>
 
+                    <!-- Driver-specific fields (V2) : only render when type=driver_record -->
+                    <div v-if="credForm.credential_type === 'driver_record'" class="rounded-lg border border-amber-200 dark:border-amber-900/40 bg-amber-50 dark:bg-amber-950/20 p-3 space-y-2">
+                        <p class="text-xs font-semibold text-amber-800 dark:text-amber-200">Transport driver fields (FMCSA / DOT)</p>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <div>
+                                <label class="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">DOT med card expires</label>
+                                <input v-model="credForm.dot_medical_card_expires_at" type="date"
+                                    class="w-full text-sm rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-700 px-3 py-2" />
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">Last MVR check</label>
+                                <input v-model="credForm.mvr_check_date" type="date"
+                                    class="w-full text-sm rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-700 px-3 py-2" />
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">Class + endorsements</label>
+                                <input v-model="credForm.vehicle_class_endorsements" placeholder="e.g. Class B + P"
+                                    class="w-full text-sm rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-700 px-3 py-2" />
+                            </div>
+                        </div>
+                    </div>
+
                     <div>
                         <label class="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1">
                             <DocumentArrowUpIcon class="w-3.5 h-3.5" /> Supporting document (PDF / JPG / PNG, max 10 MB)
@@ -558,6 +593,23 @@ const expiringCount = computed(() =>
                                 <option v-for="(label, key) in cmsStatuses ?? {}" :key="key" :value="key">{{ label }}</option>
                             </select>
                         </label>
+                        <div v-if="editingCred.credential_type === 'driver_record'" class="col-span-2 rounded-lg border border-amber-200 dark:border-amber-900/40 bg-amber-50 dark:bg-amber-950/20 p-3 space-y-2">
+                            <p class="text-xs font-semibold text-amber-800 dark:text-amber-200">Transport driver fields (FMCSA / DOT)</p>
+                            <div class="grid grid-cols-3 gap-3">
+                                <label class="block">
+                                    <span class="text-xs font-medium text-slate-700 dark:text-slate-300">DOT med card expires</span>
+                                    <input v-model="editingCred.dot_medical_card_expires_at" type="date" class="w-full mt-1 px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-700 text-sm" />
+                                </label>
+                                <label class="block">
+                                    <span class="text-xs font-medium text-slate-700 dark:text-slate-300">Last MVR check</span>
+                                    <input v-model="editingCred.mvr_check_date" type="date" class="w-full mt-1 px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-700 text-sm" />
+                                </label>
+                                <label class="block">
+                                    <span class="text-xs font-medium text-slate-700 dark:text-slate-300">Class + endorsements</span>
+                                    <input v-model="editingCred.vehicle_class_endorsements" class="w-full mt-1 px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-700 text-sm" />
+                                </label>
+                            </div>
+                        </div>
                         <label class="block col-span-2">
                             <span class="text-xs font-medium text-slate-700 dark:text-slate-300 flex items-center gap-1">
                                 <DocumentArrowUpIcon class="w-3.5 h-3.5" /> Replace document (optional)
