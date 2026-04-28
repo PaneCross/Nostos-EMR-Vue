@@ -374,6 +374,7 @@ Route::middleware('auth')->group(function () {
         ->where('key', '[a-z0-9_.]+');
 
     // ─── Credentials V1 — executive-managed catalog + dashboard ──────────────
+    Route::get   ('/executive/job-titles-page',                             [\App\Http\Controllers\JobTitleController::class, 'page'])   ->name('executive.job-titles.page');
     Route::get   ('/executive/job-titles',                                  [\App\Http\Controllers\JobTitleController::class, 'index'])  ->name('executive.job-titles.index');
     Route::post  ('/executive/job-titles',                                  [\App\Http\Controllers\JobTitleController::class, 'store'])  ->name('executive.job-titles.store');
     Route::patch ('/executive/job-titles/{jobTitle}',                       [\App\Http\Controllers\JobTitleController::class, 'update']) ->name('executive.job-titles.update');

@@ -10,6 +10,7 @@
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { Head } from '@inertiajs/vue3'
 import AppShell from '@/Layouts/AppShell.vue'
+import OrgSettingsTabBar from '@/Pages/Executive/components/OrgSettingsTabBar.vue'
 import axios from 'axios'
 import {
     AdjustmentsHorizontalIcon,
@@ -371,6 +372,8 @@ function getBooleanState(entry: PreferenceEntry): boolean {
                     </p>
                 </div>
             </div>
+
+            <OrgSettingsTabBar active="notifications" />
 
             <!-- Help banner -->
             <div class="rounded-xl border border-blue-200 dark:border-blue-900/40 bg-blue-50 dark:bg-blue-950/30 px-5 py-4 mb-6 flex items-start gap-3 text-sm">

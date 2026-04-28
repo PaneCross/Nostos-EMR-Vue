@@ -15,9 +15,18 @@ use App\Models\JobTitle;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Inertia\Inertia;
+use Inertia\Response as InertiaResponse;
 
 class JobTitleController extends Controller
 {
+    /** Inertia page : the actual list-management UI. */
+    public function page(Request $request): InertiaResponse
+    {
+        $this->gate($request);
+        return Inertia::render('Executive/JobTitles');
+    }
+
     private function gate(Request $request): void
     {
         $u = $request->user();
