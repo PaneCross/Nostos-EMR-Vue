@@ -30,7 +30,7 @@ use Inertia\Response as InertiaResponse;
 
 class StaffCredentialController extends Controller
 {
-    /** Gate: IT admin, super admin, QA compliance (audit/review). */
+    /** Gate for write actions: IT admin, super admin, QA compliance. */
     private function gate(Request $request): void
     {
         $u = $request->user();
@@ -43,6 +43,24 @@ class StaffCredentialController extends Controller
         );
     }
 
+    /**
+     * Read-gate : also allows Executive (read-only via the index page) so the
+     * exec can see a staff member's credentials when investigating dashboard
+     * findings without needing to ping IT Admin. Write endpoints still use
+     * the stricter gate().
+     */
+    private function readGate(Request $request): void
+    {
+        $u = $request->user();
+        abort_unless($u, 401);
+        abort_unless(
+            $u->isSuperAdmin()
+                || in_array($u->department, ['it_admin', 'qa_compliance', 'executive'], true),
+            403,
+            'Only IT Admin, QA Compliance, Executive, or Super Admin may view staff credentials.'
+        );
+    }
+
     /** Scope: same tenant as the acting user. */
     private function assertSameTenant(User $staff, Request $request): void
     {
@@ -51,7 +69,9 @@ class StaffCredentialController extends Controller
 
     public function index(Request $request, User $user): InertiaResponse
     {
-        $this->gate($request);
+        // Read-gate : Executive can VIEW the page (read-only) ; only IT Admin /
+        // QA Compliance / Super Admin can mutate via the write endpoints.
+        $this->readGate($request);
         $this->assertSameTenant($user, $request);
 
         $credentials = StaffCredential::forTenant($user->tenant_id)
@@ -87,6 +107,7 @@ class StaffCredentialController extends Controller
 
         $training = StaffTrainingRecord::forTenant($user->tenant_id)
             ->where('user_id', $user->id)
+            ->with('credential:id,title')
             ->orderByDesc('completed_at')
             ->get()
             ->map(fn (StaffTrainingRecord $r) => [
@@ -98,6 +119,9 @@ class StaffCredentialController extends Controller
                 'completed_at'   => $r->completed_at?->toDateString(),
                 'verified_at'    => $r->verified_at?->toIso8601String(),
                 'notes'          => $r->notes,
+                // V2 : counts toward this credential's CEU cycle (or null if standalone)
+                'credential_id'   => $r->credential_id,
+                'credential_title'=> $r->credential?->title,
             ]);
 
         // Training hours totals: past 12 months, grouped by category.
@@ -152,6 +176,8 @@ class StaffCredentialController extends Controller
             ])->values(),
             'verificationSources' => StaffCredential::VERIFICATION_SOURCES,
             'cmsStatuses'         => StaffCredential::CMS_STATUSES,
+            'canEdit' => $request->user()->isSuperAdmin()
+                || in_array($request->user()->department, ['it_admin', 'qa_compliance'], true),
         ]);
     }
 

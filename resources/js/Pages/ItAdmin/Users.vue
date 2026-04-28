@@ -36,6 +36,7 @@ import {
     ClockIcon,
     KeyIcon,
     DocumentCheckIcon,
+    BriefcaseIcon,
     ExclamationTriangleIcon,
     BoltIcon,
     ChevronDownIcon,
@@ -63,6 +64,9 @@ interface UserDetail {
         role: string
         is_active: boolean
         designations: string[]
+        job_title: string | null
+        supervisor_user_id: number | null
+        supervisor_name: string | null
         site: { id: number; name: string } | null
         last_login_at: string | null
         failed_login_attempts: number
@@ -111,7 +115,12 @@ interface ProvisionForm {
     last_name: string
     email: string
     department: string
+    role: 'standard' | 'admin'
+    job_title: string | null
+    supervisor_user_id: number | null
 }
+interface JobTitleOption { code: string; label: string }
+interface SupervisorOption { id: number; name: string; department: string }
 
 interface Props {
     users: UserRow[]
@@ -137,6 +146,40 @@ const detailError = ref<string | null>(null)
 const togglingActive = ref(false)
 const resettingAccess = ref(false)
 const savingDesignations = ref(false)
+// Role-assignment edit state (job_title + supervisor) for the user detail modal.
+const editingRoleAssignment = ref(false)
+const roleAssignmentDraft = ref<{ job_title: string | null; supervisor_user_id: number | null }>({
+    job_title: null, supervisor_user_id: null,
+})
+const savingRoleAssignment = ref(false)
+const roleAssignmentError = ref('')
+
+function openRoleAssignment(detail: UserDetail) {
+    roleAssignmentDraft.value = {
+        job_title: detail.user.job_title ?? null,
+        supervisor_user_id: detail.user.supervisor_user_id ?? null,
+    }
+    roleAssignmentError.value = ''
+    editingRoleAssignment.value = true
+}
+
+async function saveRoleAssignment(detail: UserDetail) {
+    savingRoleAssignment.value = true
+    roleAssignmentError.value = ''
+    try {
+        const { data } = await axios.patch(`/it-admin/users/${detail.user.id}/role-assignment`, roleAssignmentDraft.value)
+        detail.user.job_title = data.user.job_title
+        detail.user.supervisor_user_id = data.user.supervisor_user_id
+        // Update supervisor display name from local options
+        const sup = supervisorOptions.value.find(s => s.id === data.user.supervisor_user_id)
+        detail.user.supervisor_name = sup?.name ?? null
+        editingRoleAssignment.value = false
+    } catch (e: any) {
+        roleAssignmentError.value = e?.response?.data?.message ?? 'Failed to save role assignment.'
+    } finally {
+        savingRoleAssignment.value = false
+    }
+}
 
 // Per-designation expansion state. Each designation card collapses by default
 // when not assigned to the user; expands when assigned OR when manually
@@ -161,7 +204,20 @@ const provisioning = ref(false)
 const provisionError = ref('')
 const provisionForm = ref<ProvisionForm>({
     first_name: '', last_name: '', email: '', department: '',
+    role: 'standard', job_title: null, supervisor_user_id: null,
 })
+
+// Catalog options for role-assignment dropdowns. Loaded once on mount and on
+// modal open so the dropdowns reflect any new job titles or active users.
+const jobTitleOptions = ref<JobTitleOption[]>([])
+const supervisorOptions = ref<SupervisorOption[]>([])
+async function loadRoleOptions() {
+    try {
+        const { data } = await axios.get('/it-admin/users/role-assignment-options')
+        jobTitleOptions.value = data.job_titles ?? []
+        supervisorOptions.value = data.potential_supervisors ?? []
+    } catch (e) { /* dropdowns just stay empty */ }
+}
 
 const DEPT_LABELS: Record<string, string> = props.deptLabels || {
     primary_care: 'Primary Care', therapies: 'Therapies', social_work: 'Social Work',
@@ -224,7 +280,10 @@ function onKeydown(e: KeyboardEvent) {
     }
 }
 
-onMounted(() => window.addEventListener('keydown', onKeydown))
+onMounted(() => {
+    window.addEventListener('keydown', onKeydown)
+    loadRoleOptions()
+})
 onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
 
 // ── Modal actions ──────────────────────────────────────────────────────────
@@ -295,7 +354,10 @@ async function toggleDesignation(key: string) {
 // ── Provision flow (unchanged) ──────────────────────────────────────────────
 
 function resetProvisionForm() {
-    provisionForm.value = { first_name: '', last_name: '', email: '', department: '' }
+    provisionForm.value = {
+        first_name: '', last_name: '', email: '', department: '',
+        role: 'standard', job_title: null, supervisor_user_id: null,
+    }
     provisionError.value = ''
 }
 
@@ -539,6 +601,72 @@ function humanizeAction(action: string): string {
                                 <dd class="text-amber-700 dark:text-amber-300 font-medium">{{ formatDateTime(detail.user.locked_until) }}</dd>
                             </div>
                         </dl>
+                    </div>
+
+                    <!-- Role assignment : job_title + supervisor -->
+                    <div class="p-6 border-b border-gray-200 dark:border-slate-700/50">
+                        <div class="flex items-center justify-between mb-3">
+                            <h3 class="text-xs uppercase tracking-wide font-semibold text-gray-500 dark:text-slate-400 flex items-center gap-1.5">
+                                <BriefcaseIcon class="w-3.5 h-3.5" />
+                                Role Assignment
+                            </h3>
+                            <button v-if="!editingRoleAssignment" @click="openRoleAssignment(detail)"
+                                class="text-xs text-indigo-600 dark:text-indigo-400 hover:underline">
+                                Edit
+                            </button>
+                        </div>
+                        <p class="text-xs text-gray-500 dark:text-slate-400 mb-3">
+                            <strong>Job title</strong> drives credential targeting (which credentials this user is required to hold).
+                            <strong>Supervisor</strong> receives the 14-day CC and overdue escalations on this user's credentials.
+                        </p>
+                        <div v-if="!editingRoleAssignment" class="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
+                            <div>
+                                <dt class="text-gray-500 dark:text-slate-400">Job title</dt>
+                                <dd class="text-gray-900 dark:text-slate-100">
+                                    <span v-if="detail.user.job_title">
+                                        {{ jobTitleOptions.find(jt => jt.code === detail.user.job_title)?.label ?? detail.user.job_title }}
+                                    </span>
+                                    <span v-else class="italic text-amber-600 dark:text-amber-400">Not set — credentials targeting won't apply</span>
+                                </dd>
+                            </div>
+                            <div>
+                                <dt class="text-gray-500 dark:text-slate-400">Supervisor</dt>
+                                <dd class="text-gray-900 dark:text-slate-100">
+                                    <span v-if="detail.user.supervisor_name">{{ detail.user.supervisor_name }}</span>
+                                    <span v-else class="italic text-gray-400 dark:text-slate-500">None set</span>
+                                </dd>
+                            </div>
+                        </div>
+                        <div v-else class="space-y-3">
+                            <div class="grid grid-cols-2 gap-3">
+                                <label class="block">
+                                    <span class="text-xs font-medium text-gray-700 dark:text-slate-300">Job title</span>
+                                    <select v-model="roleAssignmentDraft.job_title"
+                                        class="w-full mt-1 px-3 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm">
+                                        <option :value="null">— none —</option>
+                                        <option v-for="jt in jobTitleOptions" :key="jt.code" :value="jt.code">{{ jt.label }}</option>
+                                    </select>
+                                </label>
+                                <label class="block">
+                                    <span class="text-xs font-medium text-gray-700 dark:text-slate-300">Supervisor</span>
+                                    <select v-model="roleAssignmentDraft.supervisor_user_id"
+                                        class="w-full mt-1 px-3 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm">
+                                        <option :value="null">— none —</option>
+                                        <option v-for="s in supervisorOptions.filter(s => s.id !== detail.user.id)" :key="s.id" :value="s.id">
+                                            {{ s.name }} ({{ s.department }})
+                                        </option>
+                                    </select>
+                                </label>
+                            </div>
+                            <p v-if="roleAssignmentError" class="text-xs text-rose-600 dark:text-rose-400">{{ roleAssignmentError }}</p>
+                            <div class="flex justify-end gap-2">
+                                <button @click="editingRoleAssignment = false" class="px-3 py-1.5 text-xs rounded-lg text-gray-600 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-800">Cancel</button>
+                                <button @click="saveRoleAssignment(detail)" :disabled="savingRoleAssignment"
+                                    class="px-3 py-1.5 text-xs rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-medium disabled:opacity-50">
+                                    {{ savingRoleAssignment ? 'Saving...' : 'Save' }}
+                                </button>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Credentials & training -->
@@ -795,13 +923,41 @@ function humanizeAction(action: string): string {
                         <input id="prov-email" v-model="provisionForm.email" required type="email"
                             class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm" />
                     </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1" for="prov-dept">Department</label>
-                        <select id="prov-dept" v-model="provisionForm.department" required
-                            class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm text-gray-700 dark:text-slate-300">
-                            <option value="">Select department...</option>
-                            <option v-for="(label, key) in DEPT_LABELS" :key="key" :value="key">{{ label }}</option>
-                        </select>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1" for="prov-dept">Department</label>
+                            <select id="prov-dept" v-model="provisionForm.department" required
+                                class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm text-gray-700 dark:text-slate-300">
+                                <option value="">Select department...</option>
+                                <option v-for="(label, key) in DEPT_LABELS" :key="key" :value="key">{{ label }}</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1" for="prov-role">Role</label>
+                            <select id="prov-role" v-model="provisionForm.role" required
+                                class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm text-gray-700 dark:text-slate-300">
+                                <option value="standard">Standard</option>
+                                <option value="admin">Admin</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1" for="prov-title">Job Title <span class="text-xs text-gray-400">(drives credential targeting)</span></label>
+                            <select id="prov-title" v-model="provisionForm.job_title"
+                                class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm text-gray-700 dark:text-slate-300">
+                                <option :value="null">— none —</option>
+                                <option v-for="jt in jobTitleOptions" :key="jt.code" :value="jt.code">{{ jt.label }}</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1" for="prov-sup">Supervisor <span class="text-xs text-gray-400">(receives 14-day credential CC)</span></label>
+                            <select id="prov-sup" v-model="provisionForm.supervisor_user_id"
+                                class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm text-gray-700 dark:text-slate-300">
+                                <option :value="null">— none —</option>
+                                <option v-for="s in supervisorOptions" :key="s.id" :value="s.id">{{ s.name }} ({{ s.department }})</option>
+                            </select>
+                        </div>
                     </div>
                     <p v-if="provisionError" class="text-sm text-red-600 dark:text-red-400">{{ provisionError }}</p>
                     <div class="flex justify-end gap-3 pt-2">

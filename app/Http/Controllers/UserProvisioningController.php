@@ -217,6 +217,11 @@ class UserProvisioningController extends Controller
                 'role'            => $user->role,
                 'is_active'       => (bool) $user->is_active,
                 'designations'    => $user->designations ?? [],
+                'job_title'       => $user->job_title,
+                'supervisor_user_id' => $user->supervisor_user_id,
+                'supervisor_name' => $user->supervisor_user_id
+                    ? User::where('id', $user->supervisor_user_id)->value(DB::raw("first_name || ' ' || last_name"))
+                    : null,
                 'site'            => $user->site ? ['id' => $user->site->id, 'name' => $user->site->name] : null,
                 'last_login_at'   => $user->last_login_at?->toIso8601String(),
                 'failed_login_attempts' => (int) ($user->failed_login_attempts ?? 0),
@@ -258,8 +263,16 @@ class UserProvisioningController extends Controller
             'first_name' => ['required', 'string', 'max:100'],
             'last_name'  => ['required', 'string', 'max:100'],
             'email'      => ['required', 'email', 'unique:shared_users,email'],
-            'department' => ['required', 'string', 'in:primary_care,therapies,social_work,behavioral_health,dietary,activities,home_care,transportation,pharmacy,idt,enrollment,finance,qa_compliance,it_admin'],
+            'department' => ['required', 'string', 'in:primary_care,therapies,social_work,behavioral_health,dietary,activities,home_care,transportation,pharmacy,idt,enrollment,finance,qa_compliance,it_admin,executive'],
             'role'       => ['required', 'string', 'in:admin,standard'],
+            // Credentials V1 wiring : job_title drives credential targeting,
+            // supervisor_user_id drives the 14-day CC + escalation chain.
+            'job_title'          => ['nullable', 'string', 'max:60',
+                \Illuminate\Validation\Rule::exists('emr_job_titles', 'code')
+                    ->where(fn ($q) => $q->where('tenant_id', $tenantId)->whereNull('deleted_at'))],
+            'supervisor_user_id' => ['nullable', 'integer',
+                \Illuminate\Validation\Rule::exists('shared_users', 'id')
+                    ->where(fn ($q) => $q->where('tenant_id', $tenantId)->where('is_active', true))],
         ]);
 
         $user = User::create(array_merge($validated, [
@@ -389,6 +402,74 @@ class UserProvisioningController extends Controller
 
         return response()->json([
             'user' => $user->only('id', 'first_name', 'last_name', 'department', 'designations'),
+        ]);
+    }
+
+    /**
+     * Returns the dropdown options the role-assignment form needs : the
+     * tenant's active job-title catalog + active users (potential supervisors).
+     */
+    public function roleAssignmentOptions(Request $request): JsonResponse
+    {
+        $this->requireItAdmin($request);
+        $tenantId = $request->user()->tenant_id;
+
+        return response()->json([
+            'job_titles' => \App\Models\JobTitle::forTenant($tenantId)
+                ->active()->orderBy('sort_order')->orderBy('label')
+                ->get(['code', 'label']),
+            'potential_supervisors' => User::where('tenant_id', $tenantId)
+                ->where('is_active', true)
+                ->orderBy('last_name')
+                ->get(['id', 'first_name', 'last_name', 'department'])
+                ->map(fn ($u) => [
+                    'id' => $u->id,
+                    'name' => "{$u->first_name} {$u->last_name}",
+                    'department' => $u->department,
+                ]),
+        ]);
+    }
+
+    /**
+     * Update the role-targeting fields on an existing user : job_title (drives
+     * credential targeting) + supervisor_user_id (drives reminder escalation).
+     * Both fields are nullable but constrained to valid catalog entries.
+     */
+    public function updateRoleAssignment(Request $request, User $user): JsonResponse
+    {
+        $this->requireItAdmin($request);
+        $tenantId = $request->user()->tenant_id;
+        abort_if($user->tenant_id !== $tenantId, 403, 'Access denied');
+
+        $validated = $request->validate([
+            'job_title' => ['nullable', 'string', 'max:60',
+                \Illuminate\Validation\Rule::exists('emr_job_titles', 'code')
+                    ->where(fn ($q) => $q->where('tenant_id', $tenantId)->whereNull('deleted_at'))],
+            'supervisor_user_id' => ['nullable', 'integer',
+                \Illuminate\Validation\Rule::exists('shared_users', 'id')
+                    ->where(fn ($q) => $q->where('tenant_id', $tenantId)->where('is_active', true))],
+        ]);
+
+        // Block self-supervision (would create infinite escalation loops).
+        if (($validated['supervisor_user_id'] ?? null) === $user->id) {
+            return response()->json(['message' => 'A user cannot supervise themselves.'], 422);
+        }
+
+        $old = $user->only('job_title', 'supervisor_user_id');
+        $user->update($validated);
+
+        AuditLog::record(
+            action:       'it_admin.user.role_assignment_updated',
+            resourceType: 'User',
+            resourceId:   $user->id,
+            tenantId:     $tenantId,
+            userId:       $request->user()->id,
+            oldValues:    $old,
+            newValues:    $validated,
+        );
+
+        return response()->json([
+            'user' => $user->only('id', 'first_name', 'last_name', 'department', 'job_title', 'supervisor_user_id'),
         ]);
     }
 

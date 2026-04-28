@@ -1483,6 +1483,9 @@ Route::middleware('auth')->group(function () {
         Route::post('/users/{user}/reset-access',   [UserProvisioningController::class, 'resetAccess'])->name('it-admin.users.reset-access');
         // Designation management — assigns accountability roles for targeted alerting
         Route::patch('/users/{user}/designations',  [UserProvisioningController::class, 'updateDesignations'])->name('it-admin.users.designations');
+        // Credentials V1 : job_title + supervisor on existing user
+        Route::get  ('/users/role-assignment-options', [UserProvisioningController::class, 'roleAssignmentOptions'])->name('it-admin.users.role-assignment-options');
+        Route::patch('/users/{user}/role-assignment', [UserProvisioningController::class, 'updateRoleAssignment'])->name('it-admin.users.role-assignment');
 
         // Phase 4 (MVP roadmap): Staff credentials + training per §460.64-71
         Route::get ('/users/{user}/credentials',    [\App\Http\Controllers\StaffCredentialController::class, 'index'])->name('it-admin.users.credentials.index');

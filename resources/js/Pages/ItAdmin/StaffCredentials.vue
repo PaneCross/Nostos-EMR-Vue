@@ -82,6 +82,8 @@ interface Training {
     completed_at: string | null
     verified_at: string | null
     notes: string | null
+    credential_id?: number | null
+    credential_title?: string | null
 }
 
 const props = defineProps<{
@@ -96,6 +98,7 @@ const props = defineProps<{
     missingDefinitions?: MissingDefinition[]
     verificationSources?: Record<string, string>
     cmsStatuses?: Record<string, string>
+    canEdit?: boolean
 }>()
 
 // ── Credential form ──────────────────────────────────────────────────────────
@@ -424,10 +427,11 @@ const supersededCount = computed(() => props.credentials.filter(c => c.is_supers
                         <IdentificationIcon class="w-5 h-5 text-slate-500" />
                         <h2 class="text-sm font-semibold text-slate-700 dark:text-slate-200 uppercase tracking-wide">Credentials</h2>
                     </div>
-                    <button @click="showCredForm = !showCredForm"
+                    <button v-if="canEdit !== false" @click="showCredForm = !showCredForm"
                         class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-xs font-medium hover:bg-indigo-700">
                         <PlusIcon class="w-4 h-4" /> {{ showCredForm ? 'Cancel' : 'Add' }}
                     </button>
+                    <span v-else class="text-xs text-slate-400 italic">Read-only view</span>
                 </div>
 
                 <!-- Add form -->
@@ -621,10 +625,10 @@ const supersededCount = computed(() => props.credentials.filter(c => c.is_supers
                                     class="text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 inline-block mr-1" title="Open document">
                                     <DocumentArrowDownIcon class="w-4 h-4" />
                                 </a>
-                                <button @click="startEditCred(c)" class="text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 mr-1" title="Edit">
+                                <button v-if="canEdit !== false" @click="startEditCred(c)" class="text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 mr-1" title="Edit">
                                     <PencilSquareIcon class="w-4 h-4" />
                                 </button>
-                                <button @click="deleteCred(c)" class="text-slate-400 hover:text-red-600 dark:hover:text-red-400" title="Remove">
+                                <button v-if="canEdit !== false" @click="deleteCred(c)" class="text-slate-400 hover:text-red-600 dark:hover:text-red-400" title="Remove">
                                     <TrashIcon class="w-4 h-4" />
                                 </button>
                             </td>
@@ -720,7 +724,7 @@ const supersededCount = computed(() => props.credentials.filter(c => c.is_supers
                         <AcademicCapIcon class="w-5 h-5 text-slate-500" />
                         <h2 class="text-sm font-semibold text-slate-700 dark:text-slate-200 uppercase tracking-wide">Training Records</h2>
                     </div>
-                    <button @click="showTrainingForm = !showTrainingForm"
+                    <button v-if="canEdit !== false" @click="showTrainingForm = !showTrainingForm"
                         class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-xs font-medium hover:bg-indigo-700">
                         <PlusIcon class="w-4 h-4" /> {{ showTrainingForm ? 'Cancel' : 'Add' }}
                     </button>
@@ -798,7 +802,10 @@ const supersededCount = computed(() => props.credentials.filter(c => c.is_supers
                     </thead>
                     <tbody class="divide-y divide-slate-100 dark:divide-slate-700">
                         <tr v-for="t in training" :key="t.id">
-                            <td class="px-5 py-3 font-medium text-slate-800 dark:text-slate-100">{{ t.training_name }}</td>
+                            <td class="px-5 py-3 font-medium text-slate-800 dark:text-slate-100">
+                                {{ t.training_name }}
+                                <span v-if="t.credential_title" class="block text-[11px] text-indigo-600 dark:text-indigo-400 mt-0.5 font-normal">↳ counts toward {{ t.credential_title }}</span>
+                            </td>
                             <td class="px-5 py-3 text-slate-600 dark:text-slate-300 text-xs">{{ t.category_label }}</td>
                             <td class="px-5 py-3 tabular-nums">{{ t.training_hours }}</td>
                             <td class="px-5 py-3 text-slate-500 dark:text-slate-400 text-xs">{{ t.completed_at ?? '-' }}</td>

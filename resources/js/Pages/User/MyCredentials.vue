@@ -34,6 +34,8 @@ interface Credential {
     has_document: boolean
     document_filename: string | null
     is_superseded?: boolean
+    ceu_hours_logged?: number
+    ceu_hours_required?: number
 }
 interface MissingItem {
     id: number
@@ -208,6 +210,13 @@ async function submitRenewal() {
                             <td class="px-5 py-3">
                                 <span :class="['inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium', STATUS_CLASSES[c.status]]">
                                     {{ STATUS_LABELS[c.status] ?? c.status }}
+                                </span>
+                                <span v-if="(c.ceu_hours_required ?? 0) > 0"
+                                      class="block mt-1 text-xs"
+                                      :class="(c.ceu_hours_logged ?? 0) >= (c.ceu_hours_required ?? 0)
+                                          ? 'text-emerald-600 dark:text-emerald-400'
+                                          : 'text-amber-600 dark:text-amber-400'">
+                                    {{ c.ceu_hours_logged ?? 0 }} / {{ c.ceu_hours_required }} CEU hrs
                                 </span>
                             </td>
                             <td class="px-5 py-3 text-right whitespace-nowrap">

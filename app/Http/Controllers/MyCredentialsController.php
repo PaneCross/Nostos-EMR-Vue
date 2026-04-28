@@ -31,6 +31,7 @@ class MyCredentialsController extends Controller
 
         $credentials = StaffCredential::forTenant($user->tenant_id)
             ->where('user_id', $user->id)
+            ->with('definition:id,ceu_hours_required')
             ->orderByRaw('expires_at IS NULL ASC, expires_at ASC')
             ->get()
             ->map(fn (StaffCredential $c) => [
@@ -49,6 +50,9 @@ class MyCredentialsController extends Controller
                 'has_document'    => (bool) $c->document_path,
                 'document_filename' => $c->document_filename,
                 'is_superseded'   => $c->replaced_by_credential_id !== null,
+                // V2 : let the user see their own CEU progress per credential
+                'ceu_hours_logged'   => $c->ceuHoursLogged(),
+                'ceu_hours_required' => (int) ($c->definition?->ceu_hours_required ?? 0),
             ]);
 
         $defService = app(CredentialDefinitionService::class);
