@@ -4,7 +4,7 @@
 //
 // RELEASE NOTE: bump CACHE on every deploy until we automate asset-hash-based
 // invalidation. Old caches are purged in the activate handler.
-const CACHE = 'nostos-portal-20260428193830';
+const CACHE = 'nostos-portal-20260428194601';
 const SHELL = ['/portal/login', '/portal/overview', '/manifest.webmanifest'];
 
 self.addEventListener('install', (e) => {

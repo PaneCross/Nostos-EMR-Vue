@@ -106,7 +106,7 @@ onMounted(loadTitles)
     <AppShell>
         <Head title="Job Titles" />
 
-        <div class="max-w-5xl mx-auto px-6 py-8">
+        <div class="mx-auto px-6 py-8" style="max-width: min(1280px, calc(100vw - 80px));">
             <div class="flex items-start justify-between mb-6 flex-wrap gap-4">
                 <div>
                     <h1 class="text-2xl font-bold text-gray-900 dark:text-slate-100 flex items-center gap-2">

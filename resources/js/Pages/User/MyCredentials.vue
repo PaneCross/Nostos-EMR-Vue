@@ -62,6 +62,28 @@ const renewalFile = ref<File | null>(null)
 const submitting = ref(false)
 const flash = ref<{ msg: string, kind: 'success'|'error' } | null>(null)
 
+// D11 : report incorrect role assignment
+const showAssignmentDispute = ref(false)
+const disputeNote = ref('')
+const submittingDispute = ref(false)
+async function submitDispute() {
+    if (disputeNote.value.trim().length < 10) {
+        flash.value = { msg: 'Please describe the issue (min 10 characters).', kind: 'error' }
+        return
+    }
+    submittingDispute.value = true
+    try {
+        const { data } = await axios.post('/my-credentials/report-assignment', { note: disputeNote.value })
+        flash.value = { msg: data.message, kind: 'success' }
+        showAssignmentDispute.value = false
+        disputeNote.value = ''
+    } catch (e: any) {
+        flash.value = { msg: e?.response?.data?.message ?? 'Could not submit. Try again.', kind: 'error' }
+    } finally {
+        submittingDispute.value = false
+    }
+}
+
 const STATUS_LABELS: Record<string, string> = {
     current: 'Current', no_expiry: 'No expiry',
     due_60: 'Due in 60d', due_30: 'Due in 30d', due_14: 'Due in 14d',
@@ -242,6 +264,30 @@ async function submitRenewal() {
                 <ClockIcon class="w-3.5 h-3.5 mt-0.5 shrink-0" />
                 Uploads via this page are flagged as self-attested and require IT Admin verification before becoming active.
             </p>
+            <div class="text-xs text-slate-500 dark:text-slate-400 mt-2">
+                Looks wrong? <button @click="showAssignmentDispute = true" class="text-indigo-600 dark:text-indigo-400 hover:underline">Report incorrect job-title or supervisor assignment</button>
+            </div>
+
+            <!-- D11 : assignment-dispute modal -->
+            <div v-if="showAssignmentDispute" class="fixed inset-0 bg-black/50 z-40 flex items-center justify-center p-4" @click.self="showAssignmentDispute = false">
+                <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 max-w-md w-full p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-lg font-bold text-slate-900 dark:text-slate-100">Report assignment issue</h2>
+                        <button @click="showAssignmentDispute = false" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"><XMarkIcon class="w-5 h-5" /></button>
+                    </div>
+                    <p class="text-sm text-slate-600 dark:text-slate-300 mb-3">
+                        Describe what's incorrect (job title, supervisor, or both). IT Admin will review and update your record.
+                    </p>
+                    <textarea v-model="disputeNote" rows="4" placeholder="e.g. My job title says LPN but I'm an RN..."
+                        class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-800 text-sm" />
+                    <div class="flex justify-end gap-2 mt-4">
+                        <button @click="showAssignmentDispute = false" class="px-4 py-2 rounded-lg text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800">Cancel</button>
+                        <button @click="submitDispute" :disabled="submittingDispute" class="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium disabled:opacity-50">
+                            {{ submittingDispute ? 'Sending...' : 'Send to IT Admin' }}
+                        </button>
+                    </div>
+                </div>
+            </div>
 
             <!-- Renewal modal -->
             <div v-if="renewing" class="fixed inset-0 bg-black/50 z-40 flex items-center justify-center p-4" @click.self="renewing = null">

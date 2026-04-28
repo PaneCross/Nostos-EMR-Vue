@@ -385,6 +385,7 @@ Route::middleware('auth')->group(function () {
     Route::post  ('/executive/credential-definitions',                                                  [\App\Http\Controllers\CredentialDefinitionController::class, 'store'])  ->name('executive.credential-definitions.store');
     Route::patch ('/executive/credential-definitions/{credentialDefinition}',                           [\App\Http\Controllers\CredentialDefinitionController::class, 'update']) ->name('executive.credential-definitions.update');
     Route::delete('/executive/credential-definitions/{credentialDefinition}',                           [\App\Http\Controllers\CredentialDefinitionController::class, 'destroy'])->name('executive.credential-definitions.destroy');
+    Route::get   ('/executive/credential-definitions/{credentialDefinition}/preview-email',             [\App\Http\Controllers\CredentialDefinitionController::class, 'previewEmail'])         ->name('executive.credential-definitions.preview-email');
     Route::post  ('/executive/credential-definitions/{credentialDefinition}/site-overrides',            [\App\Http\Controllers\CredentialDefinitionController::class, 'storeSiteOverride'])  ->name('executive.credential-definitions.site-overrides.store');
     Route::delete('/executive/credential-definitions/{credentialDefinition}/site-overrides/{siteId}',   [\App\Http\Controllers\CredentialDefinitionController::class, 'destroySiteOverride'])->name('executive.credential-definitions.site-overrides.destroy');
 
@@ -397,6 +398,10 @@ Route::middleware('auth')->group(function () {
     // Self-service for the authenticated user
     Route::get ('/my-credentials',                              [\App\Http\Controllers\MyCredentialsController::class, 'index'])         ->name('my-credentials.index');
     Route::post('/my-credentials/{credential}/renewal',         [\App\Http\Controllers\MyCredentialsController::class, 'uploadRenewal'])->name('my-credentials.renewal');
+    Route::post('/my-credentials/report-assignment',            [\App\Http\Controllers\MyCredentialsController::class, 'reportAssignment'])->name('my-credentials.report-assignment');
+
+    // D7 : supervisor view of their direct reports' credential status
+    Route::get ('/my-team',                                     [\App\Http\Controllers\MyTeamController::class, 'index'])->name('my-team.index');
 
     // V2: Bulk credentials CSV import (IT Admin only)
     Route::get ('/it-admin/credentials/bulk-import',            [\App\Http\Controllers\CredentialBulkImportController::class, 'page'])  ->name('it-admin.credentials.bulk-import.page');
@@ -1489,6 +1494,7 @@ Route::middleware('auth')->group(function () {
 
         // Phase 4 (MVP roadmap): Staff credentials + training per §460.64-71
         Route::get ('/users/{user}/credentials',    [\App\Http\Controllers\StaffCredentialController::class, 'index'])->name('it-admin.users.credentials.index');
+        Route::get ('/users/{user}/credentials.pdf',[\App\Http\Controllers\StaffCredentialController::class, 'exportPdf'])->name('it-admin.users.credentials.pdf');
         Route::post('/users/{user}/credentials',    [\App\Http\Controllers\StaffCredentialController::class, 'storeCredential'])->name('it-admin.users.credentials.store');
         Route::post('/users/{user}/training',       [\App\Http\Controllers\StaffCredentialController::class, 'storeTraining'])->name('it-admin.users.training.store');
         // Audit log viewer
@@ -1520,6 +1526,8 @@ Route::middleware('auth')->group(function () {
 
         // Phase 4 (MVP roadmap): non-user-scoped staff credential/training actions.
         Route::patch ('/staff-credentials/{credential}', [\App\Http\Controllers\StaffCredentialController::class, 'updateCredential'])->name('it-admin.staff-credentials.update');
+        Route::post  ('/staff-credentials/{credential}/verify', [\App\Http\Controllers\StaffCredentialController::class, 'verifyCredential'])->name('it-admin.staff-credentials.verify');
+        Route::post  ('/staff-credentials/bulk-renew',          [\App\Http\Controllers\StaffCredentialController::class, 'bulkRenew'])->name('it-admin.staff-credentials.bulk-renew');
         Route::delete('/staff-credentials/{credential}', [\App\Http\Controllers\StaffCredentialController::class, 'destroyCredential'])->name('it-admin.staff-credentials.destroy');
         Route::delete('/staff-training/{record}',        [\App\Http\Controllers\StaffCredentialController::class, 'destroyTraining'])->name('it-admin.staff-training.destroy');
     });

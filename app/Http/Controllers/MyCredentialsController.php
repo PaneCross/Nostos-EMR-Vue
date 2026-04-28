@@ -76,6 +76,50 @@ class MyCredentialsController extends Controller
         ]);
     }
 
+    /**
+     * D11 : let users flag if their job_title or supervisor assignment is wrong.
+     * Creates an Alert targeted at IT Admin so the right person sees it. We
+     * intentionally do NOT let users self-modify their assignment because the
+     * targeting impacts credential compliance — needs admin review.
+     */
+    public function reportAssignment(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        abort_unless($user, 401);
+
+        $v = $request->validate([
+            'note' => ['required', 'string', 'min:10', 'max:2000'],
+        ]);
+
+        $alertService = app(\App\Services\AlertService::class);
+        $alertService->create([
+            'tenant_id'          => $user->tenant_id,
+            'source_module'      => 'it_admin',
+            'alert_type'         => 'role_assignment_dispute',
+            'severity'           => 'info',
+            'title'              => "Role assignment review requested : {$user->first_name} {$user->last_name}",
+            'message'            => "{$user->first_name} {$user->last_name} ({$user->email}) reports their role assignment may be incorrect:\n\n{$v['note']}",
+            'target_departments' => ['it_admin'],
+            'is_active'          => true,
+            'metadata'           => [
+                'user_id'    => $user->id,
+                'job_title'  => $user->job_title,
+                'supervisor_user_id' => $user->supervisor_user_id,
+            ],
+        ]);
+
+        AuditLog::record(
+            action:       'staff_credential.role_assignment_disputed',
+            resourceType: 'User',
+            resourceId:   $user->id,
+            tenantId:     $user->tenant_id,
+            userId:       $user->id,
+            newValues:    ['note' => $v['note']],
+        );
+
+        return response()->json(['ok' => true, 'message' => 'Thanks. IT Admin has been notified and will review your assignment.']);
+    }
+
     public function uploadRenewal(Request $request, StaffCredential $credential): JsonResponse|RedirectResponse
     {
         $user = $request->user();

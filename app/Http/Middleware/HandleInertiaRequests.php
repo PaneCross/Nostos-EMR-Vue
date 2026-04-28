@@ -69,6 +69,18 @@ class HandleInertiaRequests extends Middleware
             // Theme preference belongs to the REAL user, not the impersonated user.
             // This keeps the SA's display mode consistent during impersonation sessions.
             'theme_preference' => $realUser?->theme_preference ?? 'light',
+            // D4 : count of credentials expiring within 30 days for the user
+            // dropdown badge. Lazy closure so we don't query on every request
+            // unless the front-end uses it.
+            'credentials_expiring_30d' => fn () => \App\Models\StaffCredential::where('user_id', $effectiveUser->id)
+                ->whereNull('deleted_at')
+                ->whereNull('replaced_by_credential_id')
+                ->whereNotNull('expires_at')
+                ->where('expires_at', '<=', now()->addDays(30)->toDateString())
+                ->where('expires_at', '>=', now()->toDateString())
+                ->count(),
+            'has_direct_reports' => fn () => \App\Models\User::where('supervisor_user_id', $effectiveUser->id)
+                ->where('is_active', true)->exists(),
             'tenant'           => $effectiveUser->tenant ? [
                 'id'                  => $effectiveUser->tenant->id,
                 'name'                => $effectiveUser->tenant->name,

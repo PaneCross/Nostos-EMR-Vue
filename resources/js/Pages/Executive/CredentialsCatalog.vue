@@ -15,6 +15,7 @@ import {
     AcademicCapIcon, PlusIcon, PencilSquareIcon, TrashIcon, LockClosedIcon,
     InformationCircleIcon, ShieldCheckIcon, DocumentArrowUpIcon,
     BuildingOfficeIcon, BriefcaseIcon, IdentificationIcon, CheckIcon, XMarkIcon,
+    MagnifyingGlassIcon, EnvelopeIcon,
 } from '@heroicons/vue/24/outline'
 
 interface Target { kind: 'department'|'job_title'|'designation', value: string }
@@ -146,6 +147,22 @@ const customStepPreview = computed(() => {
 const sortedDefs = computed(() => [...definitions.value].sort((a, b) =>
     a.sort_order - b.sort_order || a.title.localeCompare(b.title)
 ))
+
+// D2 : search + type filter (helps once the catalog grows past 30 rows)
+const searchQuery = ref('')
+const typeFilter = ref<string>('all')
+
+const filteredDefs = computed(() => {
+    const q = searchQuery.value.trim().toLowerCase()
+    return sortedDefs.value.filter(d => {
+        if (typeFilter.value !== 'all' && d.credential_type !== typeFilter.value) return false
+        if (q) {
+            const hay = `${d.title} ${d.code} ${d.description ?? ''}`.toLowerCase()
+            if (!hay.includes(q)) return false
+        }
+        return true
+    })
+})
 
 async function load() {
     loading.value = true
@@ -304,7 +321,7 @@ onMounted(load)
     <AppShell>
         <Head title="Credentials Catalog" />
 
-        <div class="max-w-6xl mx-auto px-6 py-8">
+        <div class="mx-auto px-6 py-8" style="max-width: min(1280px, calc(100vw - 80px));">
             <div class="flex items-start justify-between mb-6 flex-wrap gap-4">
                 <div>
                     <h1 class="text-2xl font-bold text-gray-900 dark:text-slate-100 flex items-center gap-2">
@@ -341,10 +358,27 @@ onMounted(load)
                 {{ errorMessage }}
             </div>
 
+            <!-- Search + type filter -->
+            <div v-if="!loading" class="flex flex-wrap items-center gap-3 mb-4">
+                <div class="relative flex-1 min-w-[240px]">
+                    <input v-model="searchQuery" type="text" placeholder="Search by title, code, or description..."
+                        class="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm" />
+                    <MagnifyingGlassIcon class="absolute left-2.5 top-2.5 w-4 h-4 text-gray-400 dark:text-slate-500" />
+                </div>
+                <select v-model="typeFilter" class="px-3 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm">
+                    <option value="all">All types</option>
+                    <option v-for="(label, code) in credentialTypes" :key="code" :value="code">{{ label }}</option>
+                </select>
+                <span class="text-xs text-gray-500 dark:text-slate-400">{{ filteredDefs.length }} of {{ definitions.length }}</span>
+            </div>
+
             <!-- Definition list -->
             <div v-if="loading" class="text-center py-12 text-gray-500 dark:text-slate-400">Loading...</div>
+            <div v-else-if="filteredDefs.length === 0" class="text-center py-12 text-gray-500 dark:text-slate-400">
+                No credentials match the current search / filter.
+            </div>
             <div v-else class="space-y-3">
-                <div v-for="d in sortedDefs" :key="d.id"
+                <div v-for="d in filteredDefs" :key="d.id"
                      class="rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4">
                     <div class="flex items-start justify-between gap-4">
                         <div class="flex-1 min-w-0">
@@ -499,6 +533,9 @@ onMounted(load)
                                 Add custom step
                             </button>
                         </div>
+                        <p v-if="cadenceInput" class="text-xs text-gray-500 dark:text-slate-400 mt-3">
+                            <strong>Will fire at:</strong> <code class="font-mono text-gray-700 dark:text-slate-300">{{ cadenceInput.split(',').map(d => d.trim()).filter(d => d !== '').join(', ') }} days</code> relative to expiration.
+                        </p>
                     </div>
                     <label class="block mb-4">
                         <span class="text-xs font-medium text-gray-700 dark:text-slate-300">CEU hours required per renewal cycle (0 = no CEU tracking)</span>
@@ -547,6 +584,11 @@ onMounted(load)
                     </div>
 
                     <div class="flex justify-end gap-2 pt-4 border-t border-gray-200 dark:border-slate-700">
+                        <a v-if="!isNew && editing.id"
+                            :href="`/executive/credential-definitions/${editing.id}/preview-email?days=30`" target="_blank"
+                            class="px-4 py-2 rounded-lg text-sm text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800 inline-flex items-center gap-1.5">
+                            <EnvelopeIcon class="w-4 h-4" /> Preview email
+                        </a>
                         <button @click="editing = null" class="px-4 py-2 rounded-lg text-sm text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800">Cancel</button>
                         <button @click="save" class="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium">Save</button>
                     </div>

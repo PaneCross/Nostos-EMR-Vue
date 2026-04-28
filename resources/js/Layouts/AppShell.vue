@@ -977,6 +977,18 @@ function handleGlobalKey(e: KeyboardEvent) {
                             >
                                 <IdentificationIcon class="w-4 h-4 shrink-0 text-slate-400 dark:text-slate-500" aria-hidden="true" />
                                 My Credentials
+                                <span v-if="(user as any)?.credentials_expiring_30d > 0"
+                                    class="ml-auto px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300">
+                                    {{ (user as any).credentials_expiring_30d }} expiring
+                                </span>
+                            </button>
+                            <button
+                                v-if="(user as any)?.has_direct_reports"
+                                class="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors text-left"
+                                @click="showUserMenu = false; navigate('/my-team')"
+                            >
+                                <IdentificationIcon class="w-4 h-4 shrink-0 text-slate-400 dark:text-slate-500" aria-hidden="true" />
+                                My Team
                             </button>
                             <div class="border-t border-slate-100 dark:border-slate-700">
                                 <button

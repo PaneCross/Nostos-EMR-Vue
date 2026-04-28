@@ -261,6 +261,17 @@ async function deleteCred(c: Credential) {
     router.reload()
 }
 
+// D8 : one-click verify a pending self-attested renewal
+async function verifyCred(c: Credential) {
+    if (!confirm(`Verify "${c.title}" as active? Confirm only after reviewing the attached document.`)) return
+    try {
+        await axios.post(`/it-admin/staff-credentials/${c.id}/verify`)
+        router.reload()
+    } catch (e: any) {
+        alert(e?.response?.data?.message ?? 'Could not verify.')
+    }
+}
+
 function onFilePick(e: Event) {
     const input = e.target as HTMLInputElement
     credFile.value = input.files?.[0] ?? null
@@ -351,10 +362,42 @@ const expiringCount = computed(() =>
 // Audit-history toggle : superseded rows are kept as a paper trail but hidden
 // by default so the active list is clear. CMS auditors can toggle them on.
 const showAuditHistory = ref(false)
-const visibleCredentials = computed(() =>
-    props.credentials.filter(c => showAuditHistory.value || !c.is_superseded)
-)
+// D3 : filter chip set for the credentials table
+type CredFilter = 'all' | 'expired' | 'expiring' | 'pending' | 'invalid' | 'has_doc'
+const credFilter = ref<CredFilter>('all')
+
+const visibleCredentials = computed(() => {
+    return props.credentials.filter(c => {
+        if (!showAuditHistory.value && c.is_superseded) return false
+        switch (credFilter.value) {
+            case 'expired':
+                return c.status === 'expired'
+            case 'expiring':
+                return ['due_today', 'due_14', 'due_30', 'due_60'].includes(c.status)
+            case 'pending':
+                return c.cms_status === 'pending'
+            case 'invalid':
+                return c.cms_status === 'suspended' || c.cms_status === 'revoked'
+            case 'has_doc':
+                return !!c.document_url
+            case 'all':
+            default:
+                return true
+        }
+    })
+})
 const supersededCount = computed(() => props.credentials.filter(c => c.is_superseded).length)
+const filterCounts = computed(() => {
+    const c = props.credentials.filter(x => !x.is_superseded)
+    return {
+        all: c.length,
+        expired: c.filter(x => x.status === 'expired').length,
+        expiring: c.filter(x => ['due_today','due_14','due_30','due_60'].includes(x.status)).length,
+        pending: c.filter(x => x.cms_status === 'pending').length,
+        invalid: c.filter(x => x.cms_status === 'suspended' || x.cms_status === 'revoked').length,
+        has_doc: c.filter(x => !!x.document_url).length,
+    }
+})
 </script>
 
 <template>
@@ -427,11 +470,17 @@ const supersededCount = computed(() => props.credentials.filter(c => c.is_supers
                         <IdentificationIcon class="w-5 h-5 text-slate-500" />
                         <h2 class="text-sm font-semibold text-slate-700 dark:text-slate-200 uppercase tracking-wide">Credentials</h2>
                     </div>
+                    <div class="flex items-center gap-2">
+                    <a :href="`/it-admin/users/${staff.id}/credentials.pdf`" target="_blank"
+                        class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-medium" title="Download printable surveyor packet PDF">
+                        <DocumentArrowDownIcon class="w-4 h-4" /> Packet PDF
+                    </a>
                     <button v-if="canEdit !== false" @click="showCredForm = !showCredForm"
                         class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-xs font-medium hover:bg-indigo-700">
                         <PlusIcon class="w-4 h-4" /> {{ showCredForm ? 'Cancel' : 'Add' }}
                     </button>
                     <span v-else class="text-xs text-slate-400 italic">Read-only view</span>
+                    </div>
                 </div>
 
                 <!-- Add form -->
@@ -560,6 +609,34 @@ const supersededCount = computed(() => props.credentials.filter(c => c.is_supers
                     </div>
                 </div>
 
+                <!-- D3 : filter chips -->
+                <div class="px-5 py-2 border-b border-slate-200 dark:border-slate-700 flex flex-wrap items-center gap-1.5">
+                    <button @click="credFilter = 'all'" :class="['px-2.5 py-1 rounded-full text-xs font-medium transition-colors',
+                        credFilter === 'all' ? 'bg-indigo-600 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700']">
+                        All ({{ filterCounts.all }})
+                    </button>
+                    <button v-if="filterCounts.expired > 0" @click="credFilter = 'expired'" :class="['px-2.5 py-1 rounded-full text-xs font-medium transition-colors',
+                        credFilter === 'expired' ? 'bg-rose-600 text-white' : 'bg-rose-100 dark:bg-rose-900/40 text-rose-700 dark:text-rose-300 hover:bg-rose-200 dark:hover:bg-rose-900/60']">
+                        Expired ({{ filterCounts.expired }})
+                    </button>
+                    <button v-if="filterCounts.expiring > 0" @click="credFilter = 'expiring'" :class="['px-2.5 py-1 rounded-full text-xs font-medium transition-colors',
+                        credFilter === 'expiring' ? 'bg-amber-500 text-white' : 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-900/60']">
+                        Expiring (≤60d) ({{ filterCounts.expiring }})
+                    </button>
+                    <button v-if="filterCounts.pending > 0" @click="credFilter = 'pending'" :class="['px-2.5 py-1 rounded-full text-xs font-medium transition-colors',
+                        credFilter === 'pending' ? 'bg-amber-500 text-white' : 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-900/60']">
+                        Pending verify ({{ filterCounts.pending }})
+                    </button>
+                    <button v-if="filterCounts.invalid > 0" @click="credFilter = 'invalid'" :class="['px-2.5 py-1 rounded-full text-xs font-medium transition-colors',
+                        credFilter === 'invalid' ? 'bg-rose-700 text-white' : 'bg-rose-200 dark:bg-rose-900/60 text-rose-800 dark:text-rose-200 hover:bg-rose-300 dark:hover:bg-rose-900/80']">
+                        Suspended/Revoked ({{ filterCounts.invalid }})
+                    </button>
+                    <button v-if="filterCounts.has_doc > 0" @click="credFilter = 'has_doc'" :class="['px-2.5 py-1 rounded-full text-xs font-medium transition-colors',
+                        credFilter === 'has_doc' ? 'bg-indigo-600 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700']">
+                        Has document ({{ filterCounts.has_doc }})
+                    </button>
+                </div>
+
                 <!-- Audit history toggle -->
                 <div v-if="supersededCount > 0" class="px-5 py-2 border-b border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-900/30 text-xs text-slate-600 dark:text-slate-400 flex items-center justify-between">
                     <span>{{ supersededCount }} superseded credential record(s) hidden (preserved as audit history).</span>
@@ -625,6 +702,11 @@ const supersededCount = computed(() => props.credentials.filter(c => c.is_supers
                                     class="text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 inline-block mr-1" title="Open document">
                                     <DocumentArrowDownIcon class="w-4 h-4" />
                                 </a>
+                                <button v-if="canEdit !== false && c.cms_status === 'pending'" @click="verifyCred(c)"
+                                    class="text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 mr-1 inline-flex items-center gap-0.5"
+                                    title="One-click verify : sets active + records verified_at">
+                                    <CheckCircleIcon class="w-4 h-4" />
+                                </button>
                                 <button v-if="canEdit !== false" @click="startEditCred(c)" class="text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 mr-1" title="Edit">
                                     <PencilSquareIcon class="w-4 h-4" />
                                 </button>

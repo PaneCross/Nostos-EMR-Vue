@@ -159,6 +159,37 @@ class CredentialDefinitionController extends Controller
         return response()->json($this->presentDefinition($credentialDefinition->fresh()->load(['targets', 'siteOverrides.site:id,name'])));
     }
 
+    /**
+     * D12 : render the CredentialExpiringMail HTML for preview from the
+     * catalog edit modal. Lets executives sanity-check what their staff
+     * will receive at each cadence step before they save the definition.
+     */
+    public function previewEmail(Request $request, CredentialDefinition $credentialDefinition): \Illuminate\Http\Response
+    {
+        $this->gate($request);
+        abort_if($credentialDefinition->tenant_id !== $request->user()->tenant_id, 403);
+
+        $days = (int) $request->query('days', 30);
+        $isSupervisor = (bool) $request->query('supervisor', false);
+
+        // Synthesize a mock credential + user so the Mailable has data to render.
+        $user = $request->user();
+        $mockCredential = new \App\Models\StaffCredential([
+            'tenant_id' => $credentialDefinition->tenant_id,
+            'user_id'   => $user->id,
+            'credential_type' => $credentialDefinition->credential_type,
+            'title'     => $credentialDefinition->title,
+            'expires_at'=> now()->addDays($days)->toDateString(),
+        ]);
+        $mockCredential->setRelation('user', $user);
+        $mockCredential->id = 0;
+
+        $mailable = new \App\Mail\CredentialExpiringMail($user, $mockCredential, $days, $isSupervisor);
+        $html = $mailable->render();
+
+        return response($html)->header('Content-Type', 'text/html');
+    }
+
     public function destroy(Request $request, CredentialDefinition $credentialDefinition): JsonResponse
     {
         $this->gate($request);

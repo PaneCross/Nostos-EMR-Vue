@@ -24,6 +24,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response as InertiaResponse;
@@ -379,6 +380,148 @@ class StaffCredentialController extends Controller
             'document_path'     => $path,
             'document_filename' => $file->getClientOriginalName(),
         ]);
+    }
+
+    /**
+     * D6 : bulk-renew a set of credentials to the same new expires_at. Used
+     * after a group event (annual fire-drill, BLS class graduation, OIG/SAM
+     * monthly run) where many staff get the same new expiration date.
+     *
+     * Accepts credential_ids[] + new_expires_at + optional new_issued_at +
+     * verification_source. Each row goes through the same versioning chain
+     * as a self-renewal : new row created, old row marked superseded. Sets
+     * cms_status='active' immediately since IT Admin is doing the bulk
+     * action and presumably has the documentation in hand.
+     */
+    public function bulkRenew(Request $request): JsonResponse
+    {
+        $this->gate($request);
+        $tenantId = $request->user()->tenant_id;
+
+        $v = $request->validate([
+            'credential_ids'      => ['required', 'array', 'min:1', 'max:200'],
+            'credential_ids.*'    => ['integer'],
+            'new_expires_at'      => ['required', 'date', 'after:today'],
+            'new_issued_at'       => ['nullable', 'date', 'before_or_equal:new_expires_at'],
+            'verification_source' => ['nullable', Rule::in(array_keys(StaffCredential::VERIFICATION_SOURCES))],
+        ]);
+
+        $rows = StaffCredential::forTenant($tenantId)
+            ->whereIn('id', $v['credential_ids'])
+            ->whereNull('replaced_by_credential_id')
+            ->get();
+
+        $renewedIds = [];
+        \Illuminate\Support\Facades\DB::transaction(function () use ($rows, $v, $request, &$renewedIds) {
+            foreach ($rows as $old) {
+                $newRow = StaffCredential::create([
+                    'tenant_id'                => $old->tenant_id,
+                    'user_id'                  => $old->user_id,
+                    'credential_definition_id' => $old->credential_definition_id,
+                    'credential_type'          => $old->credential_type,
+                    'title'                    => $old->title,
+                    'license_state'            => $old->license_state,
+                    'license_number'           => $old->license_number,
+                    'issued_at'                => $v['new_issued_at'] ?? now()->toDateString(),
+                    'expires_at'               => $v['new_expires_at'],
+                    'verification_source'      => $v['verification_source'] ?? 'uploaded_doc',
+                    'cms_status'               => 'active',
+                    'verified_at'              => now(),
+                    'verified_by_user_id'      => $request->user()->id,
+                    'notes'                    => 'Bulk renewal by ' . $request->user()->first_name . ' ' . $request->user()->last_name,
+                ]);
+                $old->update(['replaced_by_credential_id' => $newRow->id]);
+                $renewedIds[] = $newRow->id;
+            }
+        });
+
+        AuditLog::record(
+            action: 'staff_credential.bulk_renewed',
+            resourceType: 'StaffCredential',
+            resourceId: 0,
+            tenantId: $tenantId,
+            userId: $request->user()->id,
+            newValues: ['credential_count' => count($renewedIds), 'new_expires_at' => $v['new_expires_at']],
+        );
+
+        return response()->json(['ok' => true, 'renewed_count' => count($renewedIds)]);
+    }
+
+    /**
+     * D5 : per-user printable credentials packet PDF for surveyor walk-ins.
+     * Renders a clean Letter-sized PDF with the user's identity + every
+     * non-superseded credential's status + expiry + doc-on-file flag.
+     */
+    public function exportPdf(Request $request, User $user)
+    {
+        $this->readGate($request);
+        $this->assertSameTenant($user, $request);
+
+        $credentials = StaffCredential::forTenant($user->tenant_id)
+            ->where('user_id', $user->id)
+            ->whereNull('replaced_by_credential_id')
+            ->with('definition:id,is_cms_mandatory,requires_psv')
+            ->orderBy('credential_type')
+            ->orderBy('title')
+            ->get();
+
+        $defService = app(\App\Services\Credentials\CredentialDefinitionService::class);
+        $missing = $defService->missingForUser($user);
+
+        $pdf = Pdf::loadView('pdfs.credentials-packet', [
+            'user'        => $user,
+            'credentials' => $credentials,
+            'missing'     => $missing,
+            'generatedAt' => now(),
+            'generatedBy' => $request->user(),
+            'tenant'      => $user->tenant,
+        ])->setPaper('letter', 'portrait');
+
+        return $pdf->download("credentials-{$user->last_name}-{$user->first_name}-" . now()->format('Y-m-d') . ".pdf");
+    }
+
+    /**
+     * D8 : one-click verify a pending credential. Used by IT Admin / QA when
+     * a user has uploaded a self-attested renewal and the admin has reviewed
+     * the document. Sets cms_status=active, verified_at=now, and bumps
+     * verification_source from 'self_attestation' to 'uploaded_doc' (since the
+     * admin has now visually verified the document).
+     */
+    public function verifyCredential(Request $request, StaffCredential $credential): JsonResponse
+    {
+        $this->gate($request);
+        abort_if($credential->tenant_id !== $request->user()->tenant_id, 403);
+
+        if ($credential->cms_status !== 'pending') {
+            return response()->json([
+                'message' => 'Only credentials in pending status can be one-click verified.',
+            ], 422);
+        }
+
+        $old = $credential->toArray();
+        $credential->update([
+            'cms_status'          => 'active',
+            'verified_at'         => now(),
+            'verified_by_user_id' => $request->user()->id,
+            // Promote from self_attestation to uploaded_doc since admin has
+            // visually inspected the document. PSV-required defs still require
+            // a manual edit to set state_board / npdb explicitly.
+            'verification_source' => $credential->verification_source === 'self_attestation'
+                ? 'uploaded_doc'
+                : $credential->verification_source,
+        ]);
+
+        AuditLog::record(
+            action: 'staff_credential.verified',
+            resourceType: 'StaffCredential',
+            resourceId: $credential->id,
+            tenantId: $credential->tenant_id,
+            userId: $request->user()->id,
+            oldValues: $old,
+            newValues: $credential->fresh()->toArray(),
+        );
+
+        return response()->json($credential->fresh());
     }
 
     public function destroyCredential(Request $request, StaffCredential $credential): JsonResponse
