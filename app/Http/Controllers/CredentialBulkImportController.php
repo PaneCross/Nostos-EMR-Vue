@@ -107,6 +107,32 @@ class CredentialBulkImportController extends Controller
                 continue;
             }
 
+            // Enforce definition-driven rules : doc_required + requires_psv.
+            // Bulk import has no file attachment so doc_required defs are
+            // skipped with a reason ; admin must add the row via the per-user
+            // page where they can upload a doc.
+            if ($def && $def->default_doc_required) {
+                $report['skipped']++;
+                $report['rows'][] = [
+                    'row' => $rowNum, 'email' => $email,
+                    'outcome' => 'skipped',
+                    'reason' => "{$def->title} requires a supporting document : add it from the per-user credentials page (bulk import does not accept files).",
+                ];
+                continue;
+            }
+            if ($def && $def->requires_psv) {
+                $src = $row['verification_source'] ?? '';
+                if (! in_array($src, ['state_board', 'npdb'], true)) {
+                    $report['skipped']++;
+                    $report['rows'][] = [
+                        'row' => $rowNum, 'email' => $email,
+                        'outcome' => 'skipped',
+                        'reason' => "{$def->title} requires primary-source verification : verification_source must be 'state_board' or 'npdb'.",
+                    ];
+                    continue;
+                }
+            }
+
             try {
                 $cred = StaffCredential::create([
                     'tenant_id' => $tenantId,

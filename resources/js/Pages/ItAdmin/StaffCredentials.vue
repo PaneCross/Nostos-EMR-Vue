@@ -151,6 +151,12 @@ function onDefinitionChange() {
     }
 }
 
+// Picked definition : drives requires_psv / default_doc_required hints in the UI
+const pickedDefinition = computed(() => {
+    const id = Number(credForm.value.credential_definition_id)
+    return id ? props.applicableDefinitions?.find(d => d.id === id) ?? null : null
+})
+
 function buildFormData(form: any): FormData {
     const fd = new FormData()
     Object.entries(form).forEach(([k, v]) => {
@@ -404,9 +410,19 @@ const expiringCount = computed(() =>
                             class="w-full text-sm rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-700 px-3 py-2">
                             <option value="">Custom (free-form, not linked to catalog)</option>
                             <option v-for="d in applicableDefinitions" :key="d.id" :value="d.id">
-                                {{ d.title }}{{ d.is_cms_mandatory ? ' [CMS-mandatory]' : '' }}{{ d.requires_psv ? ' [PSV]' : '' }}
+                                {{ d.title }}{{ d.is_cms_mandatory ? ' [CMS-mandatory]' : '' }}{{ d.requires_psv ? ' [PSV]' : '' }}{{ d.default_doc_required ? ' [Doc required]' : '' }}
                             </option>
                         </select>
+                    </div>
+
+                    <!-- Constraint banner : surfaces doc_required + PSV requirements early -->
+                    <div v-if="pickedDefinition && (pickedDefinition.default_doc_required || pickedDefinition.requires_psv)"
+                         class="rounded-lg border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950/30 px-3 py-2 text-xs text-amber-900 dark:text-amber-100">
+                        <strong>This catalog credential has requirements:</strong>
+                        <ul class="list-disc list-outside ml-5 mt-1 space-y-0.5">
+                            <li v-if="pickedDefinition.default_doc_required">A supporting document upload is required.</li>
+                            <li v-if="pickedDefinition.requires_psv">Verification source must be <strong>State Licensing Board</strong> or <strong>NPDB Lookup</strong> (primary-source per §460.64(c)).</li>
+                        </ul>
                     </div>
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">

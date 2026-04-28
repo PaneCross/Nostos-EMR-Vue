@@ -314,7 +314,7 @@ const bucketLabels: Record<string, string> = {
                                 <span v-else class="text-gray-300 dark:text-slate-600">-</span>
                             </td>
                             <td class="px-2 py-2 text-center bg-gray-100 dark:bg-slate-700/50">
-                                <div class="text-sm font-bold tabular-nums">{{ row.totals.users_compliant }}/{{ row.totals.users_required }}</div>
+                                <div class="text-sm font-bold tabular-nums text-gray-900 dark:text-slate-100">{{ row.totals.users_compliant }}/{{ row.totals.users_required }}</div>
                             </td>
                         </tr>
                     </tbody>

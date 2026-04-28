@@ -202,6 +202,17 @@ class StaffCredentialController extends Controller
             'document'        => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:10240'],
         ]);
 
+        // Enforce definition-driven requirements (doc_required + requires_psv).
+        // The catalog tags weren't being checked server-side ; an admin could
+        // add a "Doc Required" credential without attaching a doc.
+        $this->enforceDefinitionRules(
+            tenantId: $user->tenant_id,
+            definitionId: $v['credential_definition_id'] ?? null,
+            hasDocument: $request->hasFile('document'),
+            verificationSource: $v['verification_source'] ?? null,
+            existingDocumentPath: null,
+        );
+
         $c = StaffCredential::create(array_merge(
             collect($v)->except('document')->all(),
             [
@@ -251,6 +262,20 @@ class StaffCredentialController extends Controller
             'document'       => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:10240'],
         ]);
 
+        // Enforce definition-driven requirements on update too. For doc_required
+        // we accept either a fresh upload OR an existing document_path on the
+        // record (we don't force re-upload if a doc was uploaded previously).
+        $defIdForCheck = array_key_exists('credential_definition_id', $v)
+            ? $v['credential_definition_id']
+            : $credential->credential_definition_id;
+        $this->enforceDefinitionRules(
+            tenantId: $credential->tenant_id,
+            definitionId: $defIdForCheck,
+            hasDocument: $request->hasFile('document'),
+            verificationSource: $v['verification_source'] ?? $credential->verification_source,
+            existingDocumentPath: $credential->document_path,
+        );
+
         $old = $credential->toArray();
         $credential->update(collect($v)->except('document')->all());
 
@@ -269,6 +294,48 @@ class StaffCredentialController extends Controller
         );
 
         return response()->json($credential->fresh());
+    }
+
+    /**
+     * Enforce per-definition rules : if the definition flags doc_required
+     * and/or requires_psv, the submission must satisfy them. Throws a 422
+     * with field-level errors when not satisfied.
+     *
+     * Free-form rows (no definition_id) skip these checks entirely : the
+     * catalog rules only bind when a row is linked to a definition.
+     */
+    private function enforceDefinitionRules(
+        int $tenantId,
+        ?int $definitionId,
+        bool $hasDocument,
+        ?string $verificationSource,
+        ?string $existingDocumentPath,
+    ): void {
+        if (! $definitionId) return;
+        $def = CredentialDefinition::forTenant($tenantId)->find($definitionId);
+        if (! $def) return;
+
+        $errors = [];
+
+        if ($def->default_doc_required && ! $hasDocument && ! $existingDocumentPath) {
+            $errors['document'] = ["This credential requires a supporting document. Attach a PDF, JPG, or PNG."];
+        }
+
+        if ($def->requires_psv) {
+            $valid = ! empty($verificationSource)
+                && in_array($verificationSource, ['state_board', 'npdb'], true);
+            if (! $valid) {
+                $errors['verification_source'] = [
+                    'This credential requires primary-source verification : choose '
+                    . '"State Licensing Board" or "NPDB Lookup" as the verification source. '
+                    . 'Self-attestation or uploaded-document is not sufficient.'
+                ];
+            }
+        }
+
+        if (! empty($errors)) {
+            throw \Illuminate\Validation\ValidationException::withMessages($errors);
+        }
     }
 
     /** Save uploaded doc to local disk under tenant/{id}/credentials/{cred_id}.{ext}. */

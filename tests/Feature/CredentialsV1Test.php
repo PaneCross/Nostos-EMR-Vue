@@ -225,6 +225,69 @@ class CredentialsV1Test extends TestCase
             ->assertStatus(422);
     }
 
+    public function test_doc_required_definition_rejects_submission_without_document(): void
+    {
+        $hipaa = CredentialDefinition::where('code', 'hipaa_annual_training')->firstOrFail();
+        // hipaa is seeded with default_doc_required=true.
+        $this->assertTrue((bool) $hipaa->default_doc_required);
+
+        $resp = $this->actingAs($this->itAdmin)
+            ->postJson("/it-admin/users/{$this->nurse->id}/credentials", [
+                'credential_definition_id' => $hipaa->id,
+                'credential_type' => 'training',
+                'title'           => 'HIPAA 2026',
+                'expires_at'      => now()->addYear()->toDateString(),
+                // intentionally no document
+            ]);
+
+        $resp->assertStatus(422);
+        $resp->assertJsonValidationErrors(['document']);
+    }
+
+    public function test_requires_psv_definition_rejects_self_attestation(): void
+    {
+        // Create a non-mandatory def with requires_psv=true and target primary_care
+        $def = CredentialDefinition::create([
+            'tenant_id' => $this->tenant->id,
+            'code' => 'test_psv_required',
+            'title' => 'Test PSV License',
+            'credential_type' => 'license',
+            'requires_psv' => true,
+            'default_doc_required' => false,
+        ]);
+
+        $resp = $this->actingAs($this->itAdmin)
+            ->postJson("/it-admin/users/{$this->nurse->id}/credentials", [
+                'credential_definition_id' => $def->id,
+                'credential_type' => 'license',
+                'title' => 'Test PSV License',
+                'verification_source' => 'self_attestation',  // not allowed
+            ]);
+        $resp->assertStatus(422);
+        $resp->assertJsonValidationErrors(['verification_source']);
+
+        // state_board IS allowed
+        $resp = $this->actingAs($this->itAdmin)
+            ->postJson("/it-admin/users/{$this->nurse->id}/credentials", [
+                'credential_definition_id' => $def->id,
+                'credential_type' => 'license',
+                'title' => 'Test PSV License',
+                'verification_source' => 'state_board',
+            ]);
+        $resp->assertCreated();
+    }
+
+    public function test_free_form_credentials_skip_definition_rules(): void
+    {
+        // No definition_id : doc_required + PSV checks should not apply.
+        $resp = $this->actingAs($this->itAdmin)
+            ->postJson("/it-admin/users/{$this->nurse->id}/credentials", [
+                'credential_type' => 'other',
+                'title' => 'Some custom thing',
+            ]);
+        $resp->assertCreated();
+    }
+
     public function test_pdf_upload_persisted_to_disk_and_path_recorded(): void
     {
         Storage::fake('local');

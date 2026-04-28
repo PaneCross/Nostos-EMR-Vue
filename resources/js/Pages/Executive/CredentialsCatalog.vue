@@ -50,12 +50,14 @@ const errorMessage = ref<string | null>(null)
 const editing = ref<Definition | null>(null)
 const isNew = ref(false)
 const cadenceInput = ref('90,30,14,0')
-const customCadenceDays = ref('')
 
 // Standard cadence steps with descriptions of who gets notified at each.
 // These mirror the layered-escalation logic in CredentialExpirationAlertJob :
-// 90/60/30 → user only, 14 → user + supervisor, 0/-N → user + supervisor + QA.
-const STANDARD_CADENCE_STEPS: { days: number, label: string, recipients: string }[] = [
+// 90/60/30 → user only, 14/7 → user + supervisor, 0/negative → user +
+// supervisor + QA Compliance.
+interface CadenceStep { days: number; label: string; recipients: string }
+
+const STANDARD_CADENCE_STEPS: CadenceStep[] = [
     { days: 120, label: '120 days before',  recipients: 'Email staff member only' },
     { days: 90,  label: '90 days before',   recipients: 'Email staff member only' },
     { days: 60,  label: '60 days before',   recipients: 'Email staff member only' },
@@ -68,6 +70,31 @@ const STANDARD_CADENCE_STEPS: { days: number, label: string, recipients: string 
     { days: -30, label: '30 days overdue',  recipients: 'Re-alert all parties + QA Compliance escalation' },
 ]
 
+// Modal-state for the "Add custom step" flow
+const showCustomStepModal = ref(false)
+const customStepDays = ref<number | ''>('')
+
+/** Auto-derive recipient tier from day value, matching the alert-job logic. */
+function recipientsForDays(days: number): string {
+    if (days < 0)  return 'Re-alert staff + supervisor + QA Compliance escalation'
+    if (days === 0) return 'Email staff + supervisor + QA Compliance alert (REQUIRED)'
+    if (days <= 14) return 'Email staff + supervisor'
+    return 'Email staff member only'
+}
+
+/** Custom steps : days currently in cadenceInput that aren't in the standard list. */
+const customCadenceSteps = computed<CadenceStep[]>(() => {
+    const standardDays = new Set(STANDARD_CADENCE_STEPS.map(s => s.days))
+    return parseCadence()
+        .filter(d => !standardDays.has(d))
+        .sort((a, b) => b - a)
+        .map(days => ({
+            days,
+            label: days < 0 ? `${Math.abs(days)} days overdue` : days === 0 ? 'Day of expiration' : `${days} days before`,
+            recipients: recipientsForDays(days),
+        }))
+})
+
 function isCadenceStepActive(days: number): boolean {
     return parseCadence().includes(days)
 }
@@ -79,17 +106,42 @@ function toggleCadenceStep(days: number) {
     cadenceInput.value = Array.from(current).sort((a, b) => b - a).join(',')
 }
 
-function addCustomCadenceStep() {
-    const n = parseInt(customCadenceDays.value, 10)
+function openCustomStepModal() {
+    customStepDays.value = ''
+    showCustomStepModal.value = true
+}
+
+function submitCustomStep() {
+    const n = typeof customStepDays.value === 'number' ? customStepDays.value : parseInt(String(customStepDays.value), 10)
     if (isNaN(n) || n < -30 || n > 365) {
-        customCadenceDays.value = ''
+        // Reject silently with toast-ish feedback ; could be improved
+        return
+    }
+    // Don't duplicate standard days
+    const standardDays = new Set(STANDARD_CADENCE_STEPS.map(s => s.days))
+    if (standardDays.has(n)) {
+        // It's already a standard step ; just enable it
+        const current = new Set(parseCadence())
+        current.add(n)
+        cadenceInput.value = Array.from(current).sort((a, b) => b - a).join(',')
+        showCustomStepModal.value = false
         return
     }
     const current = new Set(parseCadence())
     current.add(n)
     cadenceInput.value = Array.from(current).sort((a, b) => b - a).join(',')
-    customCadenceDays.value = ''
+    showCustomStepModal.value = false
 }
+
+const customStepPreview = computed(() => {
+    const n = typeof customStepDays.value === 'number' ? customStepDays.value : parseInt(String(customStepDays.value), 10)
+    if (isNaN(n)) return null
+    if (n < -30 || n > 365) return null
+    return {
+        label: n < 0 ? `${Math.abs(n)} days overdue` : n === 0 ? 'Day of expiration' : `${n} days before`,
+        recipients: recipientsForDays(n),
+    }
+})
 
 const sortedDefs = computed(() => [...definitions.value].sort((a, b) =>
     a.sort_order - b.sort_order || a.title.localeCompare(b.title)
@@ -319,11 +371,13 @@ onMounted(load)
                                 Cadence: {{ (d.reminder_cadence_days ?? []).join(', ') }} days before
                             </p>
                         </div>
-                        <div class="flex items-center gap-1 shrink-0">
-                            <button @click="startEdit(d)" class="text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 p-1.5" title="Edit">
-                                <PencilSquareIcon class="w-4 h-4" />
+                        <div class="flex items-center gap-2 shrink-0">
+                            <button @click="startEdit(d)"
+                                class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium shadow-sm">
+                                <PencilSquareIcon class="w-4 h-4" /> Edit
                             </button>
-                            <button v-if="!d.is_cms_mandatory" @click="remove(d)" class="text-rose-500 hover:text-rose-700 p-1.5" title="Delete">
+                            <button v-if="!d.is_cms_mandatory" @click="remove(d)"
+                                class="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-rose-300 dark:border-rose-700 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40" title="Delete">
                                 <TrashIcon class="w-4 h-4" />
                             </button>
                         </div>
@@ -402,8 +456,9 @@ onMounted(load)
                         <p class="text-xs text-gray-500 dark:text-slate-400 mt-0.5 mb-2">
                             Toggle each step on or off. Recipients escalate as the deadline approaches : staff only at the early steps, supervisor added at 14d, QA Compliance + dept alert at day-of and overdue.
                         </p>
-                        <div class="space-y-1.5 rounded-lg border border-gray-200 dark:border-slate-700 p-2 max-h-72 overflow-y-auto">
-                            <label v-for="step in STANDARD_CADENCE_STEPS" :key="step.days"
+                        <div class="space-y-1.5 rounded-lg border border-gray-200 dark:border-slate-700 p-2 max-h-80 overflow-y-auto">
+                            <!-- Standard steps -->
+                            <label v-for="step in STANDARD_CADENCE_STEPS" :key="`std-${step.days}`"
                                    class="flex items-start gap-3 px-2 py-1.5 rounded hover:bg-gray-50 dark:hover:bg-slate-800 cursor-pointer">
                                 <input type="checkbox" :checked="isCadenceStepActive(step.days)" @change="toggleCadenceStep(step.days)"
                                     class="rounded text-indigo-600 mt-0.5 shrink-0" />
@@ -415,18 +470,35 @@ onMounted(load)
                                     <p class="text-[11px] text-gray-500 dark:text-slate-400 mt-0.5">{{ step.recipients }}</p>
                                 </div>
                             </label>
+
+                            <!-- Custom steps : separator + rendered inline so they look identical to standards -->
+                            <div v-if="customCadenceSteps.length > 0" class="border-t border-gray-200 dark:border-slate-700 pt-1.5 mt-1.5">
+                                <p class="text-[10px] uppercase tracking-wide font-semibold text-indigo-600 dark:text-indigo-400 px-2 mb-1">Custom steps</p>
+                                <label v-for="step in customCadenceSteps" :key="`custom-${step.days}`"
+                                       class="flex items-start gap-3 px-2 py-1.5 rounded hover:bg-gray-50 dark:hover:bg-slate-800 cursor-pointer">
+                                    <input type="checkbox" :checked="isCadenceStepActive(step.days)" @change="toggleCadenceStep(step.days)"
+                                        class="rounded text-indigo-600 mt-0.5 shrink-0" />
+                                    <div class="flex-1 min-w-0">
+                                        <div class="flex items-center gap-2 flex-wrap">
+                                            <span class="text-xs font-semibold text-gray-900 dark:text-slate-100">{{ step.label }}</span>
+                                            <span class="px-1.5 py-0.5 rounded text-[10px] bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300">custom</span>
+                                            <span v-if="step.days <= 0" class="px-1.5 py-0.5 rounded text-[10px] bg-rose-100 dark:bg-rose-900/40 text-rose-700 dark:text-rose-300">{{ step.days === 0 ? 'expiry' : 'overdue' }}</span>
+                                        </div>
+                                        <p class="text-[11px] text-gray-500 dark:text-slate-400 mt-0.5">{{ step.recipients }}</p>
+                                    </div>
+                                    <button type="button" @click.stop="toggleCadenceStep(step.days)" class="text-rose-400 hover:text-rose-600 shrink-0" title="Remove this custom step">
+                                        <XMarkIcon class="w-4 h-4" />
+                                    </button>
+                                </label>
+                            </div>
                         </div>
-                        <div class="mt-2 flex items-center gap-2">
-                            <input v-model="customCadenceDays" type="number" min="-30" max="365" placeholder="custom days (e.g. 45)"
-                                class="flex-1 px-3 py-1.5 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-xs font-mono" />
-                            <button @click="addCustomCadenceStep" type="button"
-                                class="px-3 py-1.5 rounded-lg border border-indigo-300 dark:border-indigo-700 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 text-xs font-medium">
+                        <div class="mt-2">
+                            <button @click="openCustomStepModal" type="button"
+                                class="w-full px-3 py-2 rounded-lg border border-dashed border-indigo-300 dark:border-indigo-700 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 text-xs font-medium inline-flex items-center justify-center gap-1.5">
+                                <PlusIcon class="w-3.5 h-3.5" />
                                 Add custom step
                             </button>
                         </div>
-                        <p v-if="cadenceInput" class="text-[11px] text-gray-500 dark:text-slate-400 mt-2">
-                            Active : <code class="font-mono">{{ cadenceInput }}</code>
-                        </p>
                     </div>
                     <label class="block mb-4">
                         <span class="text-xs font-medium text-gray-700 dark:text-slate-300">CEU hours required per renewal cycle (0 = no CEU tracking)</span>
@@ -477,6 +549,42 @@ onMounted(load)
                     <div class="flex justify-end gap-2 pt-4 border-t border-gray-200 dark:border-slate-700">
                         <button @click="editing = null" class="px-4 py-2 rounded-lg text-sm text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800">Cancel</button>
                         <button @click="save" class="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium">Save</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Custom cadence step modal (nested inside catalog modal) -->
+            <div v-if="showCustomStepModal" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" @click.self="showCustomStepModal = false">
+                <div class="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-700 max-w-md w-full p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-base font-bold text-gray-900 dark:text-slate-100">Add custom cadence step</h3>
+                        <button @click="showCustomStepModal = false" class="text-gray-400 hover:text-gray-600 dark:hover:text-slate-200"><XMarkIcon class="w-5 h-5" /></button>
+                    </div>
+                    <p class="text-xs text-gray-500 dark:text-slate-400 mb-3">
+                        Use this for non-standard cycles (e.g. a state-specific 45-day pre-expiry window). Positive = before expiration ; 0 = day of ; negative = days overdue.
+                    </p>
+                    <label class="block">
+                        <span class="text-xs font-medium text-gray-700 dark:text-slate-300">Days relative to expiration (-30 to 365)</span>
+                        <input v-model.number="customStepDays" type="number" min="-30" max="365" placeholder="e.g. 45"
+                            class="w-full mt-1 px-3 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm font-mono" autofocus />
+                    </label>
+
+                    <div v-if="customStepPreview" class="mt-3 rounded-lg border border-indigo-200 dark:border-indigo-900/40 bg-indigo-50 dark:bg-indigo-950/30 p-3">
+                        <p class="text-xs font-semibold text-indigo-900 dark:text-indigo-200">{{ customStepPreview.label }}</p>
+                        <p class="text-[11px] text-indigo-700 dark:text-indigo-300 mt-0.5">
+                            <strong>Recipients:</strong> {{ customStepPreview.recipients }}
+                        </p>
+                        <p class="text-[10px] text-indigo-600 dark:text-indigo-400 mt-1.5 italic">
+                            Recipients are auto-derived from the day value to match the layered escalation rules. Will be added to the cadence list and pre-checked.
+                        </p>
+                    </div>
+                    <div v-else-if="customStepDays !== ''" class="mt-3 text-xs text-rose-600 dark:text-rose-400">
+                        Value must be between -30 and 365.
+                    </div>
+
+                    <div class="flex justify-end gap-2 mt-5">
+                        <button @click="showCustomStepModal = false" class="px-4 py-2 rounded-lg text-sm text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800">Cancel</button>
+                        <button @click="submitCustomStep" :disabled="!customStepPreview" class="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed">Add step</button>
                     </div>
                 </div>
             </div>
