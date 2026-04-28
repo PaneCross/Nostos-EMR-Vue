@@ -971,6 +971,13 @@ function handleGlobalKey(e: KeyboardEvent) {
                                 <BellIcon class="w-4 h-4 shrink-0 text-slate-400 dark:text-slate-500" aria-hidden="true" />
                                 Notification Preferences
                             </button>
+                            <button
+                                class="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors text-left"
+                                @click="showUserMenu = false; navigate('/my-credentials')"
+                            >
+                                <IdentificationIcon class="w-4 h-4 shrink-0 text-slate-400 dark:text-slate-500" aria-hidden="true" />
+                                My Credentials
+                            </button>
                             <div class="border-t border-slate-100 dark:border-slate-700">
                                 <button
                                     class="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors text-left"

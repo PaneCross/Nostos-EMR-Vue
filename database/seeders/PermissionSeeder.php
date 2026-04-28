@@ -102,6 +102,8 @@ class PermissionSeeder extends Seeder
         'executive_overview'       => 'Executive Overview',
         // Phase SS — Org Settings (notification + workflow preferences)
         'org_settings'            => 'Org Settings',
+        // Credentials V1 — org-wide credential coverage dashboard
+        'credentials_dashboard'   => 'Credentials Dashboard',
         'tenant_management'        => 'Tenant Management',
     ];
 
@@ -188,6 +190,8 @@ class PermissionSeeder extends Seeder
         $qaBase['qapi_projects']    = $full();
         $qaBase['level_ii_reporting'] = $full();
         $qaBase['cms_reconciliation'] = $full();
+        // Credentials V1 : QA owns the credential coverage compliance view
+        $qaBase['credentials_dashboard'] = $full();
 
         // ─── Finance — billing CRUD, enrollment/participants read ─────────────
         $financeBase = [];
@@ -464,6 +468,7 @@ class PermissionSeeder extends Seeder
         }
         // Executives also get read access to the executive module itself
         $executiveBase['executive_overview'] = $read();
+        $executiveBase['credentials_dashboard'] = $full();
         // Phase SS — Org Settings is the executive's own write surface for
         // notification + workflow preferences. Full CRUD here (the only place
         // they get write access) so they can flip toggles and save.
@@ -479,6 +484,7 @@ class PermissionSeeder extends Seeder
         $superAdminDeptBase['tenant_management'] = $full();
         $superAdminDeptBase['executive_overview'] = $full();
         $superAdminDeptBase['org_settings']     = $full();
+        $superAdminDeptBase['credentials_dashboard'] = $full();
 
         // ─── Assemble final matrix — admin always gets full, standard gets base
         // (Admin within a dept can do everything their dept has access to)

@@ -296,9 +296,11 @@ class PermissionService
                 'label' => 'Executive',
                 'icon'  => 'chart',
                 'items' => [
-                    ['label' => 'Executive Overview', 'module' => 'executive_overview', 'href' => '/dashboard/executive'],
+                    ['label' => 'Executive Overview',     'module' => 'executive_overview',     'href' => '/dashboard/executive'],
                     // Phase SS : org-wide notification + workflow preferences
-                    ['label' => 'Org Settings',      'module' => 'org_settings',      'href' => '/executive/org-settings'],
+                    ['label' => 'Org Settings',           'module' => 'org_settings',           'href' => '/executive/org-settings'],
+                    // Credentials V1 : org-wide credential coverage matrix
+                    ['label' => 'Credentials Dashboard',  'module' => 'credentials_dashboard',  'href' => '/executive/credentials-dashboard'],
                 ],
             ],
             // ── Phase 10B: Nostos Super Admin ──────────────────────────────────
