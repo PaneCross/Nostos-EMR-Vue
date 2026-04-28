@@ -74,6 +74,8 @@ class StaffCredentialController extends Controller
                 'cms_status'       => $c->cms_status,
                 'verification_source' => $c->verification_source,
                 'verified_at'      => $c->verified_at?->toIso8601String(),
+                'replaced_by_credential_id' => $c->replaced_by_credential_id,
+                'is_superseded'    => $c->replaced_by_credential_id !== null,
                 // V2: driver-specific fields (only meaningful for type=driver_record)
                 'dot_medical_card_expires_at' => $c->dot_medical_card_expires_at?->toDateString(),
                 'mvr_check_date'              => $c->mvr_check_date?->toDateString(),
@@ -357,7 +359,19 @@ class StaffCredentialController extends Controller
     {
         $this->gate($request);
         abort_if($credential->tenant_id !== $request->user()->tenant_id, 403);
+
+        $old = $credential->toArray();
         $credential->delete();
+
+        AuditLog::record(
+            action: 'staff_credential.deleted',
+            resourceType: 'StaffCredential',
+            resourceId: $credential->id,
+            tenantId: $credential->tenant_id,
+            userId: $request->user()->id,
+            oldValues: $old,
+        );
+
         return response()->json(['ok' => true]);
     }
 
@@ -385,6 +399,15 @@ class StaffCredentialController extends Controller
             'verified_by_user_id' => $request->user()->id,
         ]));
 
+        AuditLog::record(
+            action: 'staff_training.created',
+            resourceType: 'StaffTrainingRecord',
+            resourceId: $r->id,
+            tenantId: $user->tenant_id,
+            userId: $request->user()->id,
+            newValues: $r->toArray(),
+        );
+
         return response()->json($r, 201);
     }
 
@@ -392,7 +415,19 @@ class StaffCredentialController extends Controller
     {
         $this->gate($request);
         abort_if($record->tenant_id !== $request->user()->tenant_id, 403);
+
+        $old = $record->toArray();
         $record->delete();
+
+        AuditLog::record(
+            action: 'staff_training.deleted',
+            resourceType: 'StaffTrainingRecord',
+            resourceId: $record->id,
+            tenantId: $record->tenant_id,
+            userId: $request->user()->id,
+            oldValues: $old,
+        );
+
         return response()->json(['ok' => true]);
     }
 }

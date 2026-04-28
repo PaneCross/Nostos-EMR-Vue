@@ -87,16 +87,19 @@ class WeeklyCredentialDigestJob implements ShouldQueue
 
     private function buildDigest(int $tenantId, CredentialDefinitionService $defService): array
     {
-        // Expiring within 30 days (active, not yet expired)
+        // Expiring within 30 days (active, not yet expired). Filter to
+        // tip-of-chain rows so superseded historical entries don't double-count.
         $expiring30d = StaffCredential::forTenant($tenantId)
             ->whereNull('deleted_at')
+            ->whereNull('replaced_by_credential_id')
             ->expiringWithin(30)
             ->where('cms_status', 'active')
             ->count();
 
-        // Currently overdue (expired but still on the books, status=active)
+        // Currently overdue (expired but still on the books, status=active).
         $overdue = StaffCredential::forTenant($tenantId)
             ->whereNull('deleted_at')
+            ->whereNull('replaced_by_credential_id')
             ->expired()
             ->where('cms_status', 'active')
             ->count();

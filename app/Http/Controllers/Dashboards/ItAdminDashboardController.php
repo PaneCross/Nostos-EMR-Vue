@@ -269,6 +269,7 @@ class ItAdminDashboardController extends Controller
 
         $credentials = \App\Models\StaffCredential::forTenant($tenantId)
             ->whereNotNull('expires_at')
+            ->whereNull('replaced_by_credential_id')
             ->where('expires_at', '<=', $cutoff)
             ->with('user:id,first_name,last_name,department,tenant_id')
             ->orderBy('expires_at')

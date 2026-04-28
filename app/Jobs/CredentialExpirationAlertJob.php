@@ -55,8 +55,13 @@ class CredentialExpirationAlertJob implements ShouldQueue
     ): void {
         $prefService = $prefService ?? app(NotificationPreferenceService::class);
 
+        // Filter to "tip of chain" rows : a credential that's been replaced by
+        // a newer pending/active row (replaced_by_credential_id set) is audit
+        // history only and must not generate fresh reminders. Without this,
+        // users get spammed about credentials they already renewed.
         $credentials = StaffCredential::whereNotNull('expires_at')
             ->whereNull('deleted_at')
+            ->whereNull('replaced_by_credential_id')
             ->with(['user', 'definition', 'user.supervisor'])
             ->get();
 

@@ -48,6 +48,7 @@ class MyCredentialsController extends Controller
                 'cms_status'      => $c->cms_status,
                 'has_document'    => (bool) $c->document_path,
                 'document_filename' => $c->document_filename,
+                'is_superseded'   => $c->replaced_by_credential_id !== null,
             ]);
 
         $defService = app(CredentialDefinitionService::class);
@@ -77,6 +78,21 @@ class MyCredentialsController extends Controller
         abort_unless($user && $credential->user_id === $user->id, 403,
             'You can only upload renewals to your own credentials.');
         abort_if($credential->tenant_id !== $user->tenant_id, 403);
+
+        // Reject renewal of an already-superseded row : the user should renew
+        // the tip-of-chain row, not a historical entry. Likewise reject if the
+        // existing row is already pending (admin hasn't verified the prior
+        // renewal yet) so we don't stack pending rows.
+        if ($credential->replaced_by_credential_id !== null) {
+            return response()->json([
+                'message' => 'This credential has already been replaced by a newer record. Renew the current version instead.',
+            ], 422);
+        }
+        if ($credential->cms_status === 'pending') {
+            return response()->json([
+                'message' => 'A renewal for this credential is already pending IT Admin verification. You will be notified once it is verified.',
+            ], 422);
+        }
 
         $v = $request->validate([
             'issued_at'  => ['nullable', 'date'],

@@ -54,6 +54,8 @@ interface Credential {
     vehicle_class_endorsements?: string | null
     ceu_hours_logged?: number
     ceu_hours_required?: number
+    replaced_by_credential_id?: number | null
+    is_superseded?: boolean
 }
 interface ApplicableDefinition {
     id: number
@@ -155,6 +157,25 @@ function onDefinitionChange() {
 const pickedDefinition = computed(() => {
     const id = Number(credForm.value.credential_definition_id)
     return id ? props.applicableDefinitions?.find(d => d.id === id) ?? null : null
+})
+
+// Toggle to show all applicable definitions (default = missing-only). Audit
+// finding A3 : the picker used to show every applicable def, which let admins
+// accidentally double-add a credential that already exists. Now we hide ones
+// the user already holds unless they explicitly opt in (legitimate cases :
+// multi-state license, replacement after lost cert).
+const showAllApplicable = ref(false)
+const heldDefinitionIds = computed(() => {
+    return new Set(
+        props.credentials
+            .filter(c => !!c.credential_definition_id && c.cms_status !== 'expired')
+            .map(c => c.credential_definition_id as number)
+    )
+})
+const visibleDefinitionsForPicker = computed(() => {
+    if (!props.applicableDefinitions) return []
+    if (showAllApplicable.value) return props.applicableDefinitions
+    return props.applicableDefinitions.filter(d => !heldDefinitionIds.value.has(d.id))
 })
 
 function buildFormData(form: any): FormData {
@@ -321,8 +342,16 @@ const STATUS_CLASSES: Record<string, string> = {
 }
 
 const expiringCount = computed(() =>
-    props.credentials.filter(c => ['expired', 'due_today', 'due_14', 'due_30', 'due_60'].includes(c.status)).length
+    props.credentials.filter(c => !c.is_superseded && ['expired', 'due_today', 'due_14', 'due_30', 'due_60'].includes(c.status)).length
 )
+
+// Audit-history toggle : superseded rows are kept as a paper trail but hidden
+// by default so the active list is clear. CMS auditors can toggle them on.
+const showAuditHistory = ref(false)
+const visibleCredentials = computed(() =>
+    props.credentials.filter(c => showAuditHistory.value || !c.is_superseded)
+)
+const supersededCount = computed(() => props.credentials.filter(c => c.is_superseded).length)
 </script>
 
 <template>
@@ -405,14 +434,23 @@ const expiringCount = computed(() =>
                 <div v-if="showCredForm" class="px-5 py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/30 space-y-3">
                     <!-- Definition picker (prefills type+title from catalog) -->
                     <div v-if="(applicableDefinitions?.length ?? 0) > 0">
-                        <label class="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">Pick from catalog (recommended)</label>
+                        <div class="flex items-center justify-between mb-1">
+                            <label class="block text-xs font-medium text-slate-700 dark:text-slate-300">Pick from catalog (recommended)</label>
+                            <label class="text-xs text-slate-500 dark:text-slate-400 inline-flex items-center gap-1.5">
+                                <input type="checkbox" v-model="showAllApplicable" class="rounded text-indigo-600" />
+                                Show held credentials too
+                            </label>
+                        </div>
                         <select v-model="credForm.credential_definition_id" @change="onDefinitionChange"
                             class="w-full text-sm rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-700 px-3 py-2">
                             <option value="">Custom (free-form, not linked to catalog)</option>
-                            <option v-for="d in applicableDefinitions" :key="d.id" :value="d.id">
-                                {{ d.title }}{{ d.is_cms_mandatory ? ' [CMS-mandatory]' : '' }}{{ d.requires_psv ? ' [PSV]' : '' }}{{ d.default_doc_required ? ' [Doc required]' : '' }}
+                            <option v-for="d in visibleDefinitionsForPicker" :key="d.id" :value="d.id">
+                                {{ d.title }}{{ d.is_cms_mandatory ? ' [CMS-mandatory]' : '' }}{{ d.requires_psv ? ' [PSV]' : '' }}{{ d.default_doc_required ? ' [Doc required]' : '' }}{{ heldDefinitionIds.has(d.id) ? ' [already held]' : '' }}
                             </option>
                         </select>
+                        <p v-if="!showAllApplicable && (applicableDefinitions?.length ?? 0) > visibleDefinitionsForPicker.length" class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                            Hiding {{ (applicableDefinitions?.length ?? 0) - visibleDefinitionsForPicker.length }} credential(s) already on file. Toggle "Show held credentials too" to add another (e.g. multi-state license).
+                        </p>
                     </div>
 
                     <!-- Constraint banner : surfaces doc_required + PSV requirements early -->
@@ -518,8 +556,17 @@ const expiringCount = computed(() =>
                     </div>
                 </div>
 
+                <!-- Audit history toggle -->
+                <div v-if="supersededCount > 0" class="px-5 py-2 border-b border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-900/30 text-xs text-slate-600 dark:text-slate-400 flex items-center justify-between">
+                    <span>{{ supersededCount }} superseded credential record(s) hidden (preserved as audit history).</span>
+                    <label class="inline-flex items-center gap-1.5 cursor-pointer">
+                        <input type="checkbox" v-model="showAuditHistory" class="rounded text-indigo-600" />
+                        <span>Show audit history</span>
+                    </label>
+                </div>
+
                 <!-- Credentials table -->
-                <div v-if="credentials.length === 0" class="py-10 text-center text-sm text-slate-400">
+                <div v-if="visibleCredentials.length === 0" class="py-10 text-center text-sm text-slate-400">
                     No credentials on file.
                 </div>
                 <table v-else class="w-full text-sm">
@@ -535,9 +582,12 @@ const expiringCount = computed(() =>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100 dark:divide-slate-700">
-                        <tr v-for="c in credentials" :key="c.id">
+                        <tr v-for="c in visibleCredentials" :key="c.id" :class="c.is_superseded ? 'opacity-50 italic' : ''">
                             <td class="px-5 py-3 text-slate-700 dark:text-slate-200">{{ c.type_label }}</td>
-                            <td class="px-5 py-3 font-medium text-slate-800 dark:text-slate-100">{{ c.title }}</td>
+                            <td class="px-5 py-3 font-medium text-slate-800 dark:text-slate-100">
+                                {{ c.title }}
+                                <span v-if="c.is_superseded" class="ml-1.5 inline-block px-1.5 py-0.5 rounded text-[10px] bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 not-italic">Replaced ↗</span>
+                            </td>
                             <td class="px-5 py-3 text-slate-500 dark:text-slate-400 text-xs">
                                 <template v-if="c.license_state || c.license_number">
                                     {{ c.license_state ?? '' }} {{ c.license_number ?? '' }}

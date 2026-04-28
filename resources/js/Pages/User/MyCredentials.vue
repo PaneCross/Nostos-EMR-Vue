@@ -9,7 +9,7 @@
 // next to Notification Preferences.
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { Head, router } from '@inertiajs/vue3'
 import AppShell from '@/Layouts/AppShell.vue'
 import axios from 'axios'
@@ -33,6 +33,7 @@ interface Credential {
     cms_status: string
     has_document: boolean
     document_filename: string | null
+    is_superseded?: boolean
 }
 interface MissingItem {
     id: number
@@ -41,11 +42,17 @@ interface MissingItem {
     credential_type_label: string
 }
 
-defineProps<{
+const props = defineProps<{
     credentials: Credential[]
     missing: MissingItem[]
     me: { id: number, first_name: string, last_name: string, department: string, job_title: string | null }
 }>()
+
+const showAuditHistory = ref(false)
+const visibleCredentials = computed(() =>
+    props.credentials.filter(c => showAuditHistory.value || !c.is_superseded)
+)
+const supersededCount = computed(() => props.credentials.filter(c => c.is_superseded).length)
 
 const renewing = ref<Credential | null>(null)
 const renewalForm = ref({ issued_at: '', expires_at: '' })
@@ -163,12 +170,16 @@ async function submitRenewal() {
 
             <!-- Credentials table -->
             <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
-                <div class="px-5 py-3 border-b border-slate-200 dark:border-slate-700">
+                <div class="px-5 py-3 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
                     <h2 class="text-sm font-semibold text-slate-700 dark:text-slate-200 uppercase tracking-wide">
-                        On file ({{ credentials.length }})
+                        On file ({{ visibleCredentials.length }})
                     </h2>
+                    <label v-if="supersededCount > 0" class="inline-flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 cursor-pointer">
+                        <input type="checkbox" v-model="showAuditHistory" class="rounded text-indigo-600" />
+                        Show audit history ({{ supersededCount }})
+                    </label>
                 </div>
-                <div v-if="credentials.length === 0" class="py-10 text-center text-sm text-slate-400">
+                <div v-if="visibleCredentials.length === 0" class="py-10 text-center text-sm text-slate-400">
                     No credentials on file yet.
                 </div>
                 <table v-else class="w-full text-sm">
@@ -182,8 +193,11 @@ async function submitRenewal() {
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100 dark:divide-slate-700">
-                        <tr v-for="c in credentials" :key="c.id">
-                            <td class="px-5 py-3 font-medium text-slate-800 dark:text-slate-100">{{ c.title }}</td>
+                        <tr v-for="c in visibleCredentials" :key="c.id" :class="c.is_superseded ? 'opacity-50 italic' : ''">
+                            <td class="px-5 py-3 font-medium text-slate-800 dark:text-slate-100">
+                                {{ c.title }}
+                                <span v-if="c.is_superseded" class="ml-1.5 inline-block px-1.5 py-0.5 rounded text-[10px] bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 not-italic">Replaced ↗</span>
+                            </td>
                             <td class="px-5 py-3 text-slate-500 dark:text-slate-400 text-xs">{{ c.type_label }}</td>
                             <td class="px-5 py-3 text-slate-700 dark:text-slate-200 text-xs">
                                 {{ c.expires_at ?? '-' }}
@@ -201,9 +215,14 @@ async function submitRenewal() {
                                    class="text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 inline-block mr-2" title="View doc">
                                     <DocumentArrowDownIcon class="w-4 h-4" />
                                 </a>
-                                <button @click="startRenewal(c)" class="inline-flex items-center gap-1 text-xs text-indigo-600 dark:text-indigo-400 hover:underline">
+                                <button v-if="!c.is_superseded && c.cms_status !== 'pending'"
+                                    @click="startRenewal(c)"
+                                    class="inline-flex items-center gap-1 text-xs text-indigo-600 dark:text-indigo-400 hover:underline">
                                     <DocumentArrowUpIcon class="w-3.5 h-3.5" /> Upload renewal
                                 </button>
+                                <span v-else-if="c.cms_status === 'pending'" class="text-xs text-amber-600 dark:text-amber-400">
+                                    Awaiting verification
+                                </span>
                             </td>
                         </tr>
                     </tbody>

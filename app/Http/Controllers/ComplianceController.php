@@ -201,7 +201,7 @@ class ComplianceController extends Controller
         $tenantId = $request->user()->tenant_id;
 
         $credentials = StaffCredential::forTenant($tenantId)
-            ->with('user:id,first_name,last_name,department,role,is_active')
+            ->with(['user:id,first_name,last_name,department,role,job_title,is_active', 'definition:id,code,is_cms_mandatory,requires_psv,ceu_hours_required'])
             ->orderBy('expires_at')
             ->get()
             ->map(function (StaffCredential $c) {
@@ -212,17 +212,37 @@ class ComplianceController extends Controller
                         'name'       => $c->user->first_name . ' ' . $c->user->last_name,
                         'department' => $c->user->department,
                         'role'       => $c->user->role,
+                        'job_title'  => $c->user->job_title,
                         'is_active'  => (bool) $c->user->is_active,
                     ] : null,
-                    'credential_type' => $c->credential_type,
-                    'title'           => $c->title,
-                    'license_state'   => $c->license_state,
-                    'license_number'  => $c->license_number,
-                    'issued_at'       => $c->issued_at?->toDateString(),
-                    'expires_at'      => $c->expires_at?->toDateString(),
-                    'days_remaining'  => $c->daysUntilExpiration(),
-                    'status'          => $c->status(),
-                    'verified_at'     => $c->verified_at?->toIso8601String(),
+                    'credential_type'        => $c->credential_type,
+                    'credential_definition'  => $c->definition ? [
+                        'id'                  => $c->definition->id,
+                        'code'                => $c->definition->code,
+                        'is_cms_mandatory'    => (bool) $c->definition->is_cms_mandatory,
+                        'requires_psv'        => (bool) $c->definition->requires_psv,
+                        'ceu_hours_required'  => (int) $c->definition->ceu_hours_required,
+                    ] : null,
+                    'title'              => $c->title,
+                    'license_state'      => $c->license_state,
+                    'license_number'     => $c->license_number,
+                    'issued_at'          => $c->issued_at?->toDateString(),
+                    'expires_at'         => $c->expires_at?->toDateString(),
+                    'days_remaining'     => $c->daysUntilExpiration(),
+                    'status'             => $c->status(),
+                    'cms_status'         => $c->cms_status,
+                    'verified_at'        => $c->verified_at?->toIso8601String(),
+                    'verification_source'=> $c->verification_source,
+                    // Driver-specific (FMCSA)
+                    'dot_medical_card_expires_at' => $c->dot_medical_card_expires_at?->toDateString(),
+                    'mvr_check_date'              => $c->mvr_check_date?->toDateString(),
+                    'vehicle_class_endorsements'  => $c->vehicle_class_endorsements,
+                    // CEU progress
+                    'ceu_hours_logged'   => $c->ceuHoursLogged(),
+                    // Renewal-chain pointer
+                    'replaced_by_credential_id' => $c->replaced_by_credential_id,
+                    'is_current_version'        => $c->replaced_by_credential_id === null,
+                    'has_document'              => (bool) $c->document_path,
                 ];
             });
 
