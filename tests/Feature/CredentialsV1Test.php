@@ -75,8 +75,10 @@ class CredentialsV1Test extends TestCase
     public function test_seeders_create_baseline_definitions(): void
     {
         $defs = CredentialDefinition::where('tenant_id', $this->tenant->id)->get();
-        $this->assertCount(8, $defs); // 8 CMS-mandatory rows
-        $this->assertEquals(8, $defs->where('is_cms_mandatory', true)->count());
+        // 12 CMS-mandatory rows : 8 original federal mandates + 4 added in
+        // Phase 3 (orientation, OIG/SAM, competency eval, supervising-physician)
+        $this->assertCount(12, $defs);
+        $this->assertEquals(12, $defs->where('is_cms_mandatory', true)->count());
     }
 
     public function test_executive_can_create_custom_definition(): void
@@ -158,11 +160,11 @@ class CredentialsV1Test extends TestCase
     public function test_missing_definitions_detected_when_no_credential_held(): void
     {
         $svc = app(CredentialDefinitionService::class);
-        // Nurse has no credentials, all 8 CMS mandates apply (HIPAA, fire, infection,
-        // abuse, restraint, TB, background, BLS — all target either all_workforce or
-        // all_clinical including primary_care).
+        // Nurse (job_title=rn, dept=primary_care) matches 11 of the 12 CMS
+        // mandates (all except supervising_physician_agreement which targets
+        // job_title=np/pa only).
         $missing = $svc->missingForUser($this->nurse);
-        $this->assertCount(8, $missing);
+        $this->assertCount(11, $missing);
     }
 
     public function test_missing_definitions_decrease_when_credential_added(): void
@@ -181,7 +183,7 @@ class CredentialsV1Test extends TestCase
 
         $svc = app(CredentialDefinitionService::class);
         $missing = $svc->missingForUser($this->nurse);
-        $this->assertCount(7, $missing);
+        $this->assertCount(10, $missing);
         $this->assertFalse($missing->contains('id', $hipaa->id));
     }
 

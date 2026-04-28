@@ -96,6 +96,10 @@ class StaffCredential extends Model
         'verified_at'                 => 'datetime',
         'dot_medical_card_expires_at' => 'date',
         'mvr_check_date'              => 'date',
+        // PII at rest. DEA numbers in particular uniquely identify prescribers
+        // and most EHRs encrypt them. State license numbers are less sensitive
+        // but encrypting all uniformly is simpler than per-type rules.
+        'license_number'              => 'encrypted',
     ];
 
     // ── Relationships ─────────────────────────────────────────────────────────

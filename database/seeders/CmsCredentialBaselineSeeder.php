@@ -122,6 +122,61 @@ class CmsCredentialBaselineSeeder extends Seeder
             'sort_order' => 80,
             'targets' => [['kind' => 'all_clinical', 'value' => null]],
         ],
+        // C4 : New-hire 8-hour PACE orientation per §460.71(b)(2). One-time
+        // event that must be completed within 30 days of hire. Modeled with
+        // far-future expires_at conceptually (lifetime credential).
+        [
+            'code'  => 'pace_orientation_8h',
+            'title' => 'PACE Orientation (8-hour, within 30 days of hire)',
+            'credential_type' => 'training',
+            'description' => '42 CFR §460.71(b)(2). 8-hour PACE-specific orientation completed within the first 30 days of employment. One-time event ; document upload required.',
+            'requires_psv' => false,
+            'default_doc_required' => true,
+            'reminder_cadence_days' => [30, 14, 0],
+            'sort_order' => 5,
+            'targets' => [['kind' => 'all_workforce', 'value' => null]],
+        ],
+        // C3 : OIG LEIE / GSA SAM exclusion check. CMS COP requires monthly
+        // verification that no staff are on the federal exclusion lists.
+        [
+            'code'  => 'oig_sam_exclusion_check',
+            'title' => 'OIG LEIE + GSA SAM Exclusion Check',
+            'credential_type' => 'background_check',
+            'description' => 'CMS Conditions of Participation : verify staff are not on the OIG List of Excluded Individuals/Entities (LEIE) or GSA SAM excluded-parties list. Run monthly ; document upload required (screenshot of the negative search result).',
+            'requires_psv' => true,
+            'default_doc_required' => true,
+            'reminder_cadence_days' => [7, 0, -7],
+            'sort_order' => 75,
+            'targets' => [['kind' => 'all_workforce', 'value' => null]],
+        ],
+        // C1 : Annual competency evaluation per §460.71(b)(1). Each clinical
+        // role gets an annual eval signed by their supervisor.
+        [
+            'code'  => 'annual_competency_evaluation',
+            'title' => 'Annual Competency Evaluation',
+            'credential_type' => 'competency',
+            'description' => '42 CFR §460.71(b)(1). Supervisor-signed annual competency evaluation appropriate to the staff member\'s role. Document upload required (signed eval form / observed-skills checklist).',
+            'requires_psv' => false,
+            'default_doc_required' => true,
+            'reminder_cadence_days' => [60, 30, 14, 0],
+            'sort_order' => 90,
+            'targets' => [['kind' => 'all_clinical', 'value' => null]],
+        ],
+        // C2 : Supervising-physician agreement for NPs + PAs per §460.103.
+        [
+            'code'  => 'supervising_physician_agreement',
+            'title' => 'Supervising Physician Agreement (NP / PA)',
+            'credential_type' => 'other',
+            'description' => '42 CFR §460.103. Written supervising-physician agreement on file. Required for every NP and PA per state scope-of-practice law. Annual review.',
+            'requires_psv' => false,
+            'default_doc_required' => true,
+            'reminder_cadence_days' => [90, 30, 14, 0],
+            'sort_order' => 95,
+            'targets' => [
+                ['kind' => 'job_title', 'value' => 'np'],
+                ['kind' => 'job_title', 'value' => 'pa'],
+            ],
+        ],
     ];
 
     /** Departments considered "all clinical" for restraint + BLS targeting. */
