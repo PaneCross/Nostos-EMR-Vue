@@ -277,7 +277,7 @@ class CredentialsV1Test extends TestCase
         $resp->assertDontSee('Other Person License');
     }
 
-    public function test_my_credentials_renewal_upload_sets_pending_status(): void
+    public function test_my_credentials_renewal_creates_new_versioned_row(): void
     {
         Storage::fake('local');
 
@@ -297,10 +297,19 @@ class CredentialsV1Test extends TestCase
             ]);
 
         $resp->assertSuccessful();
+
+        // V2 versioning : original row preserved as audit history with forward
+        // link to the new pending row. New row is the tip of the chain.
         $cred->refresh();
-        $this->assertEquals('self_attestation', $cred->verification_source);
-        $this->assertEquals('pending', $cred->cms_status);
-        $this->assertNull($cred->verified_at);
+        $this->assertNotNull($cred->replaced_by_credential_id, 'old credential should be marked as superseded');
+        $this->assertEquals('active', $cred->cms_status, 'old row keeps its prior status as audit record');
+
+        $newCred = StaffCredential::find($cred->replaced_by_credential_id);
+        $this->assertNotNull($newCred);
+        $this->assertEquals('pending', $newCred->cms_status);
+        $this->assertEquals('self_attestation', $newCred->verification_source);
+        $this->assertNull($newCred->verified_at);
+        $this->assertNull($newCred->replaced_by_credential_id, 'new row is the tip of the chain');
     }
 
     public function test_my_credentials_renewal_rejected_for_other_users_credential(): void

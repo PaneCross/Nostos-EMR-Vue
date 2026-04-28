@@ -56,6 +56,7 @@ class StaffCredentialController extends Controller
 
         $credentials = StaffCredential::forTenant($user->tenant_id)
             ->where('user_id', $user->id)
+            ->with('definition:id,ceu_hours_required')
             ->orderByRaw('expires_at IS NULL ASC, expires_at ASC')
             ->get()
             ->map(fn (StaffCredential $c) => [
@@ -77,8 +78,9 @@ class StaffCredentialController extends Controller
                 'dot_medical_card_expires_at' => $c->dot_medical_card_expires_at?->toDateString(),
                 'mvr_check_date'              => $c->mvr_check_date?->toDateString(),
                 'vehicle_class_endorsements'  => $c->vehicle_class_endorsements,
-                'ceu_hours_logged' => $c->ceuHoursLogged(),
-                'notes'            => $c->notes,
+                'ceu_hours_logged'   => $c->ceuHoursLogged(),
+                'ceu_hours_required' => (int) ($c->definition?->ceu_hours_required ?? 0),
+                'notes'              => $c->notes,
             ]);
 
         $training = StaffTrainingRecord::forTenant($user->tenant_id)
@@ -302,6 +304,10 @@ class StaffCredentialController extends Controller
             'category'       => ['required', Rule::in(StaffTrainingRecord::CATEGORIES)],
             'training_hours' => ['required', 'numeric', 'min:0', 'max:99'],
             'completed_at'   => ['required', 'date', 'before_or_equal:today'],
+            // V2 : optionally count this training toward a credential's CEU renewal cycle.
+            'credential_id'  => ['nullable', 'integer',
+                Rule::exists('emr_staff_credentials', 'id')
+                    ->where(fn ($q) => $q->where('tenant_id', $user->tenant_id)->where('user_id', $user->id))],
             'notes'          => ['nullable', 'string', 'max:4000'],
         ]);
 

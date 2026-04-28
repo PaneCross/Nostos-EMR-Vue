@@ -95,6 +95,7 @@ class CredentialDefinitionController extends Controller
                 'is_cms_mandatory'       => false,   // only seeder can mint mandatory rows
                 'default_doc_required'   => $v['default_doc_required'] ?? false,
                 'reminder_cadence_days'  => $v['reminder_cadence_days'] ?? CredentialDefinition::DEFAULT_CADENCE,
+                'ceu_hours_required'     => $v['ceu_hours_required'] ?? 0,
                 'is_active'              => $v['is_active'] ?? true,
                 'sort_order'             => $v['sort_order'] ?? 100,
             ]);
@@ -128,7 +129,7 @@ class CredentialDefinitionController extends Controller
 
             $patch = [];
             foreach (['title', 'description', 'requires_psv', 'default_doc_required',
-                      'reminder_cadence_days', 'is_active', 'sort_order'] as $field) {
+                      'reminder_cadence_days', 'ceu_hours_required', 'is_active', 'sort_order'] as $field) {
                 if (array_key_exists($field, $v)) $patch[$field] = $v[$field];
             }
 
@@ -267,6 +268,7 @@ class CredentialDefinitionController extends Controller
             'default_doc_required'   => ['nullable', 'boolean'],
             'reminder_cadence_days'  => ['nullable', 'array'],
             'reminder_cadence_days.*'=> ['integer', 'min:-30', 'max:365'],
+            'ceu_hours_required'     => ['nullable', 'integer', 'min:0', 'max:999'],
             'is_active'              => ['nullable', 'boolean'],
             'sort_order'             => ['nullable', 'integer', 'min:0', 'max:9999'],
             'targets'                => ['nullable', 'array'],
@@ -303,6 +305,7 @@ class CredentialDefinitionController extends Controller
             'is_cms_mandatory'       => $d->is_cms_mandatory,
             'default_doc_required'   => $d->default_doc_required,
             'reminder_cadence_days'  => $d->reminder_cadence_days,
+            'ceu_hours_required'     => (int) $d->ceu_hours_required,
             'is_active'              => $d->is_active,
             'sort_order'             => $d->sort_order,
             'targets'                => $d->targets->map(fn ($t) => [

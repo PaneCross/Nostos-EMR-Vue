@@ -81,14 +81,15 @@ class CredentialDefinitionService
         if ($required->isEmpty()) return collect();
 
         // A credential "covers" a definition if:
-        //  - it's linked to that definition_id, OR
-        //  - it shares the same credential_type + non-expired + status active
-        // For v1 we use definition_id linkage. (Free-form rows count as gaps.)
+        //  - it's linked to that definition_id, AND
+        //  - it's the tip of the chain (no replaced_by_credential_id : older
+        //    superseded versions are audit-history only), AND
+        //  - it's not expired AND status is active or pending
         $heldDefIds = StaffCredential::where('user_id', $user->id)
             ->whereNull('deleted_at')
             ->whereNotNull('credential_definition_id')
+            ->whereNull('replaced_by_credential_id')
             ->where(function ($q) {
-                // Treat as "held" if not expired AND not in invalid status
                 $q->where(function ($q2) {
                     $q2->whereNull('expires_at')
                        ->orWhere('expires_at', '>=', now()->toDateString());

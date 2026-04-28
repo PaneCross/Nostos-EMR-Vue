@@ -31,6 +31,7 @@ interface Definition {
     is_cms_mandatory: boolean
     default_doc_required: boolean
     reminder_cadence_days: number[] | null
+    ceu_hours_required: number
     is_active: boolean
     sort_order: number
     targets: Target[]
@@ -75,7 +76,8 @@ function startNew() {
         id: 0, site_id: null, code: '', title: '', credential_type: 'training',
         credential_type_label: '', description: null,
         requires_psv: false, is_cms_mandatory: false, default_doc_required: false,
-        reminder_cadence_days: [90, 30, 14, 0], is_active: true, sort_order: 100,
+        reminder_cadence_days: [90, 30, 14, 0], ceu_hours_required: 0,
+        is_active: true, sort_order: 100,
         targets: [], site_overrides: [],
     }
     cadenceInput.value = '90,30,14,0'
@@ -115,6 +117,7 @@ async function save() {
         requires_psv: editing.value.requires_psv,
         default_doc_required: editing.value.default_doc_required,
         reminder_cadence_days: parseCadence(),
+        ceu_hours_required: editing.value.ceu_hours_required ?? 0,
         is_active: editing.value.is_active,
         sort_order: editing.value.sort_order,
         targets: editing.value.targets.map(t => ({ kind: t.kind, value: t.value })),
@@ -358,6 +361,11 @@ onMounted(load)
                         <span class="text-xs font-medium text-gray-700 dark:text-slate-300">Reminder cadence (days before expiration, comma-separated)</span>
                         <input v-model="cadenceInput" placeholder="90,30,14,0" class="w-full mt-1 px-3 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm font-mono" />
                         <p class="text-xs text-gray-500 dark:text-slate-400 mt-1">Negative values = post-expiration follow-up. Example : <code>90,30,14,0,-7</code> sends reminders at 90/30/14 days out, day-of, then 7 days overdue.</p>
+                    </label>
+                    <label class="block mb-4">
+                        <span class="text-xs font-medium text-gray-700 dark:text-slate-300">CEU hours required per renewal cycle (0 = no CEU tracking)</span>
+                        <input v-model.number="editing.ceu_hours_required" type="number" min="0" max="999" class="w-full mt-1 px-3 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm" />
+                        <p class="text-xs text-gray-500 dark:text-slate-400 mt-1">When set, the credential row on a user's page shows CEU progress (sum of training records linked to it). Typical values: RN 30, MD 50, RD 75 over 5y, MSW 30-40.</p>
                     </label>
 
                     <!-- Targeting -->

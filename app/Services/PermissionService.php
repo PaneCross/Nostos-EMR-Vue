@@ -284,6 +284,8 @@ class PermissionService
                 'icon'  => 'settings',
                 'items' => [
                     ['label' => 'Users',                 'module' => 'user_management',    'href' => '/it-admin/users'],
+                    // Credentials V2 : bulk-import staff credentials from CSV
+                    ['label' => 'Bulk Import Credentials','module' => 'user_management',  'href' => '/it-admin/credentials/bulk-import'],
                     ['label' => 'Locations',             'module' => 'locations',          'href' => '/admin/locations'],
                     ['label' => 'System Settings',       'module' => 'system_settings',    'href' => '/admin/settings'],
                     // W4-2: HIPAA BAA tracking + SRA records + encryption status (BLOCKERs 01+03)

@@ -38,6 +38,7 @@ class CredentialDefinition extends Model
         'is_cms_mandatory',
         'default_doc_required',
         'reminder_cadence_days',
+        'ceu_hours_required',
         'is_active',
         'sort_order',
     ];
@@ -48,6 +49,7 @@ class CredentialDefinition extends Model
         'default_doc_required'   => 'boolean',
         'is_active'              => 'boolean',
         'reminder_cadence_days'  => 'array',
+        'ceu_hours_required'     => 'integer',
         'sort_order'             => 'integer',
     ];
 

@@ -89,6 +89,48 @@ async function openDrilldown(row: Row, dept: string, bucket: keyof Bucket) {
     }
 }
 
+async function exportPerUserCsv() {
+    // Per-user view : each row is a (user, credential) gap. Useful for HR / QA
+    // to drive remediation. Pulls drilldown data for every non-compliant cell.
+    const buckets: ('users_missing'|'users_expired'|'users_invalid'|'users_expiring_30d')[] = [
+        'users_missing','users_expired','users_invalid','users_expiring_30d'
+    ]
+    const lines = ['Credential,Department,Bucket,User,Job Title,Expires,Status,Days remaining']
+    for (const row of filteredRows.value) {
+        for (const dept of visibleDepts.value) {
+            const cell = row.cells[dept]
+            if (!cell || cell.users_required === 0) continue
+            for (const b of buckets) {
+                if ((cell as any)[b] === 0) continue
+                try {
+                    const { data } = await axios.get(`/executive/credentials-dashboard/drilldown/${row.definition_id}/${dept}/${b}`)
+                    for (const u of data.users) {
+                        lines.push([
+                            `"${row.title.replace(/"/g, '""')}"`,
+                            deptLabel(dept),
+                            b.replace('users_',''),
+                            `"${u.name}"`,
+                            u.job_title ?? '',
+                            u.expires_at ?? '',
+                            u.cms_status ?? '',
+                            u.days_remaining ?? '',
+                        ].join(','))
+                    }
+                } catch (e) {
+                    // continue on individual cell failures
+                }
+            }
+        }
+    }
+    const blob = new Blob([lines.join('\n')], { type: 'text/csv' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `credentials-gaps-${new Date().toISOString().slice(0,10)}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+}
+
 function exportCsv() {
     const headers = ['Credential', 'CMS-mandatory', ...visibleDepts.value.map(deptLabel), 'Required (total)', 'Compliant', 'Expiring 30d', 'Expired', 'Invalid', 'Missing']
     const lines = [headers.join(',')]
@@ -145,9 +187,14 @@ const bucketLabels: Record<string, string> = {
                         Org-wide compliance matrix. Click any cell to see the users behind it.
                     </p>
                 </div>
-                <button @click="exportCsv" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-slate-700 text-sm font-medium text-gray-700 dark:text-slate-200">
-                    <ArrowDownTrayIcon class="w-4 h-4" /> Export CSV
-                </button>
+                <div class="flex gap-2">
+                    <button @click="exportCsv" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-slate-700 text-sm font-medium text-gray-700 dark:text-slate-200">
+                        <ArrowDownTrayIcon class="w-4 h-4" /> Matrix CSV
+                    </button>
+                    <button @click="exportPerUserCsv" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-slate-700 text-sm font-medium text-gray-700 dark:text-slate-200" title="One row per (user, credential gap) - useful for HR remediation">
+                        <ArrowDownTrayIcon class="w-4 h-4" /> Per-user gaps CSV
+                    </button>
+                </div>
             </div>
 
             <OrgSettingsTabBar active="dashboard" />

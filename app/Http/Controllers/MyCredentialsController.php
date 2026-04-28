@@ -84,39 +84,56 @@ class MyCredentialsController extends Controller
             'document'   => ['required', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:10240'],
         ]);
 
-        // Save new doc, advance dates, set verification_source to self_attestation
-        // so admin knows to re-verify.
+        // V2 renewal versioning : create a NEW credential row instead of mutating
+        // the old one in place. Preserves the prior document as an audit-trail
+        // artifact (CMS auditors want the chain), and the old row's
+        // replaced_by_credential_id points forward to the new row. The "tip of
+        // the chain" (no replaced_by) is the user's current version.
+
         $ext = strtolower($v['document']->getClientOriginalExtension());
         $dir = "credentials/tenant_{$credential->tenant_id}/user_{$credential->user_id}";
-        $name = "cred_{$credential->id}_renewal_" . now()->format('YmdHis') . ".{$ext}";
+        $name = "cred_renewal_" . now()->format('YmdHis') . ".{$ext}";
         $path = $v['document']->storeAs($dir, $name, 'local');
 
-        $old = $credential->toArray();
-        $credential->update([
-            'document_path'       => $path,
-            'document_filename'   => $v['document']->getClientOriginalName(),
-            'issued_at'           => $v['issued_at'] ?? $credential->issued_at,
-            'expires_at'          => $v['expires_at'] ?? $credential->expires_at,
-            'verification_source' => 'self_attestation',
-            'cms_status'          => 'pending',  // admin must re-verify before going active
-            'verified_at'         => null,
-            'verified_by_user_id' => null,
+        $newCred = StaffCredential::create([
+            'tenant_id'                => $credential->tenant_id,
+            'user_id'                  => $credential->user_id,
+            'credential_definition_id' => $credential->credential_definition_id,
+            'credential_type'          => $credential->credential_type,
+            'title'                    => $credential->title,
+            'license_state'            => $credential->license_state,
+            'license_number'           => $credential->license_number,
+            'issued_at'                => $v['issued_at'] ?? $credential->issued_at,
+            'expires_at'               => $v['expires_at'] ?? $credential->expires_at,
+            'verification_source'      => 'self_attestation',
+            'cms_status'               => 'pending',
+            'document_path'            => $path,
+            'document_filename'        => $v['document']->getClientOriginalName(),
+            'dot_medical_card_expires_at' => $credential->dot_medical_card_expires_at,
+            'mvr_check_date'              => $credential->mvr_check_date,
+            'vehicle_class_endorsements'  => $credential->vehicle_class_endorsements,
+            'notes'                    => 'Self-attested renewal awaiting IT Admin verification.',
         ]);
+
+        // Mark the old row as superseded (forward link to new)
+        $credential->update(['replaced_by_credential_id' => $newCred->id]);
 
         AuditLog::record(
             action: 'staff_credential.renewal_uploaded',
             resourceType: 'StaffCredential',
-            resourceId: $credential->id,
+            resourceId: $newCred->id,
             tenantId: $credential->tenant_id,
             userId: $user->id,
-            oldValues: $old,
-            newValues: $credential->fresh()->toArray(),
+            newValues: [
+                'new_credential_id' => $newCred->id,
+                'replaces_credential_id' => $credential->id,
+            ],
         );
 
         return response()->json([
             'ok' => true,
-            'message' => 'Renewal uploaded. IT Admin will verify and mark active.',
-            'credential' => $credential->fresh(),
+            'message' => 'Renewal uploaded. The previous record is preserved as audit history. IT Admin will verify and mark the new entry active.',
+            'credential' => $newCred->fresh(),
         ]);
     }
 }

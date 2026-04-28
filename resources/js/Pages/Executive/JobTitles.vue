@@ -133,6 +133,7 @@ onMounted(loadTitles)
                 <div class="text-blue-900 dark:text-blue-100">
                     <p><strong>Tip:</strong> Job titles drive credential targeting. Example : the seeded "RN License" credential automatically applies to any user whose job title is set to <code class="text-xs">rn</code>.</p>
                     <p class="mt-1">Deactivating a title preserves existing user assignments but removes it from new-user dropdowns.</p>
+                    <p class="mt-1"><strong>Sort order</strong> is purely a display preference : lower number appears earlier in dropdowns and lists. It does not affect targeting, permissions, or any other business logic. Use it to group related titles together (e.g. all clinical roles at 10-19, all support roles at 50-59).</p>
                 </div>
             </div>
 

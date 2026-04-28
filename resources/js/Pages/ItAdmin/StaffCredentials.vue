@@ -53,6 +53,7 @@ interface Credential {
     mvr_check_date?: string | null
     vehicle_class_endorsements?: string | null
     ceu_hours_logged?: number
+    ceu_hours_required?: number
 }
 interface ApplicableDefinition {
     id: number
@@ -244,6 +245,7 @@ const trainingForm = ref({
     category: 'direct_care',
     training_hours: 1,
     completed_at: new Date().toISOString().slice(0, 10),
+    credential_id: '' as string | number,
     notes: '',
 })
 
@@ -253,9 +255,15 @@ function resetTraining() {
         category: 'direct_care',
         training_hours: 1,
         completed_at: new Date().toISOString().slice(0, 10),
+        credential_id: '',
         notes: '',
     }
 }
+
+// Credentials that have a CEU requirement : eligible "counts toward" targets.
+const ceuEligibleCreds = computed(() =>
+    props.credentials.filter(c => (c.ceu_hours_required ?? 0) > 0)
+)
 
 async function submitTraining() {
     if (!trainingForm.value.training_name.trim()) { alert('Training name is required'); return }
@@ -534,6 +542,13 @@ const expiringCount = computed(() =>
                                     <ExclamationTriangleIcon v-if="c.status === 'expired' || c.status === 'due_today'" class="w-3 h-3 mr-1" />
                                     {{ STATUS_LABELS[c.status] }}
                                 </span>
+                                <span v-if="(c.ceu_hours_required ?? 0) > 0"
+                                      class="block mt-1 text-xs"
+                                      :class="(c.ceu_hours_logged ?? 0) >= (c.ceu_hours_required ?? 0)
+                                          ? 'text-emerald-600 dark:text-emerald-400'
+                                          : 'text-amber-600 dark:text-amber-400'">
+                                    {{ c.ceu_hours_logged ?? 0 }} / {{ c.ceu_hours_required }} CEU hrs
+                                </span>
                             </td>
                             <td class="px-5 py-3 text-right whitespace-nowrap">
                                 <a v-if="c.document_url" :href="c.document_url" target="_blank"
@@ -669,6 +684,16 @@ const expiringCount = computed(() =>
                             <input v-model="trainingForm.completed_at" type="date"
                                 class="w-full text-sm rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-700 px-3 py-2" />
                         </div>
+                    </div>
+                    <div v-if="ceuEligibleCreds.length > 0">
+                        <label class="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">Counts toward credential (CEU)</label>
+                        <select v-model="trainingForm.credential_id" class="w-full text-sm rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-700 px-3 py-2">
+                            <option value="">- standalone (no credential link) -</option>
+                            <option v-for="c in ceuEligibleCreds" :key="c.id" :value="c.id">
+                                {{ c.title }} ({{ c.ceu_hours_logged ?? 0 }} / {{ c.ceu_hours_required }} hrs logged)
+                            </option>
+                        </select>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Linking this training to a credential adds its hours toward that credential's CEU renewal requirement.</p>
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">Notes</label>

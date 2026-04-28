@@ -63,11 +63,11 @@ async function upload() {
 }
 
 function downloadTemplate() {
-    const headers = ['email','credential_code','credential_type','title','license_state','license_number','issued_at','expires_at','verification_source','notes']
+    const headers = ['email','credential_code','credential_type','title','license_state','license_number','issued_at','expires_at','verification_source','dot_medical_card_expires_at','mvr_check_date','vehicle_class_endorsements','notes']
     const example = [
-        'jane.doe@example.com,rn_license,license,RN License,CA,RN12345,2024-06-01,2026-06-01,state_board,',
-        'john.smith@example.com,bls_certification,certification,BLS,,,2025-01-15,2027-01-15,uploaded_doc,',
-        'driver.alice@example.com,,driver_record,CDL Class B + P,CA,DL98765,2023-08-10,2028-08-10,state_board,Vehicle endorsements: P (passenger)',
+        'jane.doe@example.com,rn_license,license,RN License,CA,RN12345,2024-06-01,2026-06-01,state_board,,,,',
+        'john.smith@example.com,bls_certification,certification,BLS,,,2025-01-15,2027-01-15,uploaded_doc,,,,',
+        'driver.alice@example.com,cdl,driver_record,CDL Class B,CA,DL98765,2023-08-10,2028-08-10,state_board,2026-08-10,2026-04-01,Class B + P (passenger),Annual MVR completed',
     ]
     const blob = new Blob([headers.join(',') + '\n' + example.join('\n')], { type: 'text/csv' })
     const url = URL.createObjectURL(blob)

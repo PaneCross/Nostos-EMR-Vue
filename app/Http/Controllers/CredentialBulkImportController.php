@@ -15,6 +15,9 @@
 //   issued_at            : optional ISO date
 //   expires_at           : optional ISO date
 //   verification_source  : optional (state_board|npdb|uploaded_doc|self_attestation|other)
+//   dot_medical_card_expires_at : optional ISO date (driver_record only)
+//   mvr_check_date              : optional ISO date (driver_record only)
+//   vehicle_class_endorsements  : optional free text (driver_record only)
 //   notes                : optional
 //
 // Returns a per-row outcome report so the user can fix and re-upload.
@@ -119,6 +122,10 @@ class CredentialBulkImportController extends Controller
                     'cms_status'      => 'active',
                     'verified_at'     => now(),
                     'verified_by_user_id' => $request->user()->id,
+                    // V2 : optional driver-record fields when type=driver_record
+                    'dot_medical_card_expires_at' => $row['dot_medical_card_expires_at'] ?? null,
+                    'mvr_check_date'              => $row['mvr_check_date']              ?? null,
+                    'vehicle_class_endorsements'  => $row['vehicle_class_endorsements']  ?? null,
                     'notes'           => $row['notes'] ?? null,
                 ]);
 

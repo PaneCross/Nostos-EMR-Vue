@@ -38,10 +38,13 @@ class CredentialComplianceService
             ->orderBy('sort_order')
             ->get();
 
-        // Pre-fetch all (user_id, definition_id) credential links for efficiency
+        // Pre-fetch all (user_id, definition_id) credential links for efficiency.
+        // Filter to tip-of-chain only : superseded rows (replaced_by set) are
+        // audit-history and do not represent the user's current credential.
         $heldByUser = StaffCredential::where('tenant_id', $tenantId)
             ->whereNull('deleted_at')
             ->whereNotNull('credential_definition_id')
+            ->whereNull('replaced_by_credential_id')
             ->get()
             ->groupBy('user_id');
 
