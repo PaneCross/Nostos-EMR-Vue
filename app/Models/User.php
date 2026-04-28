@@ -52,6 +52,14 @@ class User extends Authenticatable
      *   nursing_director    → notified on nursing-related QA alerts
      *   pharmacy_director   → notified on critical drug interaction alerts
      */
+    /** Department codes : keep in sync with shared_users_department_check constraint. */
+    public const DEPARTMENTS_LIST = [
+        'primary_care', 'therapies', 'social_work', 'behavioral_health',
+        'dietary', 'activities', 'home_care', 'transportation',
+        'pharmacy', 'idt', 'enrollment', 'finance', 'qa_compliance',
+        'it_admin', 'executive',
+    ];
+
     public const DESIGNATIONS = [
         'medical_director',
         'program_director',

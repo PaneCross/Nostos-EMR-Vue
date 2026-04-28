@@ -14,12 +14,16 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AuditLog;
+use App\Models\CredentialDefinition;
+use App\Services\Credentials\CredentialDefinitionService;
 use App\Models\StaffCredential;
 use App\Models\StaffTrainingRecord;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response as InertiaResponse;
@@ -97,6 +101,11 @@ class StaffCredentialController extends Controller
 
         $totalHours = (float) array_sum($hoursByCategory);
 
+        // Resolve which definitions apply to this user, and which are missing
+        $defService = app(CredentialDefinitionService::class);
+        $applicable = $defService->activeForUser($user);
+        $missing    = $defService->missingForUser($user);
+
         return Inertia::render('ItAdmin/StaffCredentials', [
             'staff' => [
                 'id'         => $user->id,
@@ -105,15 +114,59 @@ class StaffCredentialController extends Controller
                 'email'      => $user->email,
                 'department' => $user->department,
                 'role'       => $user->role,
+                'job_title'  => $user->job_title,
                 'is_active'  => (bool) $user->is_active,
             ],
-            'credentials'     => $credentials,
+            'credentials'     => $credentials->map(fn ($c) => $c + [
+                'document_url' => $c['id'] && ($url = $this->documentUrlFor($c['id'])) ? $url : null,
+            ]),
             'training'        => $training,
             'hoursByCategory' => $hoursByCategory,
             'totalHours12mo'  => round($totalHours, 2),
             'credentialTypes' => StaffCredential::TYPE_LABELS,
             'trainingCategories' => StaffTrainingRecord::CATEGORY_LABELS,
+            'applicableDefinitions' => $applicable->map(fn ($d) => [
+                'id'     => $d->id,
+                'code'   => $d->code,
+                'title'  => $d->title,
+                'credential_type' => $d->credential_type,
+                'requires_psv'    => $d->requires_psv,
+                'is_cms_mandatory'=> $d->is_cms_mandatory,
+                'default_doc_required' => $d->default_doc_required,
+            ])->values(),
+            'missingDefinitions' => $missing->map(fn ($d) => [
+                'id' => $d->id, 'code' => $d->code, 'title' => $d->title,
+                'is_cms_mandatory' => $d->is_cms_mandatory,
+            ])->values(),
+            'verificationSources' => StaffCredential::VERIFICATION_SOURCES,
+            'cmsStatuses'         => StaffCredential::CMS_STATUSES,
         ]);
+    }
+
+    private function documentUrlFor(int $credentialId): ?string
+    {
+        $cred = StaffCredential::find($credentialId);
+        if (! $cred?->document_path) return null;
+
+        // Generate a signed temporary URL for inline preview / download
+        return route('staff-credentials.document', ['credential' => $credentialId]);
+    }
+
+    public function downloadDocument(Request $request, StaffCredential $credential)
+    {
+        $u = $request->user();
+        abort_unless($u, 401);
+        // Allow: admin/QA, OR the user themselves viewing their own doc
+        $isAdmin = $u->isSuperAdmin() || in_array($u->department, ['it_admin', 'qa_compliance', 'executive'], true);
+        $isSelf  = $u->id === $credential->user_id;
+        abort_unless($isAdmin || $isSelf, 403);
+        abort_if($credential->tenant_id !== $u->tenant_id, 403);
+        abort_unless($credential->document_path && Storage::disk('local')->exists($credential->document_path), 404);
+
+        return response()->file(
+            Storage::disk('local')->path($credential->document_path),
+            ['Content-Type' => 'application/pdf']
+        );
     }
 
     public function storeCredential(Request $request, User $user): JsonResponse
@@ -122,23 +175,45 @@ class StaffCredentialController extends Controller
         $this->assertSameTenant($user, $request);
 
         $v = $request->validate([
+            'credential_definition_id' => ['nullable', 'integer',
+                Rule::exists('emr_credential_definitions', 'id')->where('tenant_id', $user->tenant_id)],
             'credential_type' => ['required', Rule::in(StaffCredential::TYPES)],
             'title'           => ['required', 'string', 'max:200'],
             'license_state'   => ['nullable', 'string', 'size:2'],
             'license_number'  => ['nullable', 'string', 'max:80'],
             'issued_at'       => ['nullable', 'date'],
             'expires_at'      => ['nullable', 'date', 'after_or_equal:issued_at'],
+            'verification_source' => ['nullable', Rule::in(array_keys(StaffCredential::VERIFICATION_SOURCES))],
+            'cms_status'      => ['nullable', Rule::in(array_keys(StaffCredential::CMS_STATUSES))],
             'notes'           => ['nullable', 'string', 'max:4000'],
+            'document'        => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:10240'],
         ]);
 
-        $c = StaffCredential::create(array_merge($v, [
-            'tenant_id' => $user->tenant_id,
-            'user_id'   => $user->id,
-            'verified_at'         => now(),
-            'verified_by_user_id' => $request->user()->id,
-        ]));
+        $c = StaffCredential::create(array_merge(
+            collect($v)->except('document')->all(),
+            [
+                'tenant_id'           => $user->tenant_id,
+                'user_id'             => $user->id,
+                'cms_status'          => $v['cms_status'] ?? 'active',
+                'verified_at'         => now(),
+                'verified_by_user_id' => $request->user()->id,
+            ]
+        ));
 
-        return response()->json($c, 201);
+        if ($request->hasFile('document')) {
+            $this->storeDocument($c, $request->file('document'));
+        }
+
+        AuditLog::record(
+            action: 'staff_credential.created',
+            resourceType: 'StaffCredential',
+            resourceId: $c->id,
+            tenantId: $user->tenant_id,
+            userId: $request->user()->id,
+            newValues: $c->toArray(),
+        );
+
+        return response()->json($c->fresh(), 201);
     }
 
     public function updateCredential(Request $request, StaffCredential $credential): JsonResponse
@@ -147,16 +222,52 @@ class StaffCredentialController extends Controller
         abort_if($credential->tenant_id !== $request->user()->tenant_id, 403);
 
         $v = $request->validate([
+            'credential_definition_id' => ['nullable', 'integer',
+                Rule::exists('emr_credential_definitions', 'id')->where('tenant_id', $credential->tenant_id)],
             'title'          => ['sometimes', 'string', 'max:200'],
             'license_state'  => ['nullable', 'string', 'size:2'],
             'license_number' => ['nullable', 'string', 'max:80'],
             'issued_at'      => ['nullable', 'date'],
             'expires_at'     => ['nullable', 'date'],
+            'verification_source' => ['nullable', Rule::in(array_keys(StaffCredential::VERIFICATION_SOURCES))],
+            'cms_status'     => ['nullable', Rule::in(array_keys(StaffCredential::CMS_STATUSES))],
             'notes'          => ['nullable', 'string', 'max:4000'],
+            'document'       => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:10240'],
         ]);
 
-        $credential->update($v);
+        $old = $credential->toArray();
+        $credential->update(collect($v)->except('document')->all());
+
+        if ($request->hasFile('document')) {
+            $this->storeDocument($credential, $request->file('document'));
+        }
+
+        AuditLog::record(
+            action: 'staff_credential.updated',
+            resourceType: 'StaffCredential',
+            resourceId: $credential->id,
+            tenantId: $credential->tenant_id,
+            userId: $request->user()->id,
+            oldValues: $old,
+            newValues: $credential->fresh()->toArray(),
+        );
+
         return response()->json($credential->fresh());
+    }
+
+    /** Save uploaded doc to local disk under tenant/{id}/credentials/{cred_id}.{ext}. */
+    private function storeDocument(StaffCredential $credential, $file): void
+    {
+        $ext = strtolower($file->getClientOriginalExtension());
+        $dir = "credentials/tenant_{$credential->tenant_id}/user_{$credential->user_id}";
+        $name = "cred_{$credential->id}_" . now()->format('YmdHis') . ".{$ext}";
+
+        $path = $file->storeAs($dir, $name, 'local');
+
+        $credential->update([
+            'document_path'     => $path,
+            'document_filename' => $file->getClientOriginalName(),
+        ]);
     }
 
     public function destroyCredential(Request $request, StaffCredential $credential): JsonResponse

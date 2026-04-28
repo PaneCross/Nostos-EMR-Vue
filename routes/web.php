@@ -373,6 +373,29 @@ Route::middleware('auth')->group(function () {
     Route::delete('/executive/org-settings/site/{site}/key/{key}', [OrgSettingsController::class, 'clearOverride']) ->name('executive.org-settings.clear-override')
         ->where('key', '[a-z0-9_.]+');
 
+    // ─── Credentials V1 — executive-managed catalog + dashboard ──────────────
+    Route::get   ('/executive/job-titles',                                  [\App\Http\Controllers\JobTitleController::class, 'index'])  ->name('executive.job-titles.index');
+    Route::post  ('/executive/job-titles',                                  [\App\Http\Controllers\JobTitleController::class, 'store'])  ->name('executive.job-titles.store');
+    Route::patch ('/executive/job-titles/{jobTitle}',                       [\App\Http\Controllers\JobTitleController::class, 'update']) ->name('executive.job-titles.update');
+    Route::delete('/executive/job-titles/{jobTitle}',                       [\App\Http\Controllers\JobTitleController::class, 'destroy'])->name('executive.job-titles.destroy');
+
+    Route::get   ('/executive/credential-definitions',                                                  [\App\Http\Controllers\CredentialDefinitionController::class, 'index'])  ->name('executive.credential-definitions.index');
+    Route::post  ('/executive/credential-definitions',                                                  [\App\Http\Controllers\CredentialDefinitionController::class, 'store'])  ->name('executive.credential-definitions.store');
+    Route::patch ('/executive/credential-definitions/{credentialDefinition}',                           [\App\Http\Controllers\CredentialDefinitionController::class, 'update']) ->name('executive.credential-definitions.update');
+    Route::delete('/executive/credential-definitions/{credentialDefinition}',                           [\App\Http\Controllers\CredentialDefinitionController::class, 'destroy'])->name('executive.credential-definitions.destroy');
+    Route::post  ('/executive/credential-definitions/{credentialDefinition}/site-overrides',            [\App\Http\Controllers\CredentialDefinitionController::class, 'storeSiteOverride'])  ->name('executive.credential-definitions.site-overrides.store');
+    Route::delete('/executive/credential-definitions/{credentialDefinition}/site-overrides/{siteId}',   [\App\Http\Controllers\CredentialDefinitionController::class, 'destroySiteOverride'])->name('executive.credential-definitions.site-overrides.destroy');
+
+    Route::get('/executive/credentials-dashboard',                                              [\App\Http\Controllers\CredentialsDashboardController::class, 'index'])    ->name('executive.credentials-dashboard');
+    Route::get('/executive/credentials-dashboard/drilldown/{definitionId}/{department}/{bucket}',[\App\Http\Controllers\CredentialsDashboardController::class, 'drilldown'])->name('executive.credentials-dashboard.drilldown');
+
+    // PDF/file streaming for staff credential docs (gated to admin or self)
+    Route::get('/staff-credentials/{credential}/document', [\App\Http\Controllers\StaffCredentialController::class, 'downloadDocument'])->name('staff-credentials.document');
+
+    // Self-service for the authenticated user
+    Route::get ('/my-credentials',                              [\App\Http\Controllers\MyCredentialsController::class, 'index'])         ->name('my-credentials.index');
+    Route::post('/my-credentials/{credential}/renewal',         [\App\Http\Controllers\MyCredentialsController::class, 'uploadRenewal'])->name('my-credentials.renewal');
+
     // ─── Participant Module ───────────────────────────────────────────────────
 
     // Global search (JSON) — must be before the resource routes to avoid {id} conflict
