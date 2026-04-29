@@ -27,7 +27,7 @@ class MyTeamController extends Controller
         $reports = User::where('supervisor_user_id', $supervisor->id)
             ->where('is_active', true)
             ->orderBy('last_name')
-            ->get(['id', 'first_name', 'last_name', 'email', 'department', 'job_title']);
+            ->get(['id', 'tenant_id', 'first_name', 'last_name', 'email', 'department', 'job_title']);
 
         // For each report, summarize their credential status
         $rows = $reports->map(function (User $u) use ($defSvc) {
