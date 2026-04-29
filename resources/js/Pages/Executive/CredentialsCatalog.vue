@@ -681,7 +681,7 @@ onMounted(load)
                             <span class="text-sm text-gray-700 dark:text-slate-300">Supervisor copy variant</span>
                         </label>
                     </div>
-                    <iframe :src="previewUrl" class="w-full h-[60vh] rounded-lg border border-gray-200 dark:border-slate-700"></iframe>
+                    <iframe :src="previewUrl" class="w-full h-[60vh] rounded-lg border border-gray-200 dark:border-slate-700 bg-white"></iframe>
                     <p class="text-xs text-gray-500 dark:text-slate-400 mt-2">Preview uses your account as the recipient. Real emails interpolate the actual staff member's name.</p>
                 </div>
             </div>

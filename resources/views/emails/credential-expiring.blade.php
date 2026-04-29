@@ -6,7 +6,8 @@
     <meta charset="utf-8">
     <title>Credential reminder</title>
 </head>
-<body style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+<body style="font-family: Arial, sans-serif; color: #333; background: #ffffff; margin: 0; padding: 0;">
+    <div style="max-width: 600px; margin: 0 auto; padding: 20px; background: #ffffff;">
     <h2 style="color: #4f46e5; margin-bottom: 8px;">
         @if($isOverdue)
             Credential OVERDUE
@@ -63,5 +64,6 @@
         This reminder is part of NostosEMR's automated credential tracking. You can adjust delivery preferences from your user menu.
         Required by 42 CFR §460.71 and CMS Personnel Audit Protocol.
     </p>
+    </div>
 </body>
 </html>

@@ -6,7 +6,8 @@
     <meta charset="utf-8">
     <title>Credential reminders</title>
 </head>
-<body style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+<body style="font-family: Arial, sans-serif; color: #333; background: #ffffff; margin: 0; padding: 0;">
+    <div style="max-width: 600px; margin: 0 auto; padding: 20px; background: #ffffff;">
     <h2 style="color: #4f46e5; margin-bottom: 8px;">Multiple credentials need attention</h2>
     <p>Hi {{ $recipientName }},</p>
     <p>The following credentials on your record are approaching expiration or already overdue. Bundling them into one email so you don't get a flood :</p>
@@ -53,5 +54,6 @@
     <p style="font-size: 12px; color: #6b7280; margin-top: 32px; border-top: 1px solid #e5e7eb; padding-top: 16px;">
         Required by 42 CFR §460.71. You can adjust delivery preferences from the user menu.
     </p>
+    </div>
 </body>
 </html>
