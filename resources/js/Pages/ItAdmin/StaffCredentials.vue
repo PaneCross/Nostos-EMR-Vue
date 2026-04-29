@@ -957,7 +957,7 @@ const filterCounts = computed(() => {
                                 <span v-if="t.credential_title" class="block text-[11px] text-indigo-600 dark:text-indigo-400 mt-0.5 font-normal">↳ counts toward {{ t.credential_title }}</span>
                             </td>
                             <td class="px-5 py-3 text-slate-600 dark:text-slate-300 text-xs">{{ t.category_label }}</td>
-                            <td class="px-5 py-3 tabular-nums">{{ t.training_hours }}</td>
+                            <td class="px-5 py-3 tabular-nums text-slate-700 dark:text-slate-200">{{ t.training_hours }}</td>
                             <td class="px-5 py-3 text-slate-500 dark:text-slate-400 text-xs">{{ t.completed_at ?? '-' }}</td>
                             <td class="px-5 py-3 text-right">
                                 <button @click="deleteTraining(t)" class="text-slate-400 hover:text-red-600 dark:hover:text-red-400">
