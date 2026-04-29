@@ -387,7 +387,7 @@ const bucketLabels: Record<string, string> = {
             <!-- Matrix -->
             <div class="rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 overflow-x-auto">
                 <table class="w-full text-xs">
-                    <thead class="bg-gray-50 dark:bg-slate-800 text-gray-700 dark:text-slate-300 sticky top-0">
+                    <thead class="bg-gray-50 dark:bg-slate-800 text-gray-700 dark:text-slate-200 sticky top-0">
                         <tr>
                             <th class="text-left px-3 py-2 font-medium sticky left-0 bg-gray-50 dark:bg-slate-800 z-10 min-w-[260px]">Credential</th>
                             <th v-for="d in visibleDepts" :key="d"
@@ -485,8 +485,8 @@ const bucketLabels: Record<string, string> = {
                     <template v-else>
                         <!-- A2 : bulk-renew controls when at least one user has a credential_id -->
                         <div v-if="filteredDrilldownUsers.some(u => u.credential_id)" class="mb-3 flex items-center gap-2 text-xs">
-                            <button @click="selectAllInDrilldown" class="px-2 py-1 rounded border border-gray-300 dark:border-slate-600 hover:bg-gray-50 dark:hover:bg-slate-800">Select all visible</button>
-                            <button @click="clearBulkSelection" class="px-2 py-1 rounded border border-gray-300 dark:border-slate-600 hover:bg-gray-50 dark:hover:bg-slate-800">Clear</button>
+                            <button @click="selectAllInDrilldown" class="px-2 py-1 rounded border border-gray-300 dark:border-slate-600 text-gray-700 dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-800">Select all visible</button>
+                            <button @click="clearBulkSelection" class="px-2 py-1 rounded border border-gray-300 dark:border-slate-600 text-gray-700 dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-800">Clear</button>
                             <span v-if="selectedCredentialIds.size > 0" class="text-indigo-600 dark:text-indigo-400 font-medium">{{ selectedCredentialIds.size }} selected</span>
                             <div v-if="selectedCredentialIds.size > 0" class="ml-auto flex gap-2">
                                 <button @click="showBulkEditModal = true" class="px-3 py-1.5 rounded-lg border border-indigo-300 dark:border-indigo-700 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 font-medium">
@@ -498,14 +498,14 @@ const bucketLabels: Record<string, string> = {
                             </div>
                         </div>
                         <table class="w-full text-sm">
-                            <thead class="bg-gray-50 dark:bg-slate-800 text-xs text-gray-700 dark:text-slate-300">
+                            <thead class="bg-gray-50 dark:bg-slate-800 text-xs text-gray-700 dark:text-slate-200">
                                 <tr>
                                     <th class="px-2 py-2 w-8"></th>
-                                    <th class="text-left px-3 py-2 font-medium">User</th>
-                                    <th class="text-left px-3 py-2 font-medium">Job Title</th>
-                                    <th class="text-left px-3 py-2 font-medium">Bucket</th>
-                                    <th class="text-left px-3 py-2 font-medium">Expires</th>
-                                    <th class="text-left px-3 py-2 font-medium">Status</th>
+                                    <th class="text-left px-3 py-2 font-medium text-gray-700 dark:text-slate-200">User</th>
+                                    <th class="text-left px-3 py-2 font-medium text-gray-700 dark:text-slate-200">Job Title</th>
+                                    <th class="text-left px-3 py-2 font-medium text-gray-700 dark:text-slate-200">Bucket</th>
+                                    <th class="text-left px-3 py-2 font-medium text-gray-700 dark:text-slate-200">Expires</th>
+                                    <th class="text-left px-3 py-2 font-medium text-gray-700 dark:text-slate-200">Status</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-100 dark:divide-slate-800">

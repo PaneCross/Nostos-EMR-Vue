@@ -45,7 +45,7 @@ defineProps<{ reports: Report[] }>()
 
             <div v-else class="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 overflow-hidden">
                 <table class="w-full text-sm">
-                    <thead class="bg-slate-50 dark:bg-slate-800 text-xs text-slate-700 dark:text-slate-300">
+                    <thead class="bg-slate-50 dark:bg-slate-800 text-xs text-slate-700 dark:text-slate-200">
                         <tr>
                             <th class="text-left px-4 py-2 font-medium">Staff</th>
                             <th class="text-left px-4 py-2 font-medium">Job Title</th>

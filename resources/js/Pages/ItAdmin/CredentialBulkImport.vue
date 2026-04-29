@@ -152,7 +152,7 @@ function downloadTemplate() {
                         <h2 class="text-sm font-semibold text-gray-700 dark:text-slate-200 uppercase tracking-wide">Per-row outcome</h2>
                     </div>
                     <table class="w-full text-sm">
-                        <thead class="bg-gray-50 dark:bg-slate-800 text-xs text-gray-700 dark:text-slate-300">
+                        <thead class="bg-gray-50 dark:bg-slate-800 text-xs text-gray-700 dark:text-slate-200">
                             <tr>
                                 <th class="text-left px-4 py-2 font-medium">Row</th>
                                 <th class="text-left px-4 py-2 font-medium">Email</th>
