@@ -59,9 +59,12 @@ class CredentialExpirationAlertJob implements ShouldQueue
         // a newer pending/active row (replaced_by_credential_id set) is audit
         // history only and must not generate fresh reminders. Without this,
         // users get spammed about credentials they already renewed.
+        // Audit-4 A1 : also skip credentials owned by deactivated users so we
+        // don't email retired employees about credentials they no longer hold.
         $credentials = StaffCredential::whereNotNull('expires_at')
             ->whereNull('deleted_at')
             ->whereNull('replaced_by_credential_id')
+            ->whereHas('user', fn ($q) => $q->where('is_active', true))
             ->with(['user', 'definition', 'user.supervisor'])
             ->get();
 

@@ -156,7 +156,8 @@ Schedule::job(\App\Jobs\CredentialExpirationAlertJob::class, 'compliance')->dail
 Schedule::job(\App\Jobs\WeeklyCredentialDigestJob::class, 'compliance')
     ->mondays()->at('06:00')
     ->name('credential-weekly-digest')
-    ->withoutOverlapping();
+    ->withoutOverlapping()
+    ->onOneServer();
 
 // ─── Phase B1: Restraint monitoring + IDT review deadline enforcement ────────
 // Checks all active restraint episodes every 15 minutes:

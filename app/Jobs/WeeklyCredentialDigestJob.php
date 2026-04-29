@@ -58,6 +58,19 @@ class WeeklyCredentialDigestJob implements ShouldQueue
                 continue;
             }
 
+            // Audit-4 A4 : dedup so a retry within the same week doesn't
+            // double-create the digest alert. Key on (tenant, week-of-year).
+            $weekKey = now()->isoFormat('GGGG-WW');
+            $existing = \App\Models\Alert::where('tenant_id', $tenant->id)
+                ->where('alert_type', 'credential_weekly_digest')
+                ->where('is_active', true)
+                ->whereJsonContains('metadata->digest_week', $weekKey)
+                ->exists();
+            if ($existing) {
+                Log::info("[WeeklyCredentialDigestJob] dedup skip for tenant {$tenant->id} week {$weekKey}");
+                continue;
+            }
+
             $alertService->create([
                 'tenant_id'          => $tenant->id,
                 'source_module'      => 'it_admin',
@@ -69,6 +82,7 @@ class WeeklyCredentialDigestJob implements ShouldQueue
                 'is_active'          => true,
                 'metadata'           => [
                     'digest_date'        => now()->toDateString(),
+                    'digest_week'        => $weekKey,
                     'expiring_30d'       => $digest['expiring_30d'],
                     'overdue'            => $digest['overdue'],
                     'missing_required'   => $digest['missing_required'],
@@ -89,9 +103,11 @@ class WeeklyCredentialDigestJob implements ShouldQueue
     {
         // Expiring within 30 days (active, not yet expired). Filter to
         // tip-of-chain rows so superseded historical entries don't double-count.
+        // Audit-4 A1 : skip credentials owned by deactivated users.
         $expiring30d = StaffCredential::forTenant($tenantId)
             ->whereNull('deleted_at')
             ->whereNull('replaced_by_credential_id')
+            ->whereHas('user', fn ($q) => $q->where('is_active', true))
             ->expiringWithin(30)
             ->where('cms_status', 'active')
             ->count();
@@ -100,6 +116,7 @@ class WeeklyCredentialDigestJob implements ShouldQueue
         $overdue = StaffCredential::forTenant($tenantId)
             ->whereNull('deleted_at')
             ->whereNull('replaced_by_credential_id')
+            ->whereHas('user', fn ($q) => $q->where('is_active', true))
             ->expired()
             ->where('cms_status', 'active')
             ->count();

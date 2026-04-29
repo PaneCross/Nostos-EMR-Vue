@@ -178,28 +178,39 @@ class MyCredentialsController extends Controller
         $name = "cred_renewal_" . now()->format('YmdHis') . ".{$ext}";
         $path = $v['document']->storeAs($dir, $name, 'local');
 
-        $newCred = StaffCredential::create([
-            'tenant_id'                => $credential->tenant_id,
-            'user_id'                  => $credential->user_id,
-            'credential_definition_id' => $credential->credential_definition_id,
-            'credential_type'          => $credential->credential_type,
-            'title'                    => $credential->title,
-            'license_state'            => $credential->license_state,
-            'license_number'           => $credential->license_number,
-            'issued_at'                => $v['issued_at'] ?? $credential->issued_at,
-            'expires_at'               => $v['expires_at'] ?? $credential->expires_at,
-            'verification_source'      => 'self_attestation',
-            'cms_status'               => 'pending',
-            'document_path'            => $path,
-            'document_filename'        => $v['document']->getClientOriginalName(),
-            'dot_medical_card_expires_at' => $credential->dot_medical_card_expires_at,
-            'mvr_check_date'              => $credential->mvr_check_date,
-            'vehicle_class_endorsements'  => $credential->vehicle_class_endorsements,
-            'notes'                    => 'Self-attested renewal awaiting IT Admin verification.',
-        ]);
+        // Audit-4 A3 : if the DB writes fail, delete the just-uploaded file
+        // before propagating so we don't leak orphan PDFs on disk.
+        try {
+            $newCred = \Illuminate\Support\Facades\DB::transaction(function () use ($credential, $v, $path) {
+                $newCred = StaffCredential::create([
+                    'tenant_id'                => $credential->tenant_id,
+                    'user_id'                  => $credential->user_id,
+                    'credential_definition_id' => $credential->credential_definition_id,
+                    'credential_type'          => $credential->credential_type,
+                    'title'                    => $credential->title,
+                    'license_state'            => $credential->license_state,
+                    'license_number'           => $credential->license_number,
+                    'issued_at'                => $v['issued_at'] ?? $credential->issued_at,
+                    'expires_at'               => $v['expires_at'] ?? $credential->expires_at,
+                    'verification_source'      => 'self_attestation',
+                    'cms_status'               => 'pending',
+                    'document_path'            => $path,
+                    'document_filename'        => $v['document']->getClientOriginalName(),
+                    'dot_medical_card_expires_at' => $credential->dot_medical_card_expires_at,
+                    'mvr_check_date'              => $credential->mvr_check_date,
+                    'vehicle_class_endorsements'  => $credential->vehicle_class_endorsements,
+                    'notes'                    => 'Self-attested renewal awaiting IT Admin verification.',
+                ]);
 
-        // Mark the old row as superseded (forward link to new)
-        $credential->update(['replaced_by_credential_id' => $newCred->id]);
+                // Mark the old row as superseded (forward link to new)
+                $credential->update(['replaced_by_credential_id' => $newCred->id]);
+
+                return $newCred;
+            });
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Storage::disk('local')->delete($path);
+            throw $e;
+        }
 
         AuditLog::record(
             action: 'staff_credential.renewal_uploaded',

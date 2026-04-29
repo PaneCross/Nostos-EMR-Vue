@@ -412,13 +412,16 @@ class StaffCredentialController extends Controller
             'verification_source' => ['nullable', Rule::in(array_keys(StaffCredential::VERIFICATION_SOURCES))],
         ]);
 
-        $rows = StaffCredential::forTenant($tenantId)
-            ->whereIn('id', $v['credential_ids'])
-            ->whereNull('replaced_by_credential_id')
-            ->get();
-
         $renewedIds = [];
-        \Illuminate\Support\Facades\DB::transaction(function () use ($rows, $v, $request, &$renewedIds) {
+        // Audit-4 A2 : lockForUpdate inside the transaction prevents two
+        // concurrent bulkRenew calls from racing on the same credential row.
+        \Illuminate\Support\Facades\DB::transaction(function () use ($v, $request, &$renewedIds, $tenantId) {
+            $rows = StaffCredential::forTenant($tenantId)
+                ->whereIn('id', $v['credential_ids'])
+                ->whereNull('replaced_by_credential_id')
+                ->lockForUpdate()
+                ->get();
+
             foreach ($rows as $old) {
                 $newRow = StaffCredential::create([
                     'tenant_id'                => $old->tenant_id,
