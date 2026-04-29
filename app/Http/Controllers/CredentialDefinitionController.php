@@ -196,6 +196,11 @@ class CredentialDefinitionController extends Controller
      * B2 : preview the email for a DRAFT (unsaved) credential — no DB row
      * required. Accepts the title via query string so executives can
      * sanity-check email rendering before saving a brand-new definition.
+     *
+     * SECURITY NOTE : the `title` query param flows directly into the rendered
+     * Blade template. Blade's `{{ $title }}` syntax HTML-escapes by default, so
+     * an exec couldn't inject script tags. If you ever switch to `{!! $title !!}`
+     * in the email template, this becomes XSS-able from the URL.
      */
     public function previewEmailDraft(Request $request): \Illuminate\Http\Response
     {
@@ -203,7 +208,8 @@ class CredentialDefinitionController extends Controller
 
         $days = (int) $request->query('days', 30);
         $isSupervisor = (bool) $request->query('supervisor', false);
-        $title = $request->query('title', 'Sample Credential');
+        // Cap title length defensively to avoid an exec pasting a 1MB string.
+        $title = mb_substr((string) $request->query('title', 'Sample Credential'), 0, 200);
 
         $user = $request->user();
         $mockCredential = new \App\Models\StaffCredential([

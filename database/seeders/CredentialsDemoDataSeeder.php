@@ -78,7 +78,50 @@ class CredentialsDemoDataSeeder extends Seeder
             // B6 demo : create one site-only "extra" definition + one
             // site-disable override so the per-site overrides UI has data.
             $this->seedSiteOverrideDemo($tenant->id);
+
+            // Audit-3 fix : simulate 2-3 renewals so the versioning chain UI
+            // (Replaced ↗ badge, audit-history toggle, pending-verify flow)
+            // has visible data in demo.
+            $this->simulateRenewalChainDemo($tenant->id);
         });
+    }
+
+    /**
+     * Pick a few credentials at random and create a renewal chain :
+     * mark the original superseded + insert a new pending row pointing at it
+     * (simulates a self-attested renewal awaiting admin verification).
+     */
+    private function simulateRenewalChainDemo(int $tenantId): void
+    {
+        // Find candidates : currently active license-type credentials with
+        // expiry within 90 days (the realistic renewal scenario).
+        $candidates = StaffCredential::where('tenant_id', $tenantId)
+            ->where('credential_type', 'license')
+            ->where('cms_status', 'active')
+            ->whereNull('replaced_by_credential_id')
+            ->where('expires_at', '<=', now()->addDays(90))
+            ->where('expires_at', '>=', now())
+            ->limit(3)
+            ->get();
+
+        foreach ($candidates as $old) {
+            $newRow = StaffCredential::create([
+                'tenant_id'                => $old->tenant_id,
+                'user_id'                  => $old->user_id,
+                'credential_definition_id' => $old->credential_definition_id,
+                'credential_type'          => $old->credential_type,
+                'title'                    => $old->title,
+                'license_state'            => $old->license_state,
+                'license_number'           => $old->license_number,
+                'issued_at'                => now()->subDays(2)->toDateString(),
+                'expires_at'               => now()->addYears(2)->toDateString(),
+                'verification_source'      => 'self_attestation',
+                'cms_status'               => 'pending',
+                'document_filename'        => 'renewal-demo.pdf',
+                'notes'                    => 'Simulated self-attested renewal awaiting IT Admin verification.',
+            ]);
+            $old->update(['replaced_by_credential_id' => $newRow->id]);
+        }
     }
 
     private function seedSiteOverrideDemo(int $tenantId): void
@@ -89,7 +132,7 @@ class CredentialsDemoDataSeeder extends Seeder
         $secondSite = $sites->skip(1)->first();
 
         // Site-only extra : "Bilingual proficiency cert" specific to one site.
-        \App\Models\CredentialDefinition::updateOrCreate(
+        $bilingual = \App\Models\CredentialDefinition::updateOrCreate(
             ['tenant_id' => $tenantId, 'site_id' => $firstSite->id, 'code' => 'bilingual_proficiency_cert'],
             [
                 'title'                 => 'Bilingual Proficiency Certification (Site-only)',
@@ -104,6 +147,22 @@ class CredentialsDemoDataSeeder extends Seeder
                 'sort_order'            => 200,
             ]
         );
+
+        // Audit-3 fix : add targets so the def actually applies to someone
+        // (was orphan otherwise — site_id pinned but no department/job-title
+        // rules). Target social_work + recreation_aide as the typical
+        // bilingual-language-services roles in PACE.
+        \App\Models\CredentialDefinitionTarget::where('credential_definition_id', $bilingual->id)->delete();
+        foreach ([
+            ['kind' => 'department', 'value' => 'social_work'],
+            ['kind' => 'job_title',  'value' => 'recreation_aide'],
+        ] as $t) {
+            \App\Models\CredentialDefinitionTarget::create([
+                'credential_definition_id' => $bilingual->id,
+                'target_kind'  => $t['kind'],
+                'target_value' => $t['value'],
+            ]);
+        }
 
         // Site-disable override : disable the (non-mandatory) ACLS cert at the
         // second site (e.g. site B doesn't run ACLS-level emergencies).

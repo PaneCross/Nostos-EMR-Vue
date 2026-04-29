@@ -63,6 +63,36 @@ const bulkRenewForm = ref({
 const bulkSaving = ref(false)
 const bulkResult = ref<string | null>(null)
 
+// G1 : bulk-edit fields without renewal (verification_source / cms_status / notes_append)
+const showBulkEditModal = ref(false)
+const bulkEditForm = ref({
+    verification_source: '' as ''|'state_board'|'npdb'|'uploaded_doc'|'self_attestation'|'other',
+    cms_status: '' as ''|'active'|'expired'|'suspended'|'revoked'|'pending',
+    notes_append: '',
+})
+
+async function submitBulkEdit() {
+    if (selectedCredentialIds.value.size === 0) return
+    bulkSaving.value = true
+    bulkResult.value = null
+    try {
+        const payload: any = { credential_ids: Array.from(selectedCredentialIds.value) }
+        if (bulkEditForm.value.verification_source) payload.verification_source = bulkEditForm.value.verification_source
+        if (bulkEditForm.value.cms_status)          payload.cms_status          = bulkEditForm.value.cms_status
+        if (bulkEditForm.value.notes_append.trim()) payload.notes_append        = bulkEditForm.value.notes_append.trim()
+
+        const { data } = await axios.post('/it-admin/staff-credentials/bulk-edit', payload)
+        bulkResult.value = `Updated ${data.updated_count} credential(s).`
+        clearBulkSelection()
+        showBulkEditModal.value = false
+        setTimeout(() => window.location.reload(), 1000)
+    } catch (e: any) {
+        bulkResult.value = e?.response?.data?.message ?? 'Bulk edit failed.'
+    } finally {
+        bulkSaving.value = false
+    }
+}
+
 function toggleCredentialSelected(credId: number | null | undefined) {
     if (!credId) return
     const s = new Set(selectedCredentialIds.value)
@@ -457,9 +487,14 @@ const bucketLabels: Record<string, string> = {
                             <button @click="selectAllInDrilldown" class="px-2 py-1 rounded border border-gray-300 dark:border-slate-600 hover:bg-gray-50 dark:hover:bg-slate-800">Select all visible</button>
                             <button @click="clearBulkSelection" class="px-2 py-1 rounded border border-gray-300 dark:border-slate-600 hover:bg-gray-50 dark:hover:bg-slate-800">Clear</button>
                             <span v-if="selectedCredentialIds.size > 0" class="text-indigo-600 dark:text-indigo-400 font-medium">{{ selectedCredentialIds.size }} selected</span>
-                            <button v-if="selectedCredentialIds.size > 0" @click="bulkRenewForm.new_expires_at = ''; showBulkRenewModal = true" class="ml-auto px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-medium">
-                                Bulk renew {{ selectedCredentialIds.size }} credential(s)
-                            </button>
+                            <div v-if="selectedCredentialIds.size > 0" class="ml-auto flex gap-2">
+                                <button @click="showBulkEditModal = true" class="px-3 py-1.5 rounded-lg border border-indigo-300 dark:border-indigo-700 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 font-medium">
+                                    Bulk edit {{ selectedCredentialIds.size }}
+                                </button>
+                                <button @click="bulkRenewForm.new_expires_at = ''; showBulkRenewModal = true" class="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-medium">
+                                    Bulk renew {{ selectedCredentialIds.size }}
+                                </button>
+                            </div>
                         </div>
                         <table class="w-full text-sm">
                             <thead class="bg-gray-50 dark:bg-slate-800 text-xs text-gray-700 dark:text-slate-300">
@@ -503,6 +538,55 @@ const bucketLabels: Record<string, string> = {
                             </tbody>
                         </table>
                     </template>
+                </div>
+            </div>
+
+            <!-- G1 : Bulk-edit modal -->
+            <div v-if="showBulkEditModal" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" @click.self="showBulkEditModal = false">
+                <div class="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-700 max-w-md w-full p-6">
+                    <div class="flex items-center justify-between mb-3">
+                        <h3 class="text-base font-bold text-gray-900 dark:text-slate-100">Bulk edit {{ selectedCredentialIds.size }} credential(s)</h3>
+                        <button @click="showBulkEditModal = false" class="text-gray-400 hover:text-gray-600"><XMarkIcon class="w-5 h-5" /></button>
+                    </div>
+                    <p class="text-xs text-gray-500 dark:text-slate-400 mb-3">
+                        Changes the same field across selected credentials WITHOUT creating a renewal chain. Useful for "we just got NPDB enrolled, mark all licensure rows verified via NPDB" or audit annotations.
+                    </p>
+                    <div class="space-y-3">
+                        <label class="block">
+                            <span class="text-xs font-medium text-gray-700 dark:text-slate-300">Set verification source (leave blank to skip)</span>
+                            <select v-model="bulkEditForm.verification_source" class="w-full mt-1 px-3 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm">
+                                <option value="">— no change —</option>
+                                <option value="state_board">State Licensing Board</option>
+                                <option value="npdb">NPDB Lookup</option>
+                                <option value="uploaded_doc">Uploaded Document</option>
+                                <option value="self_attestation">Self-Attestation</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </label>
+                        <label class="block">
+                            <span class="text-xs font-medium text-gray-700 dark:text-slate-300">Set status (leave blank to skip)</span>
+                            <select v-model="bulkEditForm.cms_status" class="w-full mt-1 px-3 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm">
+                                <option value="">— no change —</option>
+                                <option value="active">Active</option>
+                                <option value="expired">Expired</option>
+                                <option value="suspended">Suspended</option>
+                                <option value="revoked">Revoked</option>
+                                <option value="pending">Pending</option>
+                            </select>
+                        </label>
+                        <label class="block">
+                            <span class="text-xs font-medium text-gray-700 dark:text-slate-300">Append a note (timestamped + your name auto-prefixed)</span>
+                            <textarea v-model="bulkEditForm.notes_append" rows="2" placeholder="e.g. CMS audit 2026 reviewed"
+                                class="w-full mt-1 px-3 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm" />
+                        </label>
+                    </div>
+                    <p v-if="bulkResult" class="text-xs mt-3" :class="bulkResult.startsWith('Updated') ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'">{{ bulkResult }}</p>
+                    <div class="flex justify-end gap-2 mt-4">
+                        <button @click="showBulkEditModal = false" class="px-4 py-2 rounded-lg text-sm text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800">Cancel</button>
+                        <button @click="submitBulkEdit" :disabled="bulkSaving" class="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium disabled:opacity-50">
+                            {{ bulkSaving ? 'Updating...' : 'Apply changes' }}
+                        </button>
+                    </div>
                 </div>
             </div>
 

@@ -29,17 +29,28 @@ class MyTeamController extends Controller
             ->orderBy('last_name')
             ->get(['id', 'tenant_id', 'first_name', 'last_name', 'email', 'department', 'job_title']);
 
-        // For each report, summarize their credential status
-        $rows = $reports->map(function (User $u) use ($defSvc) {
-            $creds = StaffCredential::forTenant($u->tenant_id)
-                ->where('user_id', $u->id)
-                ->whereNull('replaced_by_credential_id')
-                ->get();
+        if ($reports->isEmpty()) {
+            return Inertia::render('User/MyTeam', ['reports' => []]);
+        }
+
+        // Audit-3 fix : vectorize the per-report queries so we don't N+1.
+        // One query for all credentials across all reports, grouped by user_id.
+        $reportIds = $reports->pluck('id')->all();
+        $credsByUser = StaffCredential::where('tenant_id', $supervisor->tenant_id)
+            ->whereIn('user_id', $reportIds)
+            ->whereNull('replaced_by_credential_id')
+            ->get()
+            ->groupBy('user_id');
+
+        $rows = $reports->map(function (User $u) use ($defSvc, $credsByUser) {
+            $creds = $credsByUser->get($u->id, collect());
 
             $expiring = $creds->filter(fn ($c) => in_array($c->status(), ['due_60','due_30','due_14','due_today'], true))->count();
             $expired  = $creds->filter(fn ($c) => $c->status() === 'expired')->count();
             $invalid  = $creds->filter(fn ($c) => in_array($c->cms_status, ['suspended','revoked'], true))->count();
             $pending  = $creds->where('cms_status', 'pending')->count();
+            // missingForUser still hits the catalog tables ; that's bounded by
+            // catalog size (small), not by report count, so fine to leave.
             $missing  = $defSvc->missingForUser($u)->count();
 
             $worst = match (true) {
