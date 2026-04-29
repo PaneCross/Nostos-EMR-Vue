@@ -381,9 +381,11 @@ Route::middleware('auth')->group(function () {
     Route::delete('/executive/job-titles/{jobTitle}',                       [\App\Http\Controllers\JobTitleController::class, 'destroy'])->name('executive.job-titles.destroy');
 
     Route::get   ('/executive/credentials-catalog',                                                     [\App\Http\Controllers\CredentialDefinitionController::class, 'page'])   ->name('executive.credentials-catalog.page');
+    Route::get   ('/executive/credential-definitions/export',                                           [\App\Http\Controllers\CredentialDefinitionController::class, 'export']) ->name('executive.credential-definitions.export');
     Route::get   ('/executive/credential-definitions',                                                  [\App\Http\Controllers\CredentialDefinitionController::class, 'index'])  ->name('executive.credential-definitions.index');
     Route::post  ('/executive/credential-definitions',                                                  [\App\Http\Controllers\CredentialDefinitionController::class, 'store'])  ->name('executive.credential-definitions.store');
     Route::patch ('/executive/credential-definitions/{credentialDefinition}',                           [\App\Http\Controllers\CredentialDefinitionController::class, 'update']) ->name('executive.credential-definitions.update');
+    Route::post  ('/executive/credential-definitions/{credentialDefinition}/clone',                     [\App\Http\Controllers\CredentialDefinitionController::class, 'clone'])  ->name('executive.credential-definitions.clone');
     Route::delete('/executive/credential-definitions/{credentialDefinition}',                           [\App\Http\Controllers\CredentialDefinitionController::class, 'destroy'])->name('executive.credential-definitions.destroy');
     Route::get   ('/executive/credential-definitions/preview-email-draft',                              [\App\Http\Controllers\CredentialDefinitionController::class, 'previewEmailDraft'])    ->name('executive.credential-definitions.preview-email-draft');
     Route::get   ('/executive/credential-definitions/{credentialDefinition}/preview-email',             [\App\Http\Controllers\CredentialDefinitionController::class, 'previewEmail'])         ->name('executive.credential-definitions.preview-email');

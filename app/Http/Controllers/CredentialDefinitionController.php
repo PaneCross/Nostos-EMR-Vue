@@ -54,6 +54,30 @@ class CredentialDefinitionController extends Controller
         );
     }
 
+    /**
+     * H3 : full catalog JSON export. Includes targets + site overrides so an
+     * org can version-control their credential policy or migrate to another
+     * environment. Exec-only.
+     */
+    public function export(Request $request): JsonResponse
+    {
+        $this->gate($request);
+        $tenantId = $request->user()->tenant_id;
+
+        $defs = CredentialDefinition::forTenant($tenantId)
+            ->with(['targets', 'siteOverrides.site:id,name'])
+            ->orderBy('sort_order')->orderBy('title')
+            ->get()
+            ->map(fn ($d) => $this->presentDefinition($d));
+
+        return response()->json([
+            'export_version' => '1',
+            'export_date'    => now()->toIso8601String(),
+            'tenant_id'      => $tenantId,
+            'definitions'    => $defs,
+        ])->header('Content-Disposition', 'attachment; filename="credential-catalog-' . now()->format('Y-m-d') . '.json"');
+    }
+
     public function index(Request $request): JsonResponse
     {
         $this->gate($request);
@@ -224,6 +248,65 @@ class CredentialDefinitionController extends Controller
 
         $mailable = new \App\Mail\CredentialExpiringMail($user, $mockCredential, $days, $isSupervisor);
         return response($mailable->render())->header('Content-Type', 'text/html');
+    }
+
+    /**
+     * H2 : clone an existing definition (any non-CMS-mandatory-aware fields
+     * carry over). Used when an exec wants "RN License - California" + "RN
+     * License - New York" variants without re-creating from scratch. The new
+     * row gets a "_copy" suffix on the code + " (copy)" on the title until
+     * the exec edits.
+     */
+    public function clone(Request $request, CredentialDefinition $credentialDefinition): JsonResponse
+    {
+        $this->gate($request);
+        abort_if($credentialDefinition->tenant_id !== $request->user()->tenant_id, 403);
+
+        $newCode = $this->uniqueCloneCode($credentialDefinition->tenant_id, $credentialDefinition->code);
+
+        $clone = DB::transaction(function () use ($credentialDefinition, $newCode, $request) {
+            $clone = $credentialDefinition->replicate([
+                'is_cms_mandatory', // explicitly drop : clones are never mandatory
+            ]);
+            $clone->code = $newCode;
+            $clone->title = $credentialDefinition->title . ' (copy)';
+            $clone->is_cms_mandatory = false;
+            $clone->save();
+
+            // Copy targets too (otherwise the clone is an instant orphan)
+            foreach ($credentialDefinition->targets as $t) {
+                CredentialDefinitionTarget::create([
+                    'credential_definition_id' => $clone->id,
+                    'target_kind'              => $t->target_kind,
+                    'target_value'             => $t->target_value,
+                ]);
+            }
+
+            AuditLog::record(
+                action: 'credential_definition.cloned',
+                resourceType: 'CredentialDefinition',
+                resourceId: $clone->id,
+                tenantId: $request->user()->tenant_id,
+                userId: $request->user()->id,
+                newValues: ['source_id' => $credentialDefinition->id, 'new_code' => $newCode],
+            );
+
+            return $clone;
+        });
+
+        return response()->json($this->presentDefinition($clone->load(['targets', 'siteOverrides'])), 201);
+    }
+
+    private function uniqueCloneCode(int $tenantId, string $sourceCode): string
+    {
+        $base = $sourceCode . '_copy';
+        $candidate = $base;
+        $i = 1;
+        while (CredentialDefinition::where('tenant_id', $tenantId)->where('code', $candidate)->exists()) {
+            $i++;
+            $candidate = "{$base}_{$i}";
+        }
+        return $candidate;
     }
 
     public function destroy(Request $request, CredentialDefinition $credentialDefinition): JsonResponse

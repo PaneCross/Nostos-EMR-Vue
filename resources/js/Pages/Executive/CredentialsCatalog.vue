@@ -18,7 +18,7 @@ import {
     AcademicCapIcon, PlusIcon, PencilSquareIcon, TrashIcon, LockClosedIcon,
     InformationCircleIcon, ShieldCheckIcon, DocumentArrowUpIcon,
     BuildingOfficeIcon, BriefcaseIcon, IdentificationIcon, CheckIcon, XMarkIcon,
-    MagnifyingGlassIcon, EnvelopeIcon,
+    MagnifyingGlassIcon, EnvelopeIcon, DocumentDuplicateIcon, ArrowDownTrayIcon,
 } from '@heroicons/vue/24/outline'
 
 interface Target { kind: 'department'|'job_title'|'designation', value: string }
@@ -284,6 +284,18 @@ async function save() {
     }
 }
 
+// H2 : duplicate a definition (e.g. for a state-variant)
+async function cloneDef(d: Definition) {
+    try {
+        const { data } = await axios.post(`/executive/credential-definitions/${d.id}/clone`)
+        definitions.value.push(data)
+        flashSuccess(`Cloned : "${data.title}". Edit to customize.`)
+        startEdit(data)
+    } catch (e: any) {
+        errorMessage.value = e?.response?.data?.message ?? 'Could not clone.'
+    }
+}
+
 async function remove(d: Definition) {
     if (d.is_cms_mandatory) {
         toast.warning('CMS-mandatory definitions cannot be deleted.')
@@ -361,12 +373,18 @@ onMounted(load)
                         The credentials your org tracks for staff. CMS-mandatory rows are locked but their targeting and reminder cadence can be tuned.
                     </p>
                 </div>
-                <button
-                    @click="startNew"
-                    class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium"
-                >
-                    <PlusIcon class="w-4 h-4" /> Add credential
-                </button>
+                <div class="flex items-center gap-2">
+                    <a href="/executive/credential-definitions/export" target="_blank"
+                        class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-slate-700 text-sm font-medium text-gray-700 dark:text-slate-200" title="Export catalog as JSON">
+                        <ArrowDownTrayIcon class="w-4 h-4" aria-hidden="true" /> Export
+                    </a>
+                    <button
+                        @click="startNew"
+                        class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium"
+                    >
+                        <PlusIcon class="w-4 h-4" aria-hidden="true" /> Add credential
+                    </button>
+                </div>
             </div>
 
             <OrgSettingsTabBar active="credentials" />
@@ -440,11 +458,17 @@ onMounted(load)
                         <div class="flex items-center gap-2 shrink-0">
                             <button @click="startEdit(d)"
                                 class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium shadow-sm">
-                                <PencilSquareIcon class="w-4 h-4" /> Edit
+                                <PencilSquareIcon class="w-4 h-4" aria-hidden="true" /> Edit
+                            </button>
+                            <button @click="cloneDef(d)"
+                                class="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-gray-300 dark:border-slate-600 text-gray-600 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800"
+                                title="Clone (e.g. for a state variant)" aria-label="Clone definition">
+                                <DocumentDuplicateIcon class="w-4 h-4" aria-hidden="true" />
                             </button>
                             <button v-if="!d.is_cms_mandatory" @click="remove(d)"
-                                class="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-rose-300 dark:border-rose-700 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40" title="Delete">
-                                <TrashIcon class="w-4 h-4" />
+                                class="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-rose-300 dark:border-rose-700 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40"
+                                title="Delete" aria-label="Delete definition">
+                                <TrashIcon class="w-4 h-4" aria-hidden="true" />
                             </button>
                         </div>
                     </div>

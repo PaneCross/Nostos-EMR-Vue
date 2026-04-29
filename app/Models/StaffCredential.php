@@ -145,6 +145,17 @@ class StaffCredential extends Model
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
+    /**
+     * Days until expires_at relative to "now" in the app's configured TZ.
+     *
+     * Audit-4 E1 note : `expires_at` is a date column (no time component) and
+     * `now()` returns the app's configured timezone (UTC by default). For a
+     * Pacific-time tenant, a credential expiring 2026-06-01 will tick to
+     * "expired" at 5pm PT the day before (when UTC rolls to 2026-06-01). Most
+     * ops accept this as "we run on server time." If you need precise
+     * tenant-local expiry, store an `expires_at_tz` column and compare in the
+     * tenant's timezone here.
+     */
     public function daysUntilExpiration(): ?int
     {
         if (! $this->expires_at) return null;

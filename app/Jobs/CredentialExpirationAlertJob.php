@@ -211,7 +211,16 @@ class CredentialExpirationAlertJob implements ShouldQueue
         ]);
     }
 
-    /** Find which cadence step (if any) the current days-out matches. */
+    /**
+     * Find which cadence step (if any) the current days-out matches.
+     *
+     * Audit-4 E2 note : exact-day matching means if Horizon is down for >24h
+     * and skips a day's run, that day's cadence step is missed. The user will
+     * still catch the next step (e.g. 30→14). For overdue, the synthetic
+     * `-1` step ensures daily re-fire so nothing slips. Document recovery
+     * behavior in runbook : if you suspect a missed run, manually invoke
+     * `php artisan queue:work compliance --once` to catch up.
+     */
     private function matchedCadenceStep(int $days, array $cadence): ?int
     {
         // Sort descending so we pick the highest matching step (e.g. day-of triggers
