@@ -188,7 +188,8 @@ onMounted(loadTitles)
             </div>
 
             <!-- Add modal -->
-            <div v-if="showAddModal" class="fixed inset-0 bg-black/50 z-40 flex items-center justify-center p-4" @click.self="showAddModal = false">
+            <div v-if="showAddModal" role="dialog" aria-modal="true" aria-label="Add job title" tabindex="-1" @keydown.escape.window="showAddModal = false"
+                class="fixed inset-0 bg-black/50 z-40 flex items-center justify-center p-4" @click.self="showAddModal = false">
                 <div class="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-700 max-w-md w-full p-6">
                     <h2 class="text-lg font-bold text-gray-900 dark:text-slate-100 mb-4">Add job title</h2>
                     <div class="space-y-3">
@@ -213,7 +214,8 @@ onMounted(loadTitles)
             </div>
 
             <!-- Edit modal -->
-            <div v-if="editingTitle" class="fixed inset-0 bg-black/50 z-40 flex items-center justify-center p-4" @click.self="editingTitle = null">
+            <div v-if="editingTitle" role="dialog" aria-modal="true" aria-label="Edit job title" tabindex="-1" @keydown.escape.window="editingTitle = null"
+                class="fixed inset-0 bg-black/50 z-40 flex items-center justify-center p-4" @click.self="editingTitle = null">
                 <div class="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-700 max-w-md w-full p-6">
                     <h2 class="text-lg font-bold text-gray-900 dark:text-slate-100 mb-4">Edit job title</h2>
                     <div class="space-y-3">

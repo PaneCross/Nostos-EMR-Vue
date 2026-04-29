@@ -16,7 +16,10 @@
 import { ref, computed, watch } from 'vue'
 import { Head, Link, router } from '@inertiajs/vue3'
 import AppShell from '@/Layouts/AppShell.vue'
+import { useToast } from '@/composables/useToast'
 import axios from 'axios'
+
+const toast = useToast()
 import {
     IdentificationIcon,
     AcademicCapIcon,
@@ -193,7 +196,7 @@ function buildFormData(form: any): FormData {
 }
 
 async function submitCred() {
-    if (!credForm.value.title.trim()) { alert('Title is required'); return }
+    if (!credForm.value.title.trim()) { toast.warning('Title is required'); return }
     credSaving.value = true
     try {
         await axios.post(
@@ -205,7 +208,7 @@ async function submitCred() {
         resetCred()
         router.reload()
     } catch (err: any) {
-        alert(err?.response?.data?.message ?? 'Failed to save credential.')
+        toast.error(err?.response?.data?.message ?? 'Failed to save credential.')
     } finally {
         credSaving.value = false
     }
@@ -250,7 +253,7 @@ async function submitEditCred() {
         editingCred.value = null
         router.reload()
     } catch (err: any) {
-        alert(err?.response?.data?.message ?? 'Failed to update credential.')
+        toast.error(err?.response?.data?.message ?? 'Failed to update credential.')
     } finally {
         credSaving.value = false
     }
@@ -273,7 +276,7 @@ async function verifyCred(c: Credential) {
         await axios.post(`/it-admin/staff-credentials/${c.id}/verify`)
         router.reload()
     } catch (e: any) {
-        alert(e?.response?.data?.message ?? 'Could not verify.')
+        toast.error(e?.response?.data?.message ?? 'Could not verify.')
     }
 }
 
@@ -312,7 +315,7 @@ const ceuEligibleCreds = computed(() =>
 )
 
 async function submitTraining() {
-    if (!trainingForm.value.training_name.trim()) { alert('Training name is required'); return }
+    if (!trainingForm.value.training_name.trim()) { toast.warning('Training name is required'); return }
     trainingSaving.value = true
     try {
         await axios.post(`/it-admin/users/${props.staff.id}/training`, trainingForm.value)
@@ -320,7 +323,7 @@ async function submitTraining() {
         resetTraining()
         router.reload()
     } catch (err: any) {
-        alert(err?.response?.data?.message ?? 'Failed to save training.')
+        toast.error(err?.response?.data?.message ?? 'Failed to save training.')
     } finally {
         trainingSaving.value = false
     }
@@ -729,11 +732,12 @@ const filterCounts = computed(() => {
             </div>
 
             <!-- Edit modal -->
-            <div v-if="editingCred" class="fixed inset-0 bg-black/50 z-40 flex items-center justify-center p-4 overflow-y-auto" @click.self="editingCred = null">
+            <div v-if="editingCred" role="dialog" aria-modal="true" aria-label="Edit credential" tabindex="-1" @keydown.escape.window="editingCred = null"
+                class="fixed inset-0 bg-black/50 z-40 flex items-center justify-center p-4 overflow-y-auto" @click.self="editingCred = null">
                 <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 max-w-2xl w-full p-6 my-8 max-h-[90vh] overflow-y-auto">
                     <div class="flex items-center justify-between mb-4">
                         <h2 class="text-lg font-bold text-slate-900 dark:text-slate-100">Edit credential</h2>
-                        <button @click="editingCred = null" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"><XMarkIcon class="w-5 h-5" /></button>
+                        <button @click="editingCred = null" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200" aria-label="Close dialog"><XMarkIcon class="w-5 h-5" aria-hidden="true" /></button>
                     </div>
                     <div class="grid grid-cols-2 gap-3 mb-3">
                         <label class="block col-span-2">
@@ -809,13 +813,14 @@ const filterCounts = computed(() => {
             </div>
 
             <!-- F9 : read-only credential detail modal -->
-            <div v-if="viewingCred" class="fixed inset-0 bg-black/50 z-40 flex items-center justify-center p-4 overflow-y-auto" @click.self="viewingCred = null">
+            <div v-if="viewingCred" role="dialog" aria-modal="true" aria-label="Credential details" tabindex="-1" @keydown.escape.window="viewingCred = null"
+                class="fixed inset-0 bg-black/50 z-40 flex items-center justify-center p-4 overflow-y-auto" @click.self="viewingCred = null">
                 <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 max-w-2xl w-full p-6 my-8 max-h-[90vh] overflow-y-auto">
                     <div class="flex items-center justify-between mb-4">
                         <h2 class="text-lg font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
                             <EyeIcon class="w-5 h-5" /> Credential details
                         </h2>
-                        <button @click="viewingCred = null" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"><XMarkIcon class="w-5 h-5" /></button>
+                        <button @click="viewingCred = null" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200" aria-label="Close dialog"><XMarkIcon class="w-5 h-5" aria-hidden="true" /></button>
                     </div>
                     <div class="space-y-3 text-sm">
                         <div>

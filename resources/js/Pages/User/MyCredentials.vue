@@ -298,11 +298,12 @@ async function submitRenewal() {
             </div>
 
             <!-- D11 : assignment-dispute modal -->
-            <div v-if="showAssignmentDispute" class="fixed inset-0 bg-black/50 z-40 flex items-center justify-center p-4" @click.self="showAssignmentDispute = false">
+            <div v-if="showAssignmentDispute" role="dialog" aria-modal="true" aria-label="Report assignment issue" tabindex="-1" @keydown.escape.window="showAssignmentDispute = false"
+                class="fixed inset-0 bg-black/50 z-40 flex items-center justify-center p-4" @click.self="showAssignmentDispute = false">
                 <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 max-w-md w-full p-6">
                     <div class="flex items-center justify-between mb-4">
                         <h2 class="text-lg font-bold text-slate-900 dark:text-slate-100">Report assignment issue</h2>
-                        <button @click="showAssignmentDispute = false" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"><XMarkIcon class="w-5 h-5" /></button>
+                        <button @click="showAssignmentDispute = false" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200" aria-label="Close dialog"><XMarkIcon class="w-5 h-5" aria-hidden="true" /></button>
                     </div>
                     <p class="text-sm text-slate-600 dark:text-slate-300 mb-3">
                         Describe what's incorrect (job title, supervisor, or both). IT Admin will review and update your record.
@@ -319,11 +320,12 @@ async function submitRenewal() {
             </div>
 
             <!-- Renewal modal -->
-            <div v-if="renewing" class="fixed inset-0 bg-black/50 z-40 flex items-center justify-center p-4" @click.self="renewing = null">
+            <div v-if="renewing" role="dialog" aria-modal="true" aria-label="Upload renewal" tabindex="-1" @keydown.escape.window="renewing = null"
+                class="fixed inset-0 bg-black/50 z-40 flex items-center justify-center p-4" @click.self="renewing = null">
                 <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 max-w-md w-full p-6">
                     <div class="flex items-center justify-between mb-4">
                         <h2 class="text-lg font-bold text-slate-900 dark:text-slate-100">Upload renewal</h2>
-                        <button @click="renewing = null" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"><XMarkIcon class="w-5 h-5" /></button>
+                        <button @click="renewing = null" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200" aria-label="Close dialog"><XMarkIcon class="w-5 h-5" aria-hidden="true" /></button>
                     </div>
                     <p class="text-sm text-slate-600 dark:text-slate-300 mb-4">
                         Renewing : <strong>{{ renewing.title }}</strong>

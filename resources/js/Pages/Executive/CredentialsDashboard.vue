@@ -433,7 +433,8 @@ const bucketLabels: Record<string, string> = {
             </div>
 
             <!-- Drilldown modal -->
-            <div v-if="drilldown" class="fixed inset-0 bg-black/50 z-40 flex items-center justify-center p-4 overflow-y-auto" @click.self="drilldown = null">
+            <div v-if="drilldown" role="dialog" aria-modal="true" aria-label="Credential drilldown" tabindex="-1" @keydown.escape.window="drilldown = null"
+                class="fixed inset-0 bg-black/50 z-40 flex items-center justify-center p-4 overflow-y-auto" @click.self="drilldown = null">
                 <div class="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-700 max-w-3xl w-full p-6 my-8 max-h-[90vh] overflow-y-auto">
                     <div class="flex items-center justify-between mb-4">
                         <div>
@@ -442,7 +443,7 @@ const bucketLabels: Record<string, string> = {
                                 {{ deptLabel(drilldown.dept) }} · {{ drilldown.users.length }} user(s) required
                             </p>
                         </div>
-                        <button @click="drilldown = null" class="text-gray-400 hover:text-gray-600 dark:hover:text-slate-200"><XMarkIcon class="w-5 h-5" /></button>
+                        <button @click="drilldown = null" class="text-gray-400 hover:text-gray-600 dark:hover:text-slate-200" aria-label="Close dialog"><XMarkIcon class="w-5 h-5" aria-hidden="true" /></button>
                     </div>
 
                     <!-- Quick-filter chips by bucket -->
@@ -542,11 +543,12 @@ const bucketLabels: Record<string, string> = {
             </div>
 
             <!-- G1 : Bulk-edit modal -->
-            <div v-if="showBulkEditModal" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" @click.self="showBulkEditModal = false">
+            <div v-if="showBulkEditModal" role="dialog" aria-modal="true" aria-label="Bulk edit credentials" tabindex="-1" @keydown.escape.window="showBulkEditModal = false"
+                class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" @click.self="showBulkEditModal = false">
                 <div class="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-700 max-w-md w-full p-6">
                     <div class="flex items-center justify-between mb-3">
                         <h3 class="text-base font-bold text-gray-900 dark:text-slate-100">Bulk edit {{ selectedCredentialIds.size }} credential(s)</h3>
-                        <button @click="showBulkEditModal = false" class="text-gray-400 hover:text-gray-600"><XMarkIcon class="w-5 h-5" /></button>
+                        <button @click="showBulkEditModal = false" class="text-gray-400 hover:text-gray-600" aria-label="Close dialog"><XMarkIcon class="w-5 h-5" aria-hidden="true" /></button>
                     </div>
                     <p class="text-xs text-gray-500 dark:text-slate-400 mb-3">
                         Changes the same field across selected credentials WITHOUT creating a renewal chain. Useful for "we just got NPDB enrolled, mark all licensure rows verified via NPDB" or audit annotations.
@@ -591,11 +593,12 @@ const bucketLabels: Record<string, string> = {
             </div>
 
             <!-- A2 : Bulk-renew modal -->
-            <div v-if="showBulkRenewModal" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" @click.self="showBulkRenewModal = false">
+            <div v-if="showBulkRenewModal" role="dialog" aria-modal="true" aria-label="Bulk renew credentials" tabindex="-1" @keydown.escape.window="showBulkRenewModal = false"
+                class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" @click.self="showBulkRenewModal = false">
                 <div class="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-700 max-w-md w-full p-6">
                     <div class="flex items-center justify-between mb-3">
                         <h3 class="text-base font-bold text-gray-900 dark:text-slate-100">Bulk renew {{ selectedCredentialIds.size }} credential(s)</h3>
-                        <button @click="showBulkRenewModal = false" class="text-gray-400 hover:text-gray-600"><XMarkIcon class="w-5 h-5" /></button>
+                        <button @click="showBulkRenewModal = false" class="text-gray-400 hover:text-gray-600" aria-label="Close dialog"><XMarkIcon class="w-5 h-5" aria-hidden="true" /></button>
                     </div>
                     <p class="text-xs text-gray-500 dark:text-slate-400 mb-3">
                         Each credential gets a new active row with the dates below ; the previous record is preserved as audit history. Use this after a group event (annual fire-drill, BLS class graduation, monthly OIG/SAM run).

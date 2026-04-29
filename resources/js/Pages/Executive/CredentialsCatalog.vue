@@ -10,7 +10,10 @@ import { ref, onMounted, computed } from 'vue'
 import { Head } from '@inertiajs/vue3'
 import AppShell from '@/Layouts/AppShell.vue'
 import OrgSettingsTabBar from '@/Pages/Executive/components/OrgSettingsTabBar.vue'
+import { useToast } from '@/composables/useToast'
 import axios from 'axios'
+
+const toast = useToast()
 import {
     AcademicCapIcon, PlusIcon, PencilSquareIcon, TrashIcon, LockClosedIcon,
     InformationCircleIcon, ShieldCheckIcon, DocumentArrowUpIcon,
@@ -283,7 +286,7 @@ async function save() {
 
 async function remove(d: Definition) {
     if (d.is_cms_mandatory) {
-        alert('CMS-mandatory definitions cannot be deleted.')
+        toast.warning('CMS-mandatory definitions cannot be deleted.')
         return
     }
     if (!confirm(`Delete "${d.title}"? This cannot be undone.`)) return
@@ -467,13 +470,14 @@ onMounted(load)
             </div>
 
             <!-- Edit / Add modal -->
-            <div v-if="editing" class="fixed inset-0 bg-black/50 z-40 flex items-center justify-center p-4 overflow-y-auto" @click.self="editing = null">
+            <div v-if="editing" role="dialog" aria-modal="true" aria-labelledby="catalog-edit-title" tabindex="-1" @keydown.escape.window="editing = null"
+                class="fixed inset-0 bg-black/50 z-40 flex items-center justify-center p-4 overflow-y-auto" @click.self="editing = null">
                 <div class="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-700 max-w-3xl w-full p-6 my-8 max-h-[90vh] overflow-y-auto">
                     <div class="flex items-center justify-between mb-4">
                         <h2 class="text-lg font-bold text-gray-900 dark:text-slate-100">
                             {{ isNew ? 'Add credential definition' : (editing.is_cms_mandatory ? 'Edit (CMS-mandatory : code/type locked)' : 'Edit credential definition') }}
                         </h2>
-                        <button @click="editing = null" class="text-gray-400 hover:text-gray-600 dark:hover:text-slate-200"><XMarkIcon class="w-5 h-5" /></button>
+                        <button @click="editing = null" class="text-gray-400 hover:text-gray-600 dark:hover:text-slate-200" aria-label="Close dialog"><XMarkIcon class="w-5 h-5" aria-hidden="true" /></button>
                     </div>
 
                     <div class="grid grid-cols-2 gap-4 mb-4">
@@ -624,13 +628,14 @@ onMounted(load)
             </div>
 
             <!-- B2/B3 : Email preview sub-modal -->
-            <div v-if="showEmailPreview" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" @click.self="showEmailPreview = false">
+            <div v-if="showEmailPreview" role="dialog" aria-modal="true" aria-label="Email preview" tabindex="-1" @keydown.escape.window="showEmailPreview = false"
+                class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" @click.self="showEmailPreview = false">
                 <div class="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-700 max-w-3xl w-full p-6 max-h-[90vh] overflow-y-auto">
                     <div class="flex items-center justify-between mb-3">
                         <h3 class="text-base font-bold text-gray-900 dark:text-slate-100 flex items-center gap-1.5">
                             <EnvelopeIcon class="w-5 h-5" /> Email preview
                         </h3>
-                        <button @click="showEmailPreview = false" class="text-gray-400 hover:text-gray-600"><XMarkIcon class="w-5 h-5" /></button>
+                        <button @click="showEmailPreview = false" class="text-gray-400 hover:text-gray-600" aria-label="Close dialog"><XMarkIcon class="w-5 h-5" aria-hidden="true" /></button>
                     </div>
                     <div class="grid grid-cols-2 gap-3 mb-3">
                         <label class="block">
@@ -658,11 +663,12 @@ onMounted(load)
             </div>
 
             <!-- Custom cadence step modal (nested inside catalog modal) -->
-            <div v-if="showCustomStepModal" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" @click.self="showCustomStepModal = false">
+            <div v-if="showCustomStepModal" role="dialog" aria-modal="true" aria-label="Add custom cadence step" tabindex="-1" @keydown.escape.window="showCustomStepModal = false"
+                class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" @click.self="showCustomStepModal = false">
                 <div class="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-700 max-w-md w-full p-6">
                     <div class="flex items-center justify-between mb-4">
                         <h3 class="text-base font-bold text-gray-900 dark:text-slate-100">Add custom cadence step</h3>
-                        <button @click="showCustomStepModal = false" class="text-gray-400 hover:text-gray-600 dark:hover:text-slate-200"><XMarkIcon class="w-5 h-5" /></button>
+                        <button @click="showCustomStepModal = false" class="text-gray-400 hover:text-gray-600 dark:hover:text-slate-200" aria-label="Close dialog"><XMarkIcon class="w-5 h-5" aria-hidden="true" /></button>
                     </div>
                     <p class="text-xs text-gray-500 dark:text-slate-400 mb-3">
                         Use this for non-standard cycles (e.g. a state-specific 45-day pre-expiry window). Positive = before expiration ; 0 = day of ; negative = days overdue.
