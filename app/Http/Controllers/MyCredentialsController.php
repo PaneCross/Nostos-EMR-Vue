@@ -108,6 +108,22 @@ class MyCredentialsController extends Controller
             ],
         ]);
 
+        // F8 : also email each active IT Admin so the dispute doesn't sit
+        // unactioned if the dept feed is missed.
+        $itAdmins = \App\Models\User::where('tenant_id', $user->tenant_id)
+            ->where('department', 'it_admin')
+            ->where('is_active', true)
+            ->get();
+        foreach ($itAdmins as $admin) {
+            try {
+                \Illuminate\Support\Facades\Mail::to($admin->email)->queue(new \App\Mail\NotificationMail($admin));
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning(
+                    "[reportAssignment] failed to mail IT Admin {$admin->id}: " . $e->getMessage()
+                );
+            }
+        }
+
         AuditLog::record(
             action:       'staff_credential.role_assignment_disputed',
             resourceType: 'User',

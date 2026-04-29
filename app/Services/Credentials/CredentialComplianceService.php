@@ -89,8 +89,35 @@ class CredentialComplianceService
             'departments' => $departments,
             'rows'        => $rows,
             'summary'     => $this->summarize($rows),
+            // G2 : next-6-months expiration counts for the calendar widget
+            'upcoming'    => $this->upcomingExpirations($tenantId),
             'generated_at' => now()->toIso8601String(),
         ];
+    }
+
+    /**
+     * G2 : count of expiring credentials per upcoming month for the next 6
+     * months. Used to drive the calendar bar chart on the dashboard.
+     */
+    private function upcomingExpirations(int $tenantId): array
+    {
+        $now = now()->startOfMonth();
+        $months = [];
+        for ($i = 0; $i < 6; $i++) {
+            $m = $now->copy()->addMonths($i);
+            $months[] = [
+                'month_label' => $m->format('M Y'),
+                'month_key'   => $m->format('Y-m'),
+                'count'       => \App\Models\StaffCredential::where('tenant_id', $tenantId)
+                    ->whereNull('deleted_at')
+                    ->whereNull('replaced_by_credential_id')
+                    ->whereYear('expires_at', $m->year)
+                    ->whereMonth('expires_at', $m->month)
+                    ->where('cms_status', 'active')
+                    ->count(),
+            ];
+        }
+        return $months;
     }
 
     /** Return one of: missing|invalid|expired|expiring_30d|compliant */

@@ -56,6 +56,18 @@ const visibleCredentials = computed(() =>
 )
 const supersededCount = computed(() => props.credentials.filter(c => c.is_superseded).length)
 
+// G3 : credentials where CEU progress is fully met and the cycle is approaching
+// expiry (within 60 days). The user can renew now since they've satisfied the
+// continuing-ed requirement.
+const ceuReadyForRenewal = computed(() => {
+    return props.credentials.filter(c => {
+        if (c.is_superseded) return false
+        if ((c.ceu_hours_required ?? 0) === 0) return false
+        if ((c.ceu_hours_logged ?? 0) < (c.ceu_hours_required ?? 0)) return false
+        return ['due_60', 'due_30', 'due_14', 'due_today'].includes(c.status)
+    })
+})
+
 const renewing = ref<Credential | null>(null)
 const renewalForm = ref({ issued_at: '', expires_at: '' })
 const renewalFile = ref<File | null>(null)
@@ -172,6 +184,23 @@ async function submitRenewal() {
                     {{ flash.msg }}
                 </div>
                 <button @click="flash = null" class="text-current/60 hover:text-current"><XMarkIcon class="w-4 h-4" /></button>
+            </div>
+
+            <!-- G3 : CEU-complete-ready-to-renew banner -->
+            <div v-if="ceuReadyForRenewal.length > 0"
+                 class="rounded-xl border border-emerald-300 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-950/30 px-5 py-4 text-sm mb-6">
+                <div class="flex items-start gap-3">
+                    <CheckCircleIcon class="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+                    <div class="text-emerald-800 dark:text-emerald-200">
+                        <p class="font-semibold mb-1">{{ ceuReadyForRenewal.length }} credential(s) ready for renewal</p>
+                        <p class="mb-1 text-xs">You've completed the CEU hour requirement and the cycle is within 60 days of expiring. You can submit your renewal documentation now :</p>
+                        <ul class="list-disc list-outside ml-5 space-y-0.5">
+                            <li v-for="c in ceuReadyForRenewal" :key="c.id">
+                                <strong>{{ c.title }}</strong> — {{ c.ceu_hours_logged }} / {{ c.ceu_hours_required }} CEU hours logged
+                            </li>
+                        </ul>
+                    </div>
+                </div>
             </div>
 
             <!-- Missing -->

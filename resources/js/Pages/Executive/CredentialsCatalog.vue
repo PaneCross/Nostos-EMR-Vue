@@ -422,6 +422,9 @@ onMounted(load)
                                 <span v-if="d.default_doc_required" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-300">
                                     <DocumentArrowUpIcon class="w-3 h-3" /> Doc required
                                 </span>
+                                <span v-if="d.ceu_hours_required > 0" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300">
+                                    {{ d.ceu_hours_required }} CEU hrs/cycle
+                                </span>
                                 <span v-if="!d.is_active" class="px-2 py-0.5 rounded-full text-xs bg-gray-100 dark:bg-slate-800 text-gray-500 dark:text-slate-400">Inactive</span>
                             </div>
                             <p v-if="d.description" class="text-xs text-gray-600 dark:text-slate-400 mb-1">{{ d.description }}</p>

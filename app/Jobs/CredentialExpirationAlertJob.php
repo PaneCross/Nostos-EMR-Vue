@@ -68,6 +68,12 @@ class CredentialExpirationAlertJob implements ShouldQueue
         $alertsCreated = 0;
         $emailsSent = 0;
 
+        // G4 : batch emails per user. Build queues keyed by user_id (and a
+        // separate one for supervisors), flush at the end as either a single
+        // CredentialExpiringMail (1 item) or CredentialDigestMail (2+ items).
+        $userQueue = [];        // [user_id => array of items]
+        $supervisorQueue = [];  // [supervisor_id => array of items]
+
         foreach ($credentials as $credential) {
             $days = $credential->daysUntilExpiration();
             if ($days === null) continue;
@@ -90,32 +96,18 @@ class CredentialExpirationAlertJob implements ShouldQueue
                 ->exists();
             if ($existing) continue;
 
-            // ── Email the staff member themselves ─────────────────────────
+            // G4 : queue emails instead of sending immediately so we can batch
+            // multiple items per user into a single digest at the end.
             if ($this->shouldEmailUser($prefService, $u, $credential)) {
-                try {
-                    Mail::to($u->email)->queue(new CredentialExpiringMail($u, $credential, $days, false));
-                    $emailsSent++;
-                } catch (\Throwable $e) {
-                    Log::warning('[CredentialExpirationAlertJob] User mail failed', [
-                        'user_id' => $u->id, 'credential_id' => $credential->id, 'error' => $e->getMessage(),
-                    ]);
-                }
+                $userQueue[$u->id] ??= ['user' => $u, 'items' => []];
+                $userQueue[$u->id]['items'][] = ['credential' => $credential, 'days_remaining' => $days, 'is_supervisor_copy' => false];
             }
 
-            // ── Supervisor CC at the 14-day mark and overdue ──────────────
             if (in_array($cadenceStep, self::SUPERVISOR_CC_AT, true) || $days < 0) {
                 if ($u->supervisor && $this->shouldEmailSupervisor($prefService, $u->supervisor, $credential)) {
-                    try {
-                        Mail::to($u->supervisor->email)
-                            ->queue(new CredentialExpiringMail($u->supervisor, $credential, $days, true));
-                        $emailsSent++;
-                    } catch (\Throwable $e) {
-                        Log::warning('[CredentialExpirationAlertJob] Supervisor mail failed', [
-                            'supervisor_id' => $u->supervisor->id,
-                            'credential_id' => $credential->id,
-                            'error' => $e->getMessage(),
-                        ]);
-                    }
+                    $supId = $u->supervisor->id;
+                    $supervisorQueue[$supId] ??= ['user' => $u->supervisor, 'items' => []];
+                    $supervisorQueue[$supId]['items'][] = ['credential' => $credential, 'days_remaining' => $days, 'is_supervisor_copy' => true];
                 }
             }
 
@@ -142,6 +134,32 @@ class CredentialExpirationAlertJob implements ShouldQueue
             ]);
 
             $alertsCreated++;
+        }
+
+        // G4 : flush queued emails. Single-item users get the original
+        // CredentialExpiringMail ; multi-item users get the new digest.
+        foreach ([$userQueue, $supervisorQueue] as $queue) {
+            foreach ($queue as $entry) {
+                $items = $entry['items'];
+                $recipient = $entry['user'];
+                try {
+                    if (count($items) === 1) {
+                        $i = $items[0];
+                        Mail::to($recipient->email)->queue(
+                            new CredentialExpiringMail($recipient, $i['credential'], $i['days_remaining'], $i['is_supervisor_copy'])
+                        );
+                    } else {
+                        Mail::to($recipient->email)->queue(
+                            new \App\Mail\CredentialDigestMail($recipient, $items)
+                        );
+                    }
+                    $emailsSent++;
+                } catch (\Throwable $e) {
+                    Log::warning('[CredentialExpirationAlertJob] flush mail failed', [
+                        'user_id' => $recipient->id, 'item_count' => count($items), 'error' => $e->getMessage(),
+                    ]);
+                }
+            }
         }
 
         Log::info('[CredentialExpirationAlertJob] Batch complete', [

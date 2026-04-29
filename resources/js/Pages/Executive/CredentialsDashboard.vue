@@ -33,10 +33,12 @@ interface Row {
     cells: Record<string, Bucket>
     totals: Bucket
 }
+interface UpcomingMonth { month_label: string; month_key: string; count: number }
 interface Matrix {
     departments: string[]
     rows: Row[]
     summary: Bucket
+    upcoming?: UpcomingMonth[]
     generated_at: string
 }
 
@@ -302,6 +304,21 @@ const bucketLabels: Record<string, string> = {
                 </div>
             </div>
 
+            <!-- G2 : 6-month renewals calendar -->
+            <div v-if="matrix.upcoming && matrix.upcoming.length > 0" class="rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4 mb-6">
+                <h3 class="text-xs uppercase tracking-wide font-semibold text-gray-700 dark:text-slate-300 mb-3">Upcoming renewals (next 6 months)</h3>
+                <div class="flex items-end gap-3 h-24">
+                    <div v-for="m in matrix.upcoming" :key="m.month_key" class="flex-1 flex flex-col items-center justify-end">
+                        <span class="text-xs font-bold text-gray-900 dark:text-slate-100 tabular-nums">{{ m.count }}</span>
+                        <div class="w-full mt-1 rounded-t bg-indigo-500 dark:bg-indigo-600 transition-all"
+                             :style="{ height: Math.max(8, (m.count / Math.max(1, Math.max(...matrix.upcoming.map(x=>x.count)))) * 70) + 'px' }"
+                             :title="`${m.count} credential(s) expiring in ${m.month_label}`">
+                        </div>
+                        <span class="text-[10px] text-gray-500 dark:text-slate-400 mt-1">{{ m.month_label }}</span>
+                    </div>
+                </div>
+            </div>
+
             <!-- Filters -->
             <div class="flex flex-wrap items-center gap-3 mb-4">
                 <label class="text-xs text-gray-700 dark:text-slate-300 flex items-center gap-1.5">
@@ -318,6 +335,11 @@ const bucketLabels: Record<string, string> = {
                         <option v-for="d in matrix.departments" :key="d" :value="d">{{ deptLabel(d) }}</option>
                     </select>
                 </label>
+                <button v-if="filterDept !== 'all'" @click="filterDept = 'all'"
+                    class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-200 dark:hover:bg-indigo-900/60">
+                    Filtered to {{ deptLabel(filterDept as string) }}
+                    <XMarkIcon class="w-3.5 h-3.5" />
+                </button>
                 <span class="text-xs text-gray-500 dark:text-slate-400 ml-auto">
                     Generated {{ new Date(matrix.generated_at).toLocaleString() }}
                 </span>

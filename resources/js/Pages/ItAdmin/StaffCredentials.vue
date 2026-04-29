@@ -13,7 +13,7 @@
 //   - Append-only credential history; superseded rows retained.
 // ────────────────────────────────────────────────────────────────────────────
 
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { Head, Link, router } from '@inertiajs/vue3'
 import AppShell from '@/Layouts/AppShell.vue'
 import axios from 'axios'
@@ -30,6 +30,7 @@ import {
     DocumentArrowDownIcon,
     ShieldCheckIcon,
     XMarkIcon,
+    EyeIcon,
 } from '@heroicons/vue/24/outline'
 
 interface Credential {
@@ -255,6 +256,10 @@ async function submitEditCred() {
     }
 }
 
+// F9 : read-only credential detail modal
+const viewingCred = ref<Credential | null>(null)
+function viewCred(c: Credential) { viewingCred.value = c }
+
 async function deleteCred(c: Credential) {
     if (!confirm(`Remove credential "${c.title}"?`)) return
     await axios.delete(`/it-admin/staff-credentials/${c.id}`)
@@ -359,9 +364,10 @@ const expiringCount = computed(() =>
     props.credentials.filter(c => !c.is_superseded && ['expired', 'due_today', 'due_14', 'due_30', 'due_60'].includes(c.status)).length
 )
 
-// Audit-history toggle : superseded rows are kept as a paper trail but hidden
-// by default so the active list is clear. CMS auditors can toggle them on.
-const showAuditHistory = ref(false)
+// F1 : localStorage-persisted audit history toggle. CMS auditors flipping
+// through many users in sequence don't want to re-toggle on every load.
+const showAuditHistory = ref(localStorage.getItem('credentials.showAuditHistory') === '1')
+watch(showAuditHistory, v => localStorage.setItem('credentials.showAuditHistory', v ? '1' : '0'))
 // D3 : filter chip set for the credentials table
 type CredFilter = 'all' | 'expired' | 'expiring' | 'pending' | 'invalid' | 'has_doc'
 const credFilter = ref<CredFilter>('all')
@@ -702,6 +708,9 @@ const filterCounts = computed(() => {
                                     class="text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 inline-block mr-1" title="Open document">
                                     <DocumentArrowDownIcon class="w-4 h-4" />
                                 </a>
+                                <button @click="viewCred(c)" class="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 mr-1" title="View details">
+                                    <EyeIcon class="w-4 h-4" />
+                                </button>
                                 <button v-if="canEdit !== false && c.cms_status === 'pending'" @click="verifyCred(c)"
                                     class="text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 mr-1 inline-flex items-center gap-0.5"
                                     title="One-click verify : sets active + records verified_at">
@@ -795,6 +804,60 @@ const filterCounts = computed(() => {
                         <button @click="submitEditCred" :disabled="credSaving" class="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium disabled:opacity-50">
                             {{ credSaving ? 'Saving...' : 'Save changes' }}
                         </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- F9 : read-only credential detail modal -->
+            <div v-if="viewingCred" class="fixed inset-0 bg-black/50 z-40 flex items-center justify-center p-4 overflow-y-auto" @click.self="viewingCred = null">
+                <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 max-w-2xl w-full p-6 my-8 max-h-[90vh] overflow-y-auto">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-lg font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                            <EyeIcon class="w-5 h-5" /> Credential details
+                        </h2>
+                        <button @click="viewingCred = null" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"><XMarkIcon class="w-5 h-5" /></button>
+                    </div>
+                    <div class="space-y-3 text-sm">
+                        <div>
+                            <h3 class="font-semibold text-slate-900 dark:text-slate-100 text-base mb-1">{{ viewingCred.title }}</h3>
+                            <div class="flex items-center gap-2 flex-wrap">
+                                <span class="px-2 py-0.5 rounded-full text-xs bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">{{ viewingCred.type_label }}</span>
+                                <span :class="['inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium', STATUS_CLASSES[viewingCred.status]]">
+                                    {{ STATUS_LABELS[viewingCred.status] }}
+                                </span>
+                                <span v-if="viewingCred.is_superseded" class="px-2 py-0.5 rounded-full text-xs bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300">Superseded</span>
+                            </div>
+                        </div>
+                        <dl class="grid grid-cols-2 gap-x-6 gap-y-2 text-xs">
+                            <div><dt class="text-slate-500 dark:text-slate-400">License state</dt><dd class="text-slate-900 dark:text-slate-100">{{ viewingCred.license_state ?? '-' }}</dd></div>
+                            <div><dt class="text-slate-500 dark:text-slate-400">License #</dt><dd class="text-slate-900 dark:text-slate-100 font-mono">{{ viewingCred.license_number ?? '-' }}</dd></div>
+                            <div><dt class="text-slate-500 dark:text-slate-400">Issued</dt><dd class="text-slate-900 dark:text-slate-100">{{ viewingCred.issued_at ?? '-' }}</dd></div>
+                            <div><dt class="text-slate-500 dark:text-slate-400">Expires</dt><dd class="text-slate-900 dark:text-slate-100">{{ viewingCred.expires_at ?? '-' }}</dd></div>
+                            <div><dt class="text-slate-500 dark:text-slate-400">Verification source</dt><dd class="text-slate-900 dark:text-slate-100">{{ verificationSources?.[viewingCred.verification_source ?? ''] ?? viewingCred.verification_source ?? '-' }}</dd></div>
+                            <div><dt class="text-slate-500 dark:text-slate-400">CMS status</dt><dd class="text-slate-900 dark:text-slate-100">{{ cmsStatuses?.[viewingCred.cms_status ?? ''] ?? viewingCred.cms_status ?? '-' }}</dd></div>
+                            <div v-if="viewingCred.dot_medical_card_expires_at"><dt class="text-slate-500 dark:text-slate-400">DOT med card expires</dt><dd class="text-slate-900 dark:text-slate-100">{{ viewingCred.dot_medical_card_expires_at }}</dd></div>
+                            <div v-if="viewingCred.mvr_check_date"><dt class="text-slate-500 dark:text-slate-400">Last MVR</dt><dd class="text-slate-900 dark:text-slate-100">{{ viewingCred.mvr_check_date }}</dd></div>
+                            <div v-if="viewingCred.vehicle_class_endorsements" class="col-span-2"><dt class="text-slate-500 dark:text-slate-400">Vehicle class / endorsements</dt><dd class="text-slate-900 dark:text-slate-100">{{ viewingCred.vehicle_class_endorsements }}</dd></div>
+                            <div v-if="(viewingCred.ceu_hours_required ?? 0) > 0" class="col-span-2">
+                                <dt class="text-slate-500 dark:text-slate-400">CEU progress</dt>
+                                <dd :class="(viewingCred.ceu_hours_logged ?? 0) >= (viewingCred.ceu_hours_required ?? 0) ? 'text-emerald-600 dark:text-emerald-400 font-semibold' : 'text-amber-600 dark:text-amber-400'">
+                                    {{ viewingCred.ceu_hours_logged ?? 0 }} / {{ viewingCred.ceu_hours_required }} hours logged toward renewal
+                                </dd>
+                            </div>
+                        </dl>
+                        <div v-if="viewingCred.notes">
+                            <dt class="text-xs text-slate-500 dark:text-slate-400">Notes</dt>
+                            <dd class="text-sm text-slate-900 dark:text-slate-100 whitespace-pre-wrap mt-0.5">{{ viewingCred.notes }}</dd>
+                        </div>
+                        <div v-if="viewingCred.document_url" class="pt-2">
+                            <a :href="viewingCred.document_url" target="_blank"
+                                class="inline-flex items-center gap-1.5 text-indigo-600 dark:text-indigo-400 hover:underline">
+                                <DocumentArrowDownIcon class="w-4 h-4" /> Open attached document
+                            </a>
+                        </div>
+                    </div>
+                    <div class="flex justify-end pt-4 mt-4 border-t border-slate-200 dark:border-slate-700">
+                        <button @click="viewingCred = null" class="px-4 py-2 rounded-lg text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800">Close</button>
                     </div>
                 </div>
             </div>

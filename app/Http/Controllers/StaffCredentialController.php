@@ -454,6 +454,63 @@ class StaffCredentialController extends Controller
     }
 
     /**
+     * G1 : bulk-edit fields on selected credentials WITHOUT the renewal-chain
+     * versioning. Used for non-renewal updates : "we just got NPDB enrolled,
+     * mark all licensure rows as verified via NPDB" or "CMS audit 2026 : add
+     * a notes annotation."
+     *
+     * Accepts credential_ids[] + any of : verification_source, notes_append,
+     * cms_status. Each is optional ; only fields present in the payload are
+     * touched.
+     */
+    public function bulkEdit(Request $request): JsonResponse
+    {
+        $this->gate($request);
+        $tenantId = $request->user()->tenant_id;
+
+        $v = $request->validate([
+            'credential_ids'      => ['required', 'array', 'min:1', 'max:200'],
+            'credential_ids.*'    => ['integer'],
+            'verification_source' => ['nullable', Rule::in(array_keys(StaffCredential::VERIFICATION_SOURCES))],
+            'cms_status'          => ['nullable', Rule::in(array_keys(StaffCredential::CMS_STATUSES))],
+            'notes_append'        => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        $rows = StaffCredential::forTenant($tenantId)
+            ->whereIn('id', $v['credential_ids'])
+            ->whereNull('replaced_by_credential_id')
+            ->get();
+
+        $touched = 0;
+        foreach ($rows as $cred) {
+            $patch = [];
+            if (! empty($v['verification_source'])) $patch['verification_source'] = $v['verification_source'];
+            if (! empty($v['cms_status']))          $patch['cms_status']          = $v['cms_status'];
+
+            if (! empty($v['notes_append'])) {
+                $stamp = '[' . now()->format('Y-m-d') . " {$request->user()->first_name}]: ";
+                $patch['notes'] = trim(($cred->notes ? $cred->notes . "\n\n" : '') . $stamp . $v['notes_append']);
+            }
+
+            if (! empty($patch)) {
+                $cred->update($patch);
+                $touched++;
+            }
+        }
+
+        AuditLog::record(
+            action: 'staff_credential.bulk_edited',
+            resourceType: 'StaffCredential',
+            resourceId: 0,
+            tenantId: $tenantId,
+            userId: $request->user()->id,
+            newValues: ['credential_count' => $touched, 'fields_touched' => array_keys($v)],
+        );
+
+        return response()->json(['ok' => true, 'updated_count' => $touched]);
+    }
+
+    /**
      * D5 : per-user printable credentials packet PDF for surveyor walk-ins.
      * Renders a clean Letter-sized PDF with the user's identity + every
      * non-superseded credential's status + expiry + doc-on-file flag.

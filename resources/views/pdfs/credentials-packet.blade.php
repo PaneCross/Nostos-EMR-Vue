@@ -53,18 +53,22 @@
         <table>
             <thead>
                 <tr>
-                    <th style="width: 38%;">Credential</th>
-                    <th style="width: 14%;">Type</th>
-                    <th style="width: 14%;">License #</th>
-                    <th style="width: 11%;">Issued</th>
-                    <th style="width: 11%;">Expires</th>
-                    <th style="width: 12%;">Status / Doc</th>
+                    <th style="width: 36%;">Credential</th>
+                    <th style="width: 13%;">Type</th>
+                    <th style="width: 13%;">License #</th>
+                    <th style="width: 10%;">Issued</th>
+                    <th style="width: 10%;">Expires</th>
+                    <th style="width: 18%;">Status / CEU / Doc</th>
                 </tr>
             </thead>
             <tbody>
                 @foreach($credentials as $c)
+                    @php
+                        $ceuReq = (int) ($c->definition?->ceu_hours_required ?? 0);
+                        $ceuLogged = $ceuReq > 0 ? $c->ceuHoursLogged() : 0;
+                    @endphp
                     <tr>
-                        <td>
+                        <td style="word-wrap: break-word; word-break: break-word;">
                             {{ $c->title }}
                             @if($c->definition?->is_cms_mandatory) <span class="pill pill-mand">CMS</span> @endif
                             @if($c->definition?->requires_psv) <span class="pill pill-psv">PSV</span> @endif
@@ -73,7 +77,7 @@
                             @endif
                         </td>
                         <td>{{ \App\Models\StaffCredential::TYPE_LABELS[$c->credential_type] ?? $c->credential_type }}</td>
-                        <td>
+                        <td style="word-break: break-all;">
                             @if($c->license_state) {{ $c->license_state }} @endif
                             @if($c->license_number) {{ $c->license_number }} @endif
                             @if(!$c->license_state && !$c->license_number) - @endif
@@ -85,6 +89,11 @@
                             <span class="pill pill-{{ in_array($st, ['expired','suspended','revoked']) ? 'expired' : (in_array($st, ['due_today','due_14','due_30','due_60']) ? 'expiring' : ($c->cms_status === 'pending' ? 'pending' : 'active')) }}">
                                 {{ strtoupper(str_replace('_', ' ', $st)) }}
                             </span>
+                            @if($ceuReq > 0)
+                                <br><span style="font-size: 8pt; color: {{ $ceuLogged >= $ceuReq ? '#065f46' : '#92400e' }};">
+                                    {{ $ceuLogged }}/{{ $ceuReq }} CEU hrs
+                                </span>
+                            @endif
                             <br>
                             @if($c->document_path)
                                 <span style="font-size: 8pt; color: #065f46;">✓ doc on file</span>

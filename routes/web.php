@@ -1529,6 +1529,7 @@ Route::middleware('auth')->group(function () {
         Route::patch ('/staff-credentials/{credential}', [\App\Http\Controllers\StaffCredentialController::class, 'updateCredential'])->name('it-admin.staff-credentials.update');
         Route::post  ('/staff-credentials/{credential}/verify', [\App\Http\Controllers\StaffCredentialController::class, 'verifyCredential'])->name('it-admin.staff-credentials.verify');
         Route::post  ('/staff-credentials/bulk-renew',          [\App\Http\Controllers\StaffCredentialController::class, 'bulkRenew'])->name('it-admin.staff-credentials.bulk-renew');
+        Route::post  ('/staff-credentials/bulk-edit',           [\App\Http\Controllers\StaffCredentialController::class, 'bulkEdit'])->name('it-admin.staff-credentials.bulk-edit');
         Route::delete('/staff-credentials/{credential}', [\App\Http\Controllers\StaffCredentialController::class, 'destroyCredential'])->name('it-admin.staff-credentials.destroy');
         Route::delete('/staff-training/{record}',        [\App\Http\Controllers\StaffCredentialController::class, 'destroyTraining'])->name('it-admin.staff-training.destroy');
     });
