@@ -200,7 +200,15 @@ class CmsCredentialBaselineSeeder extends Seeder
 
     public function run(): void
     {
-        Tenant::all()->each(function (Tenant $tenant) {
+        // B7 : ensure NotificationPreferenceService default rows are seeded
+        // for each tenant so the Org Settings → Notifications tab shows
+        // every credential pref (and every other catalog key) with a
+        // persisted default rather than a lazy fallback.
+        $prefService = app(\App\Services\NotificationPreferenceService::class);
+
+        Tenant::all()->each(function (Tenant $tenant) use ($prefService) {
+            $prefService->seedDefaults($tenant->id);
+
             DB::transaction(function () use ($tenant) {
                 foreach (self::BASELINE as $defData) {
                     $def = CredentialDefinition::updateOrCreate(

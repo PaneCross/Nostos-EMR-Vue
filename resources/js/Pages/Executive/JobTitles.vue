@@ -84,11 +84,11 @@ async function saveEdit() {
 }
 
 async function deactivate(t: JobTitle) {
-    if (!confirm(`Deactivate "${t.label}"? Existing user assignments are preserved but it will no longer appear in dropdowns.`)) return
+    if (!confirm(`Deactivate "${t.label}"?\n\nAny users currently holding this title will be cleared (job_title set to null) so their credential targeting doesn't silently break. You'll need to reassign them to a different title for credentials to apply correctly.`)) return
     try {
-        await axios.delete(`/executive/job-titles/${t.id}`)
+        const { data } = await axios.delete(`/executive/job-titles/${t.id}`)
         titles.value = titles.value.filter(x => x.id !== t.id)
-        flashSuccess(`Deactivated "${t.label}".`)
+        flashSuccess(data.message ?? `Deactivated "${t.label}".`)
     } catch (e: any) {
         errorMessage.value = e?.response?.data?.message ?? 'Could not deactivate.'
     }

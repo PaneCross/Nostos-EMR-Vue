@@ -57,6 +57,29 @@ class AssignDemoJobTitlesSeeder extends Seeder
 
     public function run(): void
     {
+        // B4 : ensure each tenant has at least one demo executive user so the
+        // executive code-paths (catalog edit, dashboard view, job-titles
+        // management, org-settings) can be exercised without falling back to
+        // Super Admin.
+        \App\Models\Tenant::all()->each(function ($tenant) {
+            $exists = User::where('tenant_id', $tenant->id)
+                ->where('department', 'executive')
+                ->where('is_active', true)
+                ->exists();
+            if (! $exists) {
+                User::factory()->create([
+                    'tenant_id'  => $tenant->id,
+                    'first_name' => 'Vivian',
+                    'last_name'  => 'Executive',
+                    'email'      => "exec.demo.{$tenant->id}@nostos-demo.test",
+                    'department' => 'executive',
+                    'role'       => 'admin',
+                    'job_title'  => 'center_manager',
+                    'is_active'  => true,
+                ]);
+            }
+        });
+
         $users = User::where('is_active', true)->get();
 
         // Pass 1 : assign job_title

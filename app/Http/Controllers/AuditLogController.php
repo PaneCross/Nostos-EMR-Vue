@@ -53,6 +53,19 @@ class AuditLogController extends Controller
         if ($request->filled('action')) {
             $query->where('action', 'like', '%' . $request->query('action') . '%');
         }
+        // B8 : category quick-filter shortcut so users can pull "everything
+        // credential-related" in one click without typing exact action keys.
+        if ($request->filled('category')) {
+            $patterns = match ($request->query('category')) {
+                'credentials' => ['staff_credential.%', 'staff_training.%', 'credential_definition.%', 'job_title.%', '%role_assignment%'],
+                default       => null,
+            };
+            if ($patterns) {
+                $query->where(function ($q) use ($patterns) {
+                    foreach ($patterns as $p) $q->orWhere('action', 'like', $p);
+                });
+            }
+        }
         if ($request->filled('user_id')) {
             $query->where('user_id', $request->query('user_id'));
         }

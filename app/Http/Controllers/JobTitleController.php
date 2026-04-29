@@ -116,6 +116,16 @@ class JobTitleController extends Controller
         $this->gate($request);
         abort_if($jobTitle->tenant_id !== $request->user()->tenant_id, 403);
 
+        // E4 : null out users.job_title for any user pointing at this code so
+        // their credential targeting doesn't silently break. The deactivation
+        // returns the count so the UI can flag re-assignment as a follow-up.
+        $affectedUsers = \App\Models\User::where('tenant_id', $jobTitle->tenant_id)
+            ->where('job_title', $jobTitle->code)
+            ->pluck('id')->all();
+        if (! empty($affectedUsers)) {
+            \App\Models\User::whereIn('id', $affectedUsers)->update(['job_title' => null]);
+        }
+
         $jobTitle->delete();   // soft delete
 
         AuditLog::record(
@@ -124,8 +134,15 @@ class JobTitleController extends Controller
             resourceId: $jobTitle->id,
             tenantId: $request->user()->tenant_id,
             userId: $request->user()->id,
+            newValues: ['affected_user_ids' => $affectedUsers],
         );
 
-        return response()->json(['ok' => true]);
+        return response()->json([
+            'ok' => true,
+            'affected_users' => count($affectedUsers),
+            'message' => count($affectedUsers) > 0
+                ? "Deactivated. " . count($affectedUsers) . " user(s) had this title : their job_title is now null and they need to be reassigned for credential targeting to work."
+                : 'Deactivated.',
+        ]);
     }
 }

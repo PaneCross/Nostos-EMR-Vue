@@ -50,6 +50,65 @@ const drilldown = ref<{
 const drilldownLoading = ref(false)
 const drilldownFilter = ref<'all'|'users_missing'|'users_invalid'|'users_expired'|'users_expiring_30d'|'users_compliant'>('all')
 
+// A2 : bulk renewal multi-select on the drilldown modal
+const selectedCredentialIds = ref<Set<number>>(new Set())
+const showBulkRenewModal = ref(false)
+const bulkRenewForm = ref({
+    new_expires_at: '',
+    new_issued_at: new Date().toISOString().slice(0, 10),
+    verification_source: 'uploaded_doc' as 'state_board'|'npdb'|'uploaded_doc'|'self_attestation'|'other',
+})
+const bulkSaving = ref(false)
+const bulkResult = ref<string | null>(null)
+
+function toggleCredentialSelected(credId: number | null | undefined) {
+    if (!credId) return
+    const s = new Set(selectedCredentialIds.value)
+    if (s.has(credId)) s.delete(credId)
+    else s.add(credId)
+    selectedCredentialIds.value = s
+}
+
+function selectAllInDrilldown() {
+    if (!drilldown.value) return
+    const s = new Set<number>()
+    for (const u of drilldown.value.users) {
+        if (u.credential_id) s.add(u.credential_id)
+    }
+    selectedCredentialIds.value = s
+}
+
+function clearBulkSelection() {
+    selectedCredentialIds.value = new Set()
+}
+
+async function submitBulkRenew() {
+    if (selectedCredentialIds.value.size === 0) return
+    if (!bulkRenewForm.value.new_expires_at) {
+        bulkResult.value = 'New expiration date is required.'
+        return
+    }
+    bulkSaving.value = true
+    bulkResult.value = null
+    try {
+        const { data } = await axios.post('/it-admin/staff-credentials/bulk-renew', {
+            credential_ids: Array.from(selectedCredentialIds.value),
+            new_expires_at: bulkRenewForm.value.new_expires_at,
+            new_issued_at: bulkRenewForm.value.new_issued_at || undefined,
+            verification_source: bulkRenewForm.value.verification_source || undefined,
+        })
+        bulkResult.value = `Renewed ${data.renewed_count} credential(s). Refresh to see updated counts.`
+        clearBulkSelection()
+        showBulkRenewModal.value = false
+        // Refresh the matrix
+        setTimeout(() => window.location.reload(), 1000)
+    } catch (e: any) {
+        bulkResult.value = e?.response?.data?.message ?? 'Bulk renewal failed.'
+    } finally {
+        bulkSaving.value = false
+    }
+}
+
 const filteredRows = computed(() => {
     if (filterDefId.value === 'all') return props.matrix.rows
     return props.matrix.rows.filter(r => r.definition_id === filterDefId.value)
@@ -370,40 +429,100 @@ const bucketLabels: Record<string, string> = {
                     <div v-if="drilldownLoading" class="text-center py-6 text-gray-500 dark:text-slate-400">Loading...</div>
                     <div v-else-if="drilldown.users.length === 0" class="text-center py-6 text-gray-500 dark:text-slate-400">No users matched this credential's targeting in {{ deptLabel(drilldown.dept) }}.</div>
                     <div v-else-if="filteredDrilldownUsers.length === 0" class="text-center py-6 text-gray-500 dark:text-slate-400">No users in this bucket. Try another filter above.</div>
-                    <table v-else class="w-full text-sm">
-                        <thead class="bg-gray-50 dark:bg-slate-800 text-xs text-gray-700 dark:text-slate-300">
-                            <tr>
-                                <th class="text-left px-3 py-2 font-medium">User</th>
-                                <th class="text-left px-3 py-2 font-medium">Job Title</th>
-                                <th class="text-left px-3 py-2 font-medium">Bucket</th>
-                                <th class="text-left px-3 py-2 font-medium">Expires</th>
-                                <th class="text-left px-3 py-2 font-medium">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-100 dark:divide-slate-800">
-                            <tr v-for="u in filteredDrilldownUsers" :key="u.user_id">
-                                <td class="px-3 py-2 text-gray-900 dark:text-slate-100">{{ u.name }}</td>
-                                <td class="px-3 py-2 text-gray-600 dark:text-slate-300">{{ u.job_title ?? '-' }}</td>
-                                <td class="px-3 py-2 text-xs">
-                                    <span :class="[
-                                        'inline-block px-2 py-0.5 rounded-full text-[10px] font-medium',
-                                        u.bucket === 'users_compliant' ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300' :
-                                        u.bucket === 'users_expiring_30d' ? 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300' :
-                                        u.bucket === 'users_expired' ? 'bg-rose-100 dark:bg-rose-900/40 text-rose-700 dark:text-rose-300' :
-                                        u.bucket === 'users_invalid' ? 'bg-rose-200 dark:bg-rose-900/60 text-rose-800 dark:text-rose-200' :
-                                        'bg-rose-100 dark:bg-rose-900/40 text-rose-700 dark:text-rose-300'
-                                    ]">{{ (bucketLabels[u.bucket] ?? u.bucket.replace('users_','')) }}</span>
-                                </td>
-                                <td class="px-3 py-2 text-gray-600 dark:text-slate-300 text-xs">
-                                    {{ u.expires_at ?? '-' }}
-                                    <span v-if="u.days_remaining !== null && u.days_remaining !== undefined" class="block text-gray-400">
-                                        {{ u.days_remaining < 0 ? `${Math.abs(u.days_remaining)}d overdue` : u.days_remaining === 0 ? 'today' : `in ${u.days_remaining}d` }}
-                                    </span>
-                                </td>
-                                <td class="px-3 py-2 text-gray-600 dark:text-slate-300 text-xs">{{ u.cms_status ?? '-' }}</td>
-                            </tr>
-                        </tbody>
-                    </table>
+                    <template v-else>
+                        <!-- A2 : bulk-renew controls when at least one user has a credential_id -->
+                        <div v-if="filteredDrilldownUsers.some(u => u.credential_id)" class="mb-3 flex items-center gap-2 text-xs">
+                            <button @click="selectAllInDrilldown" class="px-2 py-1 rounded border border-gray-300 dark:border-slate-600 hover:bg-gray-50 dark:hover:bg-slate-800">Select all visible</button>
+                            <button @click="clearBulkSelection" class="px-2 py-1 rounded border border-gray-300 dark:border-slate-600 hover:bg-gray-50 dark:hover:bg-slate-800">Clear</button>
+                            <span v-if="selectedCredentialIds.size > 0" class="text-indigo-600 dark:text-indigo-400 font-medium">{{ selectedCredentialIds.size }} selected</span>
+                            <button v-if="selectedCredentialIds.size > 0" @click="bulkRenewForm.new_expires_at = ''; showBulkRenewModal = true" class="ml-auto px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-medium">
+                                Bulk renew {{ selectedCredentialIds.size }} credential(s)
+                            </button>
+                        </div>
+                        <table class="w-full text-sm">
+                            <thead class="bg-gray-50 dark:bg-slate-800 text-xs text-gray-700 dark:text-slate-300">
+                                <tr>
+                                    <th class="px-2 py-2 w-8"></th>
+                                    <th class="text-left px-3 py-2 font-medium">User</th>
+                                    <th class="text-left px-3 py-2 font-medium">Job Title</th>
+                                    <th class="text-left px-3 py-2 font-medium">Bucket</th>
+                                    <th class="text-left px-3 py-2 font-medium">Expires</th>
+                                    <th class="text-left px-3 py-2 font-medium">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-100 dark:divide-slate-800">
+                                <tr v-for="u in filteredDrilldownUsers" :key="u.user_id">
+                                    <td class="px-2 py-2">
+                                        <input v-if="u.credential_id" type="checkbox"
+                                            :checked="selectedCredentialIds.has(u.credential_id)"
+                                            @change="toggleCredentialSelected(u.credential_id)"
+                                            class="rounded text-indigo-600" />
+                                    </td>
+                                    <td class="px-3 py-2 text-gray-900 dark:text-slate-100">{{ u.name }}</td>
+                                    <td class="px-3 py-2 text-gray-600 dark:text-slate-300">{{ u.job_title ?? '-' }}</td>
+                                    <td class="px-3 py-2 text-xs">
+                                        <span :class="[
+                                            'inline-block px-2 py-0.5 rounded-full text-[10px] font-medium',
+                                            u.bucket === 'users_compliant' ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300' :
+                                            u.bucket === 'users_expiring_30d' ? 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300' :
+                                            u.bucket === 'users_expired' ? 'bg-rose-100 dark:bg-rose-900/40 text-rose-700 dark:text-rose-300' :
+                                            u.bucket === 'users_invalid' ? 'bg-rose-200 dark:bg-rose-900/60 text-rose-800 dark:text-rose-200' :
+                                            'bg-rose-100 dark:bg-rose-900/40 text-rose-700 dark:text-rose-300'
+                                        ]">{{ (bucketLabels[u.bucket] ?? u.bucket.replace('users_','')) }}</span>
+                                    </td>
+                                    <td class="px-3 py-2 text-gray-600 dark:text-slate-300 text-xs">
+                                        {{ u.expires_at ?? '-' }}
+                                        <span v-if="u.days_remaining !== null && u.days_remaining !== undefined" class="block text-gray-400">
+                                            {{ u.days_remaining < 0 ? `${Math.abs(u.days_remaining)}d overdue` : u.days_remaining === 0 ? 'today' : `in ${u.days_remaining}d` }}
+                                        </span>
+                                    </td>
+                                    <td class="px-3 py-2 text-gray-600 dark:text-slate-300 text-xs">{{ u.cms_status ?? '-' }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </template>
+                </div>
+            </div>
+
+            <!-- A2 : Bulk-renew modal -->
+            <div v-if="showBulkRenewModal" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" @click.self="showBulkRenewModal = false">
+                <div class="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-700 max-w-md w-full p-6">
+                    <div class="flex items-center justify-between mb-3">
+                        <h3 class="text-base font-bold text-gray-900 dark:text-slate-100">Bulk renew {{ selectedCredentialIds.size }} credential(s)</h3>
+                        <button @click="showBulkRenewModal = false" class="text-gray-400 hover:text-gray-600"><XMarkIcon class="w-5 h-5" /></button>
+                    </div>
+                    <p class="text-xs text-gray-500 dark:text-slate-400 mb-3">
+                        Each credential gets a new active row with the dates below ; the previous record is preserved as audit history. Use this after a group event (annual fire-drill, BLS class graduation, monthly OIG/SAM run).
+                    </p>
+                    <div class="space-y-3">
+                        <label class="block">
+                            <span class="text-xs font-medium text-gray-700 dark:text-slate-300">New expiration date <span class="text-rose-500">*</span></span>
+                            <input v-model="bulkRenewForm.new_expires_at" type="date" :min="new Date(Date.now() + 86400000).toISOString().slice(0,10)" required
+                                class="w-full mt-1 px-3 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm" />
+                        </label>
+                        <label class="block">
+                            <span class="text-xs font-medium text-gray-700 dark:text-slate-300">New issue date</span>
+                            <input v-model="bulkRenewForm.new_issued_at" type="date" :max="new Date().toISOString().slice(0,10)"
+                                class="w-full mt-1 px-3 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm" />
+                        </label>
+                        <label class="block">
+                            <span class="text-xs font-medium text-gray-700 dark:text-slate-300">Verification source</span>
+                            <select v-model="bulkRenewForm.verification_source" class="w-full mt-1 px-3 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm">
+                                <option value="uploaded_doc">Uploaded Document</option>
+                                <option value="state_board">State Licensing Board</option>
+                                <option value="npdb">NPDB Lookup</option>
+                                <option value="self_attestation">Self-Attestation</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </label>
+                    </div>
+                    <p v-if="bulkResult" class="text-xs mt-3" :class="bulkResult.startsWith('Renewed') ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'">{{ bulkResult }}</p>
+                    <div class="flex justify-end gap-2 mt-4">
+                        <button @click="showBulkRenewModal = false" class="px-4 py-2 rounded-lg text-sm text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800">Cancel</button>
+                        <button @click="submitBulkRenew" :disabled="bulkSaving || !bulkRenewForm.new_expires_at" class="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium disabled:opacity-50">
+                            {{ bulkSaving ? 'Renewing...' : 'Apply renewal' }}
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>

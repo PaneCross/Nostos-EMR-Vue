@@ -23,6 +23,7 @@ namespace Database\Seeders;
 
 use App\Models\CredentialDefinition;
 use App\Models\StaffCredential;
+use App\Models\StaffTrainingRecord;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Services\Credentials\CredentialDefinitionService;
@@ -66,7 +67,87 @@ class CredentialsDemoDataSeeder extends Seeder
                     $this->maybeAddDriverFields($cred, $def);
                 }
             }
+
+            // B1 demo : link some training records to CEU-tracking credentials
+            // so the "X / Y CEU hrs" progress display is non-empty across the
+            // demo. We pick credentials with ceu_hours_required > 0 and the
+            // user's existing training records, and assign training_record.
+            // credential_id to roughly half of them per user.
+            $this->linkDemoTrainingToCredentials($tenant->id);
+
+            // B6 demo : create one site-only "extra" definition + one
+            // site-disable override so the per-site overrides UI has data.
+            $this->seedSiteOverrideDemo($tenant->id);
         });
+    }
+
+    private function seedSiteOverrideDemo(int $tenantId): void
+    {
+        $sites = \App\Models\Site::where('tenant_id', $tenantId)->orderBy('id')->get();
+        if ($sites->count() < 1) return;
+        $firstSite = $sites->first();
+        $secondSite = $sites->skip(1)->first();
+
+        // Site-only extra : "Bilingual proficiency cert" specific to one site.
+        \App\Models\CredentialDefinition::updateOrCreate(
+            ['tenant_id' => $tenantId, 'site_id' => $firstSite->id, 'code' => 'bilingual_proficiency_cert'],
+            [
+                'title'                 => 'Bilingual Proficiency Certification (Site-only)',
+                'credential_type'       => 'certification',
+                'description'           => 'Site-specific cert for staff providing language services. Only required at this one site.',
+                'requires_psv'          => false,
+                'is_cms_mandatory'      => false,
+                'default_doc_required'  => true,
+                'reminder_cadence_days' => [30, 0],
+                'ceu_hours_required'    => 0,
+                'is_active'             => true,
+                'sort_order'            => 200,
+            ]
+        );
+
+        // Site-disable override : disable the (non-mandatory) ACLS cert at the
+        // second site (e.g. site B doesn't run ACLS-level emergencies).
+        if ($secondSite) {
+            $aclsDef = \App\Models\CredentialDefinition::where('tenant_id', $tenantId)
+                ->where('code', 'acls_certification')->first();
+            if ($aclsDef) {
+                \App\Models\CredentialDefinitionSiteOverride::updateOrCreate(
+                    [
+                        'tenant_id' => $tenantId,
+                        'site_id'   => $secondSite->id,
+                        'credential_definition_id' => $aclsDef->id,
+                    ],
+                    [
+                        'action' => 'disabled',
+                    ]
+                );
+            }
+        }
+    }
+
+    private function linkDemoTrainingToCredentials(int $tenantId): void
+    {
+        $ceuCreds = StaffCredential::where('tenant_id', $tenantId)
+            ->whereNull('replaced_by_credential_id')
+            ->whereHas('definition', fn ($q) => $q->where('ceu_hours_required', '>', 0))
+            ->get(['id', 'user_id', 'credential_definition_id']);
+
+        // Group by user so we link multiple training records under one cred per user
+        $byUser = $ceuCreds->groupBy('user_id');
+
+        foreach ($byUser as $userId => $creds) {
+            // Pick the first CEU-tracking cred for this user
+            $cred = $creds->first();
+            $training = StaffTrainingRecord::where('tenant_id', $tenantId)
+                ->where('user_id', $userId)
+                ->whereNull('credential_id')
+                ->limit(2)
+                ->get();
+
+            foreach ($training as $t) {
+                $t->update(['credential_id' => $cred->id]);
+            }
+        }
     }
 
     /** Stable bucket assignment : seed-then-mod gives reproducible spread. */

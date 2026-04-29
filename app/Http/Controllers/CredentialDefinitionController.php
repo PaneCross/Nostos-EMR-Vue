@@ -160,9 +160,11 @@ class CredentialDefinitionController extends Controller
     }
 
     /**
-     * D12 : render the CredentialExpiringMail HTML for preview from the
-     * catalog edit modal. Lets executives sanity-check what their staff
-     * will receive at each cadence step before they save the definition.
+     * D12 + B2/B3 : render the CredentialExpiringMail HTML for preview. Used
+     * from the catalog edit modal to sanity-check what staff will see.
+     *
+     * Accepts ?days=N + ?supervisor=1 + optional ?title=X (for new-definition
+     * preview before save). Default : 30 days, recipient=staff.
      */
     public function previewEmail(Request $request, CredentialDefinition $credentialDefinition): \Illuminate\Http\Response
     {
@@ -171,14 +173,14 @@ class CredentialDefinitionController extends Controller
 
         $days = (int) $request->query('days', 30);
         $isSupervisor = (bool) $request->query('supervisor', false);
+        $title = $request->query('title') ?: $credentialDefinition->title;
 
-        // Synthesize a mock credential + user so the Mailable has data to render.
         $user = $request->user();
         $mockCredential = new \App\Models\StaffCredential([
             'tenant_id' => $credentialDefinition->tenant_id,
             'user_id'   => $user->id,
             'credential_type' => $credentialDefinition->credential_type,
-            'title'     => $credentialDefinition->title,
+            'title'     => $title,
             'expires_at'=> now()->addDays($days)->toDateString(),
         ]);
         $mockCredential->setRelation('user', $user);
@@ -188,6 +190,34 @@ class CredentialDefinitionController extends Controller
         $html = $mailable->render();
 
         return response($html)->header('Content-Type', 'text/html');
+    }
+
+    /**
+     * B2 : preview the email for a DRAFT (unsaved) credential — no DB row
+     * required. Accepts the title via query string so executives can
+     * sanity-check email rendering before saving a brand-new definition.
+     */
+    public function previewEmailDraft(Request $request): \Illuminate\Http\Response
+    {
+        $this->gate($request);
+
+        $days = (int) $request->query('days', 30);
+        $isSupervisor = (bool) $request->query('supervisor', false);
+        $title = $request->query('title', 'Sample Credential');
+
+        $user = $request->user();
+        $mockCredential = new \App\Models\StaffCredential([
+            'tenant_id' => $user->tenant_id,
+            'user_id'   => $user->id,
+            'credential_type' => 'license',
+            'title'     => $title,
+            'expires_at'=> now()->addDays($days)->toDateString(),
+        ]);
+        $mockCredential->setRelation('user', $user);
+        $mockCredential->id = 0;
+
+        $mailable = new \App\Mail\CredentialExpiringMail($user, $mockCredential, $days, $isSupervisor);
+        return response($mailable->render())->header('Content-Type', 'text/html');
     }
 
     public function destroy(Request $request, CredentialDefinition $credentialDefinition): JsonResponse

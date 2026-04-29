@@ -75,6 +75,23 @@ const STANDARD_CADENCE_STEPS: CadenceStep[] = [
 const showCustomStepModal = ref(false)
 const customStepDays = ref<number | ''>('')
 
+// B2/B3 : email preview controls (works for both saved and draft definitions)
+const showEmailPreview = ref(false)
+const previewDays = ref(30)
+const previewSupervisor = ref(false)
+
+const previewUrl = computed(() => {
+    const params = new URLSearchParams({
+        days: String(previewDays.value),
+        supervisor: previewSupervisor.value ? '1' : '0',
+        title: editing.value?.title ?? 'Sample Credential',
+    })
+    if (!isNew.value && editing.value?.id) {
+        return `/executive/credential-definitions/${editing.value.id}/preview-email?${params}`
+    }
+    return `/executive/credential-definitions/preview-email-draft?${params}`
+})
+
 /** Auto-derive recipient tier from day value, matching the alert-job logic. */
 function recipientsForDays(days: number): string {
     if (days < 0)  return 'Re-alert staff + supervisor + QA Compliance escalation'
@@ -219,6 +236,15 @@ function parseCadence(): number[] {
 async function save() {
     if (!editing.value) return
     errorMessage.value = null
+
+    // E3 : warn before saving a definition with no targets (it would apply
+    // to nobody).
+    if (editing.value.targets.length === 0) {
+        if (!confirm('This credential has no targeting rules and will not apply to any user. Save anyway?')) {
+            return
+        }
+    }
+
     const payload: any = {
         title: editing.value.title,
         credential_type: editing.value.credential_type,
@@ -584,14 +610,47 @@ onMounted(load)
                     </div>
 
                     <div class="flex justify-end gap-2 pt-4 border-t border-gray-200 dark:border-slate-700">
-                        <a v-if="!isNew && editing.id"
-                            :href="`/executive/credential-definitions/${editing.id}/preview-email?days=30`" target="_blank"
+                        <button type="button" @click="showEmailPreview = true"
                             class="px-4 py-2 rounded-lg text-sm text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800 inline-flex items-center gap-1.5">
                             <EnvelopeIcon class="w-4 h-4" /> Preview email
-                        </a>
+                        </button>
                         <button @click="editing = null" class="px-4 py-2 rounded-lg text-sm text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800">Cancel</button>
                         <button @click="save" class="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium">Save</button>
                     </div>
+                </div>
+            </div>
+
+            <!-- B2/B3 : Email preview sub-modal -->
+            <div v-if="showEmailPreview" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" @click.self="showEmailPreview = false">
+                <div class="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-700 max-w-3xl w-full p-6 max-h-[90vh] overflow-y-auto">
+                    <div class="flex items-center justify-between mb-3">
+                        <h3 class="text-base font-bold text-gray-900 dark:text-slate-100 flex items-center gap-1.5">
+                            <EnvelopeIcon class="w-5 h-5" /> Email preview
+                        </h3>
+                        <button @click="showEmailPreview = false" class="text-gray-400 hover:text-gray-600"><XMarkIcon class="w-5 h-5" /></button>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3 mb-3">
+                        <label class="block">
+                            <span class="text-xs font-medium text-gray-700 dark:text-slate-300">Days before expiration</span>
+                            <select v-model.number="previewDays" class="w-full mt-1 px-3 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm">
+                                <option :value="120">120 days out</option>
+                                <option :value="90">90 days out</option>
+                                <option :value="60">60 days out</option>
+                                <option :value="30">30 days out</option>
+                                <option :value="14">14 days out (supervisor adds)</option>
+                                <option :value="7">7 days out</option>
+                                <option :value="0">Day of expiration</option>
+                                <option :value="-7">7 days overdue</option>
+                                <option :value="-30">30 days overdue</option>
+                            </select>
+                        </label>
+                        <label class="flex items-center gap-2 mt-6">
+                            <input type="checkbox" v-model="previewSupervisor" class="rounded text-indigo-600" />
+                            <span class="text-sm text-gray-700 dark:text-slate-300">Supervisor copy variant</span>
+                        </label>
+                    </div>
+                    <iframe :src="previewUrl" class="w-full h-[60vh] rounded-lg border border-gray-200 dark:border-slate-700"></iframe>
+                    <p class="text-xs text-gray-500 dark:text-slate-400 mt-2">Preview uses your account as the recipient. Real emails interpolate the actual staff member's name.</p>
                 </div>
             </div>
 
