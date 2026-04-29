@@ -406,7 +406,9 @@ Route::middleware('auth')->group(function () {
 
     // V2: Bulk credentials CSV import (IT Admin only)
     Route::get ('/it-admin/credentials/bulk-import',            [\App\Http\Controllers\CredentialBulkImportController::class, 'page'])  ->name('it-admin.credentials.bulk-import.page');
-    Route::post('/it-admin/credentials/bulk-import',            [\App\Http\Controllers\CredentialBulkImportController::class, 'import'])->name('it-admin.credentials.bulk-import.run');
+    Route::post('/it-admin/credentials/bulk-import',            [\App\Http\Controllers\CredentialBulkImportController::class, 'import'])
+        ->middleware('throttle:10,1')
+        ->name('it-admin.credentials.bulk-import.run');
 
     // ─── Participant Module ───────────────────────────────────────────────────
 
@@ -1495,7 +1497,10 @@ Route::middleware('auth')->group(function () {
 
         // Phase 4 (MVP roadmap): Staff credentials + training per §460.64-71
         Route::get ('/users/{user}/credentials',    [\App\Http\Controllers\StaffCredentialController::class, 'index'])->name('it-admin.users.credentials.index');
-        Route::get ('/users/{user}/credentials.pdf',[\App\Http\Controllers\StaffCredentialController::class, 'exportPdf'])->name('it-admin.users.credentials.pdf');
+        // Audit-4 C3 : rate-limit PDF generation (CPU-heavy via dompdf).
+        Route::get ('/users/{user}/credentials.pdf',[\App\Http\Controllers\StaffCredentialController::class, 'exportPdf'])
+            ->middleware('throttle:20,1')
+            ->name('it-admin.users.credentials.pdf');
         Route::post('/users/{user}/credentials',    [\App\Http\Controllers\StaffCredentialController::class, 'storeCredential'])->name('it-admin.users.credentials.store');
         Route::post('/users/{user}/training',       [\App\Http\Controllers\StaffCredentialController::class, 'storeTraining'])->name('it-admin.users.training.store');
         // Audit log viewer
@@ -1527,9 +1532,15 @@ Route::middleware('auth')->group(function () {
 
         // Phase 4 (MVP roadmap): non-user-scoped staff credential/training actions.
         Route::patch ('/staff-credentials/{credential}', [\App\Http\Controllers\StaffCredentialController::class, 'updateCredential'])->name('it-admin.staff-credentials.update');
+        // Audit-4 F3 : trash + restore for accidentally-deleted credentials
+        Route::get   ('/users/{user}/credentials/trashed',          [\App\Http\Controllers\StaffCredentialController::class, 'trashedForUser'])->name('it-admin.users.credentials.trashed');
+        Route::post  ('/staff-credentials/{credentialId}/restore',  [\App\Http\Controllers\StaffCredentialController::class, 'restoreCredential'])->name('it-admin.staff-credentials.restore');
         Route::post  ('/staff-credentials/{credential}/verify', [\App\Http\Controllers\StaffCredentialController::class, 'verifyCredential'])->name('it-admin.staff-credentials.verify');
-        Route::post  ('/staff-credentials/bulk-renew',          [\App\Http\Controllers\StaffCredentialController::class, 'bulkRenew'])->name('it-admin.staff-credentials.bulk-renew');
-        Route::post  ('/staff-credentials/bulk-edit',           [\App\Http\Controllers\StaffCredentialController::class, 'bulkEdit'])->name('it-admin.staff-credentials.bulk-edit');
+        // Audit-4 C3 : rate-limit bulk endpoints (CPU-heavy + side-effect-heavy).
+        Route::middleware('throttle:30,1')->group(function () {
+            Route::post('/staff-credentials/bulk-renew', [\App\Http\Controllers\StaffCredentialController::class, 'bulkRenew'])->name('it-admin.staff-credentials.bulk-renew');
+            Route::post('/staff-credentials/bulk-edit',  [\App\Http\Controllers\StaffCredentialController::class, 'bulkEdit'])->name('it-admin.staff-credentials.bulk-edit');
+        });
         Route::delete('/staff-credentials/{credential}', [\App\Http\Controllers\StaffCredentialController::class, 'destroyCredential'])->name('it-admin.staff-credentials.destroy');
         Route::delete('/staff-training/{record}',        [\App\Http\Controllers\StaffCredentialController::class, 'destroyTraining'])->name('it-admin.staff-training.destroy');
     });

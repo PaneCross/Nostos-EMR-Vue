@@ -457,6 +457,67 @@ class StaffCredentialController extends Controller
     }
 
     /**
+     * F3 : list soft-deleted credentials per user (recovery UI). Returns rows
+     * with deleted_at + the deleting user when available. Read-only.
+     */
+    public function trashedForUser(Request $request, User $user): JsonResponse
+    {
+        $this->readGate($request);
+        $this->assertSameTenant($user, $request);
+
+        $rows = StaffCredential::onlyTrashed()
+            ->forTenant($user->tenant_id)
+            ->where('user_id', $user->id)
+            ->orderByDesc('deleted_at')
+            ->get([
+                'id', 'credential_type', 'title', 'license_state', 'license_number',
+                'issued_at', 'expires_at', 'cms_status', 'verification_source',
+                'deleted_at', 'document_path', 'notes',
+            ])
+            ->map(fn ($c) => [
+                'id'                  => $c->id,
+                'title'               => $c->title,
+                'type_label'          => StaffCredential::TYPE_LABELS[$c->credential_type] ?? $c->credential_type,
+                'license_state'       => $c->license_state,
+                'license_number'      => $c->license_number,
+                'issued_at'           => $c->issued_at?->toDateString(),
+                'expires_at'          => $c->expires_at?->toDateString(),
+                'cms_status'          => $c->cms_status,
+                'verification_source' => $c->verification_source,
+                'deleted_at'          => $c->deleted_at?->toIso8601String(),
+                'has_document'        => (bool) $c->document_path,
+                'notes'               => $c->notes,
+            ]);
+
+        return response()->json($rows);
+    }
+
+    /**
+     * F3 : restore a soft-deleted credential. Only IT Admin / Super Admin.
+     * The audit log records the restore for HIPAA traceability.
+     */
+    public function restoreCredential(Request $request, int $credentialId): JsonResponse
+    {
+        $this->gate($request);
+        $cred = StaffCredential::onlyTrashed()
+            ->forTenant($request->user()->tenant_id)
+            ->findOrFail($credentialId);
+
+        $cred->restore();
+
+        AuditLog::record(
+            action: 'staff_credential.restored',
+            resourceType: 'StaffCredential',
+            resourceId: $cred->id,
+            tenantId: $cred->tenant_id,
+            userId: $request->user()->id,
+            newValues: ['restored_from' => $cred->deleted_at?->toIso8601String()],
+        );
+
+        return response()->json(['ok' => true, 'credential' => $cred->fresh()]);
+    }
+
+    /**
      * G1 : bulk-edit fields on selected credentials WITHOUT the renewal-chain
      * versioning. Used for non-renewal updates : "we just got NPDB enrolled,
      * mark all licensure rows as verified via NPDB" or "CMS audit 2026 : add

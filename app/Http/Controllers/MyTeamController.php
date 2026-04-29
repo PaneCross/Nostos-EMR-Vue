@@ -33,6 +33,18 @@ class MyTeamController extends Controller
             return Inertia::render('User/MyTeam', ['reports' => []]);
         }
 
+        // Audit-4 G4 : log the supervisor's view of their team's credential
+        // status. Some employee-health credentials (TB clearance, immunizations)
+        // count as worker PHI in strict shops ; this gives ops a paper trail.
+        \App\Models\AuditLog::record(
+            action: 'my_team.viewed',
+            resourceType: 'User',
+            resourceId: $supervisor->id,
+            tenantId: $supervisor->tenant_id,
+            userId: $supervisor->id,
+            newValues: ['report_count' => $reports->count(), 'report_ids' => $reports->pluck('id')->all()],
+        );
+
         // Audit-3 fix : vectorize the per-report queries so we don't N+1.
         // One query for all credentials across all reports, grouped by user_id.
         $reportIds = $reports->pluck('id')->all();

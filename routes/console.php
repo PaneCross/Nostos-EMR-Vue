@@ -159,6 +159,15 @@ Schedule::job(\App\Jobs\WeeklyCredentialDigestJob::class, 'compliance')
     ->withoutOverlapping()
     ->onOneServer();
 
+// Audit-4 F1+F2 : monthly garbage collection of orphan + stale credential
+// document files. Defaults to a 365-day retention on soft-deleted rows
+// (matches CMS audit window). Runs on the 1st of each month at 02:00.
+Schedule::command('credentials:cleanup-documents', ['--older-than=365'])
+    ->monthlyOn(1, '02:00')
+    ->name('credential-document-cleanup')
+    ->withoutOverlapping()
+    ->onOneServer();
+
 // ─── Phase B1: Restraint monitoring + IDT review deadline enforcement ────────
 // Checks all active restraint episodes every 15 minutes:
 //   - Monitoring observation > 4h absent → warning alert to nursing

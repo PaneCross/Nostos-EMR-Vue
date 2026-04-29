@@ -141,6 +141,12 @@ class CredentialExpirationAlertJob implements ShouldQueue
 
         // G4 : flush queued emails. Single-item users get the original
         // CredentialExpiringMail ; multi-item users get the new digest.
+        // Audit-4 G2 : mail failures are now persisted into the credential's
+        // metadata via Alert flags so ops can see "this user's last 3
+        // reminder attempts failed" on the dashboard rather than only in
+        // log warnings.
+        $mailFailures = [];
+
         foreach ([$userQueue, $supervisorQueue] as $queue) {
             foreach ($queue as $entry) {
                 $items = $entry['items'];
@@ -157,11 +163,44 @@ class CredentialExpirationAlertJob implements ShouldQueue
                         );
                     }
                     $emailsSent++;
+                    // G1 : structured per-recipient log line for observability.
+                    Log::info('[CredentialExpirationAlertJob] mail.queued', [
+                        'recipient_id' => $recipient->id,
+                        'recipient_email' => $recipient->email,
+                        'mail_type' => count($items) === 1 ? 'single' : 'digest',
+                        'item_count' => count($items),
+                    ]);
                 } catch (\Throwable $e) {
-                    Log::warning('[CredentialExpirationAlertJob] flush mail failed', [
-                        'user_id' => $recipient->id, 'item_count' => count($items), 'error' => $e->getMessage(),
+                    $mailFailures[] = [
+                        'recipient_id' => $recipient->id,
+                        'item_count'   => count($items),
+                        'error'        => $e->getMessage(),
+                    ];
+                    Log::warning('[CredentialExpirationAlertJob] mail.failed', [
+                        'recipient_id' => $recipient->id, 'item_count' => count($items),
+                        'error' => $e->getMessage(),
                     ]);
                 }
+            }
+        }
+
+        // G2 : if any mail failures happened this run, create a single
+        // ops-visible alert so IT Admin sees it on their dashboard rather
+        // than having to grep the worker logs.
+        if (! empty($mailFailures)) {
+            $tenantIds = $credentials->pluck('tenant_id')->unique();
+            foreach ($tenantIds as $tid) {
+                $alertService->create([
+                    'tenant_id'          => $tid,
+                    'source_module'      => 'it_admin',
+                    'alert_type'         => 'credential_mail_delivery_failures',
+                    'severity'           => 'warning',
+                    'title'              => 'Credential reminder mail failures',
+                    'message'            => count($mailFailures) . ' credential reminder email(s) failed to queue this run. Check the worker logs at [CredentialExpirationAlertJob] mail.failed.',
+                    'target_departments' => ['it_admin'],
+                    'is_active'          => true,
+                    'metadata'           => ['failures' => array_slice($mailFailures, 0, 50)],
+                ]);
             }
         }
 
