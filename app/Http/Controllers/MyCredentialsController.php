@@ -142,9 +142,12 @@ class MyCredentialsController extends Controller
             ], 422);
         }
 
+        // Audit #2 A3 : require expires_at on renewal (else the new "renewed"
+        // row could inherit the old expired date and stay non-compliant).
+        // issued_at must be in the past (can't issue a future credential).
         $v = $request->validate([
-            'issued_at'  => ['nullable', 'date'],
-            'expires_at' => ['nullable', 'date', 'after_or_equal:issued_at'],
+            'issued_at'  => ['nullable', 'date', 'before_or_equal:today'],
+            'expires_at' => ['required', 'date', 'after:today'],
             'document'   => ['required', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:10240'],
         ]);
 

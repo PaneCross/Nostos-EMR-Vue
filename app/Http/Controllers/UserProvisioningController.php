@@ -455,6 +455,26 @@ class UserProvisioningController extends Controller
             return response()->json(['message' => 'A user cannot supervise themselves.'], 422);
         }
 
+        // E2 : detect cyclic supervisor chains beyond direct self-reference.
+        // Walk up the chain from the proposed supervisor : if we ever encounter
+        // $user->id, this assignment would create a cycle.
+        $proposedSupId = $validated['supervisor_user_id'] ?? null;
+        if ($proposedSupId) {
+            $seen = [$user->id];
+            $cursor = $proposedSupId;
+            $depth = 0;
+            while ($cursor && $depth < 25) {
+                if (in_array($cursor, $seen, true)) {
+                    return response()->json([
+                        'message' => 'This assignment would create a cyclic supervisor chain. Pick a different supervisor.',
+                    ], 422);
+                }
+                $seen[] = $cursor;
+                $cursor = User::where('id', $cursor)->value('supervisor_user_id');
+                $depth++;
+            }
+        }
+
         $old = $user->only('job_title', 'supervisor_user_id');
         $user->update($validated);
 

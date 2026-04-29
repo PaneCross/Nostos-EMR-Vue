@@ -33,6 +33,18 @@ class CredentialsDemoDataSeeder extends Seeder
 {
     public function run(): void
     {
+        // B9 : refuse to run in production unless explicitly forced. This
+        // seeder is destructive (wipes all StaffCredential rows for every
+        // tenant) and was meant for demo data only.
+        if (app()->environment('production')) {
+            $force = (bool) env('CREDENTIALS_DEMO_FORCE_PRODUCTION', false);
+            if (! $force) {
+                $this->command?->error('CredentialsDemoDataSeeder refuses to run in production. Set CREDENTIALS_DEMO_FORCE_PRODUCTION=true to override (DANGEROUS : wipes all staff credential rows).');
+                return;
+            }
+            $this->command?->warn('Running CredentialsDemoDataSeeder in production with force flag. This will wipe all existing staff credentials.');
+        }
+
         /** @var CredentialDefinitionService $svc */
         $svc = app(CredentialDefinitionService::class);
 

@@ -133,6 +133,35 @@ class CredentialBulkImportController extends Controller
                 }
             }
 
+            // A4 : validate verification_source against the enum before insert.
+            // DB CHECK constraint would reject otherwise but with an opaque
+            // SQLSTATE error. Surface a clean per-row reason instead.
+            $verificationSource = $row['verification_source'] ?? null;
+            if ($verificationSource !== null && $verificationSource !== ''
+                && ! in_array($verificationSource, array_keys(StaffCredential::VERIFICATION_SOURCES), true)) {
+                $report['skipped']++;
+                $report['rows'][] = [
+                    'row' => $rowNum, 'email' => $email,
+                    'outcome' => 'skipped',
+                    'reason' => "Invalid verification_source '{$verificationSource}'. Allowed: " . implode(', ', array_keys(StaffCredential::VERIFICATION_SOURCES)),
+                ];
+                continue;
+            }
+
+            // Validate dates (catch malformed CSV before DB throws)
+            foreach (['issued_at', 'expires_at', 'dot_medical_card_expires_at', 'mvr_check_date'] as $dateCol) {
+                $dateVal = $row[$dateCol] ?? null;
+                if ($dateVal !== null && $dateVal !== '' && ! strtotime($dateVal)) {
+                    $report['skipped']++;
+                    $report['rows'][] = [
+                        'row' => $rowNum, 'email' => $email,
+                        'outcome' => 'skipped',
+                        'reason' => "Invalid date in {$dateCol}: '{$dateVal}'. Use YYYY-MM-DD format.",
+                    ];
+                    continue 2; // outer foreach
+                }
+            }
+
             try {
                 $cred = StaffCredential::create([
                     'tenant_id' => $tenantId,

@@ -370,6 +370,12 @@ class StaffCredentialController extends Controller
     /** Save uploaded doc to local disk under tenant/{id}/credentials/{cred_id}.{ext}. */
     private function storeDocument(StaffCredential $credential, $file): void
     {
+        // Audit #2 A5 : purge the previous file before overwriting the path
+        // pointer so we don't leak orphaned PDFs on disk.
+        if ($credential->document_path && Storage::disk('local')->exists($credential->document_path)) {
+            Storage::disk('local')->delete($credential->document_path);
+        }
+
         $ext = strtolower($file->getClientOriginalExtension());
         $dir = "credentials/tenant_{$credential->tenant_id}/user_{$credential->user_id}";
         $name = "cred_{$credential->id}_" . now()->format('YmdHis') . ".{$ext}";
@@ -498,14 +504,27 @@ class StaffCredentialController extends Controller
             ], 422);
         }
 
+        // Audit #2 finding A1 : if the def requires PSV, one-click verify cannot
+        // satisfy it (uploaded_doc isn't state_board/npdb). The admin must use
+        // the full edit modal to explicitly record state_board or npdb.
+        $credential->loadMissing('definition');
+        if ($credential->definition && $credential->definition->requires_psv) {
+            $valid = in_array($credential->verification_source, ['state_board', 'npdb'], true);
+            if (! $valid) {
+                return response()->json([
+                    'message' => 'This credential requires primary-source verification. Use the Edit modal to record verification_source as State Licensing Board or NPDB Lookup before activating.',
+                ], 422);
+            }
+        }
+
         $old = $credential->toArray();
         $credential->update([
             'cms_status'          => 'active',
             'verified_at'         => now(),
             'verified_by_user_id' => $request->user()->id,
             // Promote from self_attestation to uploaded_doc since admin has
-            // visually inspected the document. PSV-required defs still require
-            // a manual edit to set state_board / npdb explicitly.
+            // visually inspected the document. PSV-required defs already
+            // satisfied above (state_board / npdb).
             'verification_source' => $credential->verification_source === 'self_attestation'
                 ? 'uploaded_doc'
                 : $credential->verification_source,

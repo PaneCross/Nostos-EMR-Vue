@@ -288,6 +288,23 @@ class CredentialDefinitionController extends Controller
                 ->ignore($existing?->id),
         ];
 
+        // B5 : PSV only logically applies to licensure-grade credentials.
+        // Validate cross-field : if requires_psv is true, credential_type must
+        // be license / certification / driver_record / background_check (the
+        // four types where a state board / NPDB / federal database actually
+        // verifies).
+        $request->validate([
+            'requires_psv'    => ['nullable', 'boolean'],
+            'credential_type' => ['nullable', Rule::in(array_keys(StaffCredential::TYPE_LABELS))],
+        ]);
+        $reqPsv = $request->input('requires_psv', false);
+        $type   = $request->input('credential_type');
+        if ($reqPsv && ! in_array($type, ['license', 'certification', 'driver_record', 'background_check'], true)) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'requires_psv' => "Primary-source verification only applies to license, certification, driver_record, or background_check types. The selected type '{$type}' does not have a verifying authority.",
+            ]);
+        }
+
         return $request->validate([
             'code'                   => $existing && $existing->is_cms_mandatory ? ['nullable'] : ['required', ...array_slice($codeRule, 1)],
             'title'                  => ['required', 'string', 'max:200'],
