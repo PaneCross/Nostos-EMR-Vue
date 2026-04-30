@@ -61,35 +61,30 @@ COPY . .
 RUN composer dump-autoload --classmap-authoritative
 
 # ── Stage 3 : final runtime image ────────────────────────────────────────────
-# Switched off serversideup/php:*-fpm-nginx-alpine because its s6-overlay
-# entrypoint refuses to run on Fly.io machines : "s6-overlay-suexec: fatal:
-# can only run as pid 1" even when started as root. Fly's machine runtime
-# wraps containers in a way that breaks s6's PID 1 check.
-#
-# This image (richarvey/nginx-php-fpm) bundles nginx + php-fpm under
-# supervisord (which doesn't care about PID 1) and works cleanly on Fly.
-# It's also smaller and a common pick for Laravel on container hosts.
-FROM richarvey/nginx-php-fpm:3.1.6 AS final
+# Tried serversideup/php first — its s6-overlay entrypoint refuses to run on
+# Fly.io ("s6-overlay-suexec: fatal: can only run as pid 1"). Tried richarvey
+# next — that ships PHP 8.2 and our composer lock requires 8.4. webdevops
+# is actively maintained, has a clean PHP 8.4 alpine tag, runs nginx +
+# php-fpm under supervisord, and works on Fly without any PID 1 gymnastics.
+FROM webdevops/php-nginx:8.4-alpine AS final
 
-WORKDIR /var/www/html
+# webdevops uses /app as the document root by default. Symlink to
+# /var/www/html so the rest of the build can stay consistent with Laravel
+# conventions (and so existing /var/www/html paths in env / config still
+# resolve correctly if anything reads them at runtime).
+ENV WEB_DOCUMENT_ROOT=/app/public
+ENV APP_ROOT=/app
+
+WORKDIR /app
 
 # Pull in the built app + composer vendor dir + compiled front-end manifest.
-COPY --from=composer-builder /app/ /var/www/html/
-COPY --from=node-builder /app/public/build/ /var/www/html/public/build/
+COPY --from=composer-builder /app/ /app/
+COPY --from=node-builder /app/public/build/ /app/public/build/
 
-# Make sure storage + bootstrap/cache are writable by php-fpm. Sail does
-# this in dev via the volume mount ; we have to bake it in.
-RUN chown -R nginx:nginx /var/www/html/storage /var/www/html/bootstrap/cache \
- && chmod -R ug+rwX /var/www/html/storage /var/www/html/bootstrap/cache
+# webdevops runs as the "application" user (uid 1000) by default — give it
+# write access to the framework's runtime directories.
+RUN chown -R application:application /app/storage /app/bootstrap/cache \
+ && chmod -R ug+rwX /app/storage /app/bootstrap/cache
 
-# Tell richarvey's image where Laravel's public dir lives (it defaults to
-# /var/www/html which already matches, but being explicit is safer when
-# upstream defaults change). WEBROOT must point at the public/ folder
-# so nginx serves index.php through laravel's front controller.
-ENV WEBROOT=/var/www/html/public
-ENV SKIP_COMPOSER=1
-ENV PHP_ERRORS_STDERR=1
-ENV REAL_IP_HEADER=1
-
-# Port 80 is the richarvey default. fly.toml internal_port matches.
+# Port 80 is the webdevops default ; matches fly.toml internal_port.
 EXPOSE 80
