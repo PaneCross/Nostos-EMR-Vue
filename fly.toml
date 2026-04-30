@@ -12,9 +12,7 @@
 # top of this. To re-apply : `fly deploy --config fly.toml`.
 # ─────────────────────────────────────────────────────────────────────────────
 
-# `app` is set during `fly launch` ; leave commented and let the CLI fill it
-# so we don't conflict with whatever name TJ picks.
-# app = "nostosemr-demo"
+app = "nostos-emr-vue"
 
 # Closest region to TJ for now. Change later if PACE contacts are East-coast.
 primary_region = "lax"
