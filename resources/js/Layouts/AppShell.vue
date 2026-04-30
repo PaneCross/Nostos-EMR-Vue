@@ -112,7 +112,10 @@ interface TenantContext { id: number; name: string; slug: string; is_home?: bool
 const tenantContext = computed(() => page.props.tenant_context as TenantContext | null)
 const availableTenants = computed(() => (page.props.available_tenants as TenantContext[]) ?? [])
 const canSwitchTenant = computed(() =>
-    (user.value?.is_super_admin || user.value?.department === 'super_admin') && availableTenants.value.length > 1
+    // Always show the switcher to a super-admin so the affordance is
+    // discoverable, even when only one tenant exists yet (the dropdown will
+    // surface that single home tenant — useful while onboarding).
+    (user.value?.is_super_admin || user.value?.department === 'super_admin') && availableTenants.value.length >= 1
 )
 const isTenantOverridden = computed(() =>
     canSwitchTenant.value && tenantContext.value && tenantContext.value.is_home === false

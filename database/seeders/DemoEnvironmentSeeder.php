@@ -96,6 +96,36 @@ class DemoEnvironmentSeeder extends Seeder
         }
         $this->command->line("  Sites: <comment>{$eastSite->name}</comment>, <comment>{$westSite->name}</comment>");
 
+        // ─── Second demo tenant — exists only so super-admins have ──────────
+        // somewhere to switch to via the tenant context switcher. Empty
+        // (one site, no users / participants) on purpose : it's a fixture for
+        // verifying cross-tenant scoping, not a populated demo org.
+        $horizonTenant = Tenant::firstOrCreate(
+            ['slug' => 'horizon-pace-demo'],
+            [
+                'name'                => 'Horizon PACE — Demo Organization',
+                'transport_mode'      => 'broker',
+                'cms_contract_id'     => 'H8888',
+                'state'               => 'AZ',
+                'timezone'            => 'America/Phoenix',
+                'auto_logout_minutes' => 20,
+                'is_active'           => true,
+            ]
+        );
+        Site::firstOrCreate(
+            ['tenant_id' => $horizonTenant->id, 'name' => 'Horizon PACE Phoenix'],
+            [
+                'mrn_prefix' => 'PHX',
+                'address'    => '100 N Central Ave',
+                'city'       => 'Phoenix',
+                'state'      => 'AZ',
+                'zip'        => '85004',
+                'phone'      => '(602) 555-0300',
+                'is_active'  => true,
+            ]
+        );
+        $this->command->line("  2nd tenant (for switcher demo): <comment>{$horizonTenant->name}</comment>");
+
         // ─── Users (2 per department = 28 total) ─────────────────────────────
         $this->command->info('');
         $this->command->info('  Creating 28 demo users (2 per department)...');
