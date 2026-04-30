@@ -57,8 +57,12 @@ class DashboardController extends Controller
                 }
                 // Already on the correct dept : render it
             } else {
-                // No impersonation: use "Dashboard View" selector context (defaults to 'it_admin')
-                $department = $this->impersonation->getViewAsDepartment();
+                // No impersonation. SA navigated to /dashboard/{dept} — respect
+                // that URL and sync the view-as selector so the header chip + the
+                // rendered dashboard agree. Without this sync, every nav link to
+                // /dashboard/executive collapsed back to view-as (defaults to
+                // it_admin), making "Executive Overview" feel broken.
+                $this->impersonation->setViewAs($department);
             }
             // Super-admins see all nav items and all pages regardless of this dept context.
             // This only controls which module cards appear on the dashboard.
