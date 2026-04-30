@@ -97,9 +97,14 @@ class ExecutiveDashboardController
                 ->where('enrollment_status', 'enrolled')
                 ->count();
 
-            $carePlans = DB::table('emr_care_plans')
-                ->where('site_id', $site->id)
-                ->whereIn('status', ['draft', 'under_review', 'active'])
+            // Care plans don't carry site_id directly — they're scoped to the
+            // participant. Join through emr_participants to count per-site
+            // active care plans (excluding archived).
+            $carePlans = DB::table('emr_care_plans as cp')
+                ->join('emr_participants as p', 'p.id', '=', 'cp.participant_id')
+                ->where('p.site_id', $site->id)
+                ->whereNull('p.deleted_at')
+                ->whereIn('cp.status', ['draft', 'under_review', 'active'])
                 ->count();
 
             return [
@@ -181,5 +186,178 @@ class ExecutiveDashboardController
         });
 
         return response()->json(['sites' => $data]);
+    }
+
+    /**
+     * Department compliance roll-up : 8 org-wide KPI counts plus a per-department
+     * row of operational backlog (overdue SDRs, unsigned notes, overdue
+     * assessments, pending orders, STAT orders). Powers the bottom half of
+     * the executive dashboard — the Org Compliance Overview KPI strip and
+     * the Department Operations table.
+     *
+     * Score band per department :
+     *   critical : any overdue SDR or any STAT order outstanding
+     *   warning  : unsigned_notes > 3 OR any overdue assessment OR pending_orders > 5
+     *   good     : otherwise
+     */
+    public function deptCompliance(): JsonResponse
+    {
+        $this->requireAccess();
+        $tenantId = $this->tenantId();
+
+        $now           = now();
+        $startOfMonth  = $now->copy()->startOfMonth();
+
+        // ── Org-wide totals (KPI strip) ────────────────────────────────────────
+        $overdueSdrs = DB::table('emr_sdrs')
+            ->where('tenant_id', $tenantId)
+            ->whereNull('deleted_at')
+            ->whereNotIn('status', ['completed', 'cancelled', 'denied'])
+            ->where('due_at', '<', $now)
+            ->count();
+
+        $unsignedNotes = DB::table('emr_clinical_notes')
+            ->where('tenant_id', $tenantId)
+            ->whereNull('deleted_at')
+            ->where('status', 'draft')
+            ->whereNull('signed_at')
+            ->count();
+
+        $openIncidents = DB::table('emr_incidents')
+            ->where('tenant_id', $tenantId)
+            ->whereNull('deleted_at')
+            ->whereIn('status', ['open', 'under_review', 'rca_in_progress'])
+            ->count();
+
+        $overdueCarePlans = DB::table('emr_care_plans')
+            ->where('tenant_id', $tenantId)
+            ->where('status', 'active')
+            ->whereNotNull('review_due_date')
+            ->where('review_due_date', '<', $now->toDateString())
+            ->count();
+
+        // IDT reviews not yet held for participants flagged in a past meeting.
+        $overdueIdtReviews = DB::table('emr_idt_participant_reviews as r')
+            ->join('emr_idt_meetings as m', 'm.id', '=', 'r.meeting_id')
+            ->where('m.tenant_id', $tenantId)
+            ->whereNull('r.reviewed_at')
+            ->where('m.meeting_date', '<', $now->toDateString())
+            ->count();
+
+        $criticalWounds = DB::table('emr_wound_records')
+            ->where('tenant_id', $tenantId)
+            ->whereNull('deleted_at')
+            ->where('status', 'deteriorating')
+            ->count();
+
+        // Hospital discharges (proxy for hospitalizations this month — we record
+        // the discharge back to PACE, not the admission itself).
+        $hospitalizationsThisMonth = DB::table('emr_discharge_events')
+            ->where('tenant_id', $tenantId)
+            ->where('discharged_on', '>=', $startOfMonth->toDateString())
+            ->count();
+
+        $unackedInteractions = DB::table('emr_drug_interaction_alerts')
+            ->where('tenant_id', $tenantId)
+            ->where('is_acknowledged', false)
+            ->whereIn('severity', ['contraindicated', 'major'])
+            ->count();
+
+        // ── Per-department roll-up ─────────────────────────────────────────────
+        $deptList = [
+            'primary_care'      => 'Primary Care / Nursing',
+            'therapies'         => 'Therapies (PT/OT/ST)',
+            'social_work'       => 'Social Work',
+            'behavioral_health' => 'Behavioral Health',
+            'dietary'           => 'Dietary / Nutrition',
+            'activities'        => 'Activities / Recreation',
+            'home_care'         => 'Home Care',
+            'transportation'    => 'Transportation',
+            'pharmacy'          => 'Pharmacy',
+            'idt'               => 'IDT / Care Coordination',
+            'enrollment'        => 'Enrollment / Intake',
+            'finance'           => 'Finance / Billing',
+            'qa_compliance'     => 'QA / Compliance',
+            'it_admin'          => 'IT / Administration',
+        ];
+
+        // Single grouped queries — much cheaper than 14 × 5 round-trips.
+        $sdrByDept = DB::table('emr_sdrs')
+            ->where('tenant_id', $tenantId)
+            ->whereNull('deleted_at')
+            ->whereNotIn('status', ['completed', 'cancelled', 'denied'])
+            ->where('due_at', '<', $now)
+            ->select('assigned_department', DB::raw('count(*) as c'))
+            ->groupBy('assigned_department')
+            ->pluck('c', 'assigned_department');
+
+        $notesByDept = DB::table('emr_clinical_notes')
+            ->where('tenant_id', $tenantId)
+            ->whereNull('deleted_at')
+            ->where('status', 'draft')
+            ->whereNull('signed_at')
+            ->select('department', DB::raw('count(*) as c'))
+            ->groupBy('department')
+            ->pluck('c', 'department');
+
+        $assessmentByDept = DB::table('emr_assessments')
+            ->where('tenant_id', $tenantId)
+            ->whereNotNull('next_due_date')
+            ->where('next_due_date', '<', $now->toDateString())
+            ->select('department', DB::raw('count(*) as c'))
+            ->groupBy('department')
+            ->pluck('c', 'department');
+
+        $pendingOrdersByDept = DB::table('emr_clinical_orders')
+            ->where('tenant_id', $tenantId)
+            ->whereIn('status', ['pending', 'acknowledged'])
+            ->select('target_department', DB::raw('count(*) as c'))
+            ->groupBy('target_department')
+            ->pluck('c', 'target_department');
+
+        $statOrdersByDept = DB::table('emr_clinical_orders')
+            ->where('tenant_id', $tenantId)
+            ->whereIn('status', ['pending', 'acknowledged'])
+            ->where('priority', 'stat')
+            ->select('target_department', DB::raw('count(*) as c'))
+            ->groupBy('target_department')
+            ->pluck('c', 'target_department');
+
+        $departments = [];
+        foreach ($deptList as $key => $label) {
+            $row = [
+                'department'          => $key,
+                'label'               => $label,
+                'overdue_sdrs'        => (int) ($sdrByDept[$key] ?? 0),
+                'unsigned_notes'      => (int) ($notesByDept[$key] ?? 0),
+                'overdue_assessments' => (int) ($assessmentByDept[$key] ?? 0),
+                'pending_orders'      => (int) ($pendingOrdersByDept[$key] ?? 0),
+                'stat_orders'         => (int) ($statOrdersByDept[$key] ?? 0),
+            ];
+
+            // Score band — keep in sync with method docblock if the rules change.
+            if ($row['overdue_sdrs'] > 0 || $row['stat_orders'] > 0) {
+                $row['score'] = 'critical';
+            } elseif ($row['unsigned_notes'] > 3 || $row['overdue_assessments'] > 0 || $row['pending_orders'] > 5) {
+                $row['score'] = 'warning';
+            } else {
+                $row['score'] = 'good';
+            }
+            $departments[] = $row;
+        }
+
+        return response()->json([
+            'org_totals' => [
+                'overdue_sdrs'              => $overdueSdrs,
+                'unsigned_notes'            => $unsignedNotes,
+                'open_incidents'            => $openIncidents,
+                'overdue_care_plans'        => $overdueCarePlans,
+                'overdue_idt_reviews'       => $overdueIdtReviews,
+                'critical_wounds'           => $criticalWounds,
+                'hospitalizations_this_month' => $hospitalizationsThisMonth,
+                'unacked_interactions'      => $unackedInteractions,
+            ],
+            'departments' => $departments,
+        ]);
     }
 }
