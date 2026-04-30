@@ -182,8 +182,8 @@ These are the conventions you'll see hundreds of times in the codebase. Internal
 Every clinical query must filter by `tenant_id`. Cross-tenant data leakage is a **HIPAA breach** — see §164.312. The standard pattern:
 
 ```php
-// In a controller
-$rows = Participant::forTenant($user->tenant_id)->get();
+// In a controller — note effectiveTenantId(), not tenant_id directly
+$rows = Participant::forTenant($user->effectiveTenantId())->get();
 
 // In a model
 public function scopeForTenant(Builder $q, int $tenantId): Builder
@@ -192,7 +192,28 @@ public function scopeForTenant(Builder $q, int $tenantId): Builder
 }
 ```
 
-Cross-tenant guards have full test coverage — see `V6PreWaveSCrossTenantGuardsTest` and the wider `*CrossTenant*` suite.
+**`User::effectiveTenantId()` vs `User::tenant_id`** — important distinction.
+A super-admin can switch tenant context via the header dropdown (sets
+`session('active_tenant_id')`). `effectiveTenantId()` honours that override
+and returns the active tenant ; `tenant_id` always returns the SA's home
+tenant. Use `effectiveTenantId()` for any data-display query (so the SA
+sees the tenant they're acting inside). Use `tenant_id` directly for audit
+logging — the audit trail should record the SA's HOME tenant, not the
+context they happened to be acting in (audit honesty). Regular users get
+`tenant_id` either way ; they have no override capability.
+
+The same pattern applies one tier down for site context :
+`session('active_site_id')` lets executives + SAs switch site, resolved by
+controllers that read `request->attributes->get('active_site_id')`.
+
+Endpoints :
+- `POST /tenant-context/switch` (SA only) — body `{tenant_id: int}`
+- `DELETE /tenant-context` — revert to home tenant
+- `POST /site-context/switch` — body `{site_id: int}`
+- `DELETE /site-context` — revert to home site
+
+Cross-tenant guards have full test coverage — see `V6PreWaveSCrossTenantGuardsTest`,
+`TenantContextTest`, and the wider `*CrossTenant*` suite.
 
 ### 5.2 Audit logging on every read + write
 
