@@ -21,11 +21,13 @@ primary_region = "lax"
   dockerfile = "Dockerfile"
 
 # ── Release command : runs ONCE per deploy, before the new VMs go live. ─────
-# This is where migrations live. If a migration fails here, the deploy
-# aborts and the old VMs keep serving — safer than running migrations
-# inside the web process where a half-applied deploy could half-break.
+# Migrations always ; demo seed only if the DB is empty (first-deploy bootstrap).
+# Fly gives the release_command machine ~30 min vs SSH's ~3 min timeout,
+# which is why this is the right place for the multi-minute demo seeder.
+# The participant-count guard makes re-deploys idempotent : we don't
+# re-seed every time, only on a fresh / wiped DB.
 [deploy]
-  release_command = "php artisan migrate --force"
+  release_command = "sh -c 'php artisan migrate --force && php artisan demo:seed-if-empty'"
 
 # ── HTTP service ────────────────────────────────────────────────────────────
 # Public-facing port 80 / 443 → internal port 8080 (serversideup default).
