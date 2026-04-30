@@ -52,6 +52,11 @@ primary_region = "lax"
 # but composer/migration steps occasionally OOM at that size.
 [[vm]]
   size = "shared-cpu-1x"
-  memory = "1gb"
+  # Bumped to 2 GB after the demo seeder OOM'd at 1 GB. Laravel's seeder
+  # cluster (factories + 25 participants + medications + clinical notes +
+  # billing + lab results + ...) is heavy. After the initial seed we can
+  # drop back to 1 GB if cost matters ; demo traffic itself runs fine in
+  # 512 MB.
+  memory = "2gb"
   cpu_kind = "shared"
   cpus = 1
