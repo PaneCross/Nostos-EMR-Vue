@@ -4,7 +4,7 @@
 // rates over time per measure so QA + leadership can see whether quality
 // scores are improving or backsliding month-over-month.
 //
-// Data provenance — these numbers are DERIVED, not entered. Every snapshot
+// Data provenance, these numbers are DERIVED, not entered. Every snapshot
 // comes from QualityMeasureService.computeAll() which queries real clinical
 // tables (immunizations, clinical notes, problems, incidents, consent
 // records, participants). The scheduled QualityMeasureSnapshotJob runs
@@ -68,9 +68,9 @@ function cardData(measureId: string) {
 function latestRate(measureId: string): string {
   const rows = snapshots.value[measureId] ?? []
   const last = rows[rows.length - 1]
-  if (! last) return '—'
+  if (! last) return '-'
   const v = parseFloat(last.rate_pct ?? last.rate ?? 0)
-  return Number.isFinite(v) ? `${v.toFixed(1)}%` : '—'
+  return Number.isFinite(v) ? `${v.toFixed(1)}%` : '-'
 }
 
 const byCategory = computed(() => {
@@ -108,11 +108,11 @@ const byCategory = computed(() => {
         <InformationCircleIcon class="w-5 h-5 shrink-0 mt-0.5 text-blue-500 dark:text-blue-400" aria-hidden="true" />
         <div class="space-y-1.5">
           <p>
-            <strong>Where this data comes from :</strong>
-            each rate is computed by <code class="bg-blue-100 dark:bg-blue-900/60 px-1 rounded text-xs">QualityMeasureService</code>
-            which queries the source clinical tables — immunizations, clinical notes, problems, incidents, consent records, and participant
-            demographics. Numerator and denominator counts are exact. Rates update on the nightly schedule (02:30) and on demand via
-            the <em>Recompute now</em> button above.
+            <strong>Where this data comes from.</strong>
+            Each rate is computed by <code class="bg-blue-100 dark:bg-blue-900/60 px-1 rounded text-xs">QualityMeasureService</code>,
+            which queries the source clinical tables (immunizations, clinical notes, problems, incidents, consent records, and
+            participant demographics). Numerator and denominator counts are exact. Rates update on the nightly schedule at 02:30
+            and on demand via the <em>Recompute now</em> button above.
           </p>
           <p class="text-xs text-blue-700 dark:text-blue-300">
             This page is read-only. To move a rate, fix the underlying clinical reality (sign that note, record the immunization),

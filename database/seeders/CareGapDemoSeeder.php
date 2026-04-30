@@ -7,7 +7,7 @@
 // against each participant's actual emr_clinical_notes / emr_immunizations /
 // emr_problems history and writes one CareGap row per (participant, measure).
 //
-// Without this seeder /dashboards/gaps shows empty — the 02:00 nightly job
+// Without this seeder /dashboards/gaps shows empty, the 02:00 nightly job
 // never runs locally. After this runs, the dashboard's tenant summary chart
 // + "My panel" table both populate. Pressing "Recompute now" on the page
 // re-runs the same service, so signing a fresh PCP note in the demo and
@@ -33,7 +33,7 @@ class CareGapDemoSeeder extends Seeder
     {
         $tenant = Tenant::where('slug', 'sunrise-pace-demo')->first() ?? Tenant::first();
         if (! $tenant) {
-            $this->command?->warn('  No tenant — skipping care-gap evaluation.');
+            $this->command?->warn('  No tenant, skipping care-gap evaluation.');
             return;
         }
 
@@ -43,7 +43,7 @@ class CareGapDemoSeeder extends Seeder
             ->get();
 
         if ($participants->isEmpty()) {
-            $this->command?->warn('  No enrolled participants — skipping care-gap evaluation.');
+            $this->command?->warn('  No enrolled participants, skipping care-gap evaluation.');
             return;
         }
 

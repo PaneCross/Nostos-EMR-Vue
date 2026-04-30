@@ -49,7 +49,7 @@ class TenantContextController extends Controller
         $tenant = Tenant::findOrFail($data['tenant_id']);
 
         session(['active_tenant_id' => $tenant->id]);
-        // Drop site context — it would dangle on the wrong tenant otherwise.
+        // Drop site context, it would dangle on the wrong tenant otherwise.
         session()->forget('active_site_id');
 
         AuditLog::record(

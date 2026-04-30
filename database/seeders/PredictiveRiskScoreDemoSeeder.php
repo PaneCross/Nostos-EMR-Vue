@@ -2,15 +2,15 @@
 
 // ─── PredictiveRiskScoreDemoSeeder ───────────────────────────────────────────
 // Runs the real PredictiveRiskService against every enrolled participant in
-// the demo tenant. The heuristic pulls features from real seeded data —
+// the demo tenant. The heuristic pulls features from real seeded data -
 // LACE+ assessments, recent hospitalizations + ER visits, active medication
-// counts (polypharmacy), ADL dependence, age — and emits one score per
+// counts (polypharmacy), ADL dependence, age, and emits one score per
 // participant per risk_type (disenrollment + acute_event).
 //
 // The /dashboards/high-risk endpoint filters to scores computed in the last
 // 24 hours, so without this seed the page is always empty in dev (the 03:00
 // scheduled job never runs locally). Pressing "Recompute now" on the
-// dashboard re-runs the same service against any updated demo data —
+// dashboard re-runs the same service against any updated demo data -
 // adding an ER incident, prescribing more meds, etc. will move scores
 // upward on the next click.
 //
@@ -37,7 +37,7 @@ class PredictiveRiskScoreDemoSeeder extends Seeder
     {
         $tenant = Tenant::where('slug', 'sunrise-pace-demo')->first() ?? Tenant::first();
         if (! $tenant) {
-            $this->command?->warn('  No tenant — skipping predictive risk scoring.');
+            $this->command?->warn('  No tenant, skipping predictive risk scoring.');
             return;
         }
 
@@ -48,7 +48,7 @@ class PredictiveRiskScoreDemoSeeder extends Seeder
             ->get();
 
         if ($participants->isEmpty()) {
-            $this->command?->warn('  No enrolled participants — skipping predictive risk scoring.');
+            $this->command?->warn('  No enrolled participants, skipping predictive risk scoring.');
             return;
         }
 
@@ -59,7 +59,7 @@ class PredictiveRiskScoreDemoSeeder extends Seeder
 
         // ── Inject risk-elevating clinical data for a subset ──────────────────
         // Without this most demo participants score 'low' because they lack
-        // LACE+ assessments and recent hospitalizations — the heuristic's
+        // LACE+ assessments and recent hospitalizations, the heuristic's
         // highest-weight features. We seed a small population of "real" risk
         // signals so the dashboard reflects a believable distribution AND so
         // the underlying source data is auditable (clicking through to a
@@ -70,7 +70,7 @@ class PredictiveRiskScoreDemoSeeder extends Seeder
         $byBand = ['high' => 0, 'medium' => 0, 'low' => 0];
         foreach ($participants as $p) {
             // score() calls scoreType() for both 'disenrollment' and
-            // 'acute_event' — two PredictiveRiskScore rows per participant.
+            // 'acute_event', two PredictiveRiskScore rows per participant.
             foreach ($svc->score($p) as $score) {
                 $byBand[$score->band] = ($byBand[$score->band] ?? 0) + 1;
             }
@@ -90,7 +90,7 @@ class PredictiveRiskScoreDemoSeeder extends Seeder
      * subset of participants so the heuristic produces a realistic high /
      * medium / low spread instead of bottoming out at "low" everywhere.
      *
-     * The data IS real (visible on the participant's chart) — it's just demo
+     * The data IS real (visible on the participant's chart), it's just demo
      * data, like every other clinical row in this seeder cluster. We tag the
      * incidents with a description that calls out their seeded origin so a
      * curious tester can tell.

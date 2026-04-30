@@ -5,7 +5,7 @@
 // HEDIS / CMS Stars measures. Two views : org-wide summary + the logged-in
 // clinician's own panel.
 //
-// Data provenance — gap rows come from CareGapService.evaluate(), which
+// Data provenance, gap rows come from CareGapService.evaluate(), which
 // queries each participant's actual clinical history (clinical notes,
 // immunizations, problems) against the 7 measure definitions. The
 // scheduled CareGapCalculationJob runs nightly at 02:00 and the Recompute
@@ -94,14 +94,15 @@ const chart = computed(() => {
         <InformationCircleIcon class="w-5 h-5 shrink-0 mt-0.5 text-blue-500 dark:text-blue-400" aria-hidden="true" />
         <div class="space-y-1.5">
           <p>
-            <strong>Where this data comes from :</strong>
+            <strong>Where this data comes from.</strong>
             <code class="bg-blue-100 dark:bg-blue-900/60 px-1 rounded text-xs">CareGapService</code>
             checks each enrolled participant against 7 preventive measures
             (annual PCP visit, flu shot, pneumococcal, colonoscopy, mammogram, A1c, diabetic eye exam) using their clinical
             notes, immunizations, and active problems. One row per participant per measure. Updates nightly at 02:00 and on demand.
           </p>
           <p class="text-xs text-blue-700 dark:text-blue-300">
-            This page is read-only. Closing a gap means signing a fresh note, recording the immunization, etc. — then recompute.
+            This page is read-only. Closing a gap means signing a fresh note, recording the immunization, and so on, then
+            pressing recompute.
           </p>
         </div>
       </div>
@@ -137,11 +138,11 @@ const chart = computed(() => {
                   {{ g.satisfied ? 'Satisfied' : 'Open' }}
                 </span>
               </td>
-              <td class="px-2 py-1.5 text-slate-500 dark:text-slate-400">{{ g.next_due_date ?? '—' }}</td>
+              <td class="px-2 py-1.5 text-slate-500 dark:text-slate-400">{{ g.next_due_date ?? '-' }}</td>
             </tr>
             <tr v-if="myPanel.length === 0">
               <td colspan="4" class="px-2 py-4 text-center text-slate-500 dark:text-slate-400">
-                No gaps on your panel — or you don't have a participant panel assigned.
+                No gaps on your panel, or you don't have a participant panel assigned.
               </td>
             </tr>
           </tbody>

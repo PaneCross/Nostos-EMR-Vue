@@ -154,7 +154,7 @@ class TenantContextTest extends TestCase
 
         // SuperAdminPanel responds 403 to non-SAs but the share() middleware
         // still runs for forbidden requests; regardless, we use a route the
-        // factory user can hit. Use participants index — protected only by
+        // factory user can hit. Use participants index, protected only by
         // auth + standard permissions, available to it_admin role/dept.
         $response = $this->actingAs($user)->get('/participants');
 

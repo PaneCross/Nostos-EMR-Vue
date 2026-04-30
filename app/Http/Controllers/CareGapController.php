@@ -65,7 +65,7 @@ class CareGapController extends Controller
      * POST /care-gaps/recompute-all : re-evaluate all 7 measures for every
      * enrolled participant in the caller's effective tenant. Drives the
      * "Recompute" button on /dashboards/gaps so demos / testing can refresh
-     * without waiting for the 02:00 scheduled job. Idempotent — the service
+     * without waiting for the 02:00 scheduled job. Idempotent, the service
      * uses updateOrCreate keyed on (tenant, participant, measure).
      */
     public function recomputeAll(Request $request, CareGapService $svc): JsonResponse

@@ -2,7 +2,7 @@
 
 // ─── QualityMeasureSnapshotsDemoSeeder ───────────────────────────────────────
 // Drives the actual QualityMeasureService against the demo tenant so the
-// "today" point on every quality-measure trendline is REAL — derived from
+// "today" point on every quality-measure trendline is REAL, derived from
 // the real seeded participants, immunizations, clinical notes, problems,
 // incidents, and consent records. Then back-fills 12 prior weekly points by
 // perturbing each measure's true numerator (±10% with smooth drift) so the
@@ -10,7 +10,7 @@
 //
 // Why fake the back-history at all : the production scheduled job runs
 // nightly and a real history accumulates over time. In a fresh demo
-// install we have no past — so for visual context we synthesize trend
+// install we have no past, so for visual context we synthesize trend
 // points that converge on the real value. The most-recent point (today)
 // always reflects the actual computation, so signing notes / recording
 // immunizations in the demo and pressing "Recompute now" on the dashboard
@@ -36,12 +36,12 @@ class QualityMeasureSnapshotsDemoSeeder extends Seeder
     {
         $tenant = Tenant::where('slug', 'sunrise-pace-demo')->first() ?? Tenant::first();
         if (! $tenant) {
-            $this->command?->warn('  No tenant — skipping quality snapshots.');
+            $this->command?->warn('  No tenant, skipping quality snapshots.');
             return;
         }
 
         if (QualityMeasure::count() === 0) {
-            $this->command?->warn('  No quality measures — run QualityMeasureSeeder first.');
+            $this->command?->warn('  No quality measures, run QualityMeasureSeeder first.');
             return;
         }
 
@@ -97,7 +97,7 @@ class QualityMeasureSnapshotsDemoSeeder extends Seeder
             }
         }
 
-        // Bulk insert backfill — much faster than per-row create() at this volume.
+        // Bulk insert backfill, much faster than per-row create() at this volume.
         foreach (array_chunk($backfill, 200) as $chunk) {
             QualityMeasureSnapshot::insert($chunk);
         }

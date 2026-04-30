@@ -5,7 +5,7 @@
 // Sites + a full department / role staff roster, then chains every downstream
 // demo + reference seeder (clinical, billing, day-center, compliance, etc.).
 //
-// When to run: dev / demo only. NEVER run against a production tenant — it
+// When to run: dev / demo only. NEVER run against a production tenant, it
 // fabricates participants, staff users, and PHI.
 // Depends on: nothing (creates tenant + sites itself, then calls all others).
 // Acronyms used elsewhere in the chain: PACE, IDT (Interdisciplinary Team),
@@ -50,7 +50,7 @@ class DemoEnvironmentSeeder extends Seeder
         $tenant = Tenant::firstOrCreate(
             ['slug' => 'sunrise-pace-demo'],
             [
-                'name'               => 'Sunrise PACE — Demo Organization',
+                'name'               => 'Sunrise PACE Demo Organization',
                 'transport_mode'     => 'direct',
                 'cms_contract_id'    => 'H9999',
                 'state'              => 'CA',
@@ -96,14 +96,14 @@ class DemoEnvironmentSeeder extends Seeder
         }
         $this->command->line("  Sites: <comment>{$eastSite->name}</comment>, <comment>{$westSite->name}</comment>");
 
-        // ─── Second demo tenant — exists only so super-admins have ──────────
+        // ─── Second demo tenant, exists only so super-admins have ──────────
         // somewhere to switch to via the tenant context switcher. Empty
         // (one site, no users / participants) on purpose : it's a fixture for
         // verifying cross-tenant scoping, not a populated demo org.
         $horizonTenant = Tenant::firstOrCreate(
             ['slug' => 'horizon-pace-demo'],
             [
-                'name'                => 'Horizon PACE — Demo Organization',
+                'name'                => 'Horizon PACE Demo Organization',
                 'transport_mode'      => 'broker',
                 'cms_contract_id'     => 'H8888',
                 'state'               => 'AZ',
@@ -167,7 +167,7 @@ class DemoEnvironmentSeeder extends Seeder
         $this->command->table($headers, $rows);
 
         // ─── Super Admin ──────────────────────────────────────────────────────
-        // tj@nostos.tech — full access via Google OAuth, no department restriction
+        // tj@nostos.tech, full access via Google OAuth, no department restriction
         User::firstOrCreate(
             ['email' => 'tj@nostos.tech'],
             [
@@ -181,7 +181,7 @@ class DemoEnvironmentSeeder extends Seeder
                 'provisioned_at' => now(),
             ]
         );
-        $this->command->line('  Super Admin: <comment>tj@nostos.tech</comment> (role: super_admin — unrestricted access)');
+        $this->command->line('  Super Admin: <comment>tj@nostos.tech</comment> (role: super_admin, unrestricted access)');
 
         // ─── Permissions ──────────────────────────────────────────────────────
         $this->command->info('');
@@ -224,7 +224,7 @@ class DemoEnvironmentSeeder extends Seeder
         $this->call(MedicationsReferenceSeeder::class);
         $this->call(Phase5CDataSeeder::class);
 
-        // Phase R5 — wire previously-orphan reference seeders so a fresh
+        // Phase R5, wire previously-orphan reference seeders so a fresh
         // migrate:fresh --seed populates Beers Criteria, day-center schedule,
         // PRO survey definitions, quality-measure registry, HCC mapping.
         $this->command->info('');
@@ -287,7 +287,7 @@ class DemoEnvironmentSeeder extends Seeder
         // ─── W4-7: Clinical Orders Seed ───────────────────────────────────────
         // Seeds 2-4 routine orders per enrolled participant + 1 stat + 1 urgent
         // for the first 3 participants. Demonstrates CPOE worklist at /orders.
-        // 42 CFR §460.90 — all PACE services must be ordered and documented.
+        // 42 CFR §460.90, all PACE services must be ordered and documented.
         $this->command->info('');
         $this->command->info('  Seeding W4-7 clinical orders (CPOE demo data)...');
         $this->call(\Database\Seeders\ClinicalOrdersSeeder::class);
@@ -404,7 +404,7 @@ class DemoEnvironmentSeeder extends Seeder
         $this->command->info('  Seeding demo referral notes (Phase 4+ enrollment feature)...');
         $this->call(ReferralNoteDemoSeeder::class);
 
-        // Phase9BDataSeeder INTENTIONALLY not wired here — it overlaps with
+        // Phase9BDataSeeder INTENTIONALLY not wired here, it overlaps with
         // BillingDemoSeeder (called earlier) and produces duplicate encounter
         // + capitation rows. Run standalone only, against a tenant that does
         // NOT already have BillingDemoSeeder data:
@@ -448,7 +448,7 @@ class DemoEnvironmentSeeder extends Seeder
         // (CareGapService, PredictiveRiskService, QualityMeasureService) so
         // /dashboards/quality, /dashboards/gaps, and /dashboards/high-risk
         // light up with values DERIVED from the seeded participants + clinical
-        // data — not made-up numbers. Pressing "Recompute now" on any of those
+        // data, not made-up numbers. Pressing "Recompute now" on any of those
         // pages re-runs the same services on demand.
         //
         // Quality measures additionally synthesize 12 prior weekly trend

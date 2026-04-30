@@ -5,7 +5,7 @@
 // LACE+ score, ADL dependence, age) so the IDT can prioritize outreach.
 // IDT = Interdisciplinary Team.
 //
-// Data provenance — scores come from PredictiveRiskService.scoreType()
+// Data provenance, scores come from PredictiveRiskService.scoreType()
 // which extracts numeric features from each participant's actual clinical
 // records and runs them through either a heuristic weighted-sum (default)
 // or a trained logistic-regression model when one exists in
@@ -100,16 +100,17 @@ function bandColor(b: string): string {
         <InformationCircleIcon class="w-5 h-5 shrink-0 mt-0.5 text-blue-500 dark:text-blue-400" aria-hidden="true" />
         <div class="space-y-1.5">
           <p>
-            <strong>Where this data comes from :</strong>
+            <strong>Where this data comes from.</strong>
             <code class="bg-blue-100 dark:bg-blue-900/60 px-1 rounded text-xs">PredictiveRiskService</code>
-            extracts five features from each participant's records — LACE+ assessment score, hospitalizations + ER visits in the
-            last 90 days, active medication count (polypharmacy), ADL dependence, and age — and runs them through a weighted-sum
-            heuristic (or a trained logistic-regression model if one exists for the tenant). Two scores per participant :
-            <em>disenrollment</em> (12-month) and <em>acute_event</em> (90-day). Bands : ≥70 high, 40-69 medium, &lt;40 low.
+            extracts five features from each participant's records (LACE+ assessment score, hospitalizations and ER visits in the
+            last 90 days, active medication count for polypharmacy, ADL dependence, and age), then runs them through a weighted-sum
+            heuristic. If a trained logistic-regression model exists for the tenant, that takes precedence. Two scores per
+            participant: <em>disenrollment</em> (12-month) and <em>acute_event</em> (90-day). Bands: 70 and above is high, 40 to 69
+            is medium, below 40 is low.
           </p>
           <p class="text-xs text-blue-700 dark:text-blue-300">
             This page is read-only and shows only scores from the last 24 hours in the high band. The default heuristic is a demo
-            model — production deployments need outcome data to train. Feature contributions are stored in the <code class="text-xs">factors</code>
+            model. Production deployments need outcome data to train. Feature contributions are stored in the <code class="text-xs">factors</code>
             JSON column for each score row, viewable on the participant's chart.
           </p>
         </div>
@@ -148,7 +149,7 @@ function bandColor(b: string): string {
             </tr>
             <tr v-if="!loading && filtered.length === 0">
               <td colspan="6" class="px-3 py-6 text-center text-slate-500 dark:text-slate-400">
-                No high-risk participants — try Recompute now if scores are stale.
+                No high-risk participants. Try Recompute now if scores are stale.
               </td>
             </tr>
           </tbody>

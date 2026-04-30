@@ -114,7 +114,7 @@ const availableTenants = computed(() => (page.props.available_tenants as TenantC
 const canSwitchTenant = computed(() =>
     // Always show the switcher to a super-admin so the affordance is
     // discoverable, even when only one tenant exists yet (the dropdown will
-    // surface that single home tenant — useful while onboarding).
+    // surface that single home tenant, useful while onboarding).
     (user.value?.is_super_admin || user.value?.department === 'super_admin') && availableTenants.value.length >= 1
 )
 const isTenantOverridden = computed(() =>

@@ -153,7 +153,7 @@ class HandleInertiaRequests extends Middleware
         // ── Tenant context: super-admin only (role or dept). ─────────────────────
         // Mirrors site_context. session('active_tenant_id') is the override; the
         // SA's home tenant is the fallback. available_tenants populates the header
-        // dropdown — only super-admins ever see it.
+        // dropdown, only super-admins ever see it.
         $canSwitchTenant = $realUser && ($realUser->isSuperAdmin() || $realUser->isDeptSuperAdmin());
         $activeTenantId  = $canSwitchTenant ? (session('active_tenant_id') ?? $realUser?->tenant_id) : $realUser?->tenant_id;
         $activeTenant    = $activeTenantId ? Tenant::find($activeTenantId) : null;

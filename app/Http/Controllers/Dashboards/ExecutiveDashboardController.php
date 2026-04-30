@@ -97,7 +97,7 @@ class ExecutiveDashboardController
                 ->where('enrollment_status', 'enrolled')
                 ->count();
 
-            // Care plans don't carry site_id directly — they're scoped to the
+            // Care plans don't carry site_id directly, they're scoped to the
             // participant. Join through emr_participants to count per-site
             // active care plans (excluding archived).
             $carePlans = DB::table('emr_care_plans as cp')
@@ -192,7 +192,7 @@ class ExecutiveDashboardController
      * Department compliance roll-up : 8 org-wide KPI counts plus a per-department
      * row of operational backlog (overdue SDRs, unsigned notes, overdue
      * assessments, pending orders, STAT orders). Powers the bottom half of
-     * the executive dashboard — the Org Compliance Overview KPI strip and
+     * the executive dashboard, the Org Compliance Overview KPI strip and
      * the Department Operations table.
      *
      * Score band per department :
@@ -250,7 +250,7 @@ class ExecutiveDashboardController
             ->where('status', 'deteriorating')
             ->count();
 
-        // Hospital discharges (proxy for hospitalizations this month — we record
+        // Hospital discharges (proxy for hospitalizations this month, we record
         // the discharge back to PACE, not the admission itself).
         $hospitalizationsThisMonth = DB::table('emr_discharge_events')
             ->where('tenant_id', $tenantId)
@@ -281,7 +281,7 @@ class ExecutiveDashboardController
             'it_admin'          => 'IT / Administration',
         ];
 
-        // Single grouped queries — much cheaper than 14 × 5 round-trips.
+        // Single grouped queries, much cheaper than 14 × 5 round-trips.
         $sdrByDept = DB::table('emr_sdrs')
             ->where('tenant_id', $tenantId)
             ->whereNull('deleted_at')
@@ -335,7 +335,7 @@ class ExecutiveDashboardController
                 'stat_orders'         => (int) ($statOrdersByDept[$key] ?? 0),
             ];
 
-            // Score band — keep in sync with method docblock if the rules change.
+            // Score band, keep in sync with method docblock if the rules change.
             if ($row['overdue_sdrs'] > 0 || $row['stat_orders'] > 0) {
                 $row['score'] = 'critical';
             } elseif ($row['unsigned_notes'] > 3 || $row['overdue_assessments'] > 0 || $row['pending_orders'] > 5) {

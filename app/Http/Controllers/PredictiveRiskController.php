@@ -52,7 +52,7 @@ class PredictiveRiskController extends Controller
      * have to wait for the 03:00 scheduled job. Mirrors what
      * PredictiveRiskScoringJob does but scoped to one tenant on demand.
      *
-     * Returns a count summary, not the score rows themselves — the
+     * Returns a count summary, not the score rows themselves, the
      * dashboard reloads its own list right after.
      */
     public function recomputeAll(Request $request, PredictiveRiskService $svc): JsonResponse

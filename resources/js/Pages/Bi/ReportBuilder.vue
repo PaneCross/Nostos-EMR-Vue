@@ -7,7 +7,7 @@
 //
 // Audience : BI editors (typically QA Compliance + Finance + Exec).
 //
-// Server contract — both endpoints scoped to the user's effective tenant :
+// Server contract, both endpoints scoped to the user's effective tenant :
 //   GET  /bi/schema  → { entities[], dimensions[], measures[], joins[] }
 //                     dimensions are flat, fully-qualified ('emr_<table>.col')
 //   POST /bi/report  → { labels[], datasets[{label,data[]}], row_count }
@@ -142,7 +142,7 @@ function downloadCsv() {
   <Head title="Report Builder" />
   <AppShell>
     <!-- ── Page wrapper : centered, max-width so the form doesn't span the ──
-         full monitor on wide screens. Was the visual culprit before — three
+         full monitor on wide screens. Was the visual culprit before, three
          selects at 33% of a 2000px viewport read as broken UI. ────────── -->
     <div class="p-6 max-w-6xl mx-auto space-y-6">
       <h1 class="text-xl font-semibold text-slate-900 dark:text-slate-100">BI Report Builder</h1>
@@ -167,7 +167,7 @@ function downloadCsv() {
               @change="resetWhenEntityChanges"
               class="w-full rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
             >
-              <option value="">— choose entity —</option>
+              <option value="">- choose entity -</option>
               <option v-for="e in schema.entities" :key="e" :value="e">{{ e }}</option>
             </select>
           </div>
@@ -182,7 +182,7 @@ function downloadCsv() {
               :disabled="! entity"
               class="w-full rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <option value="">{{ entity ? '— choose dimension —' : '— pick entity first —' }}</option>
+              <option value="">{{ entity ? '- choose dimension -' : '- pick entity first -' }}</option>
               <option v-for="d in dimensions" :key="d" :value="d">{{ prettyDim(d) }}</option>
             </select>
             <p v-if="entity && ! dimensions.length" class="mt-1 text-xs text-amber-600 dark:text-amber-400">
@@ -248,7 +248,7 @@ function downloadCsv() {
             </thead>
             <tbody class="divide-y divide-slate-100 dark:divide-slate-700">
               <tr v-for="(row, i) in result" :key="i" class="hover:bg-slate-50 dark:hover:bg-slate-700/40">
-                <td class="px-3 py-2 text-slate-800 dark:text-slate-200">{{ row.label || '—' }}</td>
+                <td class="px-3 py-2 text-slate-800 dark:text-slate-200">{{ row.label || '-' }}</td>
                 <td class="px-3 py-2 text-right tabular-nums text-slate-800 dark:text-slate-200">{{ row.value.toLocaleString() }}</td>
               </tr>
             </tbody>
