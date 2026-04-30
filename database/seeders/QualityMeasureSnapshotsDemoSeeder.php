@@ -1,19 +1,24 @@
 <?php
 
 // ─── QualityMeasureSnapshotsDemoSeeder ───────────────────────────────────────
-// Backfills 90 days of weekly snapshots for every catalog row so the Quality
-// Measures dashboard (/dashboards/quality) renders trend lines instead of
-// empty cards. Idempotent : wipes prior demo snapshots for the active demo
-// tenant before re-seeding.
+// Drives the actual QualityMeasureService against the demo tenant so the
+// "today" point on every quality-measure trendline is REAL — derived from
+// the real seeded participants, immunizations, clinical notes, problems,
+// incidents, and consent records. Then back-fills 12 prior weekly points by
+// perturbing each measure's true numerator (±10% with smooth drift) so the
+// chart has a believable trend leading up to today's truth.
 //
-// Each measure gets a believable starting rate, a small per-week drift toward
-// a target, and ±2pp jitter so the line isn't a perfectly straight ramp.
-// Numerator/denominator are reverse-derived from the rate so exports look
-// honest. All snapshots are scoped to the same tenant the rest of the demo
-// data uses.
+// Why fake the back-history at all : the production scheduled job runs
+// nightly and a real history accumulates over time. In a fresh demo
+// install we have no past — so for visual context we synthesize trend
+// points that converge on the real value. The most-recent point (today)
+// always reflects the actual computation, so signing notes / recording
+// immunizations in the demo and pressing "Recompute now" on the dashboard
+// will move the rate.
 //
-// When to run : after QualityMeasureSeeder. DemoEnvironmentSeeder calls this.
-// Depends on : QualityMeasureSeeder (the catalog must exist first), Tenant.
+// When to run : after participant + clinical demo data exists. The
+// DemoEnvironmentSeeder calls this near the bottom of its run() method.
+// Idempotent : wipes prior demo snapshots for the active tenant first.
 // ─────────────────────────────────────────────────────────────────────────────
 
 namespace Database\Seeders;
@@ -21,41 +26,21 @@ namespace Database\Seeders;
 use App\Models\QualityMeasure;
 use App\Models\QualityMeasureSnapshot;
 use App\Models\Tenant;
+use App\Services\QualityMeasureService;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Seeder;
 
 class QualityMeasureSnapshotsDemoSeeder extends Seeder
 {
-    /**
-     * Per-measure starting rate + target rate (where the trend ends up after
-     * 90 days). Tuned to look plausible : flu vaccination starts mid-50s and
-     * climbs to mid-80s like a real season; A1c testing inches up; falls
-     * trend in either direction depending on whether the home visit programme
-     * is working that quarter.
-     */
-    private const TARGETS = [
-        'FLU'  => ['start' => 56.0, 'end' => 84.0, 'denom' => 250],
-        'PNE'  => ['start' => 71.0, 'end' => 88.0, 'denom' => 180],
-        'PCV'  => ['start' => 79.0, 'end' => 92.0, 'denom' => 250],
-        'A1C'  => ['start' => 64.0, 'end' => 78.0, 'denom' => 95],
-        'DEE'  => ['start' => 52.0, 'end' => 67.0, 'denom' => 95],
-        'FALL' => ['start' => 91.0, 'end' => 94.0, 'denom' => 250],
-        'NPP'  => ['start' => 88.0, 'end' => 97.0, 'denom' => 250],
-        'HOS'  => ['start' => 86.0, 'end' => 89.0, 'denom' => 250],
-        'AD'   => ['start' => 62.0, 'end' => 81.0, 'denom' => 250],
-    ];
-
-    public function run(): void
+    public function run(QualityMeasureService $svc): void
     {
-        $tenant = Tenant::where('slug', 'sunrise-pace-demo')->first()
-            ?? Tenant::first();
+        $tenant = Tenant::where('slug', 'sunrise-pace-demo')->first() ?? Tenant::first();
         if (! $tenant) {
             $this->command?->warn('  No tenant — skipping quality snapshots.');
             return;
         }
 
-        $measures = QualityMeasure::pluck('measure_id')->all();
-        if (empty($measures)) {
+        if (QualityMeasure::count() === 0) {
             $this->command?->warn('  No quality measures — run QualityMeasureSeeder first.');
             return;
         }
@@ -64,30 +49,47 @@ class QualityMeasureSnapshotsDemoSeeder extends Seeder
         // duplicate trend points.
         QualityMeasureSnapshot::where('tenant_id', $tenant->id)->delete();
 
-        $now    = CarbonImmutable::now();
-        // 13 weekly points covers ~90 days, which matches the dashboard window.
-        $points = 13;
-        $rows   = [];
+        // ── 1) Compute TODAY's point from the real participant data. ─────────
+        // computeAll() inserts one snapshot row per measure with computed_at=now.
+        $todayRows = $svc->computeAll($tenant->id);
 
-        foreach ($measures as $measureId) {
-            $cfg = self::TARGETS[$measureId] ?? ['start' => 70.0, 'end' => 80.0, 'denom' => 200];
+        // ── 2) Synthesize 12 weekly back-history points per measure. ─────────
+        // We perturb each measure's true numerator with a smooth drift + small
+        // jitter so the trend looks realistic but ends at the real value.
+        $points    = 12;
+        $now       = CarbonImmutable::now();
+        $backfill  = [];
+
+        foreach ($todayRows as $todaySnap) {
+            $denom    = (int) $todaySnap->denominator;
+            $realNum  = (int) $todaySnap->numerator;
+            if ($denom <= 0) {
+                continue; // Nothing meaningful to chart.
+            }
+
+            // Pick a starting numerator 10-25% off from today's truth, then
+            // walk it back toward truth across the 12 prior weeks. This
+            // makes the line either climb or slide depending on where the
+            // demo data landed for this measure (improving programmes
+            // climb; declining programmes slide).
+            $offsetPct = (mt_rand(10, 25) / 100.0) * (mt_rand(0, 1) ? 1 : -1);
+            $startNum  = max(0, min($denom, (int) round($realNum * (1 - $offsetPct))));
+
             for ($i = 0; $i < $points; $i++) {
-                // Linear interpolate start → end with mild jitter (±2pp).
                 $progress = $i / max(1, $points - 1);
-                $rate     = $cfg['start'] + ($cfg['end'] - $cfg['start']) * $progress;
-                $jitter   = (mt_rand(-200, 200) / 100.0); // ±2.00
-                $rate     = max(0.0, min(100.0, $rate + $jitter));
-                $denom    = (int) $cfg['denom'];
-                // Reverse-derive numerator from the rate so exports look honest.
-                $num      = (int) round($denom * ($rate / 100.0));
-                $when     = $now->subWeeks($points - 1 - $i);
+                $num      = (int) round($startNum + ($realNum - $startNum) * $progress);
+                // Jitter ±2% of denominator so the line isn't perfectly smooth.
+                $jitter   = (int) round(((mt_rand(-200, 200) / 100.0) / 100.0) * $denom);
+                $num      = max(0, min($denom, $num + $jitter));
+                $rate     = round(100 * $num / $denom, 2);
+                $when     = $now->subWeeks($points - $i); // weeks ago, in chronological order
 
-                $rows[] = [
+                $backfill[] = [
                     'tenant_id'   => $tenant->id,
-                    'measure_id'  => $measureId,
+                    'measure_id'  => $todaySnap->measure_id,
                     'numerator'   => $num,
                     'denominator' => $denom,
-                    'rate_pct'    => round($rate, 2),
+                    'rate_pct'    => $rate,
                     'computed_at' => $when,
                     'created_at'  => $when,
                     'updated_at'  => $when,
@@ -95,16 +97,15 @@ class QualityMeasureSnapshotsDemoSeeder extends Seeder
             }
         }
 
-        // Bulk insert — much faster than per-row create() at this volume.
-        foreach (array_chunk($rows, 200) as $chunk) {
+        // Bulk insert backfill — much faster than per-row create() at this volume.
+        foreach (array_chunk($backfill, 200) as $chunk) {
             QualityMeasureSnapshot::insert($chunk);
         }
 
         $this->command?->line(sprintf(
-            '    Quality snapshots: <comment>%d points across %d measures (~%d days)</comment>',
-            count($rows),
-            count($measures),
-            $points * 7,
+            '    Quality snapshots: <comment>1 real point + %d synthetic back-history points across %d measures</comment>',
+            count($backfill),
+            count($todayRows),
         ));
     }
 }

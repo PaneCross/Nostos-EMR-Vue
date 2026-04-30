@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Assessment;
 use App\Models\CareGap;
 use App\Models\Participant;
+use App\Services\CareGapService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -57,6 +58,40 @@ class CareGapController extends Controller
         return response()->json([
             'gaps' => CareGap::forTenant($u->effectiveTenantId())
                 ->where('participant_id', $participant->id)->get(),
+        ]);
+    }
+
+    /**
+     * POST /care-gaps/recompute-all : re-evaluate all 7 measures for every
+     * enrolled participant in the caller's effective tenant. Drives the
+     * "Recompute" button on /dashboards/gaps so demos / testing can refresh
+     * without waiting for the 02:00 scheduled job. Idempotent — the service
+     * uses updateOrCreate keyed on (tenant, participant, measure).
+     */
+    public function recomputeAll(Request $request, CareGapService $svc): JsonResponse
+    {
+        $this->gate();
+        $u = Auth::user();
+        $tenantId = $u->effectiveTenantId();
+
+        $participants = Participant::where('tenant_id', $tenantId)
+            ->whereNull('deleted_at')
+            ->where('enrollment_status', 'enrolled')
+            ->get();
+
+        $totalGaps = 0;
+        $openGaps  = 0;
+        foreach ($participants as $p) {
+            $results = $svc->evaluate($p);
+            $totalGaps += count($results);
+            $openGaps  += collect($results)->where('satisfied', false)->count();
+        }
+
+        return response()->json([
+            'participants_evaluated' => $participants->count(),
+            'gap_rows_written'       => $totalGaps,
+            'open_gaps'              => $openGaps,
+            'computed_at'            => now()->toIso8601String(),
         ]);
     }
 

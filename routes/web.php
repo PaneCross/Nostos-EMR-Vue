@@ -696,6 +696,7 @@ Route::middleware('auth')->group(function () {
     // Phase G8 (MVP completion roadmap): Predictive modeling
     Route::get ('/participants/{participant}/predictive-risk',          [\App\Http\Controllers\PredictiveRiskController::class, 'forParticipant'])->name('predictive.for_participant');
     Route::post('/participants/{participant}/predictive-risk/compute',  [\App\Http\Controllers\PredictiveRiskController::class, 'compute'])->name('predictive.compute');
+    Route::post('/predictive-risk/recompute-all',                       [\App\Http\Controllers\PredictiveRiskController::class, 'recomputeAll'])->name('predictive.recompute_all');
     Route::get ('/dashboards/high-risk',                                [\App\Http\Controllers\PredictiveRiskController::class, 'highRisk'])->name('dashboards.high_risk');
 
     // Phase K1 — Inertia dashboard pages (Chart.js rendered)
@@ -744,6 +745,7 @@ Route::middleware('auth')->group(function () {
     // Phase G1 (MVP completion roadmap): Care gaps + readmission risk
     Route::get ('/care-gaps/summary',                    [\App\Http\Controllers\CareGapController::class, 'summary'])->name('care_gaps.summary');
     Route::get ('/care-gaps/my-panel',                   [\App\Http\Controllers\CareGapController::class, 'myPanel'])->name('care_gaps.my_panel');
+    Route::post('/care-gaps/recompute-all',              [\App\Http\Controllers\CareGapController::class, 'recomputeAll'])->name('care_gaps.recompute_all');
     Route::get ('/participants/{participant}/care-gaps', [\App\Http\Controllers\CareGapController::class, 'forParticipant'])->name('care_gaps.for_participant');
     Route::get ('/dashboards/readmission-risk',          [\App\Http\Controllers\CareGapController::class, 'readmissionRisk'])->name('dashboards.readmission_risk');
 

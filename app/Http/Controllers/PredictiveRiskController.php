@@ -46,6 +46,44 @@ class PredictiveRiskController extends Controller
     }
 
     /**
+     * POST /predictive-risk/recompute-all : run the heuristic for every
+     * enrolled participant in the caller's effective tenant. Used by the
+     * "Recompute" button on /dashboards/high-risk so demos / tests don't
+     * have to wait for the 03:00 scheduled job. Mirrors what
+     * PredictiveRiskScoringJob does but scoped to one tenant on demand.
+     *
+     * Returns a count summary, not the score rows themselves — the
+     * dashboard reloads its own list right after.
+     */
+    public function recomputeAll(Request $request, PredictiveRiskService $svc): JsonResponse
+    {
+        $this->gate();
+        $u = Auth::user();
+        // Read-permission proxy : if the user can see /dashboards/high-risk,
+        // they can recompute. The dashboard route itself is auth-gated by
+        // the route group; no separate role check needed here.
+        $tenantId = $u->effectiveTenantId();
+
+        $participants = Participant::where('tenant_id', $tenantId)
+            ->whereNull('deleted_at')
+            ->where('enrollment_status', 'enrolled')
+            ->get();
+
+        $byBand = ['high' => 0, 'medium' => 0, 'low' => 0];
+        foreach ($participants as $p) {
+            foreach ($svc->score($p) as $score) {
+                $byBand[$score->band] = ($byBand[$score->band] ?? 0) + 1;
+            }
+        }
+
+        return response()->json([
+            'participants_scored' => $participants->count(),
+            'by_band'             => $byBand,
+            'computed_at'         => now()->toIso8601String(),
+        ]);
+    }
+
+    /**
      * GET /dashboards/high-risk : top-N high risk across tenant.
      * Phase O3: dual-serve JSON + Inertia via wantsJson() branch.
      */

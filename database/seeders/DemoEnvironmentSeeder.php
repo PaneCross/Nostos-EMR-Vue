@@ -234,13 +234,6 @@ class DemoEnvironmentSeeder extends Seeder
         $this->call(DayCenterScheduleSeeder::class);
         $this->call(ProSurveySeeder::class);
         $this->call(QualityMeasureSeeder::class);
-        // 90 days of weekly snapshots so /dashboards/quality renders trendlines
-        // instead of empty cards. Idempotent.
-        $this->call(QualityMeasureSnapshotsDemoSeeder::class);
-        // Fresh predictive-risk scores in the 24-hour window the high-risk
-        // dashboard reads from. Without this the page is always empty in dev
-        // (scoring job runs daily in prod but never fires locally).
-        $this->call(PredictiveRiskScoreDemoSeeder::class);
 
         // ─── Phase 7C: Chat Channels ───────────────────────────────────────────
         // Auto-create 14 department channels + 1 broadcast channel for the tenant.
@@ -449,6 +442,24 @@ class DemoEnvironmentSeeder extends Seeder
         $this->command->info('');
         $this->command->info('  Seeding Wave I-M demo data (IADL/TB/Anticoag/ADE/Hospice/Discharge/...)...');
         $this->call(WaveIMDemoSeeder::class);
+
+        // ─── Derived dashboards : compute from real data we just seeded ───────
+        // These three seeders run the actual production services
+        // (CareGapService, PredictiveRiskService, QualityMeasureService) so
+        // /dashboards/quality, /dashboards/gaps, and /dashboards/high-risk
+        // light up with values DERIVED from the seeded participants + clinical
+        // data — not made-up numbers. Pressing "Recompute now" on any of those
+        // pages re-runs the same services on demand.
+        //
+        // Quality measures additionally synthesize 12 prior weekly trend
+        // points around today's true value so the line charts look like a
+        // real history (we have no past in a fresh install). The most recent
+        // point on every measure always reflects the actual computation.
+        $this->command->info('');
+        $this->command->info('  Computing derived dashboards (care gaps, predictive risk, quality snapshots)...');
+        $this->call(CareGapDemoSeeder::class);
+        $this->call(PredictiveRiskScoreDemoSeeder::class);
+        $this->call(QualityMeasureSnapshotsDemoSeeder::class);
 
         // ─── Participant Photos ────────────────────────────────────────────────
         // Downloads pravatar.cc placeholder images for the first 15 enrolled
