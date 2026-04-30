@@ -7,6 +7,7 @@ use App\Listeners\SyncFlagsToTransport;
 use App\Models\AdlRecord;
 use App\Models\User;
 use App\Observers\AdlRecordObserver;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
@@ -63,5 +64,13 @@ class AppServiceProvider extends ServiceProvider
 
         // ADL threshold breach observer
         AdlRecord::observe(AdlRecordObserver::class);
+
+        // Force HTTPS asset/url generation in production. On Fly.io the app
+        // sits behind their TLS-terminating proxy and receives plain HTTP,
+        // which makes Laravel emit http:// URLs unless we override here.
+        // Cheaper than wiring full TrustedProxies middleware for one demo.
+        if (app()->environment('production')) {
+            URL::forceScheme('https');
+        }
     }
 }
