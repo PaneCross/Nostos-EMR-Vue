@@ -17,18 +17,19 @@ clinical-grade group-chat surface. Backwards-compatible with the existing
 | Channel-type sort order | Specialized → Department → Broadcast → Direct (1:1 + group DMs) |
 | Categories collapsible | Yes, with badge-when-collapsed showing unread + urgent count |
 | Specialized chat scope | Admin picks at creation : multi-select **departments** OR **site-wide** |
-| Who creates specialized chats | Department admins (`User.role === 'admin'`) |
+| Who creates specialized chats | Dept admin (in target dept), executive, `it_admin` admin (override, audit-logged), or super_admin. Site-wide chats need executive/it_admin/super_admin only. See §11.2. |
 | Auto-add by JobTitle | Yes. Adding a user with matching JobTitle auto-joins all relevant chats. |
 | Backfill history on auto-add | Full history visible. Creator dialog warns about this at creation time. |
 | Edit policy | 5-minute edit window after send, then locked |
 | Delete policy | Soft delete only, with audit log + "deleted by [user] at [time]" placeholder |
 | Reactions | 5 emoji palette : 👍 ✅ 👀 ❤️ ❓ |
-| @mentions | `@user`, `@all`, `@role` (e.g. `@RN`). All highlight + force notification (override mute). |
+| @mentions | `@user`, `@all`, `@role` (e.g. `@RN`), `@dept` (e.g. `@primary-care`). All four highlight + force notification (override mute). |
 | Mute / snooze | Per-channel. Mute = indefinite, Snooze = until timestamp. Overridden by @mention. |
 | Audit log message reads | Yes : every first-read writes a `chat.message_read` audit row. |
 | In-channel search | Yes for v1 (per-channel only ; cross-channel deferred) |
-| Pinned messages | Yes for v1. Permission matrix below. |
+| Pinned messages | Yes for v1. Permission matrix below. 50-pin soft cap with admin-only `Pin anyway` override (audit-logged). See §11.7. |
 | Pin notifications | Loud for specialized / department / broadcast. Silent for DM / group DM. |
+| Group DM management | Any member can rename / add / remove / self-leave. All actions audit-logged + visible to members via Channel Settings panel. See §11.6. |
 | Real-time delivery | Reverb-first ; graceful polling fallback when Reverb is unavailable (e.g. Render free tier) |
 | Attachments | Deferred to v3 |
 
@@ -225,20 +226,23 @@ Schema::create('emr_chat_message_mentions', function (Blueprint $t) {
 
     // Exactly one of these is non-null per row.
     $t->foreignId('mentioned_user_id')->nullable()->constrained('shared_users')->cascadeOnDelete();
-    $t->string('mentioned_role_code', 60)->nullable();      // e.g. 'rn'
+    $t->string('mentioned_role_code', 60)->nullable();      // e.g. 'rn' (JobTitle code)
+    $t->string('mentioned_department', 30)->nullable();     // e.g. 'primary_care'
     $t->boolean('is_at_all')->default(false);               // @all / @channel
 
     $t->timestamp('created_at')->useCurrent();
 
     $t->index(['mentioned_user_id', 'message_id']);
     $t->index(['mentioned_role_code']);
+    $t->index(['mentioned_department']);
     $t->index(['message_id']);
 });
 ```
 
 Server-side parser scans `message_text` on send for `@username`, `@all`,
-`@role-code` patterns and inserts rows accordingly. Frontend uses these
-rows to render highlights + override mute logic.
+`@role-code`, and `@dept-name` patterns and inserts rows accordingly.
+Frontend uses these rows to render highlights + override mute logic. All
+four mention types override the recipient's mute / snooze setting.
 
 ### 3.9 Add edited-tracking column to `emr_chat_messages`
 
@@ -427,6 +431,26 @@ All under `/chat` prefix, all auth-gated, all tenant-scoped via existing members
 ### 6.6 Pinned-message panel (new)
 
 - `GET /chat/channels/{channel}/pins` : list all pinned messages with their pinner.
+- `POST /chat/channels/{channel}/messages/{message}/pin?override=1` : pin past the 50-cap. Permission-gated to channel admins only ; writes a `chat.pin_cap_override` audit row in addition to the standard pin row.
+
+### 6.7 Channel Settings panel (new)
+
+- `GET /chat/channels/{channel}/settings` : returns the channel's current
+  config (name, description, members, role/dept targets if applicable, mute
+  state for the caller) AND the audit timeline filtered to this channel's
+  events. Used by the Channel Settings drawer in the UI.
+
+### 6.8 Group DM management (new)
+
+- `PATCH /chat/group-dm-channels/{channel}` : rename. Body : `name`. Any
+  member can call. Audit : `chat.channel_renamed` with old/new in metadata.
+- `POST /chat/group-dm-channels/{channel}/members` : add member. Body :
+  `user_id` (must be in caller's effective tenant). Any member can call.
+  Audit : `chat.member_added_by_user`.
+- `DELETE /chat/group-dm-channels/{channel}/members/{user}` : remove member.
+  Any member can call (including self-leave). Audit :
+  `chat.member_removed_by_user` for cross-removal, `chat.member_self_left`
+  for self.
 
 ### 6.7 Updates to existing endpoints
 
@@ -468,6 +492,7 @@ New `shared_audit_logs` actions :
 |---|---|---|
 | `chat.channel_created` | Role-group / group-DM creation | `chat_channel` / id |
 | `chat.channel_updated` | Role-group retargeting | `chat_channel` / id |
+| `chat.channel_renamed` | Group-DM rename | `chat_channel` / id |
 | `chat.channel_archived` | Channel set inactive | `chat_channel` / id |
 | `chat.message_sent` | Send (already exists ?) — confirm | `chat_message` / id |
 | `chat.message_read` | First-read receipt (PHI access) | `chat_message` / id |
@@ -475,11 +500,20 @@ New `shared_audit_logs` actions :
 | `chat.message_deleted` | Soft delete | `chat_message` / id |
 | `chat.message_pinned` | Pin | `chat_message` / id |
 | `chat.message_unpinned` | Unpin | `chat_message` / id |
-| `chat.member_added_by_role` | Auto-add via JobTitle change | `chat_channel` / id |
-| `chat.member_removed_by_role` | Auto-remove via JobTitle change | `chat_channel` / id |
+| `chat.pin_cap_override` | Admin pinned past the 50-cap via `Pin anyway` | `chat_channel` / id |
+| `chat.broadcast_pin_acknowledged` | Exec confirmed PHI dialog when pinning to All Staff | `chat_channel` / id |
+| `chat.member_added_by_role` | Auto-add via JobTitle / department change | `chat_channel` / id |
+| `chat.member_removed_by_role` | Auto-remove via JobTitle / department change | `chat_channel` / id |
+| `chat.member_added_by_user` | Manual add to a group DM | `chat_channel` / id |
+| `chat.member_removed_by_user` | Manual remove from a group DM | `chat_channel` / id |
+| `chat.member_self_left` | User left a group DM voluntarily | `chat_channel` / id |
+| `chat.it_admin_override` | An `it_admin` admin took an action on a channel they don't directly manage | `chat_channel` / id |
 
-For PHI exposure on broadcast pin : write `chat.broadcast_pin_acknowledged`
-when the admin confirms the dialog.
+The Channel Settings panel for any channel queries
+`shared_audit_logs` filtered to `resource_type='chat_channel' AND
+resource_id=<channel.id>` and renders the events as a chronological
+timeline — names, timestamps, and actors visible to all current
+members.
 
 ---
 
@@ -501,10 +535,13 @@ Chat/components/ReactionBar.vue   — emoji palette popover
 Chat/components/ReceiptModal.vue  — click-message-to-see-receipts modal
 Chat/components/PinPanel.vue      — pinned messages drawer
 Chat/components/SearchPanel.vue   — in-channel search drawer
-Chat/components/MentionAutocomplete.vue — typeahead for @user / @role / @all
+Chat/components/MentionAutocomplete.vue — typeahead for @user / @role / @dept / @all
 Chat/components/MuteMenu.vue      — mute / snooze submenu
-Chat/components/CreateRoleGroupModal.vue — admin's specialized-channel creator
+Chat/components/CreateRoleGroupModal.vue — admin's specialized-channel creator (with backfill warning)
 Chat/components/CreateGroupDmModal.vue   — anyone's group-DM creator
+Chat/components/ChannelSettingsDrawer.vue — name + members + audit timeline (group DMs + role-groups for admins)
+Chat/components/PinCapOverrideDialog.vue  — 50-pin block-with-override prompt
+Chat/components/PhiPinWarningDialog.vue   — broadcast-pin PHI confirmation
 ```
 
 ### 9.2 Sort order for the channel list
@@ -536,9 +573,15 @@ node. When >50 % visible for >1 s, fires `POST .../messages/{id}/read`
 ### 9.5 @mention rendering
 
 - Server returns mentions as parsed tokens in the message API response.
-- Frontend renders mentioned_user_id mentions as `<span class="mention mention-user">@First Last</span>`.
-- Renders @role and @all with distinct chip styling.
-- Mentions of the current user get a special highlight + a small flag in the message header.
+- Frontend renders the four mention forms with distinct chip styling :
+  - `@First Last` — solid blue user pill
+  - `@RN` (or any JobTitle code) — outlined indigo role pill
+  - `@primary-care` (or any department) — outlined teal dept pill
+  - `@all` — solid amber attention pill (loudest visual weight)
+- Mentions of the current user get a left-border highlight on the message
+  row + a small flag in the message header (`Mentioned you`).
+- The MentionAutocomplete typeahead surfaces all four forms when the user
+  types `@`, with the four categories grouped (Users / Roles / Depts / All).
 
 ---
 
@@ -553,9 +596,11 @@ node. When >50 % visible for >1 s, fires `POST .../messages/{id}/read`
 | Reads | 3 | First-read writes audit row, second-read no-op, real-time event fires |
 | Edit | 4 | Within 5-min ok, outside 5-min 422, original_message_text preserved, real-time event fires |
 | Delete | 3 | Sender + admin only, soft delete preserves text, real-time event fires |
-| Pins | 5 | Permission matrix per channel type, soft cap at 50, edit propagates, deleted message auto-clears, audit fires |
+| Pins | 7 | Permission matrix per channel type, 50-cap blocks regular member, override allowed for admin, override audit row written, edit propagates, deleted message auto-clears, audit fires |
 | Mute | 4 | Notification suppressed, @mention overrides, snooze expiry resumes, indefinite mute persists |
-| @mentions | 5 | @user parsed, @all parsed, @role parsed, override mute, multiple mentions in one message |
+| @mentions | 7 | @user parsed, @all parsed, @role parsed, @dept parsed, override mute on all 4, multiple mentions in one message, autocomplete returns all 4 categories |
+| Group DM management | 5 | Rename audited, member-add audited, member-remove audited, self-leave audited, settings panel returns timeline |
+| IT admin override | 3 | it_admin can manage role-group they don't own, override audit row written, regular dept admin in another dept gets 403 |
 | Auto-add hook | 6 | New user with matching role joins, dept change adds/removes, retarget sync, race when 100+ users qualify, audit logs fire, observer doesn't recurse |
 | Role-group create | 3 | Multi-dept multi-role works, site-wide works, regular user gets 403 |
 | Group DM | 2 | Anyone creates with N members, 1-member rejected |
@@ -563,44 +608,131 @@ node. When >50 % visible for >1 s, fires `POST .../messages/{id}/read`
 | Pin permission integration | 4 | Each channel type's pin permission tested |
 | End-to-end | 4 | Full Reverb-driven exchange, polling fallback works, mute survives logout, history backfill on auto-add |
 
-**Total :** ≈ 59 new tests. With the existing chat test count we'd be at ~80 chat-specific tests.
+**Total :** ≈ 70 new tests after the section-11 answers were locked in (added IT admin override + dept mention + group DM management + pin-cap override). With the existing chat test count we'd be at ~90 chat-specific tests.
 
 ---
 
-## 11. Open questions to resolve before implementation
+## 11. Resolved decisions (TJ confirmed 2026-04-30)
 
-1. **`participant_idt` channel placement in the new sort order :**
-   recommended position is between Broadcast and DMs. Confirm.
+All 7 open questions have been answered. Locking the answers here so the
+build sequence references one canonical spec.
 
-2. **"Department admin" definition :** I'm assuming `User.role === 'admin'`
-   AND `User.department === <target dept>`. Is that right ? Should
-   `it_admin` department members count as admins too ?
+### 11.1 `participant_idt` channel placement → APPROVED
 
-3. **Should @mention also work for `@everyone-in-this-dept` shorthand ?**
-   I have `@all`, `@username`, `@role-code`. Adding `@dept-name` is
-   easy but slightly redundant with `@all` in a department channel.
+Sort between **Broadcast** and **Direct Messages**. Final hierarchy :
 
-4. **PHI-pin-to-broadcast confirmation language.** I propose : *"You are
-   pinning this message to the All Staff channel. It will be visible to
-   every active staff user in the tenant. Confirm this message does not
-   contain PHI without minimum-necessary justification."* Acceptable ?
+1. Specialized (role_group) → top
+2. Department
+3. Broadcast
+4. Participant Care Teams (existing `participant_idt`)
+5. Direct + Group DM → bottom
 
-5. **History backfill warning at role-group creation time :**
-   propose : *"All future {role}s and members of the targeted departments
-   will see the entire history of this conversation when they're added.
-   Confirm this is acceptable for a clinical group chat."* Acceptable ?
+### 11.2 "Department admin" definition → tiered, audit-logged
 
-6. **Group DM rename / member-add after creation :**
-   - Rename : I'd say any member can rename. Or only creator ?
-   - Adding a new member : I'd say any member, but the new member sees
-     full history (consistent with our role-group rule). Or limit to
-     creator-only adds ?
+| Action | Who can perform |
+|---|---|
+| Create role-group channel **for one or more departments** | (a) admin of any one of the target depts (`role='admin' AND department IN <targets>`), OR (b) executive department, OR (c) `it_admin` admin (override path, audit-logged), OR (d) `role='super_admin'` |
+| Create role-group channel **site-wide** | Executive, `it_admin` admin, or `super_admin` only. Site-wide is broad enough that dept admins shouldn't unilaterally have it. |
+| Edit / retarget / archive an existing role-group channel | Same set as create, scoped to current targeting |
+| Pin a message in a role-group / department / participant_idt channel | Per the matrix in section 1 (admin of target dept), with executive + it_admin admin + super_admin always allowed |
+| Pin a message in a broadcast channel | Executive or super_admin only |
 
-7. **"50-pin soft cap" rotation :** when a 51st pin is added, do we
-   silently drop the oldest, or block the pin until something is
-   manually unpinned ? My recommendation : **block + show a small notice**
-   *"This channel is at the 50-pin limit. Unpin something first."* Pin
-   isn't a high-frequency operation so blocking isn't disruptive.
+Reasoning : matches the existing app pattern (`it_admin` has override on
+grievances, credential management, etc.). The audit log makes every
+`it_admin` override action visible if ever abused. Day-to-day workflow
+stays with department leadership ; break-glass scenarios are covered.
+
+### 11.3 `@dept-name` shorthand → APPROVED
+
+Mention syntax expanded to four forms :
+
+- `@user.name` → mention a specific user by username
+- `@all` (or `@channel`) → mention every member of the channel
+- `@role-code` → mention everyone in the channel with that JobTitle (e.g. `@RN`)
+- `@dept-name` → mention everyone in the channel from that department (e.g. `@primary-care`)
+
+All four override the recipient's mute / snooze setting. Multiple mentions
+in a single message are allowed and parsed independently. The mentions
+table grows by one row per mention (mentioned_user_id OR mentioned_role_code
+OR mentioned_department, with `is_at_all` for `@all`).
+
+### 11.4 PHI-pin-to-broadcast warning → APPROVED
+
+Confirmation dialog when an executive pins to the All Staff channel :
+
+> **Pin to All Staff?**
+>
+> This message will be visible to every active staff user in the tenant
+> (across all departments and sites). Confirm it does not contain
+> protected health information without a minimum-necessary justification.
+>
+> [ Cancel ] [ Pin to All Staff ]
+
+The pin action writes a `chat.broadcast_pin_acknowledged` audit row
+in addition to the standard `chat.message_pinned` row.
+
+### 11.5 History-backfill warning at role-group creation → APPROVED
+
+Modal copy at `Create specialized chat` time :
+
+> **Heads up : full history visible to future members**
+>
+> This is a role-based group chat. Anyone who later joins your team with
+> the matching JobTitle (or transfers into a target department) will be
+> automatically added — and will see the entire history of this
+> conversation from the moment it was created.
+>
+> If the conversation will contain PHI or sensitive clinical context,
+> confirm this is appropriate before continuing.
+>
+> [ Cancel ] [ Create channel ]
+
+### 11.6 Group DM management → APPROVED with full audit history
+
+Group DMs (user-created multi-user channels) support the following after
+creation :
+
+- **Rename** by any current member
+- **Add member** by any current member ; new members see full history
+  (consistent with role-group rule)
+- **Remove member** by any current member (anyone can remove anyone,
+  including themselves) ; removed users lose access immediately but the
+  message history they posted stays attributed
+- **Leave** by any current member (self-remove)
+
+**Every channel-level action is audit-logged with full timestamp + actor,
+and exposed to members via a "Channel Settings" panel.** The settings
+panel shows :
+
+- Current name
+- Current members
+- A scrollable timeline : *"Renamed to 'X' by Alice on Mon Apr 30 14:30"*,
+  *"Bob added Carol on Tue Mar 4 09:12"*, *"Dave left on Wed Mar 5 11:00"*
+
+Storage : these events go into `shared_audit_logs` with action codes
+`chat.channel_renamed`, `chat.member_added_by_user`,
+`chat.member_removed_by_user`, `chat.member_self_left`. The settings
+panel queries `shared_audit_logs` filtered by `resource_type='chat_channel'`
++ `resource_id=<channel.id>` for that channel's history.
+
+### 11.7 50-pin soft cap → block with override
+
+When a channel reaches 50 pins :
+
+- **Default behaviour** : the next pin attempt is blocked with notice :
+  > *"This channel has reached its 50-pin limit. Unpin something first,
+  > or override to add this pin anyway."*
+- **Override** : a `[ Pin anyway ]` button is available, but only for
+  users with **edit-channel rights** (the same set as "who can pin" in
+  the matrix above). Regular members see only `[ Cancel ]`.
+- **Override is audit-logged** with action `chat.pin_cap_override` so
+  abuse is visible.
+- **No auto-rotation.** Pins only leave when an admin actively unpins
+  them.
+
+Rationale : auto-rotation can silently lose important messages.
+Block-with-override puts the choice in front of someone who has earned
+the authority to make it.
 
 ---
 
