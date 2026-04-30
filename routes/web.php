@@ -1463,8 +1463,14 @@ Route::middleware('auth')->group(function () {
         Route::get('/channels/{channel}/pins',     [ChatController::class, 'listPins'])->name('pins.list');
         Route::get('/channels/{channel}/search',   [ChatController::class, 'searchMessages'])->name('search');
         Route::get('/channels/{channel}/settings', [ChatController::class, 'settings'])->name('settings');
+        Route::get('/channels/{channel}/members',  [ChatController::class, 'listMembers'])->name('members');
         Route::post('/channels/{channel}/mute',    [ChatController::class, 'mute'])->name('mute');
         Route::delete('/channels/{channel}/mute',  [ChatController::class, 'unmute'])->name('unmute');
+
+        // Tenant-wide lookup endpoints (used by the @mention typeahead +
+        // the specialized-channel creation checklist).
+        Route::get('/job-titles',  [ChatController::class, 'listJobTitles'])->name('job_titles');
+        Route::get('/departments', [ChatController::class, 'listDepartments'])->name('departments');
     });
 
     // ─── Phase 7C: Profile / Notification Preferences ─────────────────────────

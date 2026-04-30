@@ -841,6 +841,81 @@ class ChatController extends Controller
         return response()->json(['matches' => $matches]);
     }
 
+    // ── Lookup endpoints for the @mention typeahead + role-group creator ───
+
+    /**
+     * GET /chat/channels/{channel}/members : all current members of the
+     * channel, used by the @mention typeahead in the composer.
+     */
+    public function listMembers(Request $request, ChatChannel $channel): JsonResponse
+    {
+        $this->requireMembership($request->user(), $channel);
+
+        $members = $channel->memberships()
+            ->with('user:id,first_name,last_name,department,job_title')
+            ->get()
+            ->map(fn ($m) => [
+                'id'         => $m->user_id,
+                'name'       => $m->user?->fullName(),
+                // mention-friendly handle : Slack-style "first.last" lowercased
+                'handle'     => $m->user
+                    ? strtolower($m->user->first_name . '.' . $m->user->last_name)
+                    : null,
+                'department' => $m->user?->department,
+                'job_title'  => $m->user?->job_title,
+            ])
+            ->filter(fn ($m) => $m['handle'] !== null)
+            ->values();
+
+        return response()->json(['members' => $members]);
+    }
+
+    /**
+     * GET /chat/job-titles : all active JobTitles in the caller's tenant.
+     * Used by the specialized-channel creation flow (checklist UI) and by
+     * the @role part of the mention typeahead.
+     */
+    public function listJobTitles(Request $request): JsonResponse
+    {
+        /** @var \App\Models\User $u */
+        $u = $request->user();
+        $tenantId = $u->effectiveTenantId();
+
+        $titles = \App\Models\JobTitle::forTenant($tenantId)
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->orderBy('label')
+            ->get(['code', 'label']);
+
+        return response()->json(['job_titles' => $titles]);
+    }
+
+    /**
+     * GET /chat/departments : the 14 canonical departments + executive.
+     * Static list, but exposed via API for consistency + so the frontend
+     * doesn't have to hardcode it.
+     */
+    public function listDepartments(Request $_request): JsonResponse
+    {
+        return response()->json(['departments' => [
+            ['slug' => 'primary_care',      'label' => 'Primary Care / Nursing'],
+            ['slug' => 'therapies',         'label' => 'Therapies'],
+            ['slug' => 'social_work',       'label' => 'Social Work'],
+            ['slug' => 'behavioral_health', 'label' => 'Behavioral Health'],
+            ['slug' => 'dietary',           'label' => 'Dietary'],
+            ['slug' => 'activities',        'label' => 'Activities'],
+            ['slug' => 'home_care',         'label' => 'Home Care'],
+            ['slug' => 'transportation',    'label' => 'Transportation'],
+            ['slug' => 'pharmacy',          'label' => 'Pharmacy'],
+            ['slug' => 'idt',               'label' => 'IDT'],
+            ['slug' => 'enrollment',        'label' => 'Enrollment'],
+            ['slug' => 'finance',           'label' => 'Finance'],
+            ['slug' => 'qa_compliance',     'label' => 'QA / Compliance'],
+            ['slug' => 'it_admin',          'label' => 'IT Admin'],
+            ['slug' => 'executive',         'label' => 'Executive' ],
+        ]]);
+    }
+
     // ── Channel Settings (with audit timeline) ──────────────────────────────
 
     public function settings(Request $request, ChatChannel $channel): JsonResponse

@@ -132,6 +132,31 @@ const showSearch          = ref(false)
 const showReceipts        = ref<number | null>(null) // message id
 const showPinOverride     = ref<number | null>(null) // message id pending override
 
+// Tenant-level lookup data, loaded lazily when the relevant modal opens.
+interface JobTitleOption { code: string; label: string }
+interface DepartmentOption { slug: string; label: string }
+interface MemberOption { id: number; name: string; handle: string; department: string; job_title: string | null }
+
+const jobTitleOptions    = ref<JobTitleOption[]>([])
+const departmentOptions  = ref<DepartmentOption[]>([])
+const channelMembers     = ref<MemberOption[]>([])    // members of activeChannel
+const tenantUserSearch   = ref<DmUser[]>([])           // tenant-wide for group-DM picker
+
+async function loadJobTitles() {
+    if (jobTitleOptions.value.length > 0) return
+    const r = await axios.get('/chat/job-titles')
+    jobTitleOptions.value = r.data.job_titles ?? []
+}
+async function loadDepartments() {
+    if (departmentOptions.value.length > 0) return
+    const r = await axios.get('/chat/departments')
+    departmentOptions.value = r.data.departments ?? []
+}
+async function loadChannelMembers(channelId: number) {
+    const r = await axios.get(`/chat/channels/${channelId}/members`)
+    channelMembers.value = r.data.members ?? []
+}
+
 // DM search (existing)
 const dmQuery        = ref('')
 const dmResults      = ref<DmUser[]>([])
@@ -158,6 +183,187 @@ const receipts = ref<any>(null)
 const messagesEndRef = ref<HTMLDivElement | null>(null)
 const inputRef       = ref<HTMLTextAreaElement | null>(null)
 const echoChannelRef = ref<string | null>(null)
+
+// ── @mention typeahead state ──────────────────────────────────────────────────
+// When the user types '@' followed by characters, we open a popover above the
+// composer with matching options. Selection inserts the full handle in place
+// of the partial, and resumes typing. See selectMention() for the insertion
+// math.
+const mentionOpen     = ref(false)
+const mentionQuery    = ref('')           // chars typed AFTER the @
+const mentionStart    = ref(-1)           // index of the '@' in input
+const mentionHighlight = ref(0)           // keyboard nav index
+
+interface MentionOption {
+    kind: 'user' | 'role' | 'dept' | 'all'
+    handle: string                         // what gets inserted (without @)
+    label: string                          // shown in the popover
+    sublabel?: string
+}
+
+const mentionOptions = computed<MentionOption[]>(() => {
+    const q = mentionQuery.value.toLowerCase()
+    const opts: MentionOption[] = []
+
+    // Always offer @all if it matches.
+    if ('all'.startsWith(q) || 'channel'.startsWith(q)) {
+        opts.push({ kind: 'all', handle: 'all', label: '@all', sublabel: 'Everyone in this channel' })
+    }
+
+    // Channel members ; match first / last / full name.
+    for (const m of channelMembers.value) {
+        if (! q || m.name.toLowerCase().includes(q) || m.handle.includes(q)) {
+            opts.push({
+                kind: 'user',
+                handle: m.handle,
+                label: m.name,
+                sublabel: m.department,
+            })
+        }
+    }
+
+    // Roles (job titles).
+    for (const jt of jobTitleOptions.value) {
+        if (! q || jt.code.includes(q) || jt.label.toLowerCase().includes(q)) {
+            opts.push({
+                kind: 'role',
+                handle: jt.code,
+                label: '@' + jt.code,
+                sublabel: jt.label,
+            })
+        }
+    }
+
+    // Departments. Slug uses underscores ; mention syntax uses hyphens.
+    for (const d of departmentOptions.value) {
+        const slugAsMention = d.slug.replace(/_/g, '-')
+        if (! q || slugAsMention.includes(q) || d.label.toLowerCase().includes(q)) {
+            opts.push({
+                kind: 'dept',
+                handle: slugAsMention,
+                label: '@' + slugAsMention,
+                sublabel: d.label,
+            })
+        }
+    }
+
+    return opts.slice(0, 8)
+})
+
+function chipClass(kind: 'user' | 'role' | 'dept' | 'all'): string {
+    switch (kind) {
+        case 'user': return 'bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-200 border border-blue-200 dark:border-blue-700'
+        case 'role': return 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-800 dark:text-indigo-200 border border-indigo-200 dark:border-indigo-700'
+        case 'dept': return 'bg-teal-50 dark:bg-teal-900/30 text-teal-800 dark:text-teal-200 border border-teal-200 dark:border-teal-700'
+        case 'all':  return 'bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-200 border border-amber-200 dark:border-amber-700'
+    }
+}
+
+/**
+ * Parse the textarea contents around the cursor. If we find an unclosed
+ * '@<chars>' token, open the typeahead. Otherwise close it.
+ */
+function checkMentionContext() {
+    const el = inputRef.value
+    if (! el) { mentionOpen.value = false; return }
+
+    const cursor = el.selectionStart ?? 0
+    const before = input.value.slice(0, cursor)
+    const match  = before.match(/(^|\s)@([A-Za-z0-9_\.\-]*)$/)
+    if (match) {
+        mentionStart.value = cursor - match[2].length - 1 // index of '@'
+        mentionQuery.value = match[2]
+        mentionOpen.value = true
+        mentionHighlight.value = 0
+    } else {
+        mentionOpen.value = false
+    }
+}
+
+function selectMention(opt: MentionOption) {
+    const el = inputRef.value
+    if (! el || mentionStart.value < 0) return
+
+    const cursor = el.selectionStart ?? input.value.length
+    // Replace the partial '@<typed>' with '@<handle> '
+    const beforeAt = input.value.slice(0, mentionStart.value)
+    const afterCursor = input.value.slice(cursor)
+    input.value = beforeAt + '@' + opt.handle + ' ' + afterCursor
+    mentionOpen.value = false
+
+    nextTick(() => {
+        // Place cursor right after the inserted ' '.
+        const newPos = beforeAt.length + 1 + opt.handle.length + 1
+        el.focus()
+        el.setSelectionRange(newPos, newPos)
+    })
+}
+
+function onMentionKey(e: KeyboardEvent) {
+    if (! mentionOpen.value || mentionOptions.value.length === 0) return
+    if (e.key === 'ArrowDown') {
+        e.preventDefault()
+        mentionHighlight.value = (mentionHighlight.value + 1) % mentionOptions.value.length
+    } else if (e.key === 'ArrowUp') {
+        e.preventDefault()
+        mentionHighlight.value = (mentionHighlight.value - 1 + mentionOptions.value.length) % mentionOptions.value.length
+    } else if (e.key === 'Enter' || e.key === 'Tab') {
+        e.preventDefault()
+        selectMention(mentionOptions.value[mentionHighlight.value])
+    } else if (e.key === 'Escape') {
+        mentionOpen.value = false
+    }
+}
+
+/**
+ * Render a message_text into a list of segments — plain text + colored
+ * chips for any @mention that matches one of the parsed mentions in
+ * `m.mentions`. The frontend doesn't need to re-parse the text ; the
+ * server already told us which @tokens resolved.
+ */
+interface Segment { type: 'text' | 'chip'; value: string; chipKind?: 'user' | 'role' | 'dept' | 'all' }
+function renderSegments(m: Message): Segment[] {
+    const text = m.message_text ?? ''
+    if (! text) return []
+    const segs: Segment[] = []
+    // Walk every @<token> in the text. If the message has a matching
+    // mention row, render it as a chip ; otherwise leave plain.
+    const re = /@([A-Za-z0-9_\.\-]+)/g
+    let last = 0
+    let match: RegExpExecArray | null
+    while ((match = re.exec(text)) !== null) {
+        if (match.index > last) {
+            segs.push({ type: 'text', value: text.slice(last, match.index) })
+        }
+        const token = match[1].toLowerCase()
+        const kind = mentionKindForToken(token, m)
+        if (kind) {
+            segs.push({ type: 'chip', value: '@' + match[1], chipKind: kind })
+        } else {
+            segs.push({ type: 'text', value: '@' + match[1] })
+        }
+        last = match.index + match[0].length
+    }
+    if (last < text.length) segs.push({ type: 'text', value: text.slice(last) })
+    return segs
+}
+
+function mentionKindForToken(token: string, m: Message): 'user' | 'role' | 'dept' | 'all' | null {
+    if (token === 'all' || token === 'channel') {
+        return m.mentions.find(x => x.is_at_all) ? 'all' : null
+    }
+    // Try dept (hyphens).
+    if (m.mentions.find(x => x.mentioned_department === token.replace(/-/g, '_'))) return 'dept'
+    if (m.mentions.find(x => x.mentioned_role_code === token)) return 'role'
+    // User : token has a dot, members lookup compares "first.last".
+    if (m.mentions.find(x => {
+        if (x.mentioned_user_id == null) return false
+        // We can't compare to a name here without a per-user map. Accept
+        // any user mention as long as a token-with-dot is present.
+        return token.includes('.')
+    })) return 'user'
+    return null
+}
 
 // Polling fallback : if Reverb isn't available, refresh on a timer.
 let pollTimer: ReturnType<typeof setInterval> | null = null
@@ -245,8 +451,16 @@ async function selectChannel(c: Channel) {
     showSearch.value = false
     showPinPanel.value = false
     showSettings.value = false
+    mentionOpen.value = false
     await loadMessages(c.id)
     await axios.post(`/chat/channels/${c.id}/read`)
+    // Load lookups in parallel so the @mention typeahead is ready as soon
+    // as the user starts typing. These are cached after first load.
+    await Promise.all([
+        loadChannelMembers(c.id),
+        loadJobTitles(),
+        loadDepartments(),
+    ])
     await loadChannels()
     bindRealtime(c.id)
 }
@@ -445,39 +659,84 @@ onUnmounted(() => {
 
 const newRoleGroup = ref<{
     name: string; description: string;
-    job_title_codes: string;  // comma-separated
-    departments: string[];
+    job_title_codes: string[];  // checklist
+    departments: string[];      // checklist
     site_wide: boolean;
-}>({ name: '', description: '', job_title_codes: '', departments: [], site_wide: false })
+}>({ name: '', description: '', job_title_codes: [], departments: [], site_wide: false })
+
+async function openCreateRoleGroup() {
+    await Promise.all([loadJobTitles(), loadDepartments()])
+    showCreateRoleGroup.value = true
+}
 
 async function createRoleGroup() {
+    if (newRoleGroup.value.job_title_codes.length === 0) {
+        alert('Pick at least one job title.')
+        return
+    }
+    if (! newRoleGroup.value.site_wide && newRoleGroup.value.departments.length === 0) {
+        alert('Pick at least one department, or check the site-wide box.')
+        return
+    }
     if (! confirm('All future role-holders will see the entire history of this conversation when they are added. Confirm this is appropriate for a clinical group chat.')) return
     try {
         await axios.post('/chat/role-group-channels', {
             name: newRoleGroup.value.name,
             description: newRoleGroup.value.description || null,
-            job_title_codes: newRoleGroup.value.job_title_codes.split(',').map(s => s.trim()).filter(Boolean),
+            job_title_codes: newRoleGroup.value.job_title_codes,
             departments: newRoleGroup.value.departments,
             site_wide: newRoleGroup.value.site_wide,
         })
         showCreateRoleGroup.value = false
-        newRoleGroup.value = { name: '', description: '', job_title_codes: '', departments: [], site_wide: false }
+        newRoleGroup.value = { name: '', description: '', job_title_codes: [], departments: [], site_wide: false }
         await loadChannels()
     } catch (e: any) {
         alert(e.response?.data?.message || 'Failed to create channel.')
     }
 }
 
-const newGroupDm = ref<{ name: string; member_user_ids: number[] }>({ name: '', member_user_ids: [] })
+const newGroupDm = ref<{
+    name: string;
+    selectedMembers: DmUser[];   // selected so we can show + remove chips
+    query: string;
+}>({ name: '', selectedMembers: [], query: '' })
+
+function openCreateGroupDm() {
+    showCreateGroupDm.value = true
+    showDmSearch.value = false
+    // Reset state in case the modal was opened earlier.
+    newGroupDm.value = { name: '', selectedMembers: [], query: '' }
+    tenantUserSearch.value = []
+}
+
+watch(() => newGroupDm.value.query, async (q) => {
+    if (q.trim().length < 2) { tenantUserSearch.value = []; return }
+    const r = await axios.get('/chat/users/search', { params: { q } })
+    tenantUserSearch.value = r.data.users ?? []
+})
+
+function toggleGroupDmMember(u: DmUser) {
+    const exists = newGroupDm.value.selectedMembers.find(m => m.id === u.id)
+    if (exists) {
+        newGroupDm.value.selectedMembers = newGroupDm.value.selectedMembers.filter(m => m.id !== u.id)
+    } else {
+        newGroupDm.value.selectedMembers.push(u)
+    }
+}
 
 async function createGroupDm() {
+    if (newGroupDm.value.selectedMembers.length < 2) {
+        alert('A group DM needs at least 2 other members (3 total including you).')
+        return
+    }
     try {
         await axios.post('/chat/group-dm-channels', {
             name: newGroupDm.value.name || null,
-            member_user_ids: newGroupDm.value.member_user_ids,
+            member_user_ids: newGroupDm.value.selectedMembers.map(m => m.id),
         })
         showCreateGroupDm.value = false
-        newGroupDm.value = { name: '', member_user_ids: [] }
+        newGroupDm.value = { name: '', selectedMembers: [], query: '' }
+        tenantUserSearch.value = []
         await loadChannels()
     } catch (e: any) {
         alert(e.response?.data?.message || 'Failed to create group DM.')
@@ -537,7 +796,7 @@ function observeForRead(el: HTMLElement | null, messageId: number) {
                     ><PencilSquareIcon class="w-4 h-4" /></button>
                     <button
                         v-if="me?.role === 'admin' || me?.is_super_admin || me?.department === 'executive'"
-                        @click="showCreateRoleGroup = true"
+                        @click="openCreateRoleGroup"
                         class="rounded px-2 py-1 text-xs font-medium bg-indigo-600 text-white hover:bg-indigo-700"
                         title="Create specialized chat"
                     >+ Specialized</button>
@@ -551,7 +810,7 @@ function observeForRead(el: HTMLElement | null, messageId: number) {
                         class="w-full rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-sm px-2 py-1"
                     />
                     <button
-                        @click="showCreateGroupDm = true; showDmSearch = false"
+                        @click="openCreateGroupDm"
                         class="w-full text-left text-xs text-indigo-700 dark:text-indigo-300 hover:underline"
                     >+ New group DM (multiple users)</button>
                     <div v-if="dmLoading" class="text-xs text-slate-500">Searching...</div>
@@ -673,7 +932,15 @@ function observeForRead(el: HTMLElement | null, messageId: number) {
                                         <span v-if="m.mentions_me" class="rounded bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-200 px-1.5 text-[10px] font-bold">Mentioned you</span>
                                     </div>
                                     <p v-if="m.is_deleted" class="mt-1 text-sm italic text-slate-400 dark:text-slate-500">This message was deleted.</p>
-                                    <p v-else class="mt-1 text-sm text-slate-800 dark:text-slate-200 whitespace-pre-wrap">{{ m.message_text }}</p>
+                                    <p v-else class="mt-1 text-sm text-slate-800 dark:text-slate-200 whitespace-pre-wrap">
+                                        <template v-for="(seg, idx) in renderSegments(m)" :key="idx">
+                                            <span v-if="seg.type === 'text'">{{ seg.value }}</span>
+                                            <span
+                                                v-else
+                                                :class="['inline-block rounded px-1 py-0 mx-0.5 text-xs font-medium', chipClass(seg.chipKind!)]"
+                                            >{{ seg.value }}</span>
+                                        </template>
+                                    </p>
 
                                     <!-- Reactions -->
                                     <div class="mt-1.5 flex flex-wrap items-center gap-1">
@@ -723,7 +990,33 @@ function observeForRead(el: HTMLElement | null, messageId: number) {
                     </div>
 
                     <!-- Composer -->
-                    <div class="border-t border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-3">
+                    <div class="border-t border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-3 relative">
+                        <!-- @mention typeahead popover -->
+                        <div
+                            v-if="mentionOpen && mentionOptions.length > 0"
+                            class="absolute bottom-full left-3 right-3 mb-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl overflow-hidden max-h-64 overflow-y-auto z-20"
+                        >
+                            <div class="px-3 py-1 text-[10px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 border-b border-slate-100 dark:border-slate-700/50">
+                                Mention {{ mentionQuery ? '"' + mentionQuery + '"' : '' }}
+                            </div>
+                            <ul>
+                                <li v-for="(opt, i) in mentionOptions" :key="opt.kind + ':' + opt.handle">
+                                    <button
+                                        @mousedown.prevent="selectMention(opt)"
+                                        @mouseenter="mentionHighlight = i"
+                                        :class="[
+                                            'w-full text-left px-3 py-1.5 text-sm flex items-center gap-2',
+                                            i === mentionHighlight ? 'bg-indigo-50 dark:bg-indigo-900/30' : 'hover:bg-slate-50 dark:hover:bg-slate-700/40',
+                                        ]"
+                                    >
+                                        <span :class="['rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide', chipClass(opt.kind)]">{{ opt.kind }}</span>
+                                        <span class="font-medium text-slate-800 dark:text-slate-200">{{ opt.label }}</span>
+                                        <span v-if="opt.sublabel" class="text-xs text-slate-500 dark:text-slate-400 truncate">{{ opt.sublabel }}</span>
+                                    </button>
+                                </li>
+                            </ul>
+                        </div>
+
                         <div v-if="editingId" class="text-xs text-amber-700 dark:text-amber-300 mb-1">
                             Editing message (5-minute window) <button @click="cancelEdit" class="text-slate-500 hover:underline">cancel</button>
                         </div>
@@ -731,7 +1024,12 @@ function observeForRead(el: HTMLElement | null, messageId: number) {
                             <textarea
                                 ref="inputRef"
                                 v-model="input"
-                                @keydown.enter.prevent="! $event.shiftKey && send()"
+                                @input="checkMentionContext"
+                                @keyup.left="checkMentionContext"
+                                @keyup.right="checkMentionContext"
+                                @click="checkMentionContext"
+                                @keydown="onMentionKey"
+                                @keydown.enter.prevent="! $event.shiftKey && ! mentionOpen && send()"
                                 placeholder="Type a message... (use @ to mention. Shift+Enter for newline.)"
                                 rows="2"
                                 class="flex-1 rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-sm px-3 py-2 resize-none"
@@ -757,37 +1055,106 @@ function observeForRead(el: HTMLElement | null, messageId: number) {
         <!-- ── Modals + drawers (kept inline for v1 simplicity) ────────────────── -->
 
         <!-- Create role-group -->
-        <div v-if="showCreateRoleGroup" class="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-            <div class="bg-white dark:bg-slate-800 rounded-xl shadow-xl max-w-lg w-full p-5 space-y-4">
+        <div v-if="showCreateRoleGroup" class="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" @click.self="showCreateRoleGroup = false">
+            <div class="bg-white dark:bg-slate-800 rounded-xl shadow-xl max-w-2xl w-full p-5 space-y-4 max-h-[90vh] overflow-y-auto">
                 <h3 class="text-base font-semibold text-slate-900 dark:text-slate-100">Create specialized chat</h3>
                 <p class="text-xs text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 rounded p-3 border border-amber-200 dark:border-amber-700">
                     <strong>Heads up :</strong> all future role-holders will see the entire history of this conversation when they're auto-added. Confirm this is appropriate for a clinical group chat.
                 </p>
-                <input v-model="newRoleGroup.name" placeholder="Channel name" class="w-full rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-sm px-3 py-2" />
-                <input v-model="newRoleGroup.description" placeholder="Description (optional)" class="w-full rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-sm px-3 py-2" />
-                <input v-model="newRoleGroup.job_title_codes" placeholder="JobTitle codes, comma-separated (e.g. rn,lpn)" class="w-full rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-sm px-3 py-2" />
-                <label class="flex items-center gap-2 text-sm">
-                    <input type="checkbox" v-model="newRoleGroup.site_wide" /> Site-wide (all departments)
-                </label>
-                <select v-if="! newRoleGroup.site_wide" v-model="newRoleGroup.departments" multiple class="w-full rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-sm px-3 py-2 h-32">
-                    <option value="primary_care">Primary Care</option>
-                    <option value="therapies">Therapies</option>
-                    <option value="social_work">Social Work</option>
-                    <option value="behavioral_health">Behavioral Health</option>
-                    <option value="dietary">Dietary</option>
-                    <option value="activities">Activities</option>
-                    <option value="home_care">Home Care</option>
-                    <option value="transportation">Transportation</option>
-                    <option value="pharmacy">Pharmacy</option>
-                    <option value="idt">IDT</option>
-                    <option value="enrollment">Enrollment</option>
-                    <option value="finance">Finance</option>
-                    <option value="qa_compliance">QA / Compliance</option>
-                    <option value="it_admin">IT Admin</option>
-                </select>
+
+                <div>
+                    <label class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Channel name</label>
+                    <input v-model="newRoleGroup.name" placeholder="e.g. RN Huddle" class="w-full rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-sm px-3 py-2" />
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Description (optional)</label>
+                    <input v-model="newRoleGroup.description" placeholder="What's this channel for?" class="w-full rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-sm px-3 py-2" />
+                </div>
+
+                <!-- Job titles checklist -->
+                <div>
+                    <label class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Job titles to include</label>
+                    <div v-if="jobTitleOptions.length === 0" class="text-xs text-slate-500 dark:text-slate-400 italic">
+                        No job titles defined yet. Add them in Executive &raquo; Job Titles first.
+                    </div>
+                    <div v-else class="grid grid-cols-2 gap-1.5 max-h-44 overflow-y-auto rounded border border-slate-200 dark:border-slate-700 p-2">
+                        <label v-for="jt in jobTitleOptions" :key="jt.code" class="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/40 rounded px-2 py-1 cursor-pointer">
+                            <input type="checkbox" :value="jt.code" v-model="newRoleGroup.job_title_codes" class="rounded" />
+                            <span>{{ jt.label }} <span class="text-xs text-slate-400 font-mono">{{ jt.code }}</span></span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Scope -->
+                <div>
+                    <label class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Scope</label>
+                    <label class="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300 mb-2">
+                        <input type="checkbox" v-model="newRoleGroup.site_wide" class="rounded" />
+                        <span>Site-wide (every department)</span>
+                    </label>
+                    <div v-if="! newRoleGroup.site_wide" class="grid grid-cols-2 gap-1.5 max-h-40 overflow-y-auto rounded border border-slate-200 dark:border-slate-700 p-2">
+                        <label v-for="d in departmentOptions" :key="d.slug" class="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/40 rounded px-2 py-1 cursor-pointer">
+                            <input type="checkbox" :value="d.slug" v-model="newRoleGroup.departments" class="rounded" />
+                            <span>{{ d.label }}</span>
+                        </label>
+                    </div>
+                </div>
+
                 <div class="flex justify-end gap-2 pt-2">
                     <button @click="showCreateRoleGroup = false" class="px-3 py-1.5 text-sm rounded border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200">Cancel</button>
-                    <button @click="createRoleGroup" class="px-3 py-1.5 text-sm rounded bg-indigo-600 text-white">Create channel</button>
+                    <button
+                        @click="createRoleGroup"
+                        :disabled="! newRoleGroup.name || newRoleGroup.job_title_codes.length === 0 || (! newRoleGroup.site_wide && newRoleGroup.departments.length === 0)"
+                        class="px-3 py-1.5 text-sm rounded bg-indigo-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                    >Create channel</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Create group DM -->
+        <div v-if="showCreateGroupDm" class="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" @click.self="showCreateGroupDm = false">
+            <div class="bg-white dark:bg-slate-800 rounded-xl shadow-xl max-w-lg w-full p-5 space-y-4 max-h-[90vh] overflow-y-auto">
+                <h3 class="text-base font-semibold text-slate-900 dark:text-slate-100">New group DM</h3>
+                <p class="text-xs text-slate-500 dark:text-slate-400">Add 2 or more people from your organisation. You'll be added as a member automatically.</p>
+
+                <div>
+                    <label class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Group name (optional)</label>
+                    <input v-model="newGroupDm.name" placeholder="e.g. Project Sunrise" class="w-full rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-sm px-3 py-2" />
+                </div>
+
+                <!-- Selected member chips -->
+                <div v-if="newGroupDm.selectedMembers.length > 0" class="flex flex-wrap gap-1.5">
+                    <span v-for="m in newGroupDm.selectedMembers" :key="m.id" class="inline-flex items-center gap-1 rounded-full bg-indigo-100 dark:bg-indigo-900/40 text-indigo-800 dark:text-indigo-200 text-xs px-2 py-0.5">
+                        {{ m.name }}
+                        <button @click="toggleGroupDmMember(m)" class="text-indigo-600 dark:text-indigo-300 hover:text-indigo-900 dark:hover:text-indigo-100">&times;</button>
+                    </span>
+                </div>
+
+                <!-- User search -->
+                <div>
+                    <label class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Add members</label>
+                    <input v-model="newGroupDm.query" placeholder="Type a name (min 2 chars)..." class="w-full rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-sm px-3 py-2" />
+                    <ul v-if="tenantUserSearch.length > 0" class="mt-2 max-h-40 overflow-y-auto rounded border border-slate-200 dark:border-slate-700 divide-y divide-slate-100 dark:divide-slate-700">
+                        <li v-for="u in tenantUserSearch" :key="u.id">
+                            <button
+                                @click="toggleGroupDmMember(u)"
+                                class="w-full flex items-center justify-between px-3 py-1.5 text-sm hover:bg-slate-50 dark:hover:bg-slate-700/40 text-left"
+                            >
+                                <span class="text-slate-800 dark:text-slate-200">{{ u.name }} <span class="text-xs text-slate-500 ml-1">{{ u.department }}</span></span>
+                                <span v-if="newGroupDm.selectedMembers.find(m => m.id === u.id)" class="text-xs text-emerald-600 dark:text-emerald-400">✓ Added</span>
+                                <span v-else class="text-xs text-indigo-600 dark:text-indigo-400">+ Add</span>
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="flex justify-end gap-2 pt-2">
+                    <button @click="showCreateGroupDm = false" class="px-3 py-1.5 text-sm rounded border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200">Cancel</button>
+                    <button
+                        @click="createGroupDm"
+                        :disabled="newGroupDm.selectedMembers.length < 2"
+                        class="px-3 py-1.5 text-sm rounded bg-indigo-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                    >Create group DM</button>
                 </div>
             </div>
         </div>
