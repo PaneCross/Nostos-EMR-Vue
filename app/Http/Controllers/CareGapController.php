@@ -33,12 +33,24 @@ class CareGapController extends Controller
         return response()->json(['rows' => $rows]);
     }
 
-    /** GET /care-gaps/my-panel : for a PCP. */
+    /**
+     * GET /care-gaps/my-panel : open care gaps for the logged-in PCP's panel.
+     *
+     * Returns both the gap list AND a `has_panel` flag so the UI can
+     * distinguish "no participants assigned to you as PCP" (most users,
+     * including admins / non-clinical roles) from "you have a panel but
+     * everyone is up to date" (the success case for an actual PCP).
+     */
     public function myPanel(Request $request): JsonResponse
     {
         $this->gate();
         $u = Auth::user();
-        $rows = CareGap::forTenant($u->effectiveTenantId())->open()
+
+        $hasPanel = Participant::where('tenant_id', $u->effectiveTenantId())
+            ->where('primary_care_user_id', $u->id)
+            ->exists();
+
+        $gaps = CareGap::forTenant($u->effectiveTenantId())->open()
             ->whereIn('participant_id', function ($q) use ($u) {
                 $q->select('id')->from('emr_participants')
                     ->where('tenant_id', $u->effectiveTenantId())
@@ -46,7 +58,11 @@ class CareGapController extends Controller
             })
             ->with('participant:id,mrn,first_name,last_name')
             ->orderBy('measure')->get();
-        return response()->json(['gaps' => $rows]);
+
+        return response()->json([
+            'gaps'      => $gaps,
+            'has_panel' => $hasPanel,
+        ]);
     }
 
     /** GET /participants/{participant}/care-gaps */

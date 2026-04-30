@@ -20,6 +20,9 @@ import { ArrowPathIcon, InformationCircleIcon } from '@heroicons/vue/24/outline'
 
 const summary = ref<any[]>([])
 const myPanel = ref<any[]>([])
+// has_panel : true if the logged-in user has any participants assigned as
+// primary_care_user_id. Drives which empty-state copy to show below.
+const hasPanel = ref(false)
 const loading = ref(true)
 const recomputing = ref(false)
 const recomputeMessage = ref<string | null>(null)
@@ -29,10 +32,14 @@ async function loadAll() {
   try {
     const [s, p] = await Promise.all([
       axios.get('/care-gaps/summary'),
-      axios.get('/care-gaps/my-panel').catch(() => ({ data: { rows: [] } })),
+      axios.get('/care-gaps/my-panel').catch(() => ({ data: { gaps: [], has_panel: false } })),
     ])
     summary.value = s.data.rows ?? []
-    myPanel.value = p.data.rows ?? p.data ?? []
+    // Endpoint returns { gaps, has_panel }. The earlier read of `p.data.rows`
+    // was always undefined and the fallback assigned the whole response
+    // object, which Vue iterated as a single phantom row.
+    myPanel.value = p.data.gaps ?? []
+    hasPanel.value = Boolean(p.data.has_panel)
   } finally { loading.value = false }
 }
 
@@ -119,8 +126,39 @@ const chart = computed(() => {
       </div>
 
       <div class="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-5 shadow-sm">
-        <h2 class="text-sm font-semibold mb-3 text-slate-900 dark:text-slate-100">My panel</h2>
-        <table class="min-w-full text-sm">
+        <div class="mb-3">
+          <h2 class="text-sm font-semibold text-slate-900 dark:text-slate-100">My panel</h2>
+          <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+            Open gaps for participants where you are listed as the primary care provider.
+          </p>
+        </div>
+
+        <!-- Empty states : two distinct cases, friendlier than a phantom row. -->
+        <div
+          v-if="!loading && myPanel.length === 0 && !hasPanel"
+          class="rounded-lg border border-dashed border-slate-200 dark:border-slate-700 px-4 py-8 text-center"
+        >
+          <p class="text-sm font-medium text-slate-700 dark:text-slate-300">
+            No participants are assigned to you as primary care provider.
+          </p>
+          <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+            This section is for clinicians with a panel. The chart above shows the org-wide picture.
+          </p>
+        </div>
+
+        <div
+          v-else-if="!loading && myPanel.length === 0 && hasPanel"
+          class="rounded-lg border border-dashed border-emerald-200 dark:border-emerald-800/60 bg-emerald-50/60 dark:bg-emerald-950/30 px-4 py-8 text-center"
+        >
+          <p class="text-sm font-medium text-emerald-800 dark:text-emerald-200">
+            Your panel is up to date. No open care gaps.
+          </p>
+          <p class="text-xs text-emerald-700 dark:text-emerald-300 mt-1">
+            Recompute after signing new notes or recording immunizations to confirm.
+          </p>
+        </div>
+
+        <table v-else-if="!loading" class="min-w-full text-sm">
           <thead class="text-xs uppercase text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-700">
             <tr>
               <th class="px-2 py-1 text-left font-medium">Participant</th>
@@ -139,11 +177,6 @@ const chart = computed(() => {
                 </span>
               </td>
               <td class="px-2 py-1.5 text-slate-500 dark:text-slate-400">{{ g.next_due_date ?? '-' }}</td>
-            </tr>
-            <tr v-if="myPanel.length === 0">
-              <td colspan="4" class="px-2 py-4 text-center text-slate-500 dark:text-slate-400">
-                No gaps on your panel, or you don't have a participant panel assigned.
-              </td>
             </tr>
           </tbody>
         </table>
