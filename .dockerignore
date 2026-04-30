@@ -1,0 +1,59 @@
+# Files NOT copied into the docker build context. Keeps the image small +
+# avoids leaking dev-only / secret files into production.
+
+# VCS
+.git
+.gitignore
+.gitattributes
+
+# Local dev artefacts
+.env
+.env.*.local
+.env.local
+.env.testing
+docker-compose.yml
+docker-compose.*.yml
+docker
+.devcontainer
+
+# Editor
+.vscode
+.idea
+*.swp
+.DS_Store
+
+# Composer / npm dirs (built fresh in the builder stages)
+vendor
+node_modules
+
+# Build artefacts (rebuilt in the node-builder stage)
+public/build
+public/hot
+public/storage
+
+# Logs + caches + ephemeral framework dirs (all of /storage/framework
+# beyond the tracked .gitignore stubs is dev-only ; rebuilt at runtime).
+storage/logs/*.log
+storage/framework
+bootstrap/cache/*.php
+
+# User-uploaded files from local dev (owned by the laravel.test container,
+# unreadable from the host docker daemon). Production starts with empty
+# private storage and grows from there.
+storage/app/private
+storage/app/public
+storage/app/livewire-tmp
+
+# Test artefacts
+.phpunit.result.cache
+coverage
+.phpunit.cache
+
+# Memory / docs / agent files (not needed at runtime)
+.claude
+plans
+docs/screenshots
+
+# Misc
+*.log
+*.tar.gz

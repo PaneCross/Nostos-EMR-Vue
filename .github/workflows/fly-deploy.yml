@@ -1,0 +1,44 @@
+# Auto-deploy to Fly.io on every push to `main`.
+#
+# Requires a repository secret named `FLY_API_TOKEN` with a Fly deploy token.
+# Generate it on TJ's machine after `fly launch` :
+#     fly tokens create deploy -x 87600h    # 10-year lived token
+# Then add to GitHub : Settings → Secrets and variables → Actions → New repo
+# secret, name = FLY_API_TOKEN, value = paste the token output.
+#
+# Once that's set, every `git push origin main` triggers this workflow which
+# runs `flyctl deploy` against the configured app. Migrations run automatically
+# via the `release_command` in fly.toml. Old VMs keep serving if migration
+# fails. Failed deploys post their logs to the GitHub Actions tab.
+
+name: Deploy to Fly.io
+
+on:
+  push:
+    branches:
+      - main
+
+# Only one deploy at a time — if a second push lands while the first is mid-
+# deploy, cancel the older one to avoid race conditions on migrations.
+concurrency:
+  group: fly-deploy
+  cancel-in-progress: false   # Don't cancel : let the in-flight migration finish.
+
+jobs:
+  deploy:
+    name: Deploy app
+    runs-on: ubuntu-latest
+    # Skip CI for commits that only touch docs / memory / changelog. Saves
+    # build minutes when only README or feedback memos changed.
+    if: |
+      !contains(github.event.head_commit.message, '[skip deploy]')
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+
+      - name: Deploy
+        run: flyctl deploy --remote-only
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}

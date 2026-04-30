@@ -1,0 +1,59 @@
+# ─── Fly.io app config for the NostosEMR demo deployment ───────────────────
+# Single web process for the demo. No queue worker, no scheduler, no Reverb :
+#  - The "Recompute now" buttons on the derived dashboards run inline so we
+#    don't need a queue worker for that flow.
+#  - Nightly QualityMeasureSnapshot / CareGapCalculation / PredictiveRiskScoring
+#    jobs aren't required for demos — manual recompute covers it.
+#  - Reverb (websocket) is chat-only ; chat falls back gracefully without it.
+# When we sign a real client we'll add `[processes]` entries for worker +
+# scheduler, which means scaling from 1 VM to 3 (~$5/mo extra each).
+#
+# After the initial `fly launch` writes app id / region, we layer config on
+# top of this. To re-apply : `fly deploy --config fly.toml`.
+# ─────────────────────────────────────────────────────────────────────────────
+
+# `app` is set during `fly launch` ; leave commented and let the CLI fill it
+# so we don't conflict with whatever name TJ picks.
+# app = "nostosemr-demo"
+
+# Closest region to TJ for now. Change later if PACE contacts are East-coast.
+primary_region = "lax"
+
+[build]
+  dockerfile = "Dockerfile"
+
+# ── Release command : runs ONCE per deploy, before the new VMs go live. ─────
+# This is where migrations live. If a migration fails here, the deploy
+# aborts and the old VMs keep serving — safer than running migrations
+# inside the web process where a half-applied deploy could half-break.
+[deploy]
+  release_command = "php artisan migrate --force"
+
+# ── HTTP service ────────────────────────────────────────────────────────────
+# Public-facing port 80 / 443 → internal port 8080 (serversideup default).
+# Fly handles Let's Encrypt automatically once a custom domain is added.
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = "stop"     # Free-tier-friendly : park when idle.
+  auto_start_machines = true      # Wake on first request (~1-3s cold start).
+  min_machines_running = 0        # Truly $0 when no one is hitting the app.
+  processes = ["app"]
+
+# Health check : Laravel ships /up out of the box (bootstrap/app.php).
+[[http_service.checks]]
+  interval = "30s"
+  timeout = "5s"
+  grace_period = "10s"
+  method = "GET"
+  path = "/up"
+
+# ── VM sizing ───────────────────────────────────────────────────────────────
+# 1 GB RAM is comfortable for a Laravel app running migrations + Inertia
+# rendering. Drop to 512 MB if cost matters — Laravel boots fine in 256 MB
+# but composer/migration steps occasionally OOM at that size.
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "1gb"
+  cpu_kind = "shared"
+  cpus = 1
