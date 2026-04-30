@@ -61,7 +61,7 @@ class ReportsController extends Controller
     public function data(Request $request): JsonResponse
     {
         $user = $request->user();
-        $tid  = $user->tenant_id;
+        $tid  = $user->effectiveTenantId();
 
         return response()->json([
             'kpis' => [
@@ -216,7 +216,7 @@ class ReportsController extends Controller
     public function export(Request $request): StreamedResponse
     {
         $user = $request->user();
-        $tid  = $user->tenant_id;
+        $tid  = $user->effectiveTenantId();
         $type = $request->input('type', '');
 
         $allowedExportDepts = [
@@ -405,7 +405,7 @@ class ReportsController extends Controller
     public function siteTransfers(Request $request): JsonResponse
     {
         $user = $request->user();
-        $tid  = $user->tenant_id;
+        $tid  = $user->effectiveTenantId();
 
         $allowedDepts = ['finance', 'qa_compliance', 'it_admin', 'enrollment', 'executive'];
         if (!$user->isSuperAdmin() && !in_array($user->department, $allowedDepts, true)) {
@@ -481,7 +481,7 @@ class ReportsController extends Controller
     public function siteTransfersExport(Request $request): StreamedResponse
     {
         $user = $request->user();
-        $tid  = $user->tenant_id;
+        $tid  = $user->effectiveTenantId();
 
         $allowedDepts = ['finance', 'qa_compliance', 'it_admin', 'enrollment', 'executive'];
         if (!$user->isSuperAdmin() && !in_array($user->department, $allowedDepts, true)) {

@@ -219,7 +219,7 @@ class MedReconciliationController extends Controller
     private function authorizeForTenant(Participant $participant, $user): void
     {
         abort_if(
-            $participant->tenant_id !== $user->tenant_id,
+            $participant->tenant_id !== $user->effectiveTenantId(),
             403,
             'Access denied: participant belongs to a different organization.',
         );

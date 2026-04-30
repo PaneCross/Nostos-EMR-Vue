@@ -33,7 +33,7 @@ class IntegrationStatusController extends Controller
     public function integrations(Request $request): InertiaResponse
     {
         $this->requireItAdmin($request);
-        $tenantId = $request->user()->tenant_id;
+        $tenantId = $request->user()->effectiveTenantId();
 
         $summary = [];
         foreach (IntegrationLog::CONNECTOR_TYPES as $type) {
@@ -84,7 +84,7 @@ class IntegrationStatusController extends Controller
     public function integrationLog(Request $request): JsonResponse
     {
         $this->requireItAdmin($request);
-        $tenantId = $request->user()->tenant_id;
+        $tenantId = $request->user()->effectiveTenantId();
 
         $query = IntegrationLog::forTenant($tenantId)->orderByDesc('created_at');
 
@@ -105,7 +105,7 @@ class IntegrationStatusController extends Controller
     public function retryIntegration(Request $request, IntegrationLog $log): JsonResponse
     {
         $this->requireItAdmin($request);
-        $tenantId = $request->user()->tenant_id;
+        $tenantId = $request->user()->effectiveTenantId();
 
         abort_if($log->tenant_id !== $tenantId, 403, 'Access denied');
         abort_if($log->status !== 'failed', 422, 'Only failed entries can be retried');

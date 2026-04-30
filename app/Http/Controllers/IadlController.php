@@ -34,7 +34,7 @@ class IadlController extends Controller
 
     private function requireSameTenant($resource, $user): void
     {
-        abort_if($resource->tenant_id !== $user->tenant_id, 403);
+        abort_if($resource->tenant_id !== $user->effectiveTenantId(), 403);
     }
 
     public function index(Request $request, Participant $participant): JsonResponse
@@ -43,7 +43,7 @@ class IadlController extends Controller
         $u = Auth::user();
         $this->requireSameTenant($participant, $u);
 
-        $records = IadlRecord::forTenant($u->tenant_id)
+        $records = IadlRecord::forTenant($u->effectiveTenantId())
             ->forParticipant($participant->id)
             ->with('recordedBy:id,first_name,last_name')
             ->orderByDesc('recorded_at')
@@ -85,7 +85,7 @@ class IadlController extends Controller
         $record = IadlRecord::create(array_merge(
             array_intersect_key($validated, array_flip(IadlRecord::ITEMS)),
             [
-                'tenant_id'           => $u->tenant_id,
+                'tenant_id'           => $u->effectiveTenantId(),
                 'participant_id'      => $participant->id,
                 'recorded_by_user_id' => $u->id,
                 'recorded_at'         => isset($validated['recorded_at'])
@@ -111,7 +111,7 @@ class IadlController extends Controller
         $tasksCreated = [];
         foreach ($record->referralSuggestions() as $sugg) {
             $tasksCreated[] = StaffTask::create([
-                'tenant_id'              => $u->tenant_id,
+                'tenant_id'              => $u->effectiveTenantId(),
                 'participant_id'         => $participant->id,
                 'assigned_to_department' => $sugg['dept'],
                 'created_by_user_id'     => $u->id,

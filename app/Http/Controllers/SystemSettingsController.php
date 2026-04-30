@@ -28,13 +28,13 @@ class SystemSettingsController extends Controller
     public function index(Request $request): Response
     {
         $user   = $request->user();
-        $tenant = Tenant::find($user->tenant_id);
+        $tenant = Tenant::find($user->effectiveTenantId());
 
         // Current HIPAA session timeout (minutes) from config
         $sessionLifetime = config('session.lifetime', 120);
 
         // State Medicaid configs for this tenant
-        $medicaidConfigs = StateMedicaidConfig::where('tenant_id', $user->tenant_id)
+        $medicaidConfigs = StateMedicaidConfig::where('tenant_id', $user->effectiveTenantId())
             ->orderBy('state_code')
             ->get(['id', 'state_code', 'submission_format', 'is_active']);
 
@@ -75,7 +75,7 @@ class SystemSettingsController extends Controller
         ]);
 
         // Persist to tenant record : only fields that exist on the model
-        $tenant = Tenant::find($user->tenant_id);
+        $tenant = Tenant::find($user->effectiveTenantId());
         if ($tenant) {
             $fillable = array_intersect_key($validated, array_flip($tenant->getFillable()));
             if (!empty($fillable)) {
@@ -86,7 +86,7 @@ class SystemSettingsController extends Controller
         AuditLog::record(
             action: 'system_settings.update',
             resourceType: 'Tenant',
-            resourceId: $user->tenant_id,
+            resourceId: $user->effectiveTenantId(),
             userId: $user->id,
             tenantId: $user->tenant_id,
             newValues: $validated,

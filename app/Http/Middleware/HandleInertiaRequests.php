@@ -19,6 +19,7 @@
 namespace App\Http\Middleware;
 
 use App\Models\Site;
+use App\Models\Tenant;
 use App\Services\ImpersonationService;
 use App\Services\PermissionService;
 use Illuminate\Http\Request;
@@ -138,9 +139,33 @@ class HandleInertiaRequests extends Middleware
             if ($realUser->isExecutive()) {
                 // Executives can only see their own tenant's sites
                 $query->where('tenant_id', $realUser->tenant_id);
+            } elseif ($realUser->isSuperAdmin() || $realUser->isDeptSuperAdmin()) {
+                // SAs : narrow to the tenant they're currently acting inside,
+                // so the site dropdown doesn't dangle on a foreign tenant.
+                $effectiveTenantId = session('active_tenant_id') ?? $realUser->tenant_id;
+                if ($effectiveTenantId) {
+                    $query->where('tenant_id', $effectiveTenantId);
+                }
             }
             $availableSites = $query->get(['id', 'name'])->toArray();
         }
+
+        // ── Tenant context: super-admin only (role or dept). ─────────────────────
+        // Mirrors site_context. session('active_tenant_id') is the override; the
+        // SA's home tenant is the fallback. available_tenants populates the header
+        // dropdown — only super-admins ever see it.
+        $canSwitchTenant = $realUser && ($realUser->isSuperAdmin() || $realUser->isDeptSuperAdmin());
+        $activeTenantId  = $canSwitchTenant ? (session('active_tenant_id') ?? $realUser?->tenant_id) : $realUser?->tenant_id;
+        $activeTenant    = $activeTenantId ? Tenant::find($activeTenantId) : null;
+        $tenantContext   = ($canSwitchTenant && $activeTenant) ? [
+            'id'   => $activeTenant->id,
+            'name' => $activeTenant->name,
+            'slug' => $activeTenant->slug,
+            'is_home' => $activeTenant->id === $realUser->tenant_id,
+        ] : null;
+        $availableTenants = $canSwitchTenant
+            ? Tenant::where('is_active', true)->orderBy('name')->get(['id', 'name', 'slug'])->toArray()
+            : [];
 
         return array_merge(parent::share($request), [
             'auth' => [
@@ -153,6 +178,9 @@ class HandleInertiaRequests extends Middleware
             // Phase 10B: site context switcher for executive + SA dept users
             'site_context'   => $siteContext,
             'available_sites' => $availableSites,
+            // Super-admin tenant switcher (mirror of site_context).
+            'tenant_context'   => $tenantContext,
+            'available_tenants' => $availableTenants,
             'flash' => [
                 'success' => $request->session()->get('success'),
                 'error'   => $request->session()->get('error'),

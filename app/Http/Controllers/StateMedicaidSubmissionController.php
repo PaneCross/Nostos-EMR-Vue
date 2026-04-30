@@ -33,11 +33,11 @@ class StateMedicaidSubmissionController extends Controller
     {
         $this->gate();
         $u = Auth::user();
-        abort_unless($batch->tenant_id === $u->tenant_id, 404);
+        abort_unless($batch->tenant_id === $u->effectiveTenantId(), 404);
         $state = strtoupper($stateCode);
         abort_unless(strlen($state) === 2, 422, 'state_code must be 2 letters.');
 
-        $config = StateMedicaidConfig::forTenant($u->tenant_id)
+        $config = StateMedicaidConfig::forTenant($u->effectiveTenantId())
             ->where('state_code', $state)
             ->active()->first();
 
@@ -45,12 +45,12 @@ class StateMedicaidSubmissionController extends Controller
         $rawPayload = $batch->file_content ?? $batch->edi_content ?? '';
         $adapter = \App\Services\StateMedicaid\StateAdapterFactory::for($state);
         $payload = $adapter
-            ? $adapter->transform($rawPayload, ['tenant_id' => $u->tenant_id, 'batch_id' => $batch->id])
+            ? $adapter->transform($rawPayload, ['tenant_id' => $u->effectiveTenantId(), 'batch_id' => $batch->id])
             : $rawPayload;
         $format = $adapter?->format() ?? ($config?->submission_format ?: '837P');
 
         $submission = StateMedicaidSubmission::create([
-            'tenant_id'        => $u->tenant_id,
+            'tenant_id'        => $u->effectiveTenantId(),
             'state_config_id'  => $config?->id,
             'edi_batch_id'     => $batch->id,
             'state_code'       => $state,
@@ -83,7 +83,7 @@ class StateMedicaidSubmissionController extends Controller
     {
         $this->gate();
         $u = Auth::user();
-        $submissions = StateMedicaidSubmission::forTenant($u->tenant_id)
+        $submissions = StateMedicaidSubmission::forTenant($u->effectiveTenantId())
             ->orderByDesc('created_at')->limit(100)->get();
 
         // Phase O11 : dual-serve so the banner is actually visible on the

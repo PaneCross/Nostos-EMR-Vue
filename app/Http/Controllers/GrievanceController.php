@@ -67,7 +67,7 @@ class GrievanceController extends Controller
     /** Abort 403 if grievance does not belong to the user's tenant */
     private function authorizeTenant(Grievance $grievance): void
     {
-        abort_if($grievance->tenant_id !== Auth::user()->tenant_id, 403);
+        abort_if($grievance->tenant_id !== Auth::user()->effectiveTenantId(), 403);
     }
 
     /** Abort 403 if user is not qa_compliance or it_admin */
@@ -90,7 +90,7 @@ class GrievanceController extends Controller
     public function index(): Response
     {
         $user     = Auth::user();
-        $tenantId = $user->tenant_id;
+        $tenantId = $user->effectiveTenantId();
         $isQaAdmin = in_array($user->department, ['qa_compliance', 'it_admin']) || $user->isSuperAdmin();
 
         $query = Grievance::forTenant($tenantId)
@@ -125,7 +125,7 @@ class GrievanceController extends Controller
     public function store(StoreGrievanceRequest $request): RedirectResponse
     {
         $participant = Participant::findOrFail($request->participant_id);
-        abort_if($participant->tenant_id !== Auth::user()->tenant_id, 403);
+        abort_if($participant->tenant_id !== Auth::user()->effectiveTenantId(), 403);
 
         $grievance = $this->service->open($participant, $request->validated(), Auth::user());
 
@@ -145,7 +145,7 @@ class GrievanceController extends Controller
     public function escalationStaff(): JsonResponse
     {
         $this->authorizeQaAdmin();
-        $tenantId = Auth::user()->tenant_id;
+        $tenantId = Auth::user()->effectiveTenantId();
 
         $staff = User::where('tenant_id', $tenantId)
             ->where('is_active', true)
@@ -177,7 +177,7 @@ class GrievanceController extends Controller
     public function overdue(): JsonResponse
     {
         $this->authorizeQaAdmin();
-        $tenantId = Auth::user()->tenant_id;
+        $tenantId = Auth::user()->effectiveTenantId();
 
         $urgentOverdue   = Grievance::forTenant($tenantId)->urgentOverdue()
             ->with('participant:id,mrn,first_name,last_name')->get();
@@ -400,7 +400,7 @@ class GrievanceController extends Controller
         // Validate escalated_to_user_id for tenant isolation : cannot target cross-tenant user
         if (!empty($data['escalated_to_user_id'])) {
             $targetUser = User::where('id', $data['escalated_to_user_id'])
-                ->where('tenant_id', Auth::user()->tenant_id)
+                ->where('tenant_id', Auth::user()->effectiveTenantId())
                 ->where('is_active', true)
                 ->first();
 
@@ -508,9 +508,9 @@ class GrievanceController extends Controller
      */
     public function participantGrievances(Participant $participant): JsonResponse
     {
-        abort_if($participant->tenant_id !== Auth::user()->tenant_id, 403);
+        abort_if($participant->tenant_id !== Auth::user()->effectiveTenantId(), 403);
 
-        $grievances = Grievance::forTenant(Auth::user()->tenant_id)
+        $grievances = Grievance::forTenant(Auth::user()->effectiveTenantId())
             ->where('participant_id', $participant->id)
             ->with(['submittedBy:id,first_name,last_name', 'assignedTo:id,first_name,last_name'])
             ->orderBy('filed_at', 'desc')

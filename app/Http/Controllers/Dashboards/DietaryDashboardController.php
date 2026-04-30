@@ -43,7 +43,7 @@ class DietaryDashboardController extends Controller
     public function assessments(): JsonResponse
     {
         $this->requireDept();
-        $tenantId = Auth::user()->tenant_id;
+        $tenantId = Auth::user()->effectiveTenantId();
 
         $overdue = Assessment::where('tenant_id', $tenantId)
             ->forType('nutritional')
@@ -91,7 +91,7 @@ class DietaryDashboardController extends Controller
     public function goals(): JsonResponse
     {
         $this->requireDept();
-        $tenantId = Auth::user()->tenant_id;
+        $tenantId = Auth::user()->effectiveTenantId();
 
         $goals = CarePlanGoal::whereHas('carePlan', fn ($q) => $q
                 ->where('tenant_id', $tenantId)
@@ -128,7 +128,7 @@ class DietaryDashboardController extends Controller
     public function restrictions(): JsonResponse
     {
         $this->requireDept();
-        $tenantId = Auth::user()->tenant_id;
+        $tenantId = Auth::user()->effectiveTenantId();
 
         // Count by allergy type across all tenant participants
         $counts = DB::table('emr_allergies')
@@ -177,7 +177,7 @@ class DietaryDashboardController extends Controller
     public function sdrs(): JsonResponse
     {
         $this->requireDept();
-        $tenantId = Auth::user()->tenant_id;
+        $tenantId = Auth::user()->effectiveTenantId();
 
         $sdrs = Sdr::where('tenant_id', $tenantId)
             ->forDepartment('dietary')
@@ -215,7 +215,7 @@ class DietaryDashboardController extends Controller
     public function ordersByDietType(): JsonResponse
     {
         $this->requireDept();
-        $tenantId = Auth::user()->tenant_id;
+        $tenantId = Auth::user()->effectiveTenantId();
 
         $rows = \App\Models\DietaryOrder::forTenant($tenantId)->active()
             ->selectRaw('diet_type, COUNT(*) AS count')
@@ -235,7 +235,7 @@ class DietaryDashboardController extends Controller
     public function iadlFoodPrepCandidates(): JsonResponse
     {
         $this->requireDept();
-        $tenantId = Auth::user()->tenant_id;
+        $tenantId = Auth::user()->effectiveTenantId();
 
         $latest = \Illuminate\Support\Facades\DB::table('emr_iadl_records as i1')
             ->select('i1.*')

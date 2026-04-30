@@ -45,7 +45,7 @@ class CmsAuditUniverseController extends Controller
         $this->gate();
         $u = Auth::user();
         $auditId = $request->query('audit_id', 'PACE-' . now()->format('Y') . '-Q' . now()->quarter);
-        $attempts = CmsAuditUniverseAttempt::forTenant($u->tenant_id)
+        $attempts = CmsAuditUniverseAttempt::forTenant($u->effectiveTenantId())
             ->forAudit($auditId)
             ->orderBy('created_at')
             ->get();
@@ -81,7 +81,7 @@ class CmsAuditUniverseController extends Controller
         $to      = $request->query('to',   Carbon::now()->subQuarter()->endOfQuarter()->toDateString());
 
         // 4th attempt → block + log non-compliance.
-        $priorAttempts = CmsAuditUniverseAttempt::forTenant($u->tenant_id)
+        $priorAttempts = CmsAuditUniverseAttempt::forTenant($u->effectiveTenantId())
             ->forAudit($auditId)
             ->forUniverse($universe)
             ->count();
@@ -97,14 +97,14 @@ class CmsAuditUniverseController extends Controller
         }
 
         [$rows, $errors] = match ($universe) {
-            'sdr'            => $this->buildSdrUniverse($u->tenant_id, $from, $to),
-            'grievances'     => $this->buildGrievancesUniverse($u->tenant_id, $from, $to),
-            'disenrollments' => $this->buildDisenrollmentsUniverse($u->tenant_id, $from, $to),
-            'appeals'        => $this->buildAppealsUniverse($u->tenant_id, $from, $to),
+            'sdr'            => $this->buildSdrUniverse($u->effectiveTenantId(), $from, $to),
+            'grievances'     => $this->buildGrievancesUniverse($u->effectiveTenantId(), $from, $to),
+            'disenrollments' => $this->buildDisenrollmentsUniverse($u->effectiveTenantId(), $from, $to),
+            'appeals'        => $this->buildAppealsUniverse($u->effectiveTenantId(), $from, $to),
         };
 
         $attempt = CmsAuditUniverseAttempt::create([
-            'tenant_id'           => $u->tenant_id,
+            'tenant_id'           => $u->effectiveTenantId(),
             'audit_id'            => $auditId,
             'universe'            => $universe,
             'attempt_number'      => $priorAttempts + 1,

@@ -25,7 +25,7 @@ class PriorAuthRequestController extends Controller
     {
         $this->gate();
         $u = Auth::user();
-        $rows = PriorAuthRequest::forTenant($u->tenant_id)
+        $rows = PriorAuthRequest::forTenant($u->effectiveTenantId())
             ->with(['participant:id,mrn,first_name,last_name', 'requestedBy:id,first_name,last_name'])
             ->orderByRaw("CASE status WHEN 'submitted' THEN 0 WHEN 'draft' THEN 1 ELSE 2 END")
             ->orderByDesc('submitted_at')
@@ -40,7 +40,7 @@ class PriorAuthRequestController extends Controller
     {
         $this->gate();
         $u = Auth::user();
-        abort_if($participant->tenant_id !== $u->tenant_id, 403);
+        abort_if($participant->tenant_id !== $u->effectiveTenantId(), 403);
 
         $validated = $request->validate([
             'related_to_type'    => 'required|in:medication,clinical_order,procedure',
@@ -51,7 +51,7 @@ class PriorAuthRequestController extends Controller
         ]);
 
         $row = PriorAuthRequest::create(array_merge($validated, [
-            'tenant_id'      => $u->tenant_id,
+            'tenant_id'      => $u->effectiveTenantId(),
             'participant_id' => $participant->id,
             'status'         => 'draft',
             'requested_by_user_id' => $u->id,
@@ -71,7 +71,7 @@ class PriorAuthRequestController extends Controller
     {
         $this->gate();
         $u = Auth::user();
-        abort_if($priorAuthRequest->tenant_id !== $u->tenant_id, 403);
+        abort_if($priorAuthRequest->tenant_id !== $u->effectiveTenantId(), 403);
 
         $validated = $request->validate([
             'status'             => 'required|in:submitted,approved,denied,withdrawn,expired',

@@ -46,7 +46,7 @@ class ShortWinsF2Controller extends Controller
     {
         $this->gate();
         $u = Auth::user();
-        abort_if($participant->tenant_id !== $u->tenant_id, 403);
+        abort_if($participant->tenant_id !== $u->effectiveTenantId(), 403);
         return response()->json(['flags' => $beers->evaluate($participant)]);
     }
 
@@ -55,7 +55,7 @@ class ShortWinsF2Controller extends Controller
     {
         $this->gate();
         $u = Auth::user();
-        abort_if($participant->tenant_id !== $u->tenant_id, 403);
+        abort_if($participant->tenant_id !== $u->effectiveTenantId(), 403);
         abort_unless(in_array($u->department, ['primary_care', 'pharmacy', 'it_admin'], true) || $u->isSuperAdmin(), 403);
         return response()->json(['orders' => $svc->apply($participant, $u, $key)], 201);
     }
@@ -65,7 +65,7 @@ class ShortWinsF2Controller extends Controller
     {
         $this->gate();
         $u = Auth::user();
-        abort_if($note->tenant_id !== $u->tenant_id, 403);
+        abort_if($note->tenant_id !== $u->effectiveTenantId(), 403);
         $note->load('participant:id,mrn,first_name,last_name,dob', 'author:id,first_name,last_name,department', 'signedBy:id,first_name,last_name');
 
         $pdf = Pdf::loadView('pdfs.clinical-note', ['note' => $note])->setPaper('letter', 'portrait');
@@ -79,27 +79,27 @@ class ShortWinsF2Controller extends Controller
         $u = Auth::user();
         $kind = $request->query('kind');
 
-        $query = Participant::where('tenant_id', $u->tenant_id);
+        $query = Participant::where('tenant_id', $u->effectiveTenantId());
 
         switch ($kind) {
             case 'open_grievance':
                 $query->whereIn('id', function ($q) use ($u) {
                     $q->select('participant_id')->from('emr_grievances')
-                        ->where('tenant_id', $u->tenant_id)
+                        ->where('tenant_id', $u->effectiveTenantId())
                         ->whereNotIn('status', ['resolved', 'closed', 'withdrawn']);
                 });
                 break;
             case 'in_appeal':
                 $query->whereIn('id', function ($q) use ($u) {
                     $q->select('participant_id')->from('emr_appeals')
-                        ->where('tenant_id', $u->tenant_id)
+                        ->where('tenant_id', $u->effectiveTenantId())
                         ->whereIn('status', ['filed', 'under_review', 'pending']);
                 });
                 break;
             case 'active_fall_risk':
                 $query->whereIn('id', function ($q) use ($u) {
                     $q->select('participant_id')->from('emr_incidents')
-                        ->where('tenant_id', $u->tenant_id)
+                        ->where('tenant_id', $u->effectiveTenantId())
                         ->where('incident_type', 'fall')
                         ->where('occurred_at', '>=', now()->subDays(90));
                 });
@@ -107,7 +107,7 @@ class ShortWinsF2Controller extends Controller
             case 'discharged_recently':
                 $query->whereIn('id', function ($q) use ($u) {
                     $q->select('participant_id')->from('emr_discharge_events')
-                        ->where('tenant_id', $u->tenant_id)
+                        ->where('tenant_id', $u->effectiveTenantId())
                         ->where('discharged_on', '>=', now()->subDays(30));
                 });
                 break;
@@ -132,7 +132,7 @@ class ShortWinsF2Controller extends Controller
         ]);
 
         $updated = CarePlan::whereIn('id', $validated['care_plan_ids'])
-            ->where('tenant_id', $u->tenant_id)
+            ->where('tenant_id', $u->effectiveTenantId())
             ->whereNull('approved_at')
             ->update([
                 'approved_at'         => now(),
@@ -161,7 +161,7 @@ class ShortWinsF2Controller extends Controller
         $siteId = (int) $request->query('site_id', $u->site_id ?? 0);
         abort_if($siteId === 0, 422, 'site_id required.');
 
-        $participants = Participant::where('tenant_id', $u->tenant_id)
+        $participants = Participant::where('tenant_id', $u->effectiveTenantId())
             ->where('site_id', $siteId)
             ->where('enrollment_status', 'enrolled')
             ->orderBy('last_name')
@@ -191,7 +191,7 @@ class ShortWinsF2Controller extends Controller
     {
         $this->gate();
         $u = Auth::user();
-        abort_if($participant->tenant_id !== $u->tenant_id, 403);
+        abort_if($participant->tenant_id !== $u->effectiveTenantId(), 403);
 
         $notes = ClinicalNote::where('participant_id', $participant->id)
             ->orderByDesc('visit_date')->limit(30)
@@ -230,12 +230,12 @@ class ShortWinsF2Controller extends Controller
         // A participant is "due for quarterly" if their latest clinical note is
         // older than 85 days (warning) or 90+ days (overdue).
         $rows = DB::table('emr_participants as p')
-            ->where('p.tenant_id', $u->tenant_id)
+            ->where('p.tenant_id', $u->effectiveTenantId())
             ->where('p.enrollment_status', 'enrolled')
             ->leftJoinSub(
                 DB::table('emr_clinical_notes')
                     ->select('participant_id', DB::raw('MAX(visit_date) as last_visit'))
-                    ->where('tenant_id', $u->tenant_id)
+                    ->where('tenant_id', $u->effectiveTenantId())
                     ->groupBy('participant_id'),
                 'n', 'n.participant_id', '=', 'p.id',
             )

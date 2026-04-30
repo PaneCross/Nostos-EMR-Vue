@@ -87,6 +87,7 @@ use App\Http\Controllers\SystemSettingsController;
 use App\Http\Controllers\TransferController;
 use App\Http\Controllers\TransferAdminController;
 use App\Http\Controllers\SiteContextController;
+use App\Http\Controllers\TenantContextController;
 use App\Http\Controllers\SuperAdminPanelController;
 use App\Http\Controllers\Dashboards\ExecutiveDashboardController;
 use App\Http\Controllers\OrgSettingsController;
@@ -1464,6 +1465,14 @@ Route::middleware('auth')->group(function () {
 
     Route::post('/site-context/switch', [SiteContextController::class, 'switch'])->name('site-context.switch');
     Route::delete('/site-context',      [SiteContextController::class, 'clear'])->name('site-context.clear');
+
+    // ─── Tenant Context Switcher (super-admin only) ───────────────────────────
+    // Mirrors site-context : sets session('active_tenant_id') so SAs can act
+    // inside another organisation's data scope without impersonating. See
+    // User::effectiveTenantId() for the consumer side.
+
+    Route::post('/tenant-context/switch', [TenantContextController::class, 'switch'])->name('tenant-context.switch');
+    Route::delete('/tenant-context',      [TenantContextController::class, 'clear'])->name('tenant-context.clear');
 
     // ─── Phase 6D: IT Admin Panel ──────────────────────────────────────────────
     // ── Super Admin Impersonation (super_admin role only) ─────────────────────

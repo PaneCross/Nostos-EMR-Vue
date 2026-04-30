@@ -38,7 +38,7 @@ class AnticoagulationController extends Controller
 
     private function requireSameTenant($resource, $user): void
     {
-        abort_if($resource->tenant_id !== $user->tenant_id, 403);
+        abort_if($resource->tenant_id !== $user->effectiveTenantId(), 403);
     }
 
     public function index(Request $request, Participant $participant): JsonResponse
@@ -48,7 +48,7 @@ class AnticoagulationController extends Controller
         $this->requireSameTenant($participant, $u);
 
         $plan = $this->svc->activePlan($participant);
-        $plans = AnticoagulationPlan::forTenant($u->tenant_id)
+        $plans = AnticoagulationPlan::forTenant($u->effectiveTenantId())
             ->where('participant_id', $participant->id)
             ->with('prescribingProvider:id,first_name,last_name')
             ->orderByDesc('start_date')
@@ -92,7 +92,7 @@ class AnticoagulationController extends Controller
         }
 
         $plan = AnticoagulationPlan::create(array_merge($validated, [
-            'tenant_id'      => $u->tenant_id,
+            'tenant_id'      => $u->effectiveTenantId(),
             'participant_id' => $participant->id,
         ]));
 

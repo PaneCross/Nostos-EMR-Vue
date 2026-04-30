@@ -29,7 +29,7 @@ class DisenrollmentController extends Controller
 {
     private function authorizeForTenant(Participant $participant, $user): void
     {
-        abort_if($participant->tenant_id !== $user->tenant_id, 403);
+        abort_if($participant->tenant_id !== $user->effectiveTenantId(), 403);
     }
 
     /** Only enrollment, qa_compliance, and it_admin may update disenrollment records. */
@@ -53,7 +53,7 @@ class DisenrollmentController extends Controller
         $user = $request->user();
         $this->authorizeForTenant($participant, $user);
 
-        $record = DisenrollmentRecord::forTenant($user->tenant_id)
+        $record = DisenrollmentRecord::forTenant($user->effectiveTenantId())
             ->where('participant_id', $participant->id)
             ->with([
                 'createdBy:id,first_name,last_name',
@@ -118,7 +118,7 @@ class DisenrollmentController extends Controller
         $this->authorizeForTenant($participant, $user);
         $this->authorizeUpdate($user);
 
-        $record = DisenrollmentRecord::forTenant($user->tenant_id)
+        $record = DisenrollmentRecord::forTenant($user->effectiveTenantId())
             ->where('participant_id', $participant->id)
             ->latest()
             ->firstOrFail();

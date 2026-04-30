@@ -43,7 +43,7 @@ class DocumentController extends Controller
         $this->participantForTenant($participant);
 
         $query = Document::where('participant_id', $participant->id)
-            ->forTenant(auth()->user()->tenant_id)
+            ->forTenant(auth()->user()->effectiveTenantId())
             ->with('uploader:id,first_name,last_name')
             ->orderBy('uploaded_at', 'desc');
 
@@ -86,7 +86,7 @@ class DocumentController extends Controller
 
         $document = Document::create([
             'participant_id'      => $participant->id,
-            'tenant_id'           => auth()->user()->tenant_id,
+            'tenant_id'           => auth()->user()->effectiveTenantId(),
             'site_id'             => auth()->user()->site_id ?? null,
             'file_name'           => $file->getClientOriginalName(),
             'file_path'           => $storagePath,
@@ -205,7 +205,7 @@ class DocumentController extends Controller
     private function participantForTenant(Participant $participant): void
     {
         abort_unless(
-            $participant->tenant_id === auth()->user()->tenant_id,
+            $participant->tenant_id === auth()->user()->effectiveTenantId(),
             403,
             'Access denied.'
         );

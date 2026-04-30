@@ -36,7 +36,7 @@ class LocationController extends Controller
     public function managePage(Request $request): InertiaResponse
     {
         $user      = $request->user();
-        $locations = Location::forTenant($user->tenant_id)
+        $locations = Location::forTenant($user->effectiveTenantId())
             ->withTrashed()   // show archived so admins can see full history
             ->orderBy('is_active', 'desc')
             ->orderBy('name')
@@ -65,7 +65,7 @@ class LocationController extends Controller
                 'deleted_at'    => $l->deleted_at?->toIso8601String(),
             ]);
 
-        $sites = \App\Models\Site::where('tenant_id', $user->tenant_id)
+        $sites = \App\Models\Site::where('tenant_id', $user->effectiveTenantId())
             ->where('is_active', true)
             ->orderBy('name')
             ->get(['id', 'name']);
@@ -91,7 +91,7 @@ class LocationController extends Controller
     {
         $user = $request->user();
 
-        $query = Location::forTenant($user->tenant_id)
+        $query = Location::forTenant($user->effectiveTenantId())
             ->orderBy('name');
 
         if ($type = $request->input('type')) {
@@ -116,7 +116,7 @@ class LocationController extends Controller
         $user = $request->user();
 
         $location = Location::create(array_merge($request->validated(), [
-            'tenant_id' => $user->tenant_id,
+            'tenant_id' => $user->effectiveTenantId(),
             'is_active' => $request->boolean('is_active', true),
         ]));
 
@@ -140,7 +140,7 @@ class LocationController extends Controller
     public function show(Request $request, Location $location): JsonResponse
     {
         $user = $request->user();
-        abort_if($location->tenant_id !== $user->tenant_id, 403);
+        abort_if($location->tenant_id !== $user->effectiveTenantId(), 403);
 
         return response()->json($location);
     }
@@ -152,7 +152,7 @@ class LocationController extends Controller
     public function update(UpdateLocationRequest $request, Location $location): JsonResponse
     {
         $user = $request->user();
-        abort_if($location->tenant_id !== $user->tenant_id, 403);
+        abort_if($location->tenant_id !== $user->effectiveTenantId(), 403);
 
         $old = $location->only(array_keys($request->validated()));
         $location->update($request->validated());
@@ -180,7 +180,7 @@ class LocationController extends Controller
     public function destroy(Request $request, Location $location): JsonResponse
     {
         $user = $request->user();
-        abort_if($location->tenant_id !== $user->tenant_id, 403);
+        abort_if($location->tenant_id !== $user->effectiveTenantId(), 403);
         $this->authorizeDeactivate($user);
 
         $location->delete();

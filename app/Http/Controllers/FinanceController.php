@@ -39,7 +39,7 @@ class FinanceController extends Controller
      */
     public function capitationIndex(Request $request): JsonResponse
     {
-        $tenantId = $request->user()->tenant_id;
+        $tenantId = $request->user()->effectiveTenantId();
 
         $query = CapitationRecord::forTenant($tenantId)
             ->with('participant:id,mrn,first_name,last_name')
@@ -65,7 +65,7 @@ class FinanceController extends Controller
      */
     public function capitationStore(Request $request): JsonResponse
     {
-        $tenantId = $request->user()->tenant_id;
+        $tenantId = $request->user()->effectiveTenantId();
 
         $data = $request->validate([
             'participant_id'       => ['required', 'integer', 'exists:emr_participants,id'],
@@ -111,7 +111,7 @@ class FinanceController extends Controller
      */
     public function encounterIndex(Request $request): JsonResponse
     {
-        $tenantId = $request->user()->tenant_id;
+        $tenantId = $request->user()->effectiveTenantId();
 
         $query = EncounterLog::forTenant($tenantId)
             ->with(['participant:id,mrn,first_name,last_name', 'provider:id,first_name,last_name'])
@@ -140,7 +140,7 @@ class FinanceController extends Controller
      */
     public function encounterStore(Request $request): JsonResponse
     {
-        $tenantId = $request->user()->tenant_id;
+        $tenantId = $request->user()->effectiveTenantId();
 
         $data = $request->validate([
             'participant_id'   => ['required', 'integer', 'exists:emr_participants,id'],
@@ -188,7 +188,7 @@ class FinanceController extends Controller
      */
     public function authIndex(Request $request): JsonResponse
     {
-        $tenantId = $request->user()->tenant_id;
+        $tenantId = $request->user()->effectiveTenantId();
 
         $query = Authorization::forTenant($tenantId)
             ->with('participant:id,mrn,first_name,last_name')
@@ -214,7 +214,7 @@ class FinanceController extends Controller
      */
     public function authStore(Request $request): JsonResponse
     {
-        $tenantId = $request->user()->tenant_id;
+        $tenantId = $request->user()->effectiveTenantId();
 
         $data = $request->validate([
             'participant_id'   => ['required', 'integer', 'exists:emr_participants,id'],
@@ -254,7 +254,7 @@ class FinanceController extends Controller
      */
     public function authUpdate(Request $request, Authorization $authorization): JsonResponse
     {
-        $tenantId = $request->user()->tenant_id;
+        $tenantId = $request->user()->effectiveTenantId();
         abort_if($authorization->tenant_id !== $tenantId, 403);
 
         $old = $authorization->only(['status', 'authorized_end', 'notes']);

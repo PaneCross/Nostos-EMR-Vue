@@ -46,7 +46,7 @@ class NoteTemplateController extends Controller
     {
         $this->gateRead();
         $u = Auth::user();
-        $templates = NoteTemplate::availableTo($u->tenant_id)
+        $templates = NoteTemplate::availableTo($u->effectiveTenantId())
             ->orderBy('note_type')->orderBy('name')->get();
         return response()->json(['templates' => $templates]);
     }
@@ -62,7 +62,7 @@ class NoteTemplateController extends Controller
             'body_markdown' => 'required|string|max:20000',
         ]);
         $template = NoteTemplate::create(array_merge($validated, [
-            'tenant_id'          => $u->tenant_id,
+            'tenant_id'          => $u->effectiveTenantId(),
             'is_system'          => false,
             'created_by_user_id' => $u->id,
         ]));
@@ -82,7 +82,7 @@ class NoteTemplateController extends Controller
         $this->gateWrite();
         $u = Auth::user();
         abort_if($template->is_system, 403, 'System templates are read-only.');
-        abort_if($template->tenant_id !== $u->tenant_id, 403);
+        abort_if($template->tenant_id !== $u->effectiveTenantId(), 403);
 
         $validated = $request->validate([
             'name'          => 'sometimes|string|max:120',
@@ -99,7 +99,7 @@ class NoteTemplateController extends Controller
         $this->gateWrite();
         $u = Auth::user();
         abort_if($template->is_system, 403, 'System templates cannot be deleted.');
-        abort_if($template->tenant_id !== $u->tenant_id, 403);
+        abort_if($template->tenant_id !== $u->effectiveTenantId(), 403);
         $template->delete();
         return response()->json(null, 204);
     }
@@ -108,9 +108,9 @@ class NoteTemplateController extends Controller
     {
         $this->gateRead();
         $u = Auth::user();
-        abort_if($participant->tenant_id !== $u->tenant_id, 403);
+        abort_if($participant->tenant_id !== $u->effectiveTenantId(), 403);
         // Template must be system OR same-tenant.
-        abort_if(! $template->is_system && $template->tenant_id !== $u->tenant_id, 403);
+        abort_if(! $template->is_system && $template->tenant_id !== $u->effectiveTenantId(), 403);
 
         $rendered = $renderer->render($template, $participant, $u);
         return response()->json([

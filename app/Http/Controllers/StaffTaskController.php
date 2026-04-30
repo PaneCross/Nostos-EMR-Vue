@@ -18,7 +18,7 @@ class StaffTaskController extends Controller
         abort_if(!$u, 401);
     }
 
-    private function requireSameTenant($r, $u): void { abort_if($r->tenant_id !== $u->tenant_id, 403); }
+    private function requireSameTenant($r, $u): void { abort_if($r->tenant_id !== $u->effectiveTenantId(), 403); }
 
     /**
      * GET /tasks?view=mine|my_department|all
@@ -29,7 +29,7 @@ class StaffTaskController extends Controller
         $u = Auth::user();
         $view = $request->query('view', 'mine');
 
-        $query = StaffTask::forTenant($u->tenant_id)
+        $query = StaffTask::forTenant($u->effectiveTenantId())
             ->with(['participant:id,mrn,first_name,last_name', 'assignedUser:id,first_name,last_name,department', 'createdBy:id,first_name,last_name']);
         match ($view) {
             'my_department' => $query->where('assigned_to_department', $u->department),
@@ -38,7 +38,7 @@ class StaffTaskController extends Controller
         };
 
         $tasks = $query->orderBy('due_at')->limit(200)->get();
-        $overdueCount = StaffTask::forTenant($u->tenant_id)->overdue()
+        $overdueCount = StaffTask::forTenant($u->effectiveTenantId())->overdue()
             ->when($view === 'mine', fn ($q) => $q->where('assigned_to_user_id', $u->id))
             ->count();
 
@@ -81,7 +81,7 @@ class StaffTaskController extends Controller
         }
 
         $task = StaffTask::create(array_merge($validated, [
-            'tenant_id'          => $u->tenant_id,
+            'tenant_id'          => $u->effectiveTenantId(),
             'created_by_user_id' => $u->id,
             'status'             => 'pending',
             'priority'           => $validated['priority'] ?? 'normal',

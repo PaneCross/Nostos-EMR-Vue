@@ -26,7 +26,7 @@ class AssessmentController extends Controller
 
     private function authorizeForTenant(Participant $participant, $user): void
     {
-        abort_if($participant->tenant_id !== $user->tenant_id, 403);
+        abort_if($participant->tenant_id !== $user->effectiveTenantId(), 403);
     }
 
     /**
@@ -57,7 +57,7 @@ class AssessmentController extends Controller
 
         $assessment = Assessment::create(array_merge($request->validated(), [
             'participant_id'      => $participant->id,
-            'tenant_id'           => $user->tenant_id,
+            'tenant_id'           => $user->effectiveTenantId(),
             'authored_by_user_id' => $user->id,
             'department'          => $user->department,
             'responses'           => $request->input('responses', []),
@@ -75,7 +75,7 @@ class AssessmentController extends Controller
         );
 
         // W4-4: Create clinical alert when a scored assessment crosses a threshold.
-        $this->maybeCreateAssessmentAlert($assessment, $participant, $user->tenant_id);
+        $this->maybeCreateAssessmentAlert($assessment, $participant, $user->effectiveTenantId());
 
         // Phase R3 : Auto-create a StaffTask when AssessmentScoringService
         // has a referral suggestion for this (instrument, band) combination.

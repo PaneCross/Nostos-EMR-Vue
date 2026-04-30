@@ -54,7 +54,7 @@ class QapiController extends Controller
     public function index(Request $request): Response
     {
         $user = auth()->user();
-        $projects = QapiProject::forTenant($user->tenant_id)
+        $projects = QapiProject::forTenant($user->effectiveTenantId())
             ->with('projectLead:id,first_name,last_name')
             ->orderByRaw("CASE status
                 WHEN 'active' THEN 1
@@ -67,7 +67,7 @@ class QapiController extends Controller
             ->get()
             ->map(fn($p) => $this->toApiArray($p));
 
-        $activeCount = QapiProject::forTenant($user->tenant_id)->active()->count();
+        $activeCount = QapiProject::forTenant($user->effectiveTenantId())->active()->count();
         $meetsMinimum = $activeCount >= QapiProject::MIN_ACTIVE_PROJECTS;
 
         return Inertia::render('Qapi/Projects', [
@@ -104,7 +104,7 @@ class QapiController extends Controller
         $user = auth()->user();
         $project = QapiProject::create([
             ...$validated,
-            'tenant_id'           => $user->tenant_id,
+            'tenant_id'           => $user->effectiveTenantId(),
             'status'              => 'planning',
             'team_member_ids'     => [],
             'created_by_user_id'  => $user->id,
@@ -129,7 +129,7 @@ class QapiController extends Controller
     public function show(Request $request, int $id): JsonResponse
     {
         $user = auth()->user();
-        $project = QapiProject::forTenant($user->tenant_id)
+        $project = QapiProject::forTenant($user->effectiveTenantId())
             ->with('projectLead:id,first_name,last_name')
             ->findOrFail($id);
 
@@ -145,7 +145,7 @@ class QapiController extends Controller
         $this->requireQaOrAdmin();
 
         $user = auth()->user();
-        $project = QapiProject::forTenant($user->tenant_id)->findOrFail($id);
+        $project = QapiProject::forTenant($user->effectiveTenantId())->findOrFail($id);
 
         $validated = $request->validate([
             'title'                   => 'sometimes|string|max:200',
@@ -193,7 +193,7 @@ class QapiController extends Controller
         $this->requireQaOrAdmin();
 
         $user = auth()->user();
-        $project = QapiProject::forTenant($user->tenant_id)->findOrFail($id);
+        $project = QapiProject::forTenant($user->effectiveTenantId())->findOrFail($id);
 
         if ($project->status !== 'active') {
             return response()->json([

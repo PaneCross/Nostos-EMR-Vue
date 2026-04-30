@@ -77,7 +77,7 @@ class DenialController extends Controller
     public function index(Request $request): InertiaResponse
     {
         $this->authorizeRead($request);
-        $tenantId = $request->user()->tenant_id;
+        $tenantId = $request->user()->effectiveTenantId();
 
         $query = DenialRecord::where('tenant_id', $tenantId)
             ->with(['remittanceClaim:id,patient_control_number,payer_claim_number,remittance_batch_id'])
@@ -123,7 +123,7 @@ class DenialController extends Controller
     public function show(Request $request, DenialRecord $denialRecord): JsonResponse
     {
         $this->authorizeRead($request);
-        abort_if($denialRecord->tenant_id !== $request->user()->tenant_id, 403);
+        abort_if($denialRecord->tenant_id !== $request->user()->effectiveTenantId(), 403);
 
         $denialRecord->load([
             'remittanceClaim.adjustments',
@@ -148,7 +148,7 @@ class DenialController extends Controller
     public function update(Request $request, DenialRecord $denialRecord): JsonResponse
     {
         $this->authorizeRead($request);
-        abort_if($denialRecord->tenant_id !== $request->user()->tenant_id, 403);
+        abort_if($denialRecord->tenant_id !== $request->user()->effectiveTenantId(), 403);
         abort_if($denialRecord->isTerminal(), 409, 'Terminal denial records cannot be updated.');
 
         $validated = $request->validate([
@@ -188,7 +188,7 @@ class DenialController extends Controller
     public function appeal(Request $request, DenialRecord $denialRecord): JsonResponse
     {
         $this->authorizeRead($request);
-        abort_if($denialRecord->tenant_id !== $request->user()->tenant_id, 403);
+        abort_if($denialRecord->tenant_id !== $request->user()->effectiveTenantId(), 403);
         abort_if($denialRecord->status !== 'open', 409, 'Only open denials can be appealed.');
 
         $validated = $request->validate([
@@ -229,7 +229,7 @@ class DenialController extends Controller
     public function writeOff(Request $request, DenialRecord $denialRecord): JsonResponse
     {
         $this->authorizeWriteOff($request);
-        abort_if($denialRecord->tenant_id !== $request->user()->tenant_id, 403);
+        abort_if($denialRecord->tenant_id !== $request->user()->effectiveTenantId(), 403);
         abort_if($denialRecord->isTerminal(), 409, 'Denial is already in a terminal state.');
 
         $validated = $request->validate([

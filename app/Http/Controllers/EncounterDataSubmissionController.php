@@ -36,7 +36,7 @@ class EncounterDataSubmissionController extends Controller
     {
         $this->gate();
         $u = Auth::user();
-        $batches = EdiBatch::where('tenant_id', $u->tenant_id)
+        $batches = EdiBatch::where('tenant_id', $u->effectiveTenantId())
             ->where('batch_type', 'edr')
             ->orderByDesc('created_at')->limit(50)->get();
         $driver = $this->gateway()->name();
@@ -58,7 +58,7 @@ class EncounterDataSubmissionController extends Controller
     {
         $this->gate();
         $u = Auth::user();
-        abort_if($batch->tenant_id !== $u->tenant_id, 403);
+        abort_if($batch->tenant_id !== $u->effectiveTenantId(), 403);
         abort_if($batch->batch_type !== 'edr', 422, 'Only EDR batches are submitted via this gateway.');
 
         $gateway = $this->gateway();

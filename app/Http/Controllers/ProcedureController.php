@@ -20,7 +20,7 @@ class ProcedureController extends Controller
 {
     private function authorizeForTenant(Participant $participant, $user): void
     {
-        abort_if($participant->tenant_id !== $user->tenant_id, 403);
+        abort_if($participant->tenant_id !== $user->effectiveTenantId(), 403);
     }
 
     /**
@@ -71,7 +71,7 @@ class ProcedureController extends Controller
 
         $procedure = Procedure::create(array_merge($validated, [
             'participant_id'       => $participant->id,
-            'tenant_id'            => $user->tenant_id,
+            'tenant_id'            => $user->effectiveTenantId(),
             'performed_by_user_id' => $validated['source'] === 'internal' ? $user->id : null,
         ]));
 

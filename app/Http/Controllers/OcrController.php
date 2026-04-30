@@ -15,7 +15,7 @@ class OcrController extends Controller
     {
         $u = Auth::user();
         abort_if(!$u, 401);
-        abort_if($document->tenant_id !== $u->tenant_id, 403);
+        abort_if($document->tenant_id !== $u->effectiveTenantId(), 403);
 
         $doc = $svc->process($document, $u);
         return response()->json([
@@ -34,7 +34,7 @@ class OcrController extends Controller
         if (strlen($q) < 3) {
             return response()->json(['rows' => [], 'count' => 0]);
         }
-        $rows = Document::where('tenant_id', $u->tenant_id)
+        $rows = Document::where('tenant_id', $u->effectiveTenantId())
             ->whereNotNull('ocr_text')
             ->where('ocr_text', 'ilike', '%' . $q . '%')
             ->select(['id', 'file_name', 'document_category', 'participant_id'])

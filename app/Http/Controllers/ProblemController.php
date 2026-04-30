@@ -19,7 +19,7 @@ class ProblemController extends Controller
 {
     private function authorizeForTenant(Participant $participant, $user): void
     {
-        abort_if($participant->tenant_id !== $user->tenant_id, 403);
+        abort_if($participant->tenant_id !== $user->effectiveTenantId(), 403);
     }
 
     private function authorizeProblemForParticipant(Problem $problem, Participant $participant): void
@@ -57,7 +57,7 @@ class ProblemController extends Controller
 
         $problem = Problem::create(array_merge($request->validated(), [
             'participant_id'   => $participant->id,
-            'tenant_id'        => $user->tenant_id,
+            'tenant_id'        => $user->effectiveTenantId(),
             'added_by_user_id' => $user->id,
         ]));
 

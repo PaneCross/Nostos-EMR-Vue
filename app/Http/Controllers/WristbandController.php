@@ -28,7 +28,7 @@ class WristbandController extends Controller
     {
         $user = $request->user();
         abort_unless($user, 401);
-        abort_if($participant->tenant_id !== $user->tenant_id, 403);
+        abort_if($participant->tenant_id !== $user->effectiveTenantId(), 403);
 
         // Backfill if missing so a print never fails for a lack of a barcode.
         if (! $participant->barcode_value) {

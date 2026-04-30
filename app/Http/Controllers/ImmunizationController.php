@@ -20,7 +20,7 @@ class ImmunizationController extends Controller
 {
     private function authorizeForTenant(Participant $participant, $user): void
     {
-        abort_if($participant->tenant_id !== $user->tenant_id, 403);
+        abort_if($participant->tenant_id !== $user->effectiveTenantId(), 403);
     }
 
     /**
@@ -76,7 +76,7 @@ class ImmunizationController extends Controller
 
         $immunization = Immunization::create(array_merge($validated, [
             'participant_id'          => $participant->id,
-            'tenant_id'               => $user->tenant_id,
+            'tenant_id'               => $user->effectiveTenantId(),
             'administered_by_user_id' => $user->id,
         ]));
 

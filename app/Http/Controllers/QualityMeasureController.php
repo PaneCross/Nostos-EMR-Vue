@@ -30,7 +30,7 @@ class QualityMeasureController extends Controller
         $this->gate();
         $u = Auth::user();
         $days = (int) $request->query('days', 90);
-        $rows = QualityMeasureSnapshot::forTenant($u->tenant_id)
+        $rows = QualityMeasureSnapshot::forTenant($u->effectiveTenantId())
             ->where('computed_at', '>=', now()->subDays($days))
             ->orderBy('measure_id')->orderBy('computed_at')->get();
         return response()->json(['rows' => $rows->groupBy('measure_id')]);
@@ -41,7 +41,7 @@ class QualityMeasureController extends Controller
     {
         $this->gate();
         $u = Auth::user();
-        $snaps = $svc->computeAll($u->tenant_id);
+        $snaps = $svc->computeAll($u->effectiveTenantId());
         return response()->json(['snapshots' => $snaps]);
     }
 }

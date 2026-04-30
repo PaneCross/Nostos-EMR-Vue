@@ -125,7 +125,7 @@ class RevenueIntegrityController extends Controller
     public function index(Request $request): InertiaResponse
     {
         $this->authorizeFinance($request);
-        $tenantId = $request->user()->tenant_id;
+        $tenantId = $request->user()->effectiveTenantId();
         $year     = (int) $request->query('year', now()->year);
 
         $service = new RevenueIntegrityService();
@@ -150,7 +150,7 @@ class RevenueIntegrityController extends Controller
     public function data(Request $request): JsonResponse
     {
         $this->authorizeFinance($request);
-        $tenantId = $request->user()->tenant_id;
+        $tenantId = $request->user()->effectiveTenantId();
         $year     = (int) $request->query('year', now()->year);
 
         $service = new RevenueIntegrityService();

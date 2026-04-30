@@ -35,7 +35,7 @@ class ClearinghouseConfigController extends Controller
         $this->gate();
         $u = Auth::user();
 
-        $rows = ClearinghouseConfig::forTenant($u->tenant_id)
+        $rows = ClearinghouseConfig::forTenant($u->effectiveTenantId())
             ->orderByDesc('is_active')
             ->orderByDesc('updated_at')
             ->get(['id', 'adapter', 'display_name', 'environment', 'submitter_id',
@@ -84,12 +84,12 @@ class ClearinghouseConfigController extends Controller
 
         $row = DB::transaction(function () use ($u, $validated) {
             if ($validated['is_active'] ?? false) {
-                ClearinghouseConfig::forTenant($u->tenant_id)
+                ClearinghouseConfig::forTenant($u->effectiveTenantId())
                     ->where('is_active', true)
                     ->update(['is_active' => false]);
             }
             return ClearinghouseConfig::create(array_merge($validated, [
-                'tenant_id' => $u->tenant_id,
+                'tenant_id' => $u->effectiveTenantId(),
             ]));
         });
 
@@ -109,7 +109,7 @@ class ClearinghouseConfigController extends Controller
     {
         $this->gate();
         $u = Auth::user();
-        abort_unless($config->tenant_id === $u->tenant_id, 404);
+        abort_unless($config->tenant_id === $u->effectiveTenantId(), 404);
 
         $validated = $request->validate([
             'adapter'              => 'sometimes|in:' . implode(',', ClearinghouseConfig::ADAPTERS),
@@ -128,7 +128,7 @@ class ClearinghouseConfigController extends Controller
 
         DB::transaction(function () use ($u, $config, $validated) {
             if (($validated['is_active'] ?? false) === true) {
-                ClearinghouseConfig::forTenant($u->tenant_id)
+                ClearinghouseConfig::forTenant($u->effectiveTenantId())
                     ->where('id', '!=', $config->id)
                     ->where('is_active', true)
                     ->update(['is_active' => false]);
@@ -152,7 +152,7 @@ class ClearinghouseConfigController extends Controller
     {
         $this->gate();
         $u = Auth::user();
-        abort_unless($config->tenant_id === $u->tenant_id, 404);
+        abort_unless($config->tenant_id === $u->effectiveTenantId(), 404);
 
         $gateway = $this->factory->resolve($config->adapter);
         $ok = $gateway->healthCheck($config);
@@ -170,7 +170,7 @@ class ClearinghouseConfigController extends Controller
     {
         $this->gate();
         $u = Auth::user();
-        abort_unless($config->tenant_id === $u->tenant_id, 404);
+        abort_unless($config->tenant_id === $u->effectiveTenantId(), 404);
 
         $config->delete();
 

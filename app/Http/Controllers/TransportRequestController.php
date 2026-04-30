@@ -53,7 +53,7 @@ class TransportRequestController extends Controller
         $user = $request->user();
 
         return Inertia::render('Transport/Manifest', [
-            'sites' => \App\Models\Site::where('tenant_id', $user->tenant_id)
+            'sites' => \App\Models\Site::where('tenant_id', $user->effectiveTenantId())
                 ->where('is_active', true)
                 ->get(['id', 'name']),
         ]);
@@ -70,7 +70,7 @@ class TransportRequestController extends Controller
         $user = $request->user();
         $date = $request->input('date', today()->toDateString());
 
-        $query = TransportRequest::forTenant($user->tenant_id)
+        $query = TransportRequest::forTenant($user->effectiveTenantId())
             ->forDate($date)
             ->whereNotIn('status', ['cancelled'])   // Cancelled trips are excluded from the run sheet
             ->with([
@@ -127,7 +127,7 @@ class TransportRequestController extends Controller
     public function store(StoreTransportRequestRequest $request): JsonResponse
     {
         $user        = $request->user();
-        $participant = Participant::where('tenant_id', $user->tenant_id)
+        $participant = Participant::where('tenant_id', $user->effectiveTenantId())
             ->findOrFail($request->input('participant_id'));
 
         // Capture active transport flags at time of request
@@ -139,7 +139,7 @@ class TransportRequestController extends Controller
             ->toArray();
 
         $transportRequest = TransportRequest::create([
-            'tenant_id'              => $user->tenant_id,
+            'tenant_id'              => $user->effectiveTenantId(),
             'participant_id'         => $participant->id,
             'appointment_id'         => $request->input('appointment_id'),
             'requesting_user_id'     => $user->id,
@@ -167,7 +167,7 @@ class TransportRequestController extends Controller
         if ($transportRequest->trip_type === 'add_on') {
             $name = trim("{$participant->first_name} {$participant->last_name}");
             $this->alertService->create([
-                'tenant_id'          => $user->tenant_id,
+                'tenant_id'          => $user->effectiveTenantId(),
                 'participant_id'     => $participant->id,
                 'source_module'      => 'transport',
                 'alert_type'         => 'info',
@@ -195,7 +195,7 @@ class TransportRequestController extends Controller
         $user = $request->user();
         abort_unless($user->department === 'transportation', 403);
 
-        $pending = TransportRequest::forTenant($user->tenant_id)
+        $pending = TransportRequest::forTenant($user->effectiveTenantId())
             ->pendingAddOns()
             ->with(['participant:id,first_name,last_name,mrn', 'pickupLocation', 'dropoffLocation', 'requestingUser:id,first_name,last_name,department'])
             ->orderBy('requested_pickup_time')
@@ -212,7 +212,7 @@ class TransportRequestController extends Controller
     {
         $user = $request->user();
         abort_unless($user->department === 'transportation', 403);
-        abort_unless($transportRequest->tenant_id === $user->tenant_id, 403);
+        abort_unless($transportRequest->tenant_id === $user->effectiveTenantId(), 403);
         abort_unless($transportRequest->isEditable(), 422);
 
         $transportRequest->update($request->safe()->except(['cancellation_reason']));
@@ -242,7 +242,7 @@ class TransportRequestController extends Controller
     public function cancel(Request $request, TransportRequest $transportRequest): JsonResponse
     {
         $user = $request->user();
-        abort_unless($transportRequest->tenant_id === $user->tenant_id, 403);
+        abort_unless($transportRequest->tenant_id === $user->effectiveTenantId(), 403);
         abort_unless(
             $user->department === 'transportation' || $user->department === $transportRequest->requesting_department,
             403
@@ -268,12 +268,12 @@ class TransportRequestController extends Controller
         // cancelled (especially for clinic visits). Default OFF; opt in via
         // /executive/org-settings.
         $prefs = app(\App\Services\NotificationPreferenceService::class);
-        if ($prefs->shouldNotify($user->tenant_id, 'workflow.transport_cancellation.notify_assigned_pcp')) {
+        if ($prefs->shouldNotify($user->effectiveTenantId(), 'workflow.transport_cancellation.notify_assigned_pcp')) {
             $participant = \App\Models\Participant::find($transportRequest->participant_id);
             $pcpId = $participant?->primary_provider_user_id ?? null;
             if ($pcpId) {
                 \App\Models\Alert::create([
-                    'tenant_id'          => $user->tenant_id,
+                    'tenant_id'          => $user->effectiveTenantId(),
                     'participant_id'     => $transportRequest->participant_id,
                     'alert_type'         => 'transport_cancelled_pcp_copy',
                     'title'              => 'Transport cancelled (PCP copy)',

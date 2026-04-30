@@ -48,7 +48,7 @@ class IncidentController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        $tenantId  = $request->user()->tenant_id;
+        $tenantId  = $request->user()->effectiveTenantId();
         $statusFilter = $request->query('status');
 
         $query = Incident::forTenant($tenantId)
@@ -76,7 +76,7 @@ class IncidentController extends Controller
         $participant   = Participant::findOrFail($participantId);
 
         abort_if(
-            $participant->tenant_id !== $request->user()->tenant_id,
+            $participant->tenant_id !== $request->user()->effectiveTenantId(),
             403,
             'Participant belongs to a different organization.',
         );
@@ -221,7 +221,7 @@ class IncidentController extends Controller
     private function authorizeTenant(Incident $incident, $user): void
     {
         abort_if(
-            $incident->tenant_id !== $user->tenant_id,
+            $incident->tenant_id !== $user->effectiveTenantId(),
             403,
             'Access denied: incident belongs to a different organization.',
         );

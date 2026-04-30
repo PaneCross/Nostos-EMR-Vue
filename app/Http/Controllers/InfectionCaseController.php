@@ -37,7 +37,7 @@ class InfectionCaseController extends Controller
 
     private function requireSameTenant($resource, $user): void
     {
-        abort_if($resource->tenant_id !== $user->tenant_id, 403);
+        abort_if($resource->tenant_id !== $user->effectiveTenantId(), 403);
     }
 
     // GET /participants/{p}/infections
@@ -76,7 +76,7 @@ class InfectionCaseController extends Controller
         ]);
 
         $case = InfectionCase::create(array_merge($validated, [
-            'tenant_id'           => $u->tenant_id,
+            'tenant_id'           => $u->effectiveTenantId(),
             'participant_id'      => $participant->id,
             'site_id'             => $participant->site_id,
             'severity'            => $validated['severity'] ?? 'mild',

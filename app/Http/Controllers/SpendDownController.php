@@ -30,7 +30,7 @@ class SpendDownController extends Controller
     {
         $u = $request->user();
         abort_unless($u, 401);
-        abort_if($participant->tenant_id !== $u->tenant_id, 403);
+        abort_if($participant->tenant_id !== $u->effectiveTenantId(), 403);
         $can = $u->isSuperAdmin()
             || in_array($u->department, ['finance', 'enrollment', 'it_admin', 'qa_compliance'], true);
         abort_unless($can, 403, 'Spend-down management requires finance / enrollment / QA / IT admin.');
@@ -162,7 +162,7 @@ class SpendDownController extends Controller
 
     public function destroyPayment(Request $request, SpendDownPayment $payment): JsonResponse
     {
-        abort_if($payment->tenant_id !== $request->user()->tenant_id, 403);
+        abort_if($payment->tenant_id !== $request->user()->effectiveTenantId(), 403);
         $u = $request->user();
         $can = $u->isSuperAdmin()
             || in_array($u->department, ['finance', 'enrollment', 'it_admin', 'qa_compliance'], true);

@@ -42,7 +42,7 @@ class SocialWorkDashboardController extends Controller
     public function schedule(): JsonResponse
     {
         $this->requireDept();
-        $tenantId = Auth::user()->tenant_id;
+        $tenantId = Auth::user()->effectiveTenantId();
 
         $appointments = Appointment::where('tenant_id', $tenantId)
             ->whereIn('appointment_type', ['social_work', 'home_visit', 'telehealth'])
@@ -79,7 +79,7 @@ class SocialWorkDashboardController extends Controller
     public function alerts(): JsonResponse
     {
         $this->requireDept();
-        $tenantId = Auth::user()->tenant_id;
+        $tenantId = Auth::user()->effectiveTenantId();
 
         $alerts = Alert::where('tenant_id', $tenantId)
             ->whereJsonContains('target_departments', 'social_work')
@@ -115,7 +115,7 @@ class SocialWorkDashboardController extends Controller
     public function sdrs(): JsonResponse
     {
         $this->requireDept();
-        $tenantId = Auth::user()->tenant_id;
+        $tenantId = Auth::user()->effectiveTenantId();
 
         $sdrs = Sdr::where('tenant_id', $tenantId)
             ->forDepartment('social_work')
@@ -154,7 +154,7 @@ class SocialWorkDashboardController extends Controller
     public function incidents(): JsonResponse
     {
         $this->requireDept();
-        $tenantId = Auth::user()->tenant_id;
+        $tenantId = Auth::user()->effectiveTenantId();
 
         $incidents = Incident::forTenant($tenantId)
             ->open()

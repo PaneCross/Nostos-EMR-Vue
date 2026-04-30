@@ -30,7 +30,7 @@ class ClinicalNoteController extends Controller
 
     private function authorizeForTenant(Participant $participant, $user): void
     {
-        abort_if($participant->tenant_id !== $user->tenant_id, 403);
+        abort_if($participant->tenant_id !== $user->effectiveTenantId(), 403);
     }
 
     private function authorizeNoteForParticipant(ClinicalNote $note, Participant $participant): void
@@ -98,7 +98,7 @@ class ClinicalNoteController extends Controller
 
         $note = ClinicalNote::create(array_merge($request->validated(), [
             'participant_id'      => $participant->id,
-            'tenant_id'           => $user->tenant_id,
+            'tenant_id'           => $user->effectiveTenantId(),
             'site_id'             => $participant->site_id,
             'authored_by_user_id' => $user->id,
             'status'              => ClinicalNote::STATUS_DRAFT,
@@ -149,7 +149,7 @@ class ClinicalNoteController extends Controller
     public function notesForProblem(Request $request, \App\Models\Problem $problem): JsonResponse
     {
         $user = $request->user();
-        abort_if($problem->tenant_id !== $user->tenant_id, 403);
+        abort_if($problem->tenant_id !== $user->effectiveTenantId(), 403);
 
         $notes = $problem->linkedNotes()
             ->with('author:id,first_name,last_name,department', 'signedBy:id,first_name,last_name')

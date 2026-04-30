@@ -34,7 +34,7 @@ class ExecutiveDashboardController
     /** Restrict to same tenant unless user is a global admin (role or dept SA). */
     private function tenantId(): int
     {
-        return Auth::user()->tenant_id;
+        return Auth::user()->effectiveTenantId();
     }
 
     private function requireAccess(): void

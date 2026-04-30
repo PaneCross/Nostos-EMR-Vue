@@ -33,7 +33,7 @@ class ClinicalOverviewController extends Controller
     public function medications(Request $request): Response
     {
         $user = $request->user();
-        $tid  = $user->tenant_id;
+        $tid  = $user->effectiveTenantId();
 
         // ── KPIs ──────────────────────────────────────────────────────────────
         $totalActive = Medication::where('tenant_id', $tid)
@@ -107,7 +107,7 @@ class ClinicalOverviewController extends Controller
     public function orders(Request $request): Response
     {
         $user = $request->user();
-        $tid  = $user->tenant_id;
+        $tid  = $user->effectiveTenantId();
 
         // ── KPIs ──────────────────────────────────────────────────────────────
         $activeGoals = CarePlanGoal::whereHas(

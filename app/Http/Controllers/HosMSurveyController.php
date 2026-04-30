@@ -48,7 +48,7 @@ class HosMSurveyController extends Controller
     public function index(Request $request): InertiaResponse
     {
         $this->authorizeAccess($request);
-        $tenantId    = $request->user()->tenant_id;
+        $tenantId    = $request->user()->effectiveTenantId();
         $currentYear = now()->year;
 
         // Year selector: defaults to current year, clamps to valid range.
@@ -123,7 +123,7 @@ class HosMSurveyController extends Controller
     public function store(Request $request): JsonResponse
     {
         $this->authorizeAccess($request);
-        $tenantId = $request->user()->tenant_id;
+        $tenantId = $request->user()->effectiveTenantId();
 
         $data = $request->validate([
             'participant_id'   => ['required', 'integer', 'exists:emr_participants,id'],
@@ -183,7 +183,7 @@ class HosMSurveyController extends Controller
     public function update(Request $request, HosMSurvey $survey): JsonResponse
     {
         $this->authorizeAccess($request);
-        abort_if($survey->tenant_id !== $request->user()->tenant_id, 403);
+        abort_if($survey->tenant_id !== $request->user()->effectiveTenantId(), 403);
         abort_if($survey->submitted_to_cms, 409, 'Cannot update a survey that has been submitted to CMS.');
 
         $old = $survey->only(['completed', 'responses']);
@@ -227,7 +227,7 @@ class HosMSurveyController extends Controller
     public function submit(Request $request, HosMSurvey $survey): JsonResponse
     {
         $this->authorizeAccess($request);
-        abort_if($survey->tenant_id !== $request->user()->tenant_id, 403);
+        abort_if($survey->tenant_id !== $request->user()->effectiveTenantId(), 403);
         abort_if(!$survey->completed, 422, 'Survey must be completed before submitting to CMS.');
         abort_if($survey->submitted_to_cms, 409, 'Survey has already been submitted to CMS.');
 

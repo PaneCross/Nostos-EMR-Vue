@@ -48,7 +48,7 @@ class RiskAdjustmentController extends Controller
     public function index(Request $request): InertiaResponse
     {
         $this->authorizeFinance($request);
-        $tenantId = $request->user()->tenant_id;
+        $tenantId = $request->user()->effectiveTenantId();
         $year     = (int) $request->query('year', now()->year);
 
         $gapSummary = (new HccRiskScoringService())->getOrgWideGapSummary($tenantId, $year);
@@ -76,7 +76,7 @@ class RiskAdjustmentController extends Controller
     public function data(Request $request): JsonResponse
     {
         $this->authorizeFinance($request);
-        $tenantId = $request->user()->tenant_id;
+        $tenantId = $request->user()->effectiveTenantId();
         $year     = (int) $request->query('year', now()->year);
 
         $gapSummary = (new HccRiskScoringService())->getOrgWideGapSummary($tenantId, $year);
@@ -105,7 +105,7 @@ class RiskAdjustmentController extends Controller
     public function participant(Request $request, int $id): JsonResponse
     {
         $this->authorizeFinance($request);
-        $tenantId = $request->user()->tenant_id;
+        $tenantId = $request->user()->effectiveTenantId();
 
         $participant = Participant::where('id', $id)
             ->where('tenant_id', $tenantId)
@@ -142,7 +142,7 @@ class RiskAdjustmentController extends Controller
     public function recalculate(Request $request, int $id): JsonResponse
     {
         $this->authorizeFinance($request);
-        $tenantId = $request->user()->tenant_id;
+        $tenantId = $request->user()->effectiveTenantId();
 
         $participant = Participant::where('id', $id)
             ->where('tenant_id', $tenantId)

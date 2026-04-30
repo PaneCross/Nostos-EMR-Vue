@@ -31,9 +31,9 @@ class PhiDisclosureController extends Controller
     {
         $this->gateStaff();
         $u = Auth::user();
-        abort_if($participant->tenant_id !== $u->tenant_id, 403);
+        abort_if($participant->tenant_id !== $u->effectiveTenantId(), 403);
 
-        $rows = PhiDisclosure::forTenant($u->tenant_id)
+        $rows = PhiDisclosure::forTenant($u->effectiveTenantId())
             ->forParticipant($participant->id)
             ->accountingPeriod()
             ->orderByDesc('disclosed_at')
@@ -60,7 +60,7 @@ class PhiDisclosureController extends Controller
         $this->gateStaff();
         $u = Auth::user();
 
-        $rows = PhiDisclosure::forTenant($u->tenant_id)
+        $rows = PhiDisclosure::forTenant($u->effectiveTenantId())
             ->accountingPeriod()
             ->with('participant:id,mrn,first_name,last_name', 'disclosedBy:id,first_name,last_name')
             ->orderByDesc('disclosed_at')

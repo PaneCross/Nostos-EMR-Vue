@@ -63,7 +63,7 @@ class TransferController extends Controller
         $this->requireSameTenant($participant);
 
         $sites = DB::table('shared_sites')
-            ->where('tenant_id', Auth::user()->tenant_id)
+            ->where('tenant_id', Auth::user()->effectiveTenantId())
             ->where('id', '!=', $participant->site_id)
             ->select('id', 'name')
             ->orderBy('name')
@@ -251,7 +251,7 @@ class TransferController extends Controller
         $this->requireSameTenant($participant);
 
         $tenantSiteIds = DB::table('shared_sites')
-            ->where('tenant_id', Auth::user()->tenant_id)
+            ->where('tenant_id', Auth::user()->effectiveTenantId())
             ->pluck('id')
             ->toArray();
 
@@ -288,7 +288,7 @@ class TransferController extends Controller
 
     private function requireSameTenant(Participant $participant): void
     {
-        if ($participant->tenant_id !== Auth::user()->tenant_id) {
+        if ($participant->tenant_id !== Auth::user()->effectiveTenantId()) {
             abort(404);
         }
     }

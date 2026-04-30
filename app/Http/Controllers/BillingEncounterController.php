@@ -65,7 +65,7 @@ class BillingEncounterController extends Controller
         }
 
         // Axios data-fetch from the mounted React component → return JSON list.
-        $tenantId = $request->user()->tenant_id;
+        $tenantId = $request->user()->effectiveTenantId();
 
         $query = EncounterLog::forTenant($tenantId)
             ->with(['participant:id,mrn,first_name,last_name', 'provider:id,first_name,last_name'])
@@ -111,7 +111,7 @@ class BillingEncounterController extends Controller
     public function store(Request $request): JsonResponse
     {
         $this->authorizeFinance($request);
-        $tenantId = $request->user()->tenant_id;
+        $tenantId = $request->user()->effectiveTenantId();
 
         $data = $request->validate([
             'participant_id'         => ['required', 'integer', 'exists:emr_participants,id'],
@@ -173,7 +173,7 @@ class BillingEncounterController extends Controller
     public function update(Request $request, EncounterLog $encounter): JsonResponse
     {
         $this->authorizeFinance($request);
-        $tenantId = $request->user()->tenant_id;
+        $tenantId = $request->user()->effectiveTenantId();
 
         // Tenant isolation check
         abort_if($encounter->tenant_id !== $tenantId, 403);
@@ -233,7 +233,7 @@ class BillingEncounterController extends Controller
     public function batch(Request $request): JsonResponse
     {
         $this->authorizeFinance($request);
-        $tenantId = $request->user()->tenant_id;
+        $tenantId = $request->user()->effectiveTenantId();
 
         $data = $request->validate([
             'encounter_ids'   => ['required', 'array', 'min:1'],

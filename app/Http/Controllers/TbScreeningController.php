@@ -30,7 +30,7 @@ class TbScreeningController extends Controller
 
     private function requireSameTenant($resource, $user): void
     {
-        abort_if($resource->tenant_id !== $user->tenant_id, 403);
+        abort_if($resource->tenant_id !== $user->effectiveTenantId(), 403);
     }
 
     public function index(Request $request, Participant $participant): JsonResponse
@@ -39,7 +39,7 @@ class TbScreeningController extends Controller
         $u = Auth::user();
         $this->requireSameTenant($participant, $u);
 
-        $records = TbScreening::forTenant($u->tenant_id)
+        $records = TbScreening::forTenant($u->effectiveTenantId())
             ->where('participant_id', $participant->id)
             ->with('recordedBy:id,first_name,last_name')
             ->orderByDesc('performed_date')
@@ -79,7 +79,7 @@ class TbScreeningController extends Controller
 
         $performed = Carbon::parse($validated['performed_date']);
         $record = TbScreening::create(array_merge($validated, [
-            'tenant_id'           => $u->tenant_id,
+            'tenant_id'           => $u->effectiveTenantId(),
             'participant_id'      => $participant->id,
             'recorded_by_user_id' => $u->id,
             'next_due_date'       => $performed->copy()->addDays(TbScreening::RECERT_DAYS),

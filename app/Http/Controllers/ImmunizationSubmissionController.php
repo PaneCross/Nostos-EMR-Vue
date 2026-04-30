@@ -35,7 +35,7 @@ class ImmunizationSubmissionController extends Controller
     {
         $this->gate();
         $u = Auth::user();
-        abort_unless($participant->tenant_id === $u->tenant_id, 404);
+        abort_unless($participant->tenant_id === $u->effectiveTenantId(), 404);
         abort_unless($immunization->participant_id === $participant->id, 404);
 
         $validated = $request->validate([
@@ -43,7 +43,7 @@ class ImmunizationSubmissionController extends Controller
         ]);
         $state = strtoupper($validated['state_code']);
 
-        $cfg = StateImmunizationRegistryConfig::forTenant($u->tenant_id)
+        $cfg = StateImmunizationRegistryConfig::forTenant($u->effectiveTenantId())
             ->where('state_code', $state)
             ->active()
             ->first();
@@ -51,7 +51,7 @@ class ImmunizationSubmissionController extends Controller
         $build = $this->builder->build($participant, $immunization, $cfg);
 
         $row = ImmunizationSubmission::create([
-            'tenant_id'            => $u->tenant_id,
+            'tenant_id'            => $u->effectiveTenantId(),
             'participant_id'       => $participant->id,
             'immunization_id'      => $immunization->id,
             'state_code'           => $state,
@@ -89,9 +89,9 @@ class ImmunizationSubmissionController extends Controller
     {
         $this->gate();
         $u = Auth::user();
-        abort_unless($participant->tenant_id === $u->tenant_id, 404);
+        abort_unless($participant->tenant_id === $u->effectiveTenantId(), 404);
 
-        $rows = ImmunizationSubmission::forTenant($u->tenant_id)
+        $rows = ImmunizationSubmission::forTenant($u->effectiveTenantId())
             ->where('participant_id', $participant->id)
             ->orderByDesc('submitted_at')
             ->limit(50)

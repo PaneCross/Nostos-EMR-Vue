@@ -56,7 +56,7 @@ class ChatController extends Controller
             'action'        => 'chat.view',
             'resource_type' => 'chat',
             'resource_id'   => null,
-            'tenant_id'     => $user->tenant_id,
+            'tenant_id'     => $user->effectiveTenantId(),
             'ip_address'    => $request->ip(),
         ]);
 
@@ -81,7 +81,7 @@ class ChatController extends Controller
         /** @var \App\Models\User $user */
         $user = $request->user();
 
-        $results = User::where('tenant_id', $user->tenant_id)
+        $results = User::where('tenant_id', $user->effectiveTenantId())
             ->where('id', '!=', $user->id)
             ->where('is_active', true)
             ->where(function ($query) use ($q) {
@@ -212,7 +212,7 @@ class ChatController extends Controller
 
             if (! empty($memberDepts)) {
                 $this->alertService->create([
-                    'tenant_id'          => $user->tenant_id,
+                    'tenant_id'          => $user->effectiveTenantId(),
                     'source_module'      => 'chat',
                     'alert_type'         => 'urgent_chat_message',
                     'title'              => 'Urgent message from ' . $user->first_name . ' ' . $user->last_name,
@@ -231,7 +231,7 @@ class ChatController extends Controller
             'action'        => 'chat.message.send',
             'resource_type' => 'chat_message',
             'resource_id'   => $message->id,
-            'tenant_id'     => $user->tenant_id,
+            'tenant_id'     => $user->effectiveTenantId(),
             'ip_address'    => $request->ip(),
         ]);
 
@@ -264,7 +264,7 @@ class ChatController extends Controller
         /** @var \App\Models\User $viewer */
         $viewer = $request->user();
 
-        if ($viewer->tenant_id !== $user->tenant_id) {
+        if ($viewer->effectiveTenantId() !== $user->effectiveTenantId()) {
             abort(403, 'Cross-tenant DMs are not permitted.');
         }
 
@@ -272,7 +272,7 @@ class ChatController extends Controller
             abort(422, 'Cannot start a DM with yourself.');
         }
 
-        $channel = $this->chatService->getOrCreateDmChannel($viewer, $user, $viewer->tenant_id);
+        $channel = $this->chatService->getOrCreateDmChannel($viewer, $user, $viewer->effectiveTenantId());
 
         return response()->json([
             'channel' => [

@@ -34,7 +34,7 @@ class TeamHuddleController extends Controller
         $this->gate();
         $u = Auth::user();
         $dept = $request->query('department', $u->department);
-        return response()->json($this->buildData($u->tenant_id, $dept));
+        return response()->json($this->buildData($u->effectiveTenantId(), $dept));
     }
 
     /** GET /huddle/pdf?department=X */
@@ -43,7 +43,7 @@ class TeamHuddleController extends Controller
         $this->gate();
         $u = Auth::user();
         $dept = $request->query('department', $u->department);
-        $data = $this->buildData($u->tenant_id, $dept);
+        $data = $this->buildData($u->effectiveTenantId(), $dept);
         $pdf = Pdf::loadView('pdfs.huddle', $data)->setPaper('letter', 'portrait');
         return $pdf->stream("huddle-{$dept}-" . now()->toDateString() . '.pdf');
     }

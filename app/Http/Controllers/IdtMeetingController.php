@@ -32,7 +32,7 @@ class IdtMeetingController extends Controller
 {
     private function authorizeForTenant(IdtMeeting $meeting, $user): void
     {
-        abort_if($meeting->tenant_id !== $user->tenant_id, 403);
+        abort_if($meeting->tenant_id !== $user->effectiveTenantId(), 403);
     }
 
     /**
@@ -43,13 +43,13 @@ class IdtMeetingController extends Controller
     {
         $user = $request->user();
 
-        $today = IdtMeeting::where('tenant_id', $user->tenant_id)
+        $today = IdtMeeting::where('tenant_id', $user->effectiveTenantId())
             ->today()
             ->with(['facilitator:id,first_name,last_name', 'participantReviews.participant:id,mrn,first_name,last_name'])
             ->orderBy('meeting_time')
             ->get();
 
-        $upcoming = IdtMeeting::where('tenant_id', $user->tenant_id)
+        $upcoming = IdtMeeting::where('tenant_id', $user->effectiveTenantId())
             ->upcoming()
             ->where('meeting_date', '>', now()->toDateString())
             ->with('facilitator:id,first_name,last_name')
@@ -57,7 +57,7 @@ class IdtMeetingController extends Controller
             ->limit(10)
             ->get();
 
-        $recent = IdtMeeting::where('tenant_id', $user->tenant_id)
+        $recent = IdtMeeting::where('tenant_id', $user->effectiveTenantId())
             ->completed()
             ->with('facilitator:id,first_name,last_name')
             ->orderByDesc('meeting_date')
@@ -82,7 +82,7 @@ class IdtMeetingController extends Controller
         $status = $request->query('status', '');
         $perPage = 20;
 
-        $query = IdtMeeting::where('tenant_id', $user->tenant_id)
+        $query = IdtMeeting::where('tenant_id', $user->effectiveTenantId())
             ->with('facilitator:id,first_name,last_name')
             ->orderByDesc('meeting_date')
             ->orderByDesc('meeting_time');
@@ -118,7 +118,7 @@ class IdtMeetingController extends Controller
         ]);
 
         $meeting = IdtMeeting::create(array_merge($validated, [
-            'tenant_id' => $user->tenant_id,
+            'tenant_id' => $user->effectiveTenantId(),
             'status'    => 'scheduled',
         ]));
 
@@ -149,7 +149,7 @@ class IdtMeetingController extends Controller
 
         // Phase U3 : pass tenant clinical users so the Run-Meeting page can
         // render the attendance roster + present/absent toggles.
-        $tenantUsers = \App\Models\User::where('tenant_id', $request->user()->tenant_id)
+        $tenantUsers = \App\Models\User::where('tenant_id', $request->user()->effectiveTenantId())
             ->where('is_active', true)
             ->whereIn('department', ['primary_care', 'therapies', 'social_work', 'behavioral_health',
                 'dietary', 'activities', 'home_care', 'transportation', 'pharmacy', 'idt'])

@@ -33,14 +33,14 @@ class AdvancedBiController extends Controller
             'joins'      => 'nullable|array',
             'joins.*'    => 'string',
         ]);
-        return response()->json($svc->run($u->tenant_id, $validated));
+        return response()->json($svc->run($u->effectiveTenantId(), $validated));
     }
 
     public function dashboardsIndex(Request $request): JsonResponse
     {
         $this->gate();
         $u = Auth::user();
-        $rows = SavedDashboard::forTenant($u->tenant_id)
+        $rows = SavedDashboard::forTenant($u->effectiveTenantId())
             ->where(function ($q) use ($u) {
                 $q->where('owner_user_id', $u->id)->orWhere('is_shared', true);
             })
@@ -61,7 +61,7 @@ class AdvancedBiController extends Controller
             'is_shared'   => 'nullable|boolean',
         ]);
         $d = SavedDashboard::create(array_merge($validated, [
-            'tenant_id'     => $u->tenant_id,
+            'tenant_id'     => $u->effectiveTenantId(),
             'owner_user_id' => $u->id,
             'is_shared'     => $validated['is_shared'] ?? false,
         ]));
@@ -72,7 +72,7 @@ class AdvancedBiController extends Controller
     {
         $this->gate();
         $u = Auth::user();
-        abort_if($dashboard->tenant_id !== $u->tenant_id, 403);
+        abort_if($dashboard->tenant_id !== $u->effectiveTenantId(), 403);
         abort_if(! $dashboard->is_shared && $dashboard->owner_user_id !== $u->id, 403);
         return response()->json(['dashboard' => $dashboard]);
     }

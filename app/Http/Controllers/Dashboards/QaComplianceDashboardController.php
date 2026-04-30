@@ -51,7 +51,7 @@ class QaComplianceDashboardController extends Controller
     public function metrics(): JsonResponse
     {
         $this->requireDept();
-        $tenantId = Auth::user()->tenant_id;
+        $tenantId = Auth::user()->effectiveTenantId();
 
         return response()->json([
             'sdr_compliance_rate'                    => $this->qaMetrics->getSdrComplianceRate($tenantId),
@@ -72,7 +72,7 @@ class QaComplianceDashboardController extends Controller
     public function incidents(): JsonResponse
     {
         $this->requireDept();
-        $tenantId = Auth::user()->tenant_id;
+        $tenantId = Auth::user()->effectiveTenantId();
 
         $incidents = Incident::forTenant($tenantId)
             ->open()
@@ -122,7 +122,7 @@ class QaComplianceDashboardController extends Controller
     public function docs(): JsonResponse
     {
         $this->requireDept();
-        $tenantId = Auth::user()->tenant_id;
+        $tenantId = Auth::user()->effectiveTenantId();
 
         $unsignedNotes = $this->qaMetrics->getUnsignedNotesOlderThan($tenantId)
             ->take(10)
@@ -176,7 +176,7 @@ class QaComplianceDashboardController extends Controller
     public function carePlans(): JsonResponse
     {
         $this->requireDept();
-        $tenantId = Auth::user()->tenant_id;
+        $tenantId = Auth::user()->effectiveTenantId();
 
         $plans = $this->qaMetrics->getCarePlansOverdue($tenantId)
             ->take(15)
@@ -208,7 +208,7 @@ class QaComplianceDashboardController extends Controller
     public function appeals(): JsonResponse
     {
         $this->requireDept();
-        $tenantId = Auth::user()->tenant_id;
+        $tenantId = Auth::user()->effectiveTenantId();
 
         $appeals = \App\Models\Appeal::forTenant($tenantId)
             ->open()
@@ -248,7 +248,7 @@ class QaComplianceDashboardController extends Controller
     public function sentinelRollup(): JsonResponse
     {
         $this->requireDept();
-        $tenantId = Auth::user()->tenant_id;
+        $tenantId = Auth::user()->effectiveTenantId();
 
         $rows = \App\Models\Incident::forTenant($tenantId)
             ->where('is_sentinel', true)
@@ -280,7 +280,7 @@ class QaComplianceDashboardController extends Controller
     public function criticalValuesPending(): JsonResponse
     {
         $this->requireDept();
-        $tenantId = Auth::user()->tenant_id;
+        $tenantId = Auth::user()->effectiveTenantId();
 
         $pending = \App\Models\CriticalValueAcknowledgment::forTenant($tenantId)->pending()
             ->with('participant:id,mrn,first_name,last_name')
@@ -310,7 +310,7 @@ class QaComplianceDashboardController extends Controller
     public function roiDueSoon(): JsonResponse
     {
         $this->requireDept();
-        $tenantId = Auth::user()->tenant_id;
+        $tenantId = Auth::user()->effectiveTenantId();
 
         $rows = \App\Models\RoiRequest::forTenant($tenantId)->open()
             ->where('due_by', '<=', now()->addDays(5))
@@ -340,7 +340,7 @@ class QaComplianceDashboardController extends Controller
     public function tbOverdue(): JsonResponse
     {
         $this->requireDept();
-        $tenantId = Auth::user()->tenant_id;
+        $tenantId = Auth::user()->effectiveTenantId();
 
         $overdueCount = \App\Models\TbScreening::forTenant($tenantId)
             ->whereNotNull('next_due_date')

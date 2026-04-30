@@ -60,7 +60,7 @@ class MedicationController extends Controller
     /** Abort with 403 if the participant belongs to a different tenant than the user. */
     private function authorizeForTenant(Participant $participant, $user): void
     {
-        abort_if($participant->tenant_id !== $user->tenant_id, 403);
+        abort_if($participant->tenant_id !== $user->effectiveTenantId(), 403);
     }
 
     /** Abort with 403 if the user is not in a prescriber department. */
@@ -109,7 +109,7 @@ class MedicationController extends Controller
         $medication = Medication::create([
             ...$request->validated(),
             'participant_id' => $participant->id,
-            'tenant_id'      => $user->tenant_id,
+            'tenant_id'      => $user->effectiveTenantId(),
         ]);
 
         // Check for drug-drug interactions with existing active medications
@@ -119,7 +119,7 @@ class MedicationController extends Controller
         // requiring PA, surface a suggestion to the prescriber UI. Match on
         // exact drug_name within tenant; fall back to generic_name match.
         $paSuggestion = null;
-        $formularyHit = FormularyEntry::where('tenant_id', $user->tenant_id)
+        $formularyHit = FormularyEntry::where('tenant_id', $user->effectiveTenantId())
             ->where(function ($q) use ($medication) {
                 $q->where('drug_name', $medication->drug_name)
                   ->orWhere('generic_name', $medication->drug_name);
@@ -342,7 +342,7 @@ class MedicationController extends Controller
     public function scanVerify(Request $request, EmarRecord $record, BcmaService $bcma): JsonResponse
     {
         $user = $request->user();
-        abort_if($record->tenant_id !== $user->tenant_id, 403);
+        abort_if($record->tenant_id !== $user->effectiveTenantId(), 403);
 
         $validated = $request->validate([
             'participant_barcode' => 'nullable|string|max:64',
@@ -380,7 +380,7 @@ class MedicationController extends Controller
         $record = EmarRecord::create([
             'participant_id'          => $participant->id,
             'medication_id'           => $medication->id,
-            'tenant_id'               => $user->tenant_id,
+            'tenant_id'               => $user->effectiveTenantId(),
             'scheduled_time'          => $request->input('administered_at'),  // PRN: scheduled = actual
             'administered_at'         => $request->input('administered_at'),
             'administered_by_user_id' => $user->id,
@@ -435,7 +435,7 @@ class MedicationController extends Controller
         $reconciliation = MedReconciliation::create([
             ...$request->validated(),
             'participant_id'          => $participant->id,
-            'tenant_id'               => $user->tenant_id,
+            'tenant_id'               => $user->effectiveTenantId(),
             'reconciled_by_user_id'   => $user->id,
             'reconciling_department'  => $user->department,
         ]);

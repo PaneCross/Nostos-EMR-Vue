@@ -38,7 +38,7 @@ class DayCenterScheduleController extends Controller
 
         $siteFilter = $request->query('site_id');
 
-        $query = Participant::where('tenant_id', $user->tenant_id)
+        $query = Participant::where('tenant_id', $user->effectiveTenantId())
             ->where('enrollment_status', 'enrolled')
             ->where('is_active', true)
             ->with('site:id,name')
@@ -58,7 +58,7 @@ class DayCenterScheduleController extends Controller
             'day_center_days' => is_array($p->day_center_days) ? $p->day_center_days : [],
         ]);
 
-        $sites = Site::where('tenant_id', $user->tenant_id)
+        $sites = Site::where('tenant_id', $user->effectiveTenantId())
             ->where('is_active', true)
             ->orderBy('name')
             ->get(['id', 'name']);
@@ -98,7 +98,7 @@ class DayCenterScheduleController extends Controller
 
         foreach ($validated['updates'] as $u) {
             $p = Participant::where('id', $u['participant_id'])
-                ->where('tenant_id', $user->tenant_id)
+                ->where('tenant_id', $user->effectiveTenantId())
                 ->first();
 
             if (! $p) {

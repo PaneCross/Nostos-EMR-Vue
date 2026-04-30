@@ -72,7 +72,7 @@ class ComplianceController extends Controller
     public function nfLocStatus(Request $request): JsonResponse|InertiaResponse
     {
         $this->gate($request);
-        $tenantId = $request->user()->tenant_id;
+        $tenantId = $request->user()->effectiveTenantId();
 
         $rows = Participant::forTenant($tenantId)
             ->where('enrollment_status', 'enrolled')
@@ -121,7 +121,7 @@ class ComplianceController extends Controller
     public function denialNotices(Request $request): JsonResponse
     {
         $this->gate($request);
-        $tenantId = $request->user()->tenant_id;
+        $tenantId = $request->user()->effectiveTenantId();
 
         $rows = ServiceDenialNotice::where('tenant_id', $tenantId)
             ->with([
@@ -146,7 +146,7 @@ class ComplianceController extends Controller
     public function appeals(Request $request): JsonResponse
     {
         $this->gate($request);
-        $tenantId = $request->user()->tenant_id;
+        $tenantId = $request->user()->effectiveTenantId();
 
         $rows = Appeal::forTenant($tenantId)
             ->with([
@@ -175,7 +175,7 @@ class ComplianceController extends Controller
     public function sdrSla(Request $request): JsonResponse
     {
         $this->gate($request);
-        $tenantId = $request->user()->tenant_id;
+        $tenantId = $request->user()->effectiveTenantId();
 
         $rows = Sdr::where('tenant_id', $tenantId)
             ->orderByDesc('submitted_at')
@@ -198,7 +198,7 @@ class ComplianceController extends Controller
     public function personnelCredentials(Request $request): JsonResponse
     {
         $this->gate($request);
-        $tenantId = $request->user()->tenant_id;
+        $tenantId = $request->user()->effectiveTenantId();
 
         $credentials = StaffCredential::forTenant($tenantId)
             ->with(['user:id,first_name,last_name,department,role,job_title,is_active', 'definition:id,code,is_cms_mandatory,requires_psv,ceu_hours_required'])
@@ -298,7 +298,7 @@ class ComplianceController extends Controller
     public function restraints(Request $request): JsonResponse|InertiaResponse
     {
         $this->gate($request);
-        $tenantId = $request->user()->tenant_id;
+        $tenantId = $request->user()->effectiveTenantId();
 
         $since = now()->subYear();
         $episodes = \App\Models\RestraintEpisode::forTenant($tenantId)
@@ -375,7 +375,7 @@ class ComplianceController extends Controller
     public function infections(Request $request): JsonResponse|InertiaResponse
     {
         $this->gate($request);
-        $tenantId = $request->user()->tenant_id;
+        $tenantId = $request->user()->effectiveTenantId();
         $since = now()->subYear();
 
         $cases = \App\Models\InfectionCase::forTenant($tenantId)
@@ -475,7 +475,7 @@ class ComplianceController extends Controller
     public function sentinelEvents(Request $request): JsonResponse|InertiaResponse
     {
         $this->gate($request);
-        $tenantId = $request->user()->tenant_id;
+        $tenantId = $request->user()->effectiveTenantId();
         $since = now()->subYear();
 
         $rows = Incident::forTenant($tenantId)
@@ -545,7 +545,7 @@ class ComplianceController extends Controller
     public function roi(Request $request): JsonResponse|InertiaResponse
     {
         $this->gate($request);
-        $tenantId = $request->user()->tenant_id;
+        $tenantId = $request->user()->effectiveTenantId();
         $since = now()->subYear();
 
         $rows = RoiRequest::forTenant($tenantId)
@@ -606,7 +606,7 @@ class ComplianceController extends Controller
     public function tbScreening(Request $request): JsonResponse|InertiaResponse
     {
         $this->gate($request);
-        $tenantId = $request->user()->tenant_id;
+        $tenantId = $request->user()->effectiveTenantId();
 
         $participants = Participant::forTenant($tenantId)
             ->where('enrollment_status', 'enrolled')
@@ -666,7 +666,7 @@ class ComplianceController extends Controller
     public function ade(Request $request): JsonResponse|InertiaResponse
     {
         $this->gate($request);
-        $tenantId = $request->user()->tenant_id;
+        $tenantId = $request->user()->effectiveTenantId();
         $since = now()->subYear();
 
         $rows = AdverseDrugEvent::forTenant($tenantId)
@@ -734,7 +734,7 @@ class ComplianceController extends Controller
         $u = $request->user();
         // Hard-coded notifiable set per CDC/state DPH common reporting list.
         $notifiable = ['mrsa', 'tuberculosis', 'covid_19', 'influenza', 'norovirus', 'c_diff'];
-        $rows = \App\Models\InfectionCase::forTenant($u->tenant_id)
+        $rows = \App\Models\InfectionCase::forTenant($u->effectiveTenantId())
             ->whereIn('organism_type', $notifiable)
             ->orderBy('onset_date')->get();
         $out = "case_id,participant_id,organism,onset_date,severity,reported_to_state_at\n";

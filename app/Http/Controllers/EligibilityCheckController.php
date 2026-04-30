@@ -37,7 +37,7 @@ class EligibilityCheckController extends Controller
     {
         $this->gate();
         $u = Auth::user();
-        abort_if($participant->tenant_id !== $u->tenant_id, 403);
+        abort_if($participant->tenant_id !== $u->effectiveTenantId(), 403);
 
         $validated = $request->validate([
             'payer_type'        => 'required|in:medicare,medicaid,other',
@@ -48,7 +48,7 @@ class EligibilityCheckController extends Controller
         $result = $gateway->check($participant, $validated['payer_type'], $validated['member_id_lookup'] ?? null);
 
         $row = EligibilityCheck::create([
-            'tenant_id'             => $u->tenant_id,
+            'tenant_id'             => $u->effectiveTenantId(),
             'participant_id'        => $participant->id,
             'payer_type'            => $validated['payer_type'],
             'member_id_lookup'      => $validated['member_id_lookup'] ?? null,
@@ -78,10 +78,10 @@ class EligibilityCheckController extends Controller
     {
         $this->gate();
         $u = Auth::user();
-        abort_if($participant->tenant_id !== $u->tenant_id, 403);
+        abort_if($participant->tenant_id !== $u->effectiveTenantId(), 403);
 
         return response()->json([
-            'checks' => EligibilityCheck::forTenant($u->tenant_id)
+            'checks' => EligibilityCheck::forTenant($u->effectiveTenantId())
                 ->forParticipant($participant->id)
                 ->orderByDesc('requested_at')->limit(20)->get(),
         ]);

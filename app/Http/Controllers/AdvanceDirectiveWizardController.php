@@ -30,7 +30,7 @@ class AdvanceDirectiveWizardController extends Controller
     {
         $this->gate();
         $u = Auth::user();
-        abort_if($participant->tenant_id !== $u->tenant_id, 403);
+        abort_if($participant->tenant_id !== $u->effectiveTenantId(), 403);
 
         $validated = $request->validate([
             'ad_type'           => 'required|in:' . implode(',', self::AD_TYPES),

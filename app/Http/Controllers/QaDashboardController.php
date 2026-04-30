@@ -64,7 +64,7 @@ class QaDashboardController extends Controller
      */
     public function dashboard(Request $request): InertiaResponse
     {
-        $tenantId = $request->user()->tenant_id;
+        $tenantId = $request->user()->effectiveTenantId();
 
         // Collect all 6 KPI metrics for the dashboard cards
         $kpis = [
@@ -119,7 +119,7 @@ class QaDashboardController extends Controller
      */
     public function unsignedNotes(Request $request): JsonResponse
     {
-        $tenantId = $request->user()->tenant_id;
+        $tenantId = $request->user()->effectiveTenantId();
 
         return response()->json(
             $this->metrics->getUnsignedNotesOlderThan($tenantId)->map(fn ($note) => [
@@ -146,7 +146,7 @@ class QaDashboardController extends Controller
      */
     public function overdueAssessments(Request $request): JsonResponse
     {
-        $tenantId = $request->user()->tenant_id;
+        $tenantId = $request->user()->effectiveTenantId();
 
         return response()->json(
             $this->metrics->getOverdueAssessments($tenantId)->map(fn ($a) => [
@@ -216,7 +216,7 @@ class QaDashboardController extends Controller
      */
     public function exportCsv(Request $request): Response
     {
-        $tenantId = $request->user()->tenant_id;
+        $tenantId = $request->user()->effectiveTenantId();
         $type     = $request->query('type', 'incidents'); // incidents|unsigned_notes|overdue_assessments
 
         $rows    = [];

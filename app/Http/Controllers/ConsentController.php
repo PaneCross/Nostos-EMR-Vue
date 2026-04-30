@@ -35,14 +35,14 @@ class ConsentController extends Controller
     /** Abort 403 if participant does not belong to the user's tenant */
     private function authorizeParticipant(Participant $participant): void
     {
-        abort_if($participant->tenant_id !== Auth::user()->tenant_id, 403);
+        abort_if($participant->tenant_id !== Auth::user()->effectiveTenantId(), 403);
     }
 
     /** Abort 403 if consent does not belong to the given participant */
     private function authorizeConsent(ConsentRecord $consent, Participant $participant): void
     {
         abort_if($consent->participant_id !== $participant->id, 403);
-        abort_if($consent->tenant_id !== Auth::user()->tenant_id, 403);
+        abort_if($consent->tenant_id !== Auth::user()->effectiveTenantId(), 403);
     }
 
     // ── Endpoints ─────────────────────────────────────────────────────────────

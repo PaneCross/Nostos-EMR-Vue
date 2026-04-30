@@ -61,7 +61,7 @@ class StateMedicaidConfigController extends Controller
     public function index(Request $request): InertiaResponse
     {
         $this->authorizeView($request);
-        $tenantId = $request->user()->tenant_id;
+        $tenantId = $request->user()->effectiveTenantId();
 
         $configs = StateMedicaidConfig::forTenant($tenantId)
             ->orderBy('state_code')
@@ -83,7 +83,7 @@ class StateMedicaidConfigController extends Controller
     public function store(Request $request): JsonResponse
     {
         $this->authorizeItAdmin($request);
-        $tenantId = $request->user()->tenant_id;
+        $tenantId = $request->user()->effectiveTenantId();
 
         $data = $request->validate([
             'state_code'            => [
@@ -130,7 +130,7 @@ class StateMedicaidConfigController extends Controller
     public function update(Request $request, StateMedicaidConfig $config): JsonResponse
     {
         $this->authorizeItAdmin($request);
-        $tenantId = $request->user()->tenant_id;
+        $tenantId = $request->user()->effectiveTenantId();
 
         abort_if($config->tenant_id !== $tenantId, 403);
 
@@ -175,7 +175,7 @@ class StateMedicaidConfigController extends Controller
     public function destroy(Request $request, StateMedicaidConfig $config): JsonResponse
     {
         $this->authorizeItAdmin($request);
-        $tenantId = $request->user()->tenant_id;
+        $tenantId = $request->user()->effectiveTenantId();
 
         abort_if($config->tenant_id !== $tenantId, 403);
 

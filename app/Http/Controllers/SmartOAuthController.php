@@ -64,7 +64,7 @@ class SmartOAuthController extends Controller
             'patient'               => 'nullable|integer', // standalone "select patient" shortcut
         ]);
 
-        $client = OAuthClient::forTenant($u->tenant_id)
+        $client = OAuthClient::forTenant($u->effectiveTenantId())
             ->active()
             ->where('client_id', $validated['client_id'])
             ->first();
@@ -103,7 +103,7 @@ class SmartOAuthController extends Controller
         // Mint authorization code
         $code = Str::random(96);
         $row = OAuthAuthorizationCode::create([
-            'tenant_id'             => $u->tenant_id,
+            'tenant_id'             => $u->effectiveTenantId(),
             'oauth_client_id'       => $client->id,
             'user_id'               => $u->id,
             'participant_id'        => $validated['patient'] ?? null,

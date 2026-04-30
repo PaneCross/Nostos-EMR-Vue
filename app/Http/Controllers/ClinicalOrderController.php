@@ -114,7 +114,7 @@ class ClinicalOrderController extends Controller
         $order = ClinicalOrder::create([
             ...$validated,
             'participant_id'     => $participant->id,
-            'tenant_id'          => $user->tenant_id,
+            'tenant_id'          => $user->effectiveTenantId(),
             'site_id'            => $participant->site_id,
             'ordered_by_user_id' => $user->id,
             'ordered_at'         => now(),
@@ -133,7 +133,7 @@ class ClinicalOrderController extends Controller
         // Create alert for stat and urgent orders (42 CFR §460.90 rapid response)
         if (in_array($validated['priority'], ['stat', 'urgent'])) {
             $this->alertService->create([
-                'tenant_id'          => $user->tenant_id,
+                'tenant_id'          => $user->effectiveTenantId(),
                 'alert_type'         => 'clinical_order_' . $validated['priority'],
                 'severity'           => $order->alertSeverity(),
                 'title'              => strtoupper($validated['priority']) . ' Order: ' . $order->orderTypeLabel(),
@@ -329,7 +329,7 @@ class ClinicalOrderController extends Controller
     public function worklist(Request $request): \Inertia\Response
     {
         $user     = Auth::user();
-        $tenantId = $user->tenant_id;
+        $tenantId = $user->effectiveTenantId();
 
         $dept           = $user->department;
         $statusFilter   = $request->query('status', '');
@@ -386,7 +386,7 @@ class ClinicalOrderController extends Controller
     private function authorizeTenant(Participant $participant): void
     {
         abort_if(
-            Auth::user()->tenant_id !== $participant->tenant_id,
+            Auth::user()->effectiveTenantId() !== $participant->tenant_id,
             403,
             'Access denied: cross-tenant participant access.'
         );

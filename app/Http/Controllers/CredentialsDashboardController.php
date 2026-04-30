@@ -38,7 +38,7 @@ class CredentialsDashboardController extends Controller
     ): InertiaResponse {
         $this->gate($request);
 
-        $matrix = $svc->matrixForTenant($request->user()->tenant_id);
+        $matrix = $svc->matrixForTenant($request->user()->effectiveTenantId());
 
         return Inertia::render('Executive/CredentialsDashboard', [
             'matrix' => $matrix,
@@ -55,7 +55,7 @@ class CredentialsDashboardController extends Controller
     ): JsonResponse {
         $this->gate($request);
 
-        $tenantId = $request->user()->tenant_id;
+        $tenantId = $request->user()->effectiveTenantId();
         $def = CredentialDefinition::forTenant($tenantId)->findOrFail($definitionId);
 
         $candidates = User::where('tenant_id', $tenantId)

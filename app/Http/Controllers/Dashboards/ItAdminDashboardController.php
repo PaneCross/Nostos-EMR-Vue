@@ -51,7 +51,7 @@ class ItAdminDashboardController extends Controller
     public function users(): JsonResponse
     {
         $this->requireDept();
-        $tenantId = Auth::user()->tenant_id;
+        $tenantId = Auth::user()->effectiveTenantId();
 
         // Recently provisioned (created in last 30 days)
         $recentlyProvisioned = User::where('tenant_id', $tenantId)
@@ -106,7 +106,7 @@ class ItAdminDashboardController extends Controller
     public function integrations(): JsonResponse
     {
         $this->requireDept();
-        $tenantId = Auth::user()->tenant_id;
+        $tenantId = Auth::user()->effectiveTenantId();
 
         $connectors = [];
         foreach (IntegrationLog::CONNECTOR_TYPES as $connectorType) {
@@ -152,7 +152,7 @@ class ItAdminDashboardController extends Controller
     public function audit(Request $request): JsonResponse
     {
         $this->requireDept();
-        $tenantId = Auth::user()->tenant_id;
+        $tenantId = Auth::user()->effectiveTenantId();
 
         $query = AuditLog::where('tenant_id', $tenantId)
             ->with(['user:id,first_name,last_name,department'])
@@ -192,7 +192,7 @@ class ItAdminDashboardController extends Controller
     public function config(): JsonResponse
     {
         $this->requireDept();
-        $tenantId = Auth::user()->tenant_id;
+        $tenantId = Auth::user()->effectiveTenantId();
 
         $tenant = Tenant::find($tenantId);
         $sites  = Site::where('tenant_id', $tenantId)
@@ -222,7 +222,7 @@ class ItAdminDashboardController extends Controller
     public function breakGlass(): JsonResponse
     {
         $this->requireDept();
-        $tenantId = Auth::user()->tenant_id;
+        $tenantId = Auth::user()->effectiveTenantId();
 
         $events = BreakGlassEvent::forTenant($tenantId)
             ->with(['user:id,first_name,last_name,department', 'participant:id,first_name,last_name,mrn'])
@@ -263,7 +263,7 @@ class ItAdminDashboardController extends Controller
     public function expiringCredentials(): JsonResponse
     {
         $this->requireDept();
-        $tenantId = Auth::user()->tenant_id;
+        $tenantId = Auth::user()->effectiveTenantId();
 
         $cutoff = now()->addDays(60)->toDateString();
 

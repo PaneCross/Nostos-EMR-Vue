@@ -43,11 +43,11 @@ class DataImportController extends Controller
             'file'   => 'required|file|mimes:csv,txt|max:10240',
         ]);
         $path = $request->file('file')->storeAs(
-            'data-imports/tenant-' . $u->tenant_id,
+            'data-imports/tenant-' . $u->effectiveTenantId(),
             'import-' . now()->format('Ymd-His') . '-' . bin2hex(random_bytes(3)) . '.csv'
         );
         $import = DataImport::create([
-            'tenant_id'           => $u->tenant_id,
+            'tenant_id'           => $u->effectiveTenantId(),
             'uploaded_by_user_id' => $u->id,
             'entity'              => $validated['entity'],
             'status'              => 'staged',
@@ -68,7 +68,7 @@ class DataImportController extends Controller
     {
         $this->gate();
         $u = Auth::user();
-        abort_unless($import->tenant_id === $u->tenant_id, 404);
+        abort_unless($import->tenant_id === $u->effectiveTenantId(), 404);
         $result = $this->svc->commit($import);
         AuditLog::record(
             action: 'data_import.committed',
@@ -83,7 +83,7 @@ class DataImportController extends Controller
     {
         $this->gate();
         $u = Auth::user();
-        $rows = DataImport::forTenant($u->tenant_id)
+        $rows = DataImport::forTenant($u->effectiveTenantId())
             ->orderByDesc('created_at')->limit(100)->get();
 
         if ($request->wantsJson()) {

@@ -27,7 +27,7 @@ class FormularyController extends Controller
     {
         $this->gate(['pharmacy', 'primary_care', 'therapies', 'qa_compliance', 'it_admin', 'finance']);
         $u = Auth::user();
-        $q = FormularyEntry::forTenant($u->tenant_id);
+        $q = FormularyEntry::forTenant($u->effectiveTenantId());
         if ($term = trim((string) $request->query('q', ''))) {
             $like = '%' . $term . '%';
             $q->where(function ($w) use ($like) {
@@ -43,7 +43,7 @@ class FormularyController extends Controller
             return response()->json(['entries' => $entries]);
         }
 
-        $pending = \App\Models\CoverageDetermination::forTenant($u->tenant_id)
+        $pending = \App\Models\CoverageDetermination::forTenant($u->effectiveTenantId())
             ->pending()->with('participant:id,first_name,last_name,mrn')
             ->orderByDesc('requested_at')->limit(50)->get();
 
@@ -70,7 +70,7 @@ class FormularyController extends Controller
             'notes'                        => 'nullable|string|max:2000',
         ]);
         $entry = FormularyEntry::create(array_merge($validated, [
-            'tenant_id'         => $u->tenant_id,
+            'tenant_id'         => $u->effectiveTenantId(),
             'added_by_user_id'  => $u->id,
             'last_reviewed_at'  => now(),
             'is_active'         => true,
@@ -88,7 +88,7 @@ class FormularyController extends Controller
     {
         $this->gate();
         $u = Auth::user();
-        abort_unless($entry->tenant_id === $u->tenant_id, 404);
+        abort_unless($entry->tenant_id === $u->effectiveTenantId(), 404);
         $validated = $request->validate([
             'drug_name'                    => 'sometimes|string|max:200',
             'generic_name'                 => 'nullable|string|max:200',
@@ -117,7 +117,7 @@ class FormularyController extends Controller
         $code  = trim((string) $request->query('rxnorm_code', ''));
         abort_unless($drug !== '' || $code !== '', 422, 'Provide drug_name or rxnorm_code.');
 
-        $q = FormularyEntry::forTenant($u->tenant_id)->active();
+        $q = FormularyEntry::forTenant($u->effectiveTenantId())->active();
         if ($code !== '') {
             $q->where('rxnorm_code', $code);
         } else {
@@ -142,7 +142,7 @@ class FormularyController extends Controller
     {
         $this->gate(['pharmacy', 'primary_care', 'qa_compliance', 'it_admin']);
         $u = Auth::user();
-        abort_unless($participant->tenant_id === $u->tenant_id, 404);
+        abort_unless($participant->tenant_id === $u->effectiveTenantId(), 404);
 
         $validated = $request->validate([
             'drug_name'              => 'required|string|max:200',
@@ -156,12 +156,12 @@ class FormularyController extends Controller
                 'nullable',
                 'integer',
                 \Illuminate\Validation\Rule::exists('emr_formulary_entries', 'id')
-                    ->where('tenant_id', $u->tenant_id),
+                    ->where('tenant_id', $u->effectiveTenantId()),
             ],
         ]);
 
         $row = CoverageDetermination::create(array_merge($validated, [
-            'tenant_id'            => $u->tenant_id,
+            'tenant_id'            => $u->effectiveTenantId(),
             'participant_id'       => $participant->id,
             'status'               => 'pending',
             'requested_at'         => now()->toDateString(),

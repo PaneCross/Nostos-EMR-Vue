@@ -32,7 +32,7 @@ class ReportDefinitionController extends Controller
     {
         $this->gate();
         $u = Auth::user();
-        $rows = ReportDefinition::forTenant($u->tenant_id)->visibleTo($u->id)
+        $rows = ReportDefinition::forTenant($u->effectiveTenantId())->visibleTo($u->id)
             ->orderByDesc('updated_at')->limit(200)->get();
         return response()->json(['reports' => $rows]);
     }
@@ -42,7 +42,7 @@ class ReportDefinitionController extends Controller
     {
         $this->gate();
         $u = Auth::user();
-        $rows = ReportDefinition::forTenant($u->tenant_id)->visibleTo($u->id)
+        $rows = ReportDefinition::forTenant($u->effectiveTenantId())->visibleTo($u->id)
             ->orderByDesc('updated_at')->limit(200)->get();
 
         return \Inertia\Inertia::render('Reports/CustomBuilder', [
@@ -64,7 +64,7 @@ class ReportDefinitionController extends Controller
             'is_shared'=> 'boolean',
         ]);
         $def = ReportDefinition::create(array_merge($validated, [
-            'tenant_id'          => $u->tenant_id,
+            'tenant_id'          => $u->effectiveTenantId(),
             'created_by_user_id' => $u->id,
         ]));
         AuditLog::record(
@@ -80,7 +80,7 @@ class ReportDefinitionController extends Controller
     {
         $this->gate();
         $u = Auth::user();
-        abort_unless($definition->tenant_id === $u->tenant_id, 404);
+        abort_unless($definition->tenant_id === $u->effectiveTenantId(), 404);
 
         $result = $this->runner->run($definition);
         AuditLog::record(
@@ -96,7 +96,7 @@ class ReportDefinitionController extends Controller
     {
         $this->gate();
         $u = Auth::user();
-        abort_unless($definition->tenant_id === $u->tenant_id, 404);
+        abort_unless($definition->tenant_id === $u->effectiveTenantId(), 404);
         return $this->runner->toCsv($definition);
     }
 
@@ -104,7 +104,7 @@ class ReportDefinitionController extends Controller
     {
         $this->gate();
         $u = Auth::user();
-        abort_unless($definition->tenant_id === $u->tenant_id, 404);
+        abort_unless($definition->tenant_id === $u->effectiveTenantId(), 404);
         $definition->delete();
         return response()->json(['ok' => true]);
     }

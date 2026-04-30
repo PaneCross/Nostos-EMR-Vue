@@ -23,14 +23,14 @@ class DietaryOrderController extends Controller
         abort_unless($u->isSuperAdmin() || in_array($u->department, $allow, true), 403);
     }
 
-    private function requireSameTenant($r, $u): void { abort_if($r->tenant_id !== $u->tenant_id, 403); }
+    private function requireSameTenant($r, $u): void { abort_if($r->tenant_id !== $u->effectiveTenantId(), 403); }
 
     public function index(Request $request, Participant $participant): JsonResponse
     {
         $this->gate();
         $u = Auth::user();
         $this->requireSameTenant($participant, $u);
-        return response()->json(['orders' => DietaryOrder::forTenant($u->tenant_id)
+        return response()->json(['orders' => DietaryOrder::forTenant($u->effectiveTenantId())
             ->where('participant_id', $participant->id)
             ->orderByDesc('effective_date')->get()]);
     }
@@ -58,7 +58,7 @@ class DietaryOrderController extends Controller
             ->update(['discontinued_date' => $validated['effective_date']]);
 
         $order = DietaryOrder::create(array_merge($validated, [
-            'tenant_id'         => $u->tenant_id,
+            'tenant_id'         => $u->effectiveTenantId(),
             'participant_id'    => $participant->id,
             'ordered_by_user_id'=> $u->id,
         ]));
@@ -83,7 +83,7 @@ class DietaryOrderController extends Controller
 
         if ($hasDm && $order->diet_type === 'regular') {
             $this->alerts->create([
-                'tenant_id'          => $u->tenant_id,
+                'tenant_id'          => $u->effectiveTenantId(),
                 'participant_id'     => $participant->id,
                 'source_module'      => 'dietary',
                 'alert_type'         => 'dietary_order_inconsistent',
@@ -129,7 +129,7 @@ class DietaryOrderController extends Controller
         $this->gate();
         $u = Auth::user();
 
-        $orders = DietaryOrder::forTenant($u->tenant_id)->active()
+        $orders = DietaryOrder::forTenant($u->effectiveTenantId())->active()
             ->with('participant:id,mrn,first_name,last_name,site_id')
             ->get();
 

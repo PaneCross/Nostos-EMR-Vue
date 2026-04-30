@@ -58,7 +58,7 @@ class CredentialBulkImportController extends Controller
     public function import(Request $request): JsonResponse
     {
         $this->gate($request);
-        $tenantId = $request->user()->tenant_id;
+        $tenantId = $request->user()->effectiveTenantId();
 
         $request->validate([
             'csv' => ['required', 'file', 'mimes:csv,txt', 'max:5120'],

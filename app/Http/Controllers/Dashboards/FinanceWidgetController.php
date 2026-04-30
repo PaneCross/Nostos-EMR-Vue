@@ -53,7 +53,7 @@ class FinanceWidgetController extends Controller
     public function capitation(): JsonResponse
     {
         $this->requireDept();
-        $tenantId    = Auth::user()->tenant_id;
+        $tenantId    = Auth::user()->effectiveTenantId();
         $currentMonth = now()->format('Y-m');
         $priorMonth   = now()->subMonth()->format('Y-m');
 
@@ -92,7 +92,7 @@ class FinanceWidgetController extends Controller
     public function authorizations(): JsonResponse
     {
         $this->requireDept();
-        $tenantId = Auth::user()->tenant_id;
+        $tenantId = Auth::user()->effectiveTenantId();
 
         $expiringAuths = Authorization::where('tenant_id', $tenantId)
             ->expiringWithin(30)
@@ -129,7 +129,7 @@ class FinanceWidgetController extends Controller
     public function enrollmentChanges(): JsonResponse
     {
         $this->requireDept();
-        $tenantId = Auth::user()->tenant_id;
+        $tenantId = Auth::user()->effectiveTenantId();
 
         $enrolledCount = Participant::where('tenant_id', $tenantId)
             ->whereMonth('enrollment_date', now()->month)
@@ -162,7 +162,7 @@ class FinanceWidgetController extends Controller
     public function encounters(): JsonResponse
     {
         $this->requireDept();
-        $tenantId = Auth::user()->tenant_id;
+        $tenantId = Auth::user()->effectiveTenantId();
 
         $totalEncounters = EncounterLog::where('tenant_id', $tenantId)->count();
 
@@ -196,7 +196,7 @@ class FinanceWidgetController extends Controller
     public function openDenials(): JsonResponse
     {
         $this->requireDept();
-        $tenantId = Auth::user()->tenant_id;
+        $tenantId = Auth::user()->effectiveTenantId();
 
         $open      = DenialRecord::where('tenant_id', $tenantId)->where('status', 'open')->count();
         $appealing = DenialRecord::where('tenant_id', $tenantId)->where('status', 'appealing')->count();
@@ -240,7 +240,7 @@ class FinanceWidgetController extends Controller
     public function revenueAtRisk(): JsonResponse
     {
         $this->requireDept();
-        $tenantId = Auth::user()->tenant_id;
+        $tenantId = Auth::user()->effectiveTenantId();
 
         // Category breakdown : groups open+appealing denials by category
         $byCategory = DenialRecord::where('tenant_id', $tenantId)
@@ -281,7 +281,7 @@ class FinanceWidgetController extends Controller
     public function recentRemittance(): JsonResponse
     {
         $this->requireDept();
-        $tenantId = Auth::user()->tenant_id;
+        $tenantId = Auth::user()->effectiveTenantId();
 
         $batches = RemittanceBatch::where('tenant_id', $tenantId)
             ->whereIn('status', ['processed', 'processing'])

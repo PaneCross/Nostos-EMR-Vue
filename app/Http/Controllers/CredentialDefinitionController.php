@@ -62,7 +62,7 @@ class CredentialDefinitionController extends Controller
     public function export(Request $request): JsonResponse
     {
         $this->gate($request);
-        $tenantId = $request->user()->tenant_id;
+        $tenantId = $request->user()->effectiveTenantId();
 
         $defs = CredentialDefinition::forTenant($tenantId)
             ->with(['targets', 'siteOverrides.site:id,name'])
@@ -81,7 +81,7 @@ class CredentialDefinitionController extends Controller
     public function index(Request $request): JsonResponse
     {
         $this->gate($request);
-        $tenantId = $request->user()->tenant_id;
+        $tenantId = $request->user()->effectiveTenantId();
 
         $definitions = CredentialDefinition::forTenant($tenantId)
             ->with(['targets', 'siteOverrides.site:id,name'])
@@ -103,7 +103,7 @@ class CredentialDefinitionController extends Controller
     public function store(Request $request): JsonResponse
     {
         $this->gate($request);
-        $tenantId = $request->user()->tenant_id;
+        $tenantId = $request->user()->effectiveTenantId();
 
         $v = $this->validatePayload($request, $tenantId, null);
 
@@ -144,9 +144,9 @@ class CredentialDefinitionController extends Controller
     public function update(Request $request, CredentialDefinition $credentialDefinition): JsonResponse
     {
         $this->gate($request);
-        abort_if($credentialDefinition->tenant_id !== $request->user()->tenant_id, 403);
+        abort_if($credentialDefinition->tenant_id !== $request->user()->effectiveTenantId(), 403);
 
-        $v = $this->validatePayload($request, $request->user()->tenant_id, $credentialDefinition);
+        $v = $this->validatePayload($request, $request->user()->effectiveTenantId(), $credentialDefinition);
 
         DB::transaction(function () use ($credentialDefinition, $v, $request) {
             $old = $credentialDefinition->toArray();
@@ -193,7 +193,7 @@ class CredentialDefinitionController extends Controller
     public function previewEmail(Request $request, CredentialDefinition $credentialDefinition): \Illuminate\Http\Response
     {
         $this->gate($request);
-        abort_if($credentialDefinition->tenant_id !== $request->user()->tenant_id, 403);
+        abort_if($credentialDefinition->tenant_id !== $request->user()->effectiveTenantId(), 403);
 
         $days = (int) $request->query('days', 30);
         $isSupervisor = (bool) $request->query('supervisor', false);
@@ -237,7 +237,7 @@ class CredentialDefinitionController extends Controller
 
         $user = $request->user();
         $mockCredential = new \App\Models\StaffCredential([
-            'tenant_id' => $user->tenant_id,
+            'tenant_id' => $user->effectiveTenantId(),
             'user_id'   => $user->id,
             'credential_type' => 'license',
             'title'     => $title,
@@ -260,7 +260,7 @@ class CredentialDefinitionController extends Controller
     public function clone(Request $request, CredentialDefinition $credentialDefinition): JsonResponse
     {
         $this->gate($request);
-        abort_if($credentialDefinition->tenant_id !== $request->user()->tenant_id, 403);
+        abort_if($credentialDefinition->tenant_id !== $request->user()->effectiveTenantId(), 403);
 
         $newCode = $this->uniqueCloneCode($credentialDefinition->tenant_id, $credentialDefinition->code);
 
@@ -312,7 +312,7 @@ class CredentialDefinitionController extends Controller
     public function destroy(Request $request, CredentialDefinition $credentialDefinition): JsonResponse
     {
         $this->gate($request);
-        abort_if($credentialDefinition->tenant_id !== $request->user()->tenant_id, 403);
+        abort_if($credentialDefinition->tenant_id !== $request->user()->effectiveTenantId(), 403);
 
         if ($credentialDefinition->is_cms_mandatory) {
             return response()->json([
@@ -336,7 +336,7 @@ class CredentialDefinitionController extends Controller
     public function storeSiteOverride(Request $request, CredentialDefinition $credentialDefinition): JsonResponse
     {
         $this->gate($request);
-        abort_if($credentialDefinition->tenant_id !== $request->user()->tenant_id, 403);
+        abort_if($credentialDefinition->tenant_id !== $request->user()->effectiveTenantId(), 403);
 
         if ($credentialDefinition->is_cms_mandatory) {
             return response()->json([
@@ -346,12 +346,12 @@ class CredentialDefinitionController extends Controller
 
         $v = $request->validate([
             'site_id' => ['required', 'integer',
-                Rule::exists('shared_sites', 'id')->where('tenant_id', $request->user()->tenant_id)],
+                Rule::exists('shared_sites', 'id')->where('tenant_id', $request->user()->effectiveTenantId())],
         ]);
 
         $override = CredentialDefinitionSiteOverride::updateOrCreate(
             [
-                'tenant_id'                 => $request->user()->tenant_id,
+                'tenant_id'                 => $request->user()->effectiveTenantId(),
                 'site_id'                   => $v['site_id'],
                 'credential_definition_id'  => $credentialDefinition->id,
             ],
@@ -379,7 +379,7 @@ class CredentialDefinitionController extends Controller
         int $siteId
     ): JsonResponse {
         $this->gate($request);
-        abort_if($credentialDefinition->tenant_id !== $request->user()->tenant_id, 403);
+        abort_if($credentialDefinition->tenant_id !== $request->user()->effectiveTenantId(), 403);
 
         CredentialDefinitionSiteOverride::where('credential_definition_id', $credentialDefinition->id)
             ->where('site_id', $siteId)

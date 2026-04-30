@@ -43,7 +43,7 @@ class EnrollmentReconciliationController extends Controller
     public function index(Request $request): InertiaResponse
     {
         $this->gate($request);
-        $tenantId = $request->user()->tenant_id;
+        $tenantId = $request->user()->effectiveTenantId();
 
         $mmrFiles = MmrFile::where('tenant_id', $tenantId)
             ->with('uploadedBy:id,first_name,last_name')
@@ -125,7 +125,7 @@ class EnrollmentReconciliationController extends Controller
     public function showMmrFile(Request $request, MmrFile $file): JsonResponse
     {
         $this->gate($request);
-        abort_if($file->tenant_id !== $request->user()->tenant_id, 403);
+        abort_if($file->tenant_id !== $request->user()->effectiveTenantId(), 403);
         return response()->json([
             'file'    => $file,
             'summary' => $this->reconciliation->reconciliationSummary($file),
@@ -143,10 +143,10 @@ class EnrollmentReconciliationController extends Controller
 
         $user = $request->user();
         $upload = $request->file('file');
-        $storagePath = $upload->store("mmr/{$user->tenant_id}", 'local');
+        $storagePath = $upload->store("mmr/{$user->effectiveTenantId()}", 'local');
 
         $file = MmrFile::create([
-            'tenant_id'           => $user->tenant_id,
+            'tenant_id'           => $user->effectiveTenantId(),
             'uploaded_by_user_id' => $user->id,
             'period_year'         => (int) $v['period_year'],
             'period_month'        => (int) $v['period_month'],
@@ -180,10 +180,10 @@ class EnrollmentReconciliationController extends Controller
 
         $user = $request->user();
         $upload = $request->file('file');
-        $storagePath = $upload->store("trr/{$user->tenant_id}", 'local');
+        $storagePath = $upload->store("trr/{$user->effectiveTenantId()}", 'local');
 
         $file = TrrFile::create([
-            'tenant_id'           => $user->tenant_id,
+            'tenant_id'           => $user->effectiveTenantId(),
             'uploaded_by_user_id' => $user->id,
             'original_filename'   => $upload->getClientOriginalName(),
             'storage_path'        => $storagePath,
@@ -209,7 +209,7 @@ class EnrollmentReconciliationController extends Controller
     public function resolveDiscrepancy(Request $request, MmrRecord $record): JsonResponse
     {
         $this->gate($request);
-        abort_if($record->tenant_id !== $request->user()->tenant_id, 403);
+        abort_if($record->tenant_id !== $request->user()->effectiveTenantId(), 403);
 
         $v = $request->validate([
             'action' => ['required', 'in:resolved,ignored'],

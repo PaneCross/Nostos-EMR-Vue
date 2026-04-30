@@ -43,7 +43,7 @@ class SiteContextController extends Controller
         $site = Site::findOrFail($data['site_id']);
 
         // Executives can only switch within their own tenant
-        if ($user->isExecutive() && $site->tenant_id !== $user->tenant_id) {
+        if ($user->isExecutive() && $site->tenant_id !== $user->effectiveTenantId()) {
             return response()->json(['message' => 'Cannot switch to a site outside your organisation.'], 403);
         }
 

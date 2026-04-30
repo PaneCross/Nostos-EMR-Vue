@@ -55,7 +55,7 @@ class PdeController extends Controller
         }
 
         // Axios data-fetch from the mounted React component → return JSON list.
-        $tenantId = $request->user()->tenant_id;
+        $tenantId = $request->user()->effectiveTenantId();
 
         $query = PdeRecord::forTenant($tenantId)
             ->with(['participant:id,mrn,first_name,last_name'])
@@ -98,7 +98,7 @@ class PdeController extends Controller
     public function store(Request $request): JsonResponse
     {
         $this->authorizeFinance($request);
-        $tenantId = $request->user()->tenant_id;
+        $tenantId = $request->user()->effectiveTenantId();
 
         $data = $request->validate([
             'participant_id'    => ['required', 'integer', 'exists:emr_participants,id'],
@@ -151,7 +151,7 @@ class PdeController extends Controller
     public function troop(Request $request): JsonResponse
     {
         $this->authorizeFinance($request);
-        $tenantId  = $request->user()->tenant_id;
+        $tenantId  = $request->user()->effectiveTenantId();
         $year      = (int) $request->query('year', now()->year);
         $yearStart = Carbon::createFromDate($year, 1, 1)->startOfDay();
 

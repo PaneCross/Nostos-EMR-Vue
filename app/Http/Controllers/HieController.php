@@ -42,7 +42,7 @@ class HieController extends Controller
     {
         $this->gate($r);
         $u = Auth::user();
-        abort_if($participant->tenant_id !== $u->tenant_id, 403);
+        abort_if($participant->tenant_id !== $u->effectiveTenantId(), 403);
 
         $xml = $ccd->build($participant);
         $result = $this->gateway()->publishCcd($participant, $xml);
@@ -77,7 +77,7 @@ class HieController extends Controller
     {
         $this->gate($r);
         $u = Auth::user();
-        abort_if($participant->tenant_id !== $u->tenant_id, 403);
+        abort_if($participant->tenant_id !== $u->effectiveTenantId(), 403);
 
         return response()->json([
             'gateway'   => $this->gateway()->name(),
@@ -91,7 +91,7 @@ class HieController extends Controller
         // Reuse existing FHIR API token guard via middleware (registered in routes).
         $u = Auth::user();
         if (! $u) abort(401);
-        abort_if($participant->tenant_id !== $u->tenant_id, 403);
+        abort_if($participant->tenant_id !== $u->effectiveTenantId(), 403);
         $xml = $ccd->build($participant);
 
         AuditLog::record(

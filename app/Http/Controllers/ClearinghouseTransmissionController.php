@@ -43,9 +43,9 @@ class ClearinghouseTransmissionController extends Controller
     {
         $this->gate();
         $u = Auth::user();
-        abort_unless($batch->tenant_id === $u->tenant_id, 404);
+        abort_unless($batch->tenant_id === $u->effectiveTenantId(), 404);
 
-        [$gateway, $cfg] = $this->factory->forTenant($u->tenant_id);
+        [$gateway, $cfg] = $this->factory->forTenant($u->effectiveTenantId());
 
         try {
             $result = $gateway->transmitClaimBatch($batch, $cfg);
@@ -109,9 +109,9 @@ class ClearinghouseTransmissionController extends Controller
     {
         $this->gate();
         $u = Auth::user();
-        abort_unless($batch->tenant_id === $u->tenant_id, 404);
+        abort_unless($batch->tenant_id === $u->effectiveTenantId(), 404);
 
-        $rows = ClearinghouseTransmission::forTenant($u->tenant_id)
+        $rows = ClearinghouseTransmission::forTenant($u->effectiveTenantId())
             ->where('edi_batch_id', $batch->id)
             ->orderByDesc('attempted_at')
             ->limit(100)

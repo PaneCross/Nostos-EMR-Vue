@@ -29,7 +29,7 @@ class SdrController extends Controller
 {
     private function authorizeForTenant(Sdr $sdr, $user): void
     {
-        abort_if($sdr->tenant_id !== $user->tenant_id, 403);
+        abort_if($sdr->tenant_id !== $user->effectiveTenantId(), 403);
     }
 
     /**
@@ -41,7 +41,7 @@ class SdrController extends Controller
         $user = $request->user();
 
         // My department's requests (incoming)
-        $myDept = Sdr::where('tenant_id', $user->tenant_id)
+        $myDept = Sdr::where('tenant_id', $user->effectiveTenantId())
             ->forDepartment($user->department)
             ->open()
             ->with(['participant:id,mrn,first_name,last_name', 'requestingUser:id,first_name,last_name'])
@@ -49,7 +49,7 @@ class SdrController extends Controller
             ->get();
 
         // Assigned directly to this user
-        $assignedToMe = Sdr::where('tenant_id', $user->tenant_id)
+        $assignedToMe = Sdr::where('tenant_id', $user->effectiveTenantId())
             ->where('assigned_to_user_id', $user->id)
             ->open()
             ->with(['participant:id,mrn,first_name,last_name'])
@@ -57,7 +57,7 @@ class SdrController extends Controller
             ->get();
 
         // Overdue across tenant
-        $overdue = Sdr::where('tenant_id', $user->tenant_id)
+        $overdue = Sdr::where('tenant_id', $user->effectiveTenantId())
             ->overdue()
             ->with(['participant:id,mrn,first_name,last_name', 'requestingUser:id,first_name,last_name'])
             ->orderBy('due_at')
@@ -66,7 +66,7 @@ class SdrController extends Controller
         // All SDRs (QA/Compliance only)
         $allSdrs = null;
         if ($user->department === 'qa_compliance') {
-            $allSdrs = Sdr::where('tenant_id', $user->tenant_id)
+            $allSdrs = Sdr::where('tenant_id', $user->effectiveTenantId())
                 ->with(['participant:id,mrn,first_name,last_name', 'requestingUser:id,first_name,last_name'])
                 ->orderBy('due_at')
                 ->paginate(50);
@@ -106,7 +106,7 @@ class SdrController extends Controller
         ]);
 
         $sdr = Sdr::create(array_merge($validated, [
-            'tenant_id'             => $user->tenant_id,
+            'tenant_id'             => $user->effectiveTenantId(),
             'requesting_user_id'    => $user->id,
             'requesting_department' => $user->department,
             'submitted_at'          => now(),

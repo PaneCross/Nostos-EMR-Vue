@@ -41,7 +41,7 @@ class EnrollmentDashboardController extends Controller
     public function pipeline(): JsonResponse
     {
         $this->requireDept();
-        $tenantId = Auth::user()->tenant_id;
+        $tenantId = Auth::user()->effectiveTenantId();
 
         // Count per status, limited to pipeline statuses (exclude declined/withdrawn)
         $counts = Referral::forTenant($tenantId)
@@ -85,7 +85,7 @@ class EnrollmentDashboardController extends Controller
     public function eligibilityPending(): JsonResponse
     {
         $this->requireDept();
-        $tenantId = Auth::user()->tenant_id;
+        $tenantId = Auth::user()->effectiveTenantId();
 
         $referrals = Referral::forTenant($tenantId)
             ->where('status', 'eligibility_pending')
@@ -119,7 +119,7 @@ class EnrollmentDashboardController extends Controller
     public function disenrollments(): JsonResponse
     {
         $this->requireDept();
-        $tenantId = Auth::user()->tenant_id;
+        $tenantId = Auth::user()->effectiveTenantId();
 
         $participants = Participant::where('tenant_id', $tenantId)
             ->whereNotNull('disenrollment_date')
@@ -169,7 +169,7 @@ class EnrollmentDashboardController extends Controller
     public function newReferrals(): JsonResponse
     {
         $this->requireDept();
-        $tenantId = Auth::user()->tenant_id;
+        $tenantId = Auth::user()->effectiveTenantId();
 
         $weekStart = now()->startOfWeek(); // Monday
 
@@ -207,7 +207,7 @@ class EnrollmentDashboardController extends Controller
     public function nfLocRecert(): \Illuminate\Http\JsonResponse
     {
         $this->requireDept();
-        $tenantId = Auth::user()->tenant_id;
+        $tenantId = Auth::user()->effectiveTenantId();
 
         $cutoff = now()->addDays(60)->toDateString();
 

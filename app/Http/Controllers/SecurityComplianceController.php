@@ -78,7 +78,7 @@ class SecurityComplianceController extends Controller
     {
         $this->requireItAdmin($request);
 
-        $tenantId = $request->user()->tenant_id;
+        $tenantId = $request->user()->effectiveTenantId();
 
         $baaRecords = BaaRecord::forTenant($tenantId)
             ->orderByDesc('baa_signed_date')
@@ -142,7 +142,7 @@ class SecurityComplianceController extends Controller
         ]);
 
         $baa = BaaRecord::create(array_merge($validated, [
-            'tenant_id' => $request->user()->tenant_id,
+            'tenant_id' => $request->user()->effectiveTenantId(),
         ]));
 
         return response()->json(['message' => 'BAA record created.', 'baa' => $baa->toApiArray()], 201);
@@ -156,7 +156,7 @@ class SecurityComplianceController extends Controller
     public function baaUpdate(Request $request, BaaRecord $baa): JsonResponse
     {
         $this->requireItAdmin($request);
-        abort_if($baa->tenant_id !== $request->user()->tenant_id, 403, 'Cross-tenant BAA access denied.');
+        abort_if($baa->tenant_id !== $request->user()->effectiveTenantId(), 403, 'Cross-tenant BAA access denied.');
 
         $validated = $request->validate([
             'vendor_name'         => 'required|string|max:255',
@@ -199,7 +199,7 @@ class SecurityComplianceController extends Controller
         ]);
 
         $sra = SraRecord::create(array_merge($validated, [
-            'tenant_id' => $request->user()->tenant_id,
+            'tenant_id' => $request->user()->effectiveTenantId(),
         ]));
 
         return response()->json(['message' => 'SRA record created.', 'sra' => $sra->toApiArray()], 201);
@@ -213,7 +213,7 @@ class SecurityComplianceController extends Controller
     public function sraUpdate(Request $request, SraRecord $sra): JsonResponse
     {
         $this->requireItAdmin($request);
-        abort_if($sra->tenant_id !== $request->user()->tenant_id, 403, 'Cross-tenant SRA access denied.');
+        abort_if($sra->tenant_id !== $request->user()->effectiveTenantId(), 403, 'Cross-tenant SRA access denied.');
 
         $validated = $request->validate([
             'sra_date'            => 'required|date',

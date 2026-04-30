@@ -39,7 +39,7 @@ class GlobalSearchController extends Controller
             'kinds' => 'nullable|string',
         ]);
         $term = $validated['q'];
-        $tenantId = $u->tenant_id;
+        $tenantId = $u->effectiveTenantId();
 
         $kindsParam = $validated['kinds'] ?? null;
         $requestedKinds = $kindsParam

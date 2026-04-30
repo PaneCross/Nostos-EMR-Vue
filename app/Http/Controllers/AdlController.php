@@ -21,7 +21,7 @@ class AdlController extends Controller
 {
     private function authorizeForTenant(Participant $participant, $user): void
     {
-        abort_if($participant->tenant_id !== $user->tenant_id, 403);
+        abort_if($participant->tenant_id !== $user->effectiveTenantId(), 403);
     }
 
     /**
@@ -79,7 +79,7 @@ class AdlController extends Controller
 
         $record = AdlRecord::create(array_merge($request->validated(), [
             'participant_id'      => $participant->id,
-            'tenant_id'           => $user->tenant_id,
+            'tenant_id'           => $user->effectiveTenantId(),
             'recorded_by_user_id' => $user->id,
             'recorded_at'         => $request->input('recorded_at', now()),
         ]));

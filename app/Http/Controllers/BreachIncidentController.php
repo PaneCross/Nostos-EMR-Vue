@@ -30,7 +30,7 @@ class BreachIncidentController extends Controller
     {
         $this->gate();
         $u = Auth::user();
-        $rows = BreachIncident::forTenant($u->tenant_id)
+        $rows = BreachIncident::forTenant($u->effectiveTenantId())
             ->orderByDesc('discovered_at')
             ->with('loggedBy:id,first_name,last_name')
             ->get();
@@ -59,7 +59,7 @@ class BreachIncidentController extends Controller
         $deadline = BreachIncident::computeHhsDeadline($validated['affected_count'], $discovered);
 
         $row = BreachIncident::create(array_merge($validated, [
-            'tenant_id'        => $u->tenant_id,
+            'tenant_id'        => $u->effectiveTenantId(),
             'hhs_deadline_at'  => $deadline,
             'status'           => 'open',
             'logged_by_user_id' => $u->id,
@@ -78,14 +78,14 @@ class BreachIncidentController extends Controller
         // Hardwired IT Admin / Compliance chain (45 CFR §164.404) is unaffected;
         // this is an additional copy when the org has opted in.
         $prefs = app(NotificationPreferenceService::class);
-        if ($prefs->shouldNotify($u->tenant_id, 'designation.program_director.breach_incident_logged')) {
-            $director = User::where('tenant_id', $u->tenant_id)
+        if ($prefs->shouldNotify($u->effectiveTenantId(), 'designation.program_director.breach_incident_logged')) {
+            $director = User::where('tenant_id', $u->effectiveTenantId())
                 ->withDesignation('program_director')
                 ->where('is_active', true)
                 ->first();
             if ($director) {
                 Alert::create([
-                    'tenant_id'          => $u->tenant_id,
+                    'tenant_id'          => $u->effectiveTenantId(),
                     'alert_type'         => 'breach_incident_logged',
                     'title'              => "HIPAA Breach Logged : Incident #{$row->id}",
                     'message'            => "HIPAA breach incident logged: {$validated['breach_type']}, {$validated['affected_count']} affected. HHS deadline: " . $deadline?->toDateString() . '.',
@@ -109,7 +109,7 @@ class BreachIncidentController extends Controller
     {
         $this->gate();
         $u = Auth::user();
-        abort_if($breachIncident->tenant_id !== $u->tenant_id, 403);
+        abort_if($breachIncident->tenant_id !== $u->effectiveTenantId(), 403);
         $breachIncident->update([
             'individual_notification_sent_at' => now(),
             'status' => 'individuals_notified',
@@ -127,7 +127,7 @@ class BreachIncidentController extends Controller
     {
         $this->gate();
         $u = Auth::user();
-        abort_if($breachIncident->tenant_id !== $u->tenant_id, 403);
+        abort_if($breachIncident->tenant_id !== $u->effectiveTenantId(), 403);
         $breachIncident->update([
             'hhs_notified_at' => now(),
             'status' => 'hhs_notified',
@@ -146,8 +146,8 @@ class BreachIncidentController extends Controller
     {
         $this->gate();
         $u = Auth::user();
-        abort_if($breachIncident->tenant_id !== $u->tenant_id, 403);
-        abort_if($participant->tenant_id !== $u->tenant_id, 403);
+        abort_if($breachIncident->tenant_id !== $u->effectiveTenantId(), 403);
+        abort_if($participant->tenant_id !== $u->effectiveTenantId(), 403);
 
         $tenant = $u->tenant;
         $address = $participant->addresses()->where('is_primary', true)->first()

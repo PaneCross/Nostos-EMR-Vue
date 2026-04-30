@@ -37,7 +37,7 @@ class CcdaController extends Controller
     {
         $this->gate();
         $u = Auth::user();
-        abort_unless($participant->tenant_id === $u->tenant_id, 404);
+        abort_unless($participant->tenant_id === $u->effectiveTenantId(), 404);
 
         $xml = $this->exporter->build($participant);
 
@@ -78,7 +78,7 @@ class CcdaController extends Controller
     {
         $this->gate();
         $u = Auth::user();
-        abort_unless($participant->tenant_id === $u->tenant_id, 404);
+        abort_unless($participant->tenant_id === $u->effectiveTenantId(), 404);
 
         $request->validate([
             'ccda_file' => 'required|file|mimetypes:application/xml,text/xml,text/plain|max:10240',

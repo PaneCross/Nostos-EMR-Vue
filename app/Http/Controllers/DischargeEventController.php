@@ -24,7 +24,7 @@ class DischargeEventController extends Controller
         abort_unless($u->isSuperAdmin() || in_array($u->department, $allow, true), 403);
     }
 
-    private function requireSameTenant($r, $u): void { abort_if($r->tenant_id !== $u->tenant_id, 403); }
+    private function requireSameTenant($r, $u): void { abort_if($r->tenant_id !== $u->effectiveTenantId(), 403); }
 
     public function index(Request $request, Participant $participant): JsonResponse
     {
@@ -32,7 +32,7 @@ class DischargeEventController extends Controller
         $u = Auth::user();
         $this->requireSameTenant($participant, $u);
 
-        $events = DischargeEvent::forTenant($u->tenant_id)
+        $events = DischargeEvent::forTenant($u->effectiveTenantId())
             ->where('participant_id', $participant->id)
             ->orderByDesc('discharged_on')->get();
 
@@ -54,7 +54,7 @@ class DischargeEventController extends Controller
 
         $dischargedOn = Carbon::parse($validated['discharged_on']);
         $event = DischargeEvent::create(array_merge($validated, [
-            'tenant_id'         => $u->tenant_id,
+            'tenant_id'         => $u->effectiveTenantId(),
             'participant_id'    => $participant->id,
             'checklist'         => DischargeEvent::buildDefaultChecklist($dischargedOn),
             'created_by_user_id'=> $u->id,

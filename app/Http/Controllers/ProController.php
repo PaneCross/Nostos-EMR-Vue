@@ -38,7 +38,7 @@ class ProController extends Controller
             'delivery_channel' => 'nullable|in:sms,portal,phone',
         ]);
         $p = Participant::findOrFail($validated['participant_id']);
-        abort_if($p->tenant_id !== $u->tenant_id, 403);
+        abort_if($p->tenant_id !== $u->effectiveTenantId(), 403);
         $survey = ProSurvey::findOrFail($validated['survey_id']);
 
         $r = $this->svc->recordResponse($p, $survey, $validated['answers'], $validated['delivery_channel'] ?? 'portal');
@@ -50,8 +50,8 @@ class ProController extends Controller
     {
         $this->gate();
         $u = Auth::user();
-        abort_if($participant->tenant_id !== $u->tenant_id, 403);
-        $rows = ProResponse::forTenant($u->tenant_id)
+        abort_if($participant->tenant_id !== $u->effectiveTenantId(), 403);
+        $rows = ProResponse::forTenant($u->effectiveTenantId())
             ->where('participant_id', $participant->id)
             ->orderByDesc('received_at')->limit(52)->get();
         return response()->json(['rows' => $rows->groupBy('survey_id')]);

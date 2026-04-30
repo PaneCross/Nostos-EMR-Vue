@@ -25,7 +25,7 @@ class BillingReconciliationController extends Controller
     {
         $this->gate();
         $u = Auth::user();
-        $rows = PdeRecord::forTenant($u->tenant_id)
+        $rows = PdeRecord::forTenant($u->effectiveTenantId())
             ->selectRaw("
                 DATE_TRUNC('month', dispense_date)::date AS month,
                 SUM(CASE WHEN submission_status = 'submitted' THEN ingredient_cost + dispensing_fee ELSE 0 END) AS submitted,
@@ -47,7 +47,7 @@ class BillingReconciliationController extends Controller
     {
         $this->gate();
         $u = Auth::user();
-        $rows = CapitationRecord::forTenant($u->tenant_id)
+        $rows = CapitationRecord::forTenant($u->effectiveTenantId())
             ->selectRaw("
                 month_year,
                 COUNT(*) AS participant_count,

@@ -49,7 +49,7 @@ class HpmsIncidentReportController extends Controller
 
         $summary = [];
         foreach (self::REPORTS as $key => $types) {
-            $summary[$key] = Incident::forTenant($u->tenant_id)
+            $summary[$key] = Incident::forTenant($u->effectiveTenantId())
                 ->whereIn('incident_type', $types)
                 ->whereBetween('occurred_at', [$from, $to])
                 ->count();
@@ -73,7 +73,7 @@ class HpmsIncidentReportController extends Controller
         $from = $request->query('from', Carbon::now()->startOfQuarter()->toDateString());
         $to   = $request->query('to',   Carbon::now()->endOfQuarter()->toDateString());
 
-        $rows = Incident::forTenant($u->tenant_id)
+        $rows = Incident::forTenant($u->effectiveTenantId())
             ->whereIn('incident_type', self::REPORTS[$report])
             ->whereBetween('occurred_at', [$from, $to])
             ->with('participant:id,mrn,first_name,last_name,medicare_id,dob')

@@ -45,7 +45,7 @@ class TherapiesDashboardController extends Controller
     public function schedule(): JsonResponse
     {
         $this->requireDept();
-        $tenantId = Auth::user()->tenant_id;
+        $tenantId = Auth::user()->effectiveTenantId();
 
         $appointments = Appointment::where('tenant_id', $tenantId)
             ->whereIn('appointment_type', ['therapy_pt', 'therapy_ot', 'therapy_st', 'telehealth'])
@@ -85,7 +85,7 @@ class TherapiesDashboardController extends Controller
     public function goals(): JsonResponse
     {
         $this->requireDept();
-        $tenantId = Auth::user()->tenant_id;
+        $tenantId = Auth::user()->effectiveTenantId();
 
         $goals = CarePlanGoal::whereHas('carePlan', fn ($q) => $q
                 ->where('tenant_id', $tenantId)
@@ -126,7 +126,7 @@ class TherapiesDashboardController extends Controller
     public function sdrs(): JsonResponse
     {
         $this->requireDept();
-        $tenantId = Auth::user()->tenant_id;
+        $tenantId = Auth::user()->effectiveTenantId();
 
         $sdrs = Sdr::where('tenant_id', $tenantId)
             ->forDepartment('therapies')
@@ -165,7 +165,7 @@ class TherapiesDashboardController extends Controller
     public function docs(): JsonResponse
     {
         $this->requireDept();
-        $tenantId = Auth::user()->tenant_id;
+        $tenantId = Auth::user()->effectiveTenantId();
 
         $notes = ClinicalNote::where('tenant_id', $tenantId)
             ->whereIn('note_type', ['therapy_pt', 'therapy_ot', 'therapy_st'])
@@ -205,7 +205,7 @@ class TherapiesDashboardController extends Controller
     public function orders(Request $request): JsonResponse
     {
         $this->requireDept();
-        $tenantId = Auth::user()->tenant_id;
+        $tenantId = Auth::user()->effectiveTenantId();
 
         $therapyTypes = ['therapy_pt', 'therapy_ot', 'therapy_st', 'therapy_speech'];
 

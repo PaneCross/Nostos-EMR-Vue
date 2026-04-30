@@ -27,7 +27,7 @@ class TransportController extends Controller
      */
     public function dashboard(Request $request): Response
     {
-        $tenantId = Auth::user()->tenant_id;
+        $tenantId = Auth::user()->effectiveTenantId();
 
         // Load all active participants with their active transport-relevant flags
         // and primary address (for route planning context).

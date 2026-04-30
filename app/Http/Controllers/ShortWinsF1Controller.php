@@ -39,7 +39,7 @@ class ShortWinsF1Controller extends Controller
         $from = now()->toDateString();
         $to   = now()->addDays(30)->toDateString();
 
-        $rows = Immunization::where('tenant_id', $u->tenant_id)
+        $rows = Immunization::where('tenant_id', $u->effectiveTenantId())
             ->whereNotNull('next_dose_due')
             ->whereBetween('next_dose_due', [$from, $to])
             ->with('participant:id,mrn,first_name,last_name')
@@ -58,7 +58,7 @@ class ShortWinsF1Controller extends Controller
         $u = Auth::user();
 
         $rows = DB::table('emr_emar_records')
-            ->where('tenant_id', $u->tenant_id)
+            ->where('tenant_id', $u->effectiveTenantId())
             ->where('status', 'late')
             ->where('scheduled_time', '>=', now()->subDays(30))
             ->selectRaw('DATE(scheduled_time) AS day, COUNT(*) AS count')
@@ -75,8 +75,8 @@ class ShortWinsF1Controller extends Controller
     {
         $this->gate();
         $u = Auth::user();
-        abort_if($wound->tenant_id !== $u->tenant_id, 403);
-        $rows = WoundPhoto::forTenant($u->tenant_id)
+        abort_if($wound->tenant_id !== $u->effectiveTenantId(), 403);
+        $rows = WoundPhoto::forTenant($u->effectiveTenantId())
             ->where('wound_id', $wound->id)
             ->orderByDesc('taken_at')->get();
         return response()->json(['photos' => $rows]);
@@ -87,7 +87,7 @@ class ShortWinsF1Controller extends Controller
     {
         $this->gate();
         $u = Auth::user();
-        abort_if($wound->tenant_id !== $u->tenant_id, 403);
+        abort_if($wound->tenant_id !== $u->effectiveTenantId(), 403);
 
         $validated = $request->validate([
             'document_id' => 'nullable|integer|exists:emr_documents,id',
@@ -95,7 +95,7 @@ class ShortWinsF1Controller extends Controller
             'notes'       => 'nullable|string|max:2000',
         ]);
         $photo = WoundPhoto::create(array_merge($validated, [
-            'tenant_id'        => $u->tenant_id,
+            'tenant_id'        => $u->effectiveTenantId(),
             'wound_id'         => $wound->id,
             'taken_by_user_id' => $u->id,
         ]));
@@ -115,8 +115,8 @@ class ShortWinsF1Controller extends Controller
     {
         $this->gate();
         $u = Auth::user();
-        abort_if($participant->tenant_id !== $u->tenant_id, 403);
-        $rows = GoalsOfCareConversation::forTenant($u->tenant_id)
+        abort_if($participant->tenant_id !== $u->effectiveTenantId(), 403);
+        $rows = GoalsOfCareConversation::forTenant($u->effectiveTenantId())
             ->where('participant_id', $participant->id)
             ->orderByDesc('conversation_date')->get();
         return response()->json(['conversations' => $rows]);
@@ -127,7 +127,7 @@ class ShortWinsF1Controller extends Controller
     {
         $this->gate();
         $u = Auth::user();
-        abort_if($participant->tenant_id !== $u->tenant_id, 403);
+        abort_if($participant->tenant_id !== $u->effectiveTenantId(), 403);
 
         $validated = $request->validate([
             'conversation_date'    => 'required|date|before_or_equal:today',
@@ -137,7 +137,7 @@ class ShortWinsF1Controller extends Controller
             'next_steps'           => 'nullable|string|max:2000',
         ]);
         $c = GoalsOfCareConversation::create(array_merge($validated, [
-            'tenant_id'           => $u->tenant_id,
+            'tenant_id'           => $u->effectiveTenantId(),
             'participant_id'      => $participant->id,
             'recorded_by_user_id' => $u->id,
         ]));

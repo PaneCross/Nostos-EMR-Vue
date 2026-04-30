@@ -114,7 +114,7 @@ class RemittanceController extends Controller
 
         // Create the batch record in 'received' status
         $batch = RemittanceBatch::create([
-            'tenant_id'           => $request->user()->tenant_id,
+            'tenant_id'           => $request->user()->effectiveTenantId(),
             'file_name'           => $fileName,
             'edi_835_content'     => $ediContent,
             'status'              => 'received',
@@ -163,7 +163,7 @@ class RemittanceController extends Controller
     public function index(Request $request): InertiaResponse
     {
         $this->authorizeRead($request);
-        $tenantId = $request->user()->tenant_id;
+        $tenantId = $request->user()->effectiveTenantId();
 
         $batches = RemittanceBatch::forTenant($tenantId)
             ->orderBy('created_at', 'desc')
@@ -215,7 +215,7 @@ class RemittanceController extends Controller
     public function show(Request $request, RemittanceBatch $remittanceBatch): InertiaResponse
     {
         $this->authorizeRead($request);
-        abort_if($remittanceBatch->tenant_id !== $request->user()->tenant_id, 403);
+        abort_if($remittanceBatch->tenant_id !== $request->user()->effectiveTenantId(), 403);
 
         // Aggregate claim stats for the batch detail header
         $claimStats = $remittanceBatch->claims()
@@ -257,7 +257,7 @@ class RemittanceController extends Controller
     public function claims(Request $request, RemittanceBatch $remittanceBatch): JsonResponse
     {
         $this->authorizeRead($request);
-        abort_if($remittanceBatch->tenant_id !== $request->user()->tenant_id, 403);
+        abort_if($remittanceBatch->tenant_id !== $request->user()->effectiveTenantId(), 403);
 
         $query = RemittanceClaim::where('remittance_batch_id', $remittanceBatch->id)
             ->with('adjustments')

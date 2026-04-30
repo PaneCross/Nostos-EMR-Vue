@@ -26,10 +26,10 @@ class DmeController extends Controller
     {
         $this->gate();
         $u = Auth::user();
-        $items = DmeItem::forTenant($u->tenant_id)
+        $items = DmeItem::forTenant($u->effectiveTenantId())
             ->orderBy('item_type')->orderBy('id')
             ->get();
-        $openIssuances = DmeIssuance::where('tenant_id', $u->tenant_id)
+        $openIssuances = DmeIssuance::where('tenant_id', $u->effectiveTenantId())
             ->whereNull('returned_at')
             ->with(['item:id,item_type,manufacturer,model', 'participant:id,mrn,first_name,last_name'])
             ->orderBy('issued_at')
@@ -58,7 +58,7 @@ class DmeController extends Controller
             'notes'         => 'nullable|string|max:2000',
         ]);
         $item = DmeItem::create(array_merge($validated, [
-            'tenant_id' => $u->tenant_id,
+            'tenant_id' => $u->effectiveTenantId(),
             'status'    => 'available',
         ]));
         AuditLog::record(action: 'dme.item_added', tenantId: $u->tenant_id, userId: $u->id,
@@ -71,7 +71,7 @@ class DmeController extends Controller
     {
         $this->gate();
         $u = Auth::user();
-        abort_if($dme->tenant_id !== $u->tenant_id, 403);
+        abort_if($dme->tenant_id !== $u->effectiveTenantId(), 403);
         abort_if($dme->status !== 'available', 422, "Item not available (status={$dme->status})");
 
         $validated = $request->validate([
@@ -82,11 +82,11 @@ class DmeController extends Controller
         ]);
         // Cross-tenant participant check
         $p = Participant::find($validated['participant_id']);
-        abort_if(! $p || $p->tenant_id !== $u->tenant_id, 403);
+        abort_if(! $p || $p->tenant_id !== $u->effectiveTenantId(), 403);
 
         return DB::transaction(function () use ($dme, $u, $validated) {
             $issuance = DmeIssuance::create([
-                'tenant_id'          => $u->tenant_id,
+                'tenant_id'          => $u->effectiveTenantId(),
                 'dme_item_id'        => $dme->id,
                 'participant_id'     => $validated['participant_id'],
                 'issued_at'          => $validated['issued_at'],
@@ -108,7 +108,7 @@ class DmeController extends Controller
     {
         $this->gate();
         $u = Auth::user();
-        abort_if($issuance->tenant_id !== $u->tenant_id, 403);
+        abort_if($issuance->tenant_id !== $u->effectiveTenantId(), 403);
         abort_if($issuance->returned_at !== null, 422, 'Issuance already closed');
 
         $validated = $request->validate([

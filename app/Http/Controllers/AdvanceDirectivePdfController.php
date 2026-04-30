@@ -23,7 +23,7 @@ class AdvanceDirectivePdfController extends Controller
     {
         $u = Auth::user();
         abort_if(!$u, 401);
-        abort_unless($participant->tenant_id === $u->tenant_id, 404);
+        abort_unless($participant->tenant_id === $u->effectiveTenantId(), 404);
 
         $ok = $u->isSuperAdmin()
             || in_array($u->department, [

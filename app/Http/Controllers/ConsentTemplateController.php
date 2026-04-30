@@ -36,7 +36,7 @@ class ConsentTemplateController extends Controller
         $this->gate();
         $u = Auth::user();
         return response()->json([
-            'templates' => ConsentTemplate::forTenant($u->tenant_id)
+            'templates' => ConsentTemplate::forTenant($u->effectiveTenantId())
                 ->orderBy('consent_type')->orderByDesc('created_at')->get(),
         ]);
     }
@@ -52,7 +52,7 @@ class ConsentTemplateController extends Controller
             'body'         => 'required|string|max:50000',
         ]);
         $template = ConsentTemplate::create(array_merge($validated, [
-            'tenant_id' => $u->tenant_id,
+            'tenant_id' => $u->effectiveTenantId(),
             'status'    => 'draft',
         ]));
         AuditLog::record(
@@ -70,13 +70,13 @@ class ConsentTemplateController extends Controller
     {
         $this->gateWrite();
         $u = Auth::user();
-        abort_if($template->tenant_id !== $u->tenant_id, 403);
+        abort_if($template->tenant_id !== $u->effectiveTenantId(), 403);
         if ($template->status !== 'draft') {
             return response()->json(['error' => 'invalid_state'], 409);
         }
 
         // Archive prior approved version of the same (tenant, consent_type).
-        ConsentTemplate::forTenant($u->tenant_id)
+        ConsentTemplate::forTenant($u->effectiveTenantId())
             ->where('consent_type', $template->consent_type)
             ->where('status', 'approved')
             ->update(['status' => 'archived']);
@@ -109,12 +109,12 @@ class ConsentTemplateController extends Controller
         $this->gate();
         $u = Auth::user();
 
-        $approvedByType = ConsentTemplate::forTenant($u->tenant_id)
+        $approvedByType = ConsentTemplate::forTenant($u->effectiveTenantId())
             ->approved()->get()->keyBy('consent_type');
 
         $queue = [];
         foreach ($approvedByType as $type => $template) {
-            $stale = ConsentRecord::forTenant($u->tenant_id)
+            $stale = ConsentRecord::forTenant($u->effectiveTenantId())
                 ->where('consent_type', $type)
                 ->where('status', 'acknowledged')
                 ->where(function ($q) use ($template) {

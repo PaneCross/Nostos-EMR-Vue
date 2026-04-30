@@ -49,7 +49,7 @@ class CarePlanController extends Controller
 {
     private function authorizeForTenant(Participant $participant, $user): void
     {
-        abort_if($participant->tenant_id !== $user->tenant_id, 403);
+        abort_if($participant->tenant_id !== $user->effectiveTenantId(), 403);
     }
 
     /**
@@ -116,7 +116,7 @@ class CarePlanController extends Controller
 
         $plan = CarePlan::create([
             'participant_id'     => $participant->id,
-            'tenant_id'          => $user->tenant_id,
+            'tenant_id'          => $user->effectiveTenantId(),
             'version'            => $nextVersion,
             'status'             => 'draft',
             'overall_goals_text' => $validated['overall_goals_text'] ?? null,

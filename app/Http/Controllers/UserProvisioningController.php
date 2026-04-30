@@ -79,7 +79,7 @@ class UserProvisioningController extends Controller
     public function users(Request $request): InertiaResponse
     {
         $this->requireItAdmin($request);
-        $tenantId = $request->user()->tenant_id;
+        $tenantId = $request->user()->effectiveTenantId();
 
         $users = User::where('tenant_id', $tenantId)
             ->orderBy('last_name')
@@ -110,7 +110,7 @@ class UserProvisioningController extends Controller
     public function userDetails(Request $request, User $user): JsonResponse
     {
         $this->requireItAdmin($request);
-        $tenantId = $request->user()->tenant_id;
+        $tenantId = $request->user()->effectiveTenantId();
         abort_if($user->tenant_id !== $tenantId, 403, 'Access denied');
 
         // ── Account info ──────────────────────────────────────────────────────
@@ -257,7 +257,7 @@ class UserProvisioningController extends Controller
     public function provisionUser(Request $request): JsonResponse
     {
         $this->requireItAdmin($request);
-        $tenantId = $request->user()->tenant_id;
+        $tenantId = $request->user()->effectiveTenantId();
 
         $validated = $request->validate([
             'first_name' => ['required', 'string', 'max:100'],
@@ -303,7 +303,7 @@ class UserProvisioningController extends Controller
     public function deactivateUser(Request $request, User $user): JsonResponse
     {
         $this->requireItAdmin($request);
-        $tenantId = $request->user()->tenant_id;
+        $tenantId = $request->user()->effectiveTenantId();
 
         abort_if($user->tenant_id !== $tenantId, 403, 'Access denied');
         abort_if($user->id === $request->user()->id, 422, 'Cannot deactivate your own account');
@@ -330,7 +330,7 @@ class UserProvisioningController extends Controller
     public function reactivateUser(Request $request, User $user): JsonResponse
     {
         $this->requireItAdmin($request);
-        $tenantId = $request->user()->tenant_id;
+        $tenantId = $request->user()->effectiveTenantId();
 
         abort_if($user->tenant_id !== $tenantId, 403, 'Access denied');
 
@@ -355,7 +355,7 @@ class UserProvisioningController extends Controller
     public function resetAccess(Request $request, User $user): JsonResponse
     {
         $this->requireItAdmin($request);
-        $tenantId = $request->user()->tenant_id;
+        $tenantId = $request->user()->effectiveTenantId();
 
         abort_if($user->tenant_id !== $tenantId, 403, 'Access denied');
 
@@ -380,7 +380,7 @@ class UserProvisioningController extends Controller
     public function updateDesignations(Request $request, User $user): JsonResponse
     {
         $this->requireItAdmin($request);
-        $tenantId = $request->user()->tenant_id;
+        $tenantId = $request->user()->effectiveTenantId();
 
         abort_if($user->tenant_id !== $tenantId, 403, 'Access denied');
 
@@ -412,7 +412,7 @@ class UserProvisioningController extends Controller
     public function roleAssignmentOptions(Request $request): JsonResponse
     {
         $this->requireItAdmin($request);
-        $tenantId = $request->user()->tenant_id;
+        $tenantId = $request->user()->effectiveTenantId();
 
         return response()->json([
             'job_titles' => \App\Models\JobTitle::forTenant($tenantId)
@@ -438,7 +438,7 @@ class UserProvisioningController extends Controller
     public function updateRoleAssignment(Request $request, User $user): JsonResponse
     {
         $this->requireItAdmin($request);
-        $tenantId = $request->user()->tenant_id;
+        $tenantId = $request->user()->effectiveTenantId();
         abort_if($user->tenant_id !== $tenantId, 403, 'Access denied');
 
         $validated = $request->validate([

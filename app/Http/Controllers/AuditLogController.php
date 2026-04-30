@@ -33,7 +33,7 @@ class AuditLogController extends Controller
         $this->requireItAdmin($request);
 
         return Inertia::render('ItAdmin/Audit', [
-            'initialCount' => AuditLog::where('tenant_id', $request->user()->tenant_id)->count(),
+            'initialCount' => AuditLog::where('tenant_id', $request->user()->effectiveTenantId())->count(),
         ]);
     }
 
@@ -44,7 +44,7 @@ class AuditLogController extends Controller
     public function auditLog(Request $request): JsonResponse
     {
         $this->requireItAdmin($request);
-        $tenantId = $request->user()->tenant_id;
+        $tenantId = $request->user()->effectiveTenantId();
 
         $query = AuditLog::where('tenant_id', $tenantId)
             ->with('user:id,first_name,last_name')
@@ -89,7 +89,7 @@ class AuditLogController extends Controller
     public function auditLogShow(Request $request, \App\Models\AuditLog $log): JsonResponse
     {
         $this->requireItAdmin($request);
-        abort_if($log->tenant_id !== $request->user()->tenant_id, 403);
+        abort_if($log->tenant_id !== $request->user()->effectiveTenantId(), 403);
         $log->load('user:id,first_name,last_name,department');
         return response()->json(['log' => $log]);
     }
@@ -106,7 +106,7 @@ class AuditLogController extends Controller
     public function exportAuditCsv(Request $request): Response
     {
         $this->requireItAdmin($request);
-        $tenantId = $request->user()->tenant_id;
+        $tenantId = $request->user()->effectiveTenantId();
 
         $from = $request->filled('from')
             ? \Illuminate\Support\Carbon::parse($request->query('from'))->startOfDay()

@@ -32,7 +32,7 @@ class ParticipantRafController extends Controller
     {
         $this->gate();
         $u = Auth::user();
-        abort_if($participant->tenant_id !== $u->tenant_id, 403);
+        abort_if($participant->tenant_id !== $u->effectiveTenantId(), 403);
 
         $year = (int) $request->query('year', now()->year);
         $priorYear = $year - 1;

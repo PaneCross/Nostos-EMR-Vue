@@ -310,6 +310,27 @@ class User extends Authenticatable
         return $this->department === 'super_admin';
     }
 
+    /**
+     * Resolve the EFFECTIVE tenant for the current session.
+     *
+     * Mirrors the site_context pattern : super-admins (role or dept) may set
+     * `active_tenant_id` in their session via the tenant switcher to act
+     * inside another organisation's data scope. Everyone else is locked to
+     * their own `tenant_id`.
+     *
+     * Use this any place a controller filters business data by tenant for
+     * display. Keep `auth()->user()->tenant_id` for audit-logging / security
+     * paths where the SA's HOME tenant is what matters (audit trail honesty).
+     */
+    public function effectiveTenantId(): ?int
+    {
+        if ($this->isSuperAdmin() || $this->isDeptSuperAdmin()) {
+            return session('active_tenant_id') ?? $this->tenant_id;
+        }
+
+        return $this->tenant_id;
+    }
+
     // ── Designation helpers ───────────────────────────────────────────────────
 
     /**

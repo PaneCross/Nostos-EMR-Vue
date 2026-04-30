@@ -20,7 +20,7 @@ class ActivityController extends Controller
         abort_unless($u->isSuperAdmin() || in_array($u->department, $allow, true), 403);
     }
 
-    private function requireSameTenant($r, $u): void { abort_if($r->tenant_id !== $u->tenant_id, 403); }
+    private function requireSameTenant($r, $u): void { abort_if($r->tenant_id !== $u->effectiveTenantId(), 403); }
 
     /** GET /activities?from=YYYY-MM-DD&to=YYYY-MM-DD (defaults to next 7 days). */
     public function index(Request $request): JsonResponse
@@ -30,7 +30,7 @@ class ActivityController extends Controller
         $from = $request->query('from', now()->toDateString());
         $to   = $request->query('to', now()->addDays(7)->toDateString());
 
-        $events = ActivityEvent::forTenant($u->tenant_id)
+        $events = ActivityEvent::forTenant($u->effectiveTenantId())
             ->whereBetween('scheduled_at', [$from, $to . ' 23:59:59'])
             ->with('facilitator:id,first_name,last_name')
             ->withCount('attendances')
@@ -56,7 +56,7 @@ class ActivityController extends Controller
         ]);
 
         $event = ActivityEvent::create(array_merge($validated, [
-            'tenant_id'   => $u->tenant_id,
+            'tenant_id'   => $u->effectiveTenantId(),
             'duration_min'=> $validated['duration_min'] ?? 60,
         ]));
 
@@ -92,7 +92,7 @@ class ActivityController extends Controller
                 'participant_id'    => $validated['participant_id'],
             ],
             array_merge($validated, [
-                'tenant_id'           => $u->tenant_id,
+                'tenant_id'           => $u->effectiveTenantId(),
                 'recorded_by_user_id' => $u->id,
             ]),
         );
@@ -107,7 +107,7 @@ class ActivityController extends Controller
         $u = Auth::user();
         $this->requireSameTenant($participant, $u);
 
-        $rows = ActivityAttendance::forTenant($u->tenant_id)
+        $rows = ActivityAttendance::forTenant($u->effectiveTenantId())
             ->where('participant_id', $participant->id)
             ->with('event:id,title,category,scheduled_at')
             ->orderByDesc('created_at')->limit(60)->get();

@@ -38,7 +38,7 @@ class WoundController extends Controller
 
     private function authorizeTenant(Participant $participant): void
     {
-        abort_if($participant->tenant_id !== Auth::user()->tenant_id, 403);
+        abort_if($participant->tenant_id !== Auth::user()->effectiveTenantId(), 403);
     }
 
     private function authorizeWrite(): void

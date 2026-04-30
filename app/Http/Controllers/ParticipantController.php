@@ -56,7 +56,7 @@ class ParticipantController extends Controller
     public function index(Request $request): Response
     {
         $user     = $request->user();
-        $tenantId = $user->tenant_id;
+        $tenantId = $user->effectiveTenantId();
 
         // Phase Y7 (Audit-13 perf baseline): pre-compute the most-recent IDT
         // review timestamp via a single subquery so idtReviewOverdue() doesn't
@@ -144,7 +144,7 @@ class ParticipantController extends Controller
         unset($data['address']);
 
         $participant = Participant::create(array_merge($data, [
-            'tenant_id'          => $user->tenant_id,
+            'tenant_id'          => $user->effectiveTenantId(),
             'created_by_user_id' => $user->id,
         ]));
 
@@ -334,7 +334,7 @@ class ParticipantController extends Controller
 
         $user     = $request->user();
         $term     = $request->input('q');
-        $tenantId = $user->tenant_id;
+        $tenantId = $user->effectiveTenantId();
 
         $query = Participant::forTenant($tenantId)
             ->with(['activeFlags', 'site:id,name'])
@@ -457,6 +457,6 @@ class ParticipantController extends Controller
 
     private function authorizeForTenant(Participant $participant, $user): void
     {
-        abort_if($participant->tenant_id !== $user->tenant_id, 403);
+        abort_if($participant->tenant_id !== $user->effectiveTenantId(), 403);
     }
 }

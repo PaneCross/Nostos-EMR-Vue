@@ -104,6 +104,20 @@ const canSwitchSite = computed(() =>
     (user.value?.is_super_admin || user.value?.department === 'executive') && availableSites.value.length > 1
 )
 
+// ── Tenant context (super-admin only) ──────────────────────────────────────────
+// Mirrors site context. SAs see a tenant switcher in the header that overrides
+// session('active_tenant_id'); other roles never see this and the props are
+// null/empty for them.
+interface TenantContext { id: number; name: string; slug: string; is_home?: boolean }
+const tenantContext = computed(() => page.props.tenant_context as TenantContext | null)
+const availableTenants = computed(() => (page.props.available_tenants as TenantContext[]) ?? [])
+const canSwitchTenant = computed(() =>
+    (user.value?.is_super_admin || user.value?.department === 'super_admin') && availableTenants.value.length > 1
+)
+const isTenantOverridden = computed(() =>
+    canSwitchTenant.value && tenantContext.value && tenantContext.value.is_home === false
+)
+
 // ── Global search ──────────────────────────────────────────────────────────────
 const showSearch = ref(false)
 
@@ -122,6 +136,33 @@ function switchSite(siteId: number) {
     axios.post('/site-context/switch', { site_id: siteId })
         .then(() => { showSiteSwitcher.value = false; router.reload() })
         .catch(() => { switchingSite.value = null })
+}
+
+// ── Tenant switcher dropdown (super-admin only) ────────────────────────────────
+const showTenantSwitcher = ref(false)
+const switchingTenant = ref<number | null>(null)
+const tenantQuery = ref('')
+
+const tenantsFiltered = computed(() => {
+    const q = tenantQuery.value.trim().toLowerCase()
+    if (!q) return availableTenants.value
+    return availableTenants.value.filter(t =>
+        t.name.toLowerCase().includes(q) || t.slug.toLowerCase().includes(q)
+    )
+})
+
+function switchTenant(tenantId: number) {
+    switchingTenant.value = tenantId
+    axios.post('/tenant-context/switch', { tenant_id: tenantId })
+        .then(() => { showTenantSwitcher.value = false; tenantQuery.value = ''; router.reload() })
+        .catch(() => { switchingTenant.value = null })
+}
+
+function clearTenantOverride() {
+    switchingTenant.value = -1
+    axios.delete('/tenant-context')
+        .then(() => { showTenantSwitcher.value = false; router.reload() })
+        .catch(() => { switchingTenant.value = null })
 }
 
 // ── Imitate User dropdown ──────────────────────────────────────────────────────
@@ -732,7 +773,15 @@ function handleGlobalKey(e: KeyboardEvent) {
                 <!-- Tenant + site display -->
                 <div class="flex-1 min-w-0 flex items-center gap-2 text-sm">
                     <span class="font-semibold text-slate-800 dark:text-slate-100 truncate">
-                        {{ user?.tenant?.name }}
+                        {{ tenantContext?.name ?? user?.tenant?.name }}
+                    </span>
+                    <!-- SA acting inside another tenant : amber pill warns them -->
+                    <span
+                        v-if="isTenantOverridden"
+                        class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wide bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-200 border border-amber-200 dark:border-amber-700"
+                        title="You are acting inside another organisation. Click 'Return to home org' in the tenant switcher to revert."
+                    >
+                        Acting as
                     </span>
                     <template v-if="siteContext || user?.site">
                         <span class="text-slate-300 dark:text-slate-600">·</span>
@@ -740,6 +789,67 @@ function handleGlobalKey(e: KeyboardEvent) {
                             {{ (siteContext ?? user?.site)?.name }}
                         </span>
                     </template>
+                </div>
+
+                <!-- Tenant switcher (super-admin only) -->
+                <div v-if="canSwitchTenant" class="relative shrink-0">
+                    <button
+                        :class="[
+                            'flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg transition-colors',
+                            isTenantOverridden
+                                ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-200 hover:bg-amber-200 dark:hover:bg-amber-900/50 border border-amber-300 dark:border-amber-700'
+                                : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600',
+                        ]"
+                        @click="showTenantSwitcher = !showTenantSwitcher"
+                        aria-label="Switch tenant context"
+                    >
+                        <BuildingOfficeIcon class="w-3.5 h-3.5" aria-hidden="true" />
+                        Tenant
+                        <ChevronDownIcon class="w-3.5 h-3.5" aria-hidden="true" />
+                    </button>
+                    <div
+                        v-if="showTenantSwitcher"
+                        class="absolute right-0 top-full mt-1 w-72 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg z-50 overflow-hidden"
+                    >
+                        <div class="px-3 py-2 border-b border-slate-200 dark:border-slate-700">
+                            <input
+                                v-model="tenantQuery"
+                                type="text"
+                                placeholder="Search organisations..."
+                                class="w-full px-2 py-1 text-sm bg-slate-50 dark:bg-slate-900 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-600 rounded focus:outline-none focus:border-indigo-400 dark:focus:border-indigo-500"
+                            />
+                        </div>
+                        <div class="max-h-64 overflow-y-auto py-1">
+                            <button
+                                v-for="t in tenantsFiltered"
+                                :key="t.id"
+                                :class="[
+                                    'w-full flex items-center gap-2 px-3 py-2 text-sm text-left transition-colors',
+                                    t.id === tenantContext?.id
+                                        ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300 font-medium'
+                                        : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700',
+                                ]"
+                                :disabled="switchingTenant === t.id"
+                                @click="switchTenant(t.id)"
+                            >
+                                <span class="truncate">{{ t.name }}</span>
+                                <span class="ml-auto text-[10px] text-slate-400 dark:text-slate-500 font-mono">{{ t.slug }}</span>
+                                <span v-if="switchingTenant === t.id" class="ml-2 text-xs text-slate-400">...</span>
+                            </button>
+                            <div v-if="tenantsFiltered.length === 0" class="px-3 py-2 text-xs text-slate-500 dark:text-slate-400">
+                                No organisations match.
+                            </div>
+                        </div>
+                        <div v-if="isTenantOverridden" class="border-t border-slate-200 dark:border-slate-700 p-2">
+                            <button
+                                class="w-full px-3 py-1.5 text-xs font-medium text-amber-800 dark:text-amber-200 bg-amber-50 dark:bg-amber-900/30 hover:bg-amber-100 dark:hover:bg-amber-900/50 rounded transition-colors"
+                                :disabled="switchingTenant === -1"
+                                @click="clearTenantOverride"
+                            >
+                                Return to home organisation
+                            </button>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Site switcher dropdown -->

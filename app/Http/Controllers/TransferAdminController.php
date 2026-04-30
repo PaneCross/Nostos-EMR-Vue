@@ -28,7 +28,7 @@ class TransferAdminController extends Controller
             abort(403);
         }
 
-        $query = ParticipantSiteTransfer::forTenant($user->tenant_id)
+        $query = ParticipantSiteTransfer::forTenant($user->effectiveTenantId())
             ->with([
                 'participant:id,first_name,last_name,mrn',
                 'fromSite:id,name',
@@ -59,7 +59,7 @@ class TransferAdminController extends Controller
             'status'                => $t->status,
         ]);
 
-        $sites = Site::where('tenant_id', $user->tenant_id)->get(['id', 'name']);
+        $sites = Site::where('tenant_id', $user->effectiveTenantId())->get(['id', 'name']);
 
         return Inertia::render('Enrollment/Transfers', [
             'transfers'      => $transfers,

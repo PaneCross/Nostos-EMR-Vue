@@ -42,7 +42,7 @@ class JobTitleController extends Controller
     {
         $this->gate($request);
 
-        $titles = JobTitle::forTenant($request->user()->tenant_id)
+        $titles = JobTitle::forTenant($request->user()->effectiveTenantId())
             ->orderBy('sort_order')
             ->orderBy('label')
             ->get();
@@ -53,7 +53,7 @@ class JobTitleController extends Controller
     public function store(Request $request): JsonResponse
     {
         $this->gate($request);
-        $tenantId = $request->user()->tenant_id;
+        $tenantId = $request->user()->effectiveTenantId();
 
         $v = $request->validate([
             'code'       => [
@@ -87,7 +87,7 @@ class JobTitleController extends Controller
     public function update(Request $request, JobTitle $jobTitle): JsonResponse
     {
         $this->gate($request);
-        abort_if($jobTitle->tenant_id !== $request->user()->tenant_id, 403);
+        abort_if($jobTitle->tenant_id !== $request->user()->effectiveTenantId(), 403);
 
         $v = $request->validate([
             'label'      => ['sometimes', 'string', 'max:120'],
@@ -114,7 +114,7 @@ class JobTitleController extends Controller
     public function destroy(Request $request, JobTitle $jobTitle): JsonResponse
     {
         $this->gate($request);
-        abort_if($jobTitle->tenant_id !== $request->user()->tenant_id, 403);
+        abort_if($jobTitle->tenant_id !== $request->user()->effectiveTenantId(), 403);
 
         // E4 : null out users.job_title for any user pointing at this code so
         // their credential targeting doesn't silently break. The deactivation

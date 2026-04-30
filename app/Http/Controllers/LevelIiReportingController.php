@@ -39,7 +39,7 @@ class LevelIiReportingController extends Controller
     public function index(Request $request): InertiaResponse
     {
         $this->gate($request);
-        $tenantId = $request->user()->tenant_id;
+        $tenantId = $request->user()->effectiveTenantId();
 
         $submissions = LevelIiSubmission::where('tenant_id', $tenantId)
             ->with(['generatedBy:id,first_name,last_name', 'markedSubmittedBy:id,first_name,last_name'])
@@ -80,7 +80,7 @@ class LevelIiReportingController extends Controller
             'quarter' => ['required', 'integer', 'in:1,2,3,4'],
         ]);
 
-        $tenant = Tenant::findOrFail($request->user()->tenant_id);
+        $tenant = Tenant::findOrFail($request->user()->effectiveTenantId());
         $submission = $this->service->generate(
             $tenant,
             (int) $validated['year'],
@@ -94,7 +94,7 @@ class LevelIiReportingController extends Controller
     public function markSubmitted(Request $request, LevelIiSubmission $submission): JsonResponse
     {
         $this->gate($request);
-        abort_if($submission->tenant_id !== $request->user()->tenant_id, 403);
+        abort_if($submission->tenant_id !== $request->user()->effectiveTenantId(), 403);
 
         $validated = $request->validate([
             'notes' => ['nullable', 'string', 'max:4000'],
@@ -112,7 +112,7 @@ class LevelIiReportingController extends Controller
     public function download(Request $request, LevelIiSubmission $submission)
     {
         $this->gate($request);
-        abort_if($submission->tenant_id !== $request->user()->tenant_id, 403);
+        abort_if($submission->tenant_id !== $request->user()->effectiveTenantId(), 403);
         abort_unless(
             $submission->csv_path && Storage::disk('local')->exists($submission->csv_path),
             404,

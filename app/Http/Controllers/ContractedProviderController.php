@@ -25,7 +25,7 @@ class ContractedProviderController extends Controller
     {
         $this->gate();
         $u = Auth::user();
-        $providers = ContractedProvider::forTenant($u->tenant_id)
+        $providers = ContractedProvider::forTenant($u->effectiveTenantId())
             ->with('contracts')
             ->orderBy('name')
             ->get()
@@ -72,7 +72,7 @@ class ContractedProviderController extends Controller
         ]);
 
         $provider = ContractedProvider::create(array_merge($validated, [
-            'tenant_id' => $u->tenant_id,
+            'tenant_id' => $u->effectiveTenantId(),
         ]));
 
         AuditLog::record(
@@ -89,7 +89,7 @@ class ContractedProviderController extends Controller
     {
         $this->gate();
         $u = Auth::user();
-        abort_if($contractedProvider->tenant_id !== $u->tenant_id, 403);
+        abort_if($contractedProvider->tenant_id !== $u->effectiveTenantId(), 403);
 
         $validated = $request->validate([
             'contract_number'      => 'nullable|string|max:60',
@@ -102,7 +102,7 @@ class ContractedProviderController extends Controller
         ]);
 
         $contract = ContractedProviderContract::create(array_merge($validated, [
-            'tenant_id'              => $u->tenant_id,
+            'tenant_id'              => $u->effectiveTenantId(),
             'contracted_provider_id' => $contractedProvider->id,
         ]));
 
@@ -120,7 +120,7 @@ class ContractedProviderController extends Controller
     {
         $this->gate();
         $u = Auth::user();
-        abort_if($contract->tenant_id !== $u->tenant_id, 403);
+        abort_if($contract->tenant_id !== $u->effectiveTenantId(), 403);
 
         $validated = $request->validate([
             'cpt_code'    => 'required|string|max:10',
@@ -145,7 +145,7 @@ class ContractedProviderController extends Controller
     {
         $this->gate();
         $u = Auth::user();
-        abort_if($contract->tenant_id !== $u->tenant_id, 403);
+        abort_if($contract->tenant_id !== $u->effectiveTenantId(), 403);
         return response()->json(['rates' => $contract->rates()->orderBy('cpt_code')->get()]);
     }
 }

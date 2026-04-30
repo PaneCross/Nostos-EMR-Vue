@@ -40,7 +40,7 @@ class DayCenterController extends Controller
         $siteId = $request->query('site_id', $user->site_id);
 
         // Load today's attendance records for this site
-        $attendance = DayCenterAttendance::forTenant($user->tenant_id)
+        $attendance = DayCenterAttendance::forTenant($user->effectiveTenantId())
             ->forDate($date)
             ->forSite($siteId)
             ->with('participant:id,mrn,first_name,last_name,preferred_name')
@@ -83,7 +83,7 @@ class DayCenterController extends Controller
         $weekday = strtolower(substr(Carbon::parse($date)->format('D'), 0, 3));
 
         // ── Home-site enrolled participants ──────────────────────────────────
-        $homeParticipants = Participant::where('tenant_id', $user->tenant_id)
+        $homeParticipants = Participant::where('tenant_id', $user->effectiveTenantId())
             ->where('site_id', $siteId)
             ->where('enrollment_status', 'enrolled')
             ->where('is_active', true)
@@ -93,7 +93,7 @@ class DayCenterController extends Controller
 
         // ── Home-site day_center_attendance appointments for this date ───────
         // (Any location : overrides recurring pattern.)
-        $homeApptIds = Appointment::where('tenant_id', $user->tenant_id)
+        $homeApptIds = Appointment::where('tenant_id', $user->effectiveTenantId())
             ->where('appointment_type', 'day_center_attendance')
             ->whereDate('scheduled_start', $date)
             ->whereNotIn('status', ['cancelled'])
@@ -103,7 +103,7 @@ class DayCenterController extends Controller
 
         // ── Cross-site visitors: appointments whose LOCATION belongs to this site
         // This pulls in participants enrolled at OTHER sites who are coming here.
-        $crossSiteApptParticipants = Appointment::where('emr_appointments.tenant_id', $user->tenant_id)
+        $crossSiteApptParticipants = Appointment::where('emr_appointments.tenant_id', $user->effectiveTenantId())
             ->where('appointment_type', 'day_center_attendance')
             ->whereDate('scheduled_start', $date)
             ->whereNotIn('emr_appointments.status', ['cancelled'])
@@ -120,7 +120,7 @@ class DayCenterController extends Controller
             ->get();
 
         // ── Existing attendance records for the host site + date ─────────────
-        $records = DayCenterAttendance::forTenant($user->tenant_id)
+        $records = DayCenterAttendance::forTenant($user->effectiveTenantId())
             ->forDate($date)
             ->forSite($siteId)
             ->pluck('status', 'participant_id')
@@ -201,11 +201,11 @@ class DayCenterController extends Controller
             'status'         => ['required', 'in:present,late'],
         ]);
 
-        $this->verifyParticipantTenant($validated['participant_id'], $user->tenant_id);
+        $this->verifyParticipantTenant($validated['participant_id'], $user->effectiveTenantId());
 
         $attendance = DayCenterAttendance::updateOrCreate(
             [
-                'tenant_id'       => $user->tenant_id,
+                'tenant_id'       => $user->effectiveTenantId(),
                 'participant_id'  => $validated['participant_id'],
                 'site_id'         => $validated['site_id'],
                 'attendance_date' => $validated['attendance_date'],
@@ -250,11 +250,11 @@ class DayCenterController extends Controller
             'notes'          => ['nullable', 'string', 'max:500'],
         ]);
 
-        $this->verifyParticipantTenant($validated['participant_id'], $user->tenant_id);
+        $this->verifyParticipantTenant($validated['participant_id'], $user->effectiveTenantId());
 
         $attendance = DayCenterAttendance::updateOrCreate(
             [
-                'tenant_id'       => $user->tenant_id,
+                'tenant_id'       => $user->effectiveTenantId(),
                 'participant_id'  => $validated['participant_id'],
                 'site_id'         => $validated['site_id'],
                 'attendance_date' => $validated['attendance_date'],
@@ -282,9 +282,9 @@ class DayCenterController extends Controller
         // Default ON. Tenants can disable via Org Settings if their workflow uses
         // a different recipient (e.g. an activities coordinator handles outreach).
         $prefs = app(\App\Services\NotificationPreferenceService::class);
-        if ($prefs->shouldNotify($user->tenant_id, 'workflow.day_center_no_show.notify_social_work')) {
+        if ($prefs->shouldNotify($user->effectiveTenantId(), 'workflow.day_center_no_show.notify_social_work')) {
             \App\Models\Alert::create([
-                'tenant_id'          => $user->tenant_id,
+                'tenant_id'          => $user->effectiveTenantId(),
                 'participant_id'     => $validated['participant_id'],
                 'alert_type'         => 'day_center_absence',
                 'title'              => 'Day-center no-show',
@@ -352,7 +352,7 @@ class DayCenterController extends Controller
         $to     = $request->query('to',   now()->toDateString());
         $siteId = (int) $request->query('site_id', $user->site_id);
 
-        $rows = DayCenterAttendance::forTenant($user->tenant_id)
+        $rows = DayCenterAttendance::forTenant($user->effectiveTenantId())
             ->forSite($siteId)
             ->whereBetween('attendance_date', [$from, $to])
             ->selectRaw('attendance_date, status, COUNT(*) as count')
@@ -384,10 +384,10 @@ class DayCenterController extends Controller
             'attendance_date' => ['required', 'date'],
             'check_out_time'  => ['nullable', 'date_format:H:i'],
         ]);
-        $this->verifyParticipantTenant($validated['participant_id'], $user->tenant_id);
+        $this->verifyParticipantTenant($validated['participant_id'], $user->effectiveTenantId());
 
         $attendance = DayCenterAttendance::where([
-            'tenant_id'       => $user->tenant_id,
+            'tenant_id'       => $user->effectiveTenantId(),
             'participant_id'  => $validated['participant_id'],
             'site_id'         => $validated['site_id'],
             'attendance_date' => $validated['attendance_date'],
@@ -424,7 +424,7 @@ class DayCenterController extends Controller
         $weekday = strtolower(substr(Carbon::parse($date)->format('D'), 0, 3));
 
         // Roster of participants expected today (recurring schedule + appt overrides).
-        $expected = Participant::where('tenant_id', $user->tenant_id)
+        $expected = Participant::where('tenant_id', $user->effectiveTenantId())
             ->where('site_id', $siteId)
             ->where('enrollment_status', 'enrolled')
             ->where('is_active', true)
@@ -434,7 +434,7 @@ class DayCenterController extends Controller
             ->keyBy('id');
 
         // Records for today.
-        $records = DayCenterAttendance::forTenant($user->tenant_id)
+        $records = DayCenterAttendance::forTenant($user->effectiveTenantId())
             ->forDate($date)
             ->forSite($siteId)
             ->get()

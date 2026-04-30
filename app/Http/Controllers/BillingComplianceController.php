@@ -50,7 +50,7 @@ class BillingComplianceController extends Controller
     public function index(Request $request): InertiaResponse
     {
         $this->authorizeFinance($request);
-        $tenantId = $request->user()->tenant_id;
+        $tenantId = $request->user()->effectiveTenantId();
 
         $checklist = (new BillingComplianceService())->getChecklist($tenantId);
 
@@ -70,7 +70,7 @@ class BillingComplianceController extends Controller
     public function data(Request $request): JsonResponse
     {
         $this->authorizeFinance($request);
-        $tenantId = $request->user()->tenant_id;
+        $tenantId = $request->user()->effectiveTenantId();
 
         $checklist = (new BillingComplianceService())->getChecklist($tenantId);
 

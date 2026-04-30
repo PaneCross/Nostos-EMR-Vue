@@ -10,7 +10,7 @@
 //   POST   /restraints/{episode}/discontinue              discontinue()    : end the episode
 //   POST   /restraints/{episode}/idt-review               recordIdtReview(): IDT review + outcome
 //
-// Tenant isolation: abort_if($participant->tenant_id !== $user->tenant_id, 403).
+// Tenant isolation: abort_if($participant->tenant_id !== $user->effectiveTenantId(), 403).
 // Cross-tenant access to an episode returns 404 per FHIR convention.
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -40,7 +40,7 @@ class RestraintController extends Controller
 
     private function requireSameTenant(Participant $p, $user): void
     {
-        abort_if($p->tenant_id !== $user->tenant_id, 403);
+        abort_if($p->tenant_id !== $user->effectiveTenantId(), 403);
     }
 
     // ── GET /participants/{p}/restraints ─────────────────────────────────────
@@ -104,7 +104,7 @@ class RestraintController extends Controller
             : RestraintEpisode::DEFAULT_MONITORING_INTERVAL_MIN_CHEMICAL;
 
         $episode = RestraintEpisode::create([
-            'tenant_id'                => $u->tenant_id,
+            'tenant_id'                => $u->effectiveTenantId(),
             'participant_id'           => $participant->id,
             'restraint_type'           => $validated['restraint_type'],
             'initiated_at'             => now(),
@@ -149,7 +149,7 @@ class RestraintController extends Controller
         ]);
 
         $observation = RestraintMonitoringObservation::create(array_merge($validated, [
-            'tenant_id'            => $u->tenant_id,
+            'tenant_id'            => $u->effectiveTenantId(),
             'restraint_episode_id' => $episode->id,
             'observed_by_user_id'  => $u->id,
             'observed_at'          => now(),

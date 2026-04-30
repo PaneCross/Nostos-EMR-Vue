@@ -50,7 +50,7 @@ class LabResultController extends Controller
      */
     private function resolveParticipant(int $participantId): Participant
     {
-        $tenantId = Auth::user()->tenant_id;
+        $tenantId = Auth::user()->effectiveTenantId();
 
         $participant = Participant::where('id', $participantId)
             ->where('tenant_id', $tenantId)

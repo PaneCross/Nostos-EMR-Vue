@@ -55,7 +55,7 @@ class CapitationController extends Controller
     public function index(Request $request): InertiaResponse
     {
         $this->authorizeFinance($request);
-        $tenantId  = $request->user()->tenant_id;
+        $tenantId  = $request->user()->effectiveTenantId();
         $monthYear = now()->format('Y-m');
 
         $currentMonthTotal = CapitationRecord::forTenant($tenantId)
@@ -96,7 +96,7 @@ class CapitationController extends Controller
     public function data(Request $request): JsonResponse
     {
         $this->authorizeFinance($request);
-        $tenantId  = $request->user()->tenant_id;
+        $tenantId  = $request->user()->effectiveTenantId();
         $monthYear = $request->query('month_year', now()->format('Y-m'));
 
         $currentMonthTotal = CapitationRecord::forTenant($tenantId)
@@ -133,7 +133,7 @@ class CapitationController extends Controller
     public function store(Request $request): JsonResponse
     {
         $this->authorizeFinance($request);
-        $tenantId = $request->user()->tenant_id;
+        $tenantId = $request->user()->effectiveTenantId();
 
         // Early cross-tenant isolation: reject before full validation so 403 is returned
         // when participant_id is provided but belongs to a different tenant.
@@ -210,7 +210,7 @@ class CapitationController extends Controller
     public function bulkImport(Request $request): JsonResponse
     {
         $this->authorizeFinance($request);
-        $tenantId = $request->user()->tenant_id;
+        $tenantId = $request->user()->effectiveTenantId();
 
         $request->validate([
             'csv_file' => ['required', 'file', 'mimetypes:text/csv,text/plain,application/csv', 'max:2048'],

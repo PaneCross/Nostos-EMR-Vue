@@ -139,7 +139,7 @@ class AlertController extends Controller
         ]);
 
         $alert = $this->alertService->create(array_merge($validated, [
-            'tenant_id'          => $user->tenant_id,
+            'tenant_id'          => $user->effectiveTenantId(),
             'source_module'      => 'manual',
             'alert_type'         => 'manual',
             'created_by_system'  => false,
@@ -158,7 +158,7 @@ class AlertController extends Controller
     public function acknowledge(Request $request, Alert $alert): JsonResponse
     {
         // Tenant isolation uses real user to prevent cross-tenant writes
-        abort_if($alert->tenant_id !== $request->user()->tenant_id, 403);
+        abort_if($alert->tenant_id !== $request->user()->effectiveTenantId(), 403);
 
         // Department check uses effective user (handles impersonation)
         $acknowledged = $this->alertService->acknowledge($alert, $this->effectiveUser($request));
@@ -175,7 +175,7 @@ class AlertController extends Controller
     public function resolve(Request $request, Alert $alert): JsonResponse
     {
         // Tenant isolation uses real user to prevent cross-tenant writes
-        abort_if($alert->tenant_id !== $request->user()->tenant_id, 403);
+        abort_if($alert->tenant_id !== $request->user()->effectiveTenantId(), 403);
 
         // Department check uses effective user (handles impersonation)
         $resolved = $this->alertService->resolve($alert, $this->effectiveUser($request));

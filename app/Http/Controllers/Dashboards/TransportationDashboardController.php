@@ -44,7 +44,7 @@ class TransportationDashboardController extends Controller
     public function manifestSummary(): JsonResponse
     {
         $this->requireDept();
-        $tenantId = Auth::user()->tenant_id;
+        $tenantId = Auth::user()->effectiveTenantId();
 
         // Aggregate today's trip statuses
         $counts = TransportRequest::where('tenant_id', $tenantId)
@@ -84,7 +84,7 @@ class TransportationDashboardController extends Controller
     public function addOns(): JsonResponse
     {
         $this->requireDept();
-        $tenantId = Auth::user()->tenant_id;
+        $tenantId = Auth::user()->effectiveTenantId();
 
         $addOns = TransportRequest::where('tenant_id', $tenantId)
             ->pendingAddOns()
@@ -130,7 +130,7 @@ class TransportationDashboardController extends Controller
     public function flagAlerts(): JsonResponse
     {
         $this->requireDept();
-        $tenantId = Auth::user()->tenant_id;
+        $tenantId = Auth::user()->effectiveTenantId();
 
         $flags = ParticipantFlag::where('tenant_id', $tenantId)
             ->whereIn('flag_type', ParticipantFlag::TRANSPORT_FLAGS)
@@ -172,14 +172,14 @@ class TransportationDashboardController extends Controller
     {
         $this->requireDept();
         $user   = Auth::user();
-        $tenant = Tenant::find($user->tenant_id);
+        $tenant = Tenant::find($user->effectiveTenantId());
 
         $isBroker = $tenant?->isBrokerMode() ?? false;
 
         // Pending add-ons without vendor assignment (only meaningful in broker mode).
         // In broker mode, trips without a transport_trip_id assigned are "unassigned".
         $pendingVendorAssignment = $isBroker
-            ? TransportRequest::where('tenant_id', $user->tenant_id)
+            ? TransportRequest::where('tenant_id', $user->effectiveTenantId())
                 ->whereIn('status', ['requested', 'scheduled'])
                 ->whereNull('transport_trip_id')
                 ->whereDate('requested_pickup_time', today())

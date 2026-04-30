@@ -48,7 +48,7 @@ class IdtDashboardController extends Controller
     public function meetings(): JsonResponse
     {
         $this->requireDept();
-        $tenantId = Auth::user()->tenant_id;
+        $tenantId = Auth::user()->effectiveTenantId();
 
         $meetings = IdtMeeting::where('tenant_id', $tenantId)
             ->today()
@@ -85,7 +85,7 @@ class IdtDashboardController extends Controller
     public function overdueSdrs(): JsonResponse
     {
         $this->requireDept();
-        $tenantId = Auth::user()->tenant_id;
+        $tenantId = Auth::user()->effectiveTenantId();
 
         $sdrs = Sdr::where('tenant_id', $tenantId)
             ->where('escalated', true)
@@ -136,7 +136,7 @@ class IdtDashboardController extends Controller
     public function sdrSla(): JsonResponse
     {
         $this->requireDept();
-        $tenantId = Auth::user()->tenant_id;
+        $tenantId = Auth::user()->effectiveTenantId();
 
         $sdrs = Sdr::where('tenant_id', $tenantId)
             ->open()
@@ -188,7 +188,7 @@ class IdtDashboardController extends Controller
     public function carePlans(): JsonResponse
     {
         $this->requireDept();
-        $tenantId = Auth::user()->tenant_id;
+        $tenantId = Auth::user()->effectiveTenantId();
 
         $plans = CarePlan::where('tenant_id', $tenantId)
             ->whereNotIn('status', ['archived'])
@@ -230,7 +230,7 @@ class IdtDashboardController extends Controller
     public function alerts(): JsonResponse
     {
         $this->requireDept();
-        $tenantId = Auth::user()->tenant_id;
+        $tenantId = Auth::user()->effectiveTenantId();
 
         $alerts = Alert::where('tenant_id', $tenantId)
             ->where('is_active', true)
@@ -275,7 +275,7 @@ class IdtDashboardController extends Controller
     public function idtReviewOverdue(): JsonResponse
     {
         $this->requireDept();
-        $tenantId = Auth::user()->tenant_id;
+        $tenantId = Auth::user()->effectiveTenantId();
 
         // Load all enrolled participants and use the model method to check overdue status.
         // We limit DB round-trips by pulling all enrolled participants and their latest review
@@ -316,7 +316,7 @@ class IdtDashboardController extends Controller
     public function significantChanges(): JsonResponse
     {
         $this->requireDept();
-        $tenantId = Auth::user()->tenant_id;
+        $tenantId = Auth::user()->effectiveTenantId();
 
         $events = SignificantChangeEvent::forTenant($tenantId)
             ->pending()

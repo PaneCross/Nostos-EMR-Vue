@@ -48,7 +48,7 @@ class MyTeamController extends Controller
         // Audit-3 fix : vectorize the per-report queries so we don't N+1.
         // One query for all credentials across all reports, grouped by user_id.
         $reportIds = $reports->pluck('id')->all();
-        $credsByUser = StaffCredential::where('tenant_id', $supervisor->tenant_id)
+        $credsByUser = StaffCredential::where('tenant_id', $supervisor->effectiveTenantId())
             ->whereIn('user_id', $reportIds)
             ->whereNull('replaced_by_credential_id')
             ->get()

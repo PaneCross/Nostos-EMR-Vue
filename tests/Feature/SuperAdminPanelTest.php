@@ -124,7 +124,7 @@ class SuperAdminPanelTest extends TestCase
         $this->actingAs($user)
             ->getJson('/super-admin-panel/health')
             ->assertOk()
-            ->assertJsonStructure(['table_counts', 'queues' => ['failed_jobs', 'pending_jobs']]);
+            ->assertJsonStructure(['table_counts', 'queue_stats' => ['pending', 'failed']]);
     }
 
     // ── Onboard wizard ────────────────────────────────────────────────────────

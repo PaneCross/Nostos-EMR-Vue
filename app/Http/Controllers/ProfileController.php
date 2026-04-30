@@ -80,7 +80,7 @@ class ProfileController extends Controller
             'action'        => 'profile.notification_preferences.update',
             'resource_type' => 'user',
             'resource_id'   => $user->id,
-            'tenant_id'     => $user->tenant_id,
+            'tenant_id'     => $user->effectiveTenantId(),
             'ip_address'    => $request->ip(),
         ]);
 

@@ -40,7 +40,7 @@ class QapiAnnualEvaluationController extends Controller
     public function index(Request $request): InertiaResponse
     {
         $this->gate($request);
-        $tenantId = $request->user()->tenant_id;
+        $tenantId = $request->user()->effectiveTenantId();
 
         $evaluations = QapiAnnualEvaluation::where('tenant_id', $tenantId)
             ->with(['generatedBy:id,first_name,last_name', 'governingBodyReviewer:id,first_name,last_name'])
@@ -76,7 +76,7 @@ class QapiAnnualEvaluationController extends Controller
             'year' => ['required', 'integer', 'min:2000', 'max:2100'],
         ]);
 
-        $tenant = Tenant::findOrFail($request->user()->tenant_id);
+        $tenant = Tenant::findOrFail($request->user()->effectiveTenantId());
         $evaluation = $this->service->generate($tenant, (int) $validated['year'], $request->user());
 
         return response()->json($evaluation, 201);
@@ -85,7 +85,7 @@ class QapiAnnualEvaluationController extends Controller
     public function recordReview(Request $request, QapiAnnualEvaluation $evaluation): JsonResponse
     {
         $this->gate($request);
-        abort_if($evaluation->tenant_id !== $request->user()->tenant_id, 403);
+        abort_if($evaluation->tenant_id !== $request->user()->effectiveTenantId(), 403);
 
         $validated = $request->validate([
             'notes' => ['nullable', 'string', 'max:4000'],
@@ -103,7 +103,7 @@ class QapiAnnualEvaluationController extends Controller
     public function download(Request $request, QapiAnnualEvaluation $evaluation)
     {
         $this->gate($request);
-        abort_if($evaluation->tenant_id !== $request->user()->tenant_id, 403);
+        abort_if($evaluation->tenant_id !== $request->user()->effectiveTenantId(), 403);
         abort_unless($evaluation->pdf_path && Storage::disk('local')->exists($evaluation->pdf_path),
             404, 'PDF has not been generated.');
 

@@ -60,7 +60,7 @@ class AppointmentController extends Controller
             'appointmentTypes' => Appointment::APPOINTMENT_TYPES,
             'typeLabels'       => Appointment::TYPE_LABELS,
             'typeColors'       => Appointment::TYPE_COLORS,
-            'locations'        => Location::forTenant($user->tenant_id)
+            'locations'        => Location::forTenant($user->effectiveTenantId())
                 ->active()
                 ->orderBy('name')
                 ->get(['id', 'name', 'location_type', 'site_id', 'city']),
@@ -106,7 +106,7 @@ class AppointmentController extends Controller
     {
         $user = $request->user();
 
-        $query = Appointment::forTenant($user->tenant_id)
+        $query = Appointment::forTenant($user->effectiveTenantId())
             ->with([
                 'participant:id,first_name,last_name,mrn',
                 'provider:id,first_name,last_name',
@@ -158,7 +158,7 @@ class AppointmentController extends Controller
     {
         $user = $request->user();
         abort_if(!$user, 401);
-        abort_unless($appointment->tenant_id === $user->tenant_id, 404);
+        abort_unless($appointment->tenant_id === $user->effectiveTenantId(), 404);
 
         $appointment->load([
             'participant:id,first_name,last_name,mrn,dob,tenant_id,site_id',
@@ -236,7 +236,7 @@ class AppointmentController extends Controller
 
         $appointment = Appointment::create(array_merge($data, [
             'participant_id'     => $participant->id,
-            'tenant_id'          => $user->tenant_id,
+            'tenant_id'          => $user->effectiveTenantId(),
             'site_id'            => $participant->site_id,
             'status'             => $data['status'] ?? 'scheduled',
             'created_by_user_id' => $user->id,
@@ -438,7 +438,7 @@ class AppointmentController extends Controller
 
         // Phase Q7 : alert to transportation + scheduling on no-show.
         app(AlertService::class)->create([
-            'tenant_id'          => $user->tenant_id,
+            'tenant_id'          => $user->effectiveTenantId(),
             'participant_id'     => $participant->id,
             'alert_type'         => 'appointment_no_show',
             'severity'           => 'info',
@@ -454,11 +454,11 @@ class AppointmentController extends Controller
         // transportation/enrollment alert above fires regardless; this is an
         // additional named-recipient layer when the org has opted in.
         $prefs = app(\App\Services\NotificationPreferenceService::class);
-        if ($prefs->shouldNotify($user->tenant_id, 'workflow.appointment_no_show.notify_pcp', $participant->site_id)) {
+        if ($prefs->shouldNotify($user->effectiveTenantId(), 'workflow.appointment_no_show.notify_pcp', $participant->site_id)) {
             $pcpId = $participant->primary_provider_user_id ?? null;
             if ($pcpId) {
                 app(AlertService::class)->create([
-                    'tenant_id'          => $user->tenant_id,
+                    'tenant_id'          => $user->effectiveTenantId(),
                     'participant_id'     => $participant->id,
                     'alert_type'         => 'appointment_no_show_pcp_copy',
                     'severity'           => 'info',
@@ -479,7 +479,7 @@ class AppointmentController extends Controller
 
     private function authorizeForTenant(Participant $participant, $user): void
     {
-        abort_if($participant->tenant_id !== $user->tenant_id, 403);
+        abort_if($participant->tenant_id !== $user->effectiveTenantId(), 403);
     }
 
     private function authorizeForParticipant(Appointment $appointment, Participant $participant): void

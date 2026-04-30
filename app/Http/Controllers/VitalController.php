@@ -23,7 +23,7 @@ class VitalController extends Controller
 {
     private function authorizeForTenant(Participant $participant, $user): void
     {
-        abort_if($participant->tenant_id !== $user->tenant_id, 403);
+        abort_if($participant->tenant_id !== $user->effectiveTenantId(), 403);
     }
 
     /**
@@ -65,7 +65,7 @@ class VitalController extends Controller
 
         $vital = Vital::create(array_merge($request->validated(), [
             'participant_id'      => $participant->id,
-            'tenant_id'           => $user->tenant_id,
+            'tenant_id'           => $user->effectiveTenantId(),
             'recorded_by_user_id' => $user->id,
             'recorded_at'         => $request->input('recorded_at', now()),
         ]));
@@ -104,8 +104,8 @@ class VitalController extends Controller
     public function pendingCriticalValues(Request $request, Participant $participant): JsonResponse
     {
         $user = $request->user();
-        abort_if($participant->tenant_id !== $user->tenant_id, 403);
-        $rows = CriticalValueAcknowledgment::forTenant($user->tenant_id)
+        abort_if($participant->tenant_id !== $user->effectiveTenantId(), 403);
+        $rows = CriticalValueAcknowledgment::forTenant($user->effectiveTenantId())
             ->where('participant_id', $participant->id)
             ->pending()
             ->orderBy('deadline_at')->get();
@@ -122,7 +122,7 @@ class VitalController extends Controller
     public function acknowledge(Request $request, CriticalValueAcknowledgment $ack): JsonResponse
     {
         $user = $request->user();
-        abort_if($ack->tenant_id !== $user->tenant_id, 403);
+        abort_if($ack->tenant_id !== $user->effectiveTenantId(), 403);
         abort_unless(
             $user->isSuperAdmin() || in_array($user->department, [
                 'primary_care', 'home_care', 'qa_compliance', 'executive', 'it_admin',

@@ -24,7 +24,7 @@ class IbnrController extends Controller
         $this->gate();
         $u = Auth::user();
         $months = max(1, min(12, (int) $request->query('months', 6)));
-        $estimate = $this->svc->estimate($u->tenant_id, $months);
+        $estimate = $this->svc->estimate($u->effectiveTenantId(), $months);
 
         return \Inertia\Inertia::render('Billing/Ibnr', [
             'months_back' => $months,

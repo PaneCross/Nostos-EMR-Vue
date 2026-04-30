@@ -44,7 +44,7 @@ class PharmacyDashboardController extends Controller
     public function medChanges(): JsonResponse
     {
         $this->requireDept();
-        $tenantId = Auth::user()->tenant_id;
+        $tenantId = Auth::user()->effectiveTenantId();
 
         // New orders: medications created today
         $newOrders = Medication::where('tenant_id', $tenantId)
@@ -112,7 +112,7 @@ class PharmacyDashboardController extends Controller
     public function interactions(): JsonResponse
     {
         $this->requireDept();
-        $tenantId = Auth::user()->tenant_id;
+        $tenantId = Auth::user()->effectiveTenantId();
 
         $alerts = DrugInteractionAlert::where('tenant_id', $tenantId)
             ->unacknowledged()
@@ -157,7 +157,7 @@ class PharmacyDashboardController extends Controller
     public function controlled(): JsonResponse
     {
         $this->requireDept();
-        $tenantId = Auth::user()->tenant_id;
+        $tenantId = Auth::user()->effectiveTenantId();
 
         // Controlled medication IDs for this tenant
         $controlledMedIds = Medication::where('tenant_id', $tenantId)
@@ -217,7 +217,7 @@ class PharmacyDashboardController extends Controller
     public function refills(): JsonResponse
     {
         $this->requireDept();
-        $tenantId = Auth::user()->tenant_id;
+        $tenantId = Auth::user()->effectiveTenantId();
 
         $needsRefill = Medication::where('tenant_id', $tenantId)
             ->active()
@@ -267,7 +267,7 @@ class PharmacyDashboardController extends Controller
     public function orders(Request $request): JsonResponse
     {
         $this->requireDept();
-        $tenantId = Auth::user()->tenant_id;
+        $tenantId = Auth::user()->effectiveTenantId();
 
         $pendingOrders = ClinicalOrder::forTenant($tenantId)
             ->where('order_type', 'medication_change')
@@ -303,7 +303,7 @@ class PharmacyDashboardController extends Controller
     public function bcmaOverrides(): JsonResponse
     {
         $this->requireDept();
-        $tenantId = Auth::user()->tenant_id;
+        $tenantId = Auth::user()->effectiveTenantId();
         $rows = \Illuminate\Support\Facades\DB::table('emr_emar_records')
             ->where('tenant_id', $tenantId)
             ->whereNotNull('barcode_mismatch_overridden_by_user_id')
@@ -324,7 +324,7 @@ class PharmacyDashboardController extends Controller
     public function beersRollup(\App\Services\BeersCriteriaService $beers): JsonResponse
     {
         $this->requireDept();
-        $tenantId = Auth::user()->tenant_id;
+        $tenantId = Auth::user()->effectiveTenantId();
         $enrolled = \App\Models\Participant::forTenant($tenantId)
             ->where('enrollment_status', 'enrolled')->get(['id']);
 
@@ -359,7 +359,7 @@ class PharmacyDashboardController extends Controller
     public function medwatchDeadlines(): JsonResponse
     {
         $this->requireDept();
-        $tenantId = Auth::user()->tenant_id;
+        $tenantId = Auth::user()->effectiveTenantId();
 
         $rows = \App\Models\AdverseDrugEvent::forTenant($tenantId)
             ->whereIn('severity', \App\Models\AdverseDrugEvent::MEDWATCH_REQUIRED_SEVERITIES)
@@ -389,7 +389,7 @@ class PharmacyDashboardController extends Controller
     public function polypharmacyQueue(): JsonResponse
     {
         $this->requireDept();
-        $tenantId = Auth::user()->tenant_id;
+        $tenantId = Auth::user()->effectiveTenantId();
         $rows = \App\Models\PolypharmacyReview::forTenant($tenantId)->pending()
             ->with('participant:id,mrn,first_name,last_name')
             ->orderByDesc('queued_at')

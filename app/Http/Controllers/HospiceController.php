@@ -37,7 +37,7 @@ class HospiceController extends Controller
 
     private function requireSameTenant($resource, $user): void
     {
-        abort_if($resource->tenant_id !== $user->tenant_id, 403);
+        abort_if($resource->tenant_id !== $user->effectiveTenantId(), 403);
     }
 
     public function refer(Request $request, Participant $participant): JsonResponse
@@ -125,7 +125,7 @@ class HospiceController extends Controller
         $this->requireSameTenant($participant, $u);
 
         return response()->json([
-            'contacts' => BereavementContact::forTenant($u->tenant_id)
+            'contacts' => BereavementContact::forTenant($u->effectiveTenantId())
                 ->where('participant_id', $participant->id)
                 ->orderBy('scheduled_at')->get(),
         ]);

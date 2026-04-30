@@ -61,7 +61,7 @@ class OrgSettingsController extends Controller
     public function index(Request $request): InertiaResponse
     {
         $this->requireExecutiveAccess($request);
-        $tenantId = $request->user()->tenant_id;
+        $tenantId = $request->user()->effectiveTenantId();
 
         /** @var NotificationPreferenceService $svc */
         $svc = app(NotificationPreferenceService::class);
@@ -109,7 +109,7 @@ class OrgSettingsController extends Controller
     public function siteEffective(Request $request, Site $site): JsonResponse
     {
         $this->requireExecutiveAccess($request);
-        $tenantId = $request->user()->tenant_id;
+        $tenantId = $request->user()->effectiveTenantId();
         abort_if($site->tenant_id !== $tenantId, 403);
 
         /** @var NotificationPreferenceService $svc */
@@ -124,7 +124,7 @@ class OrgSettingsController extends Controller
     public function update(Request $request): JsonResponse
     {
         $this->requireExecutiveAccess($request);
-        $tenantId = $request->user()->tenant_id;
+        $tenantId = $request->user()->effectiveTenantId();
 
         // Accept site_id (null = org-level) + flat map of {key: bool|{enabled,value}}.
         $validated = $request->validate([
@@ -161,7 +161,7 @@ class OrgSettingsController extends Controller
     public function clearOverride(Request $request, Site $site, string $key): JsonResponse
     {
         $this->requireExecutiveAccess($request);
-        $tenantId = $request->user()->tenant_id;
+        $tenantId = $request->user()->effectiveTenantId();
         abort_if($site->tenant_id !== $tenantId, 403);
 
         /** @var NotificationPreferenceService $svc */

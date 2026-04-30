@@ -24,7 +24,7 @@ class CareGapController extends Controller
         $this->gate();
         $u = Auth::user();
         $rows = DB::table('emr_care_gaps')
-            ->where('tenant_id', $u->tenant_id)
+            ->where('tenant_id', $u->effectiveTenantId())
             ->groupBy('measure')
             ->select('measure', DB::raw('SUM(CASE WHEN satisfied THEN 1 ELSE 0 END) AS satisfied'),
                 DB::raw('SUM(CASE WHEN NOT satisfied THEN 1 ELSE 0 END) AS open'))
@@ -37,10 +37,10 @@ class CareGapController extends Controller
     {
         $this->gate();
         $u = Auth::user();
-        $rows = CareGap::forTenant($u->tenant_id)->open()
+        $rows = CareGap::forTenant($u->effectiveTenantId())->open()
             ->whereIn('participant_id', function ($q) use ($u) {
                 $q->select('id')->from('emr_participants')
-                    ->where('tenant_id', $u->tenant_id)
+                    ->where('tenant_id', $u->effectiveTenantId())
                     ->where('primary_care_user_id', $u->id);
             })
             ->with('participant:id,mrn,first_name,last_name')
@@ -53,9 +53,9 @@ class CareGapController extends Controller
     {
         $this->gate();
         $u = Auth::user();
-        abort_if($participant->tenant_id !== $u->tenant_id, 403);
+        abort_if($participant->tenant_id !== $u->effectiveTenantId(), 403);
         return response()->json([
-            'gaps' => CareGap::forTenant($u->tenant_id)
+            'gaps' => CareGap::forTenant($u->effectiveTenantId())
                 ->where('participant_id', $participant->id)->get(),
         ]);
     }
@@ -66,7 +66,7 @@ class CareGapController extends Controller
         $this->gate();
         $u = Auth::user();
         // Assessment table has responses JSON with lace_plus_index band/total for each participant.
-        $rows = Assessment::where('tenant_id', $u->tenant_id)
+        $rows = Assessment::where('tenant_id', $u->effectiveTenantId())
             ->where('assessment_type', 'lace_plus_index')
             ->where('created_at', '>=', now()->subDays(90))
             ->with('participant:id,mrn,first_name,last_name')

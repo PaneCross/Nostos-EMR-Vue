@@ -29,7 +29,7 @@ class MyCredentialsController extends Controller
         $user = $request->user();
         abort_unless($user, 401);
 
-        $credentials = StaffCredential::forTenant($user->tenant_id)
+        $credentials = StaffCredential::forTenant($user->effectiveTenantId())
             ->where('user_id', $user->id)
             ->with('definition:id,ceu_hours_required')
             ->orderByRaw('expires_at IS NULL ASC, expires_at ASC')
@@ -93,7 +93,7 @@ class MyCredentialsController extends Controller
 
         $alertService = app(\App\Services\AlertService::class);
         $alertService->create([
-            'tenant_id'          => $user->tenant_id,
+            'tenant_id'          => $user->effectiveTenantId(),
             'source_module'      => 'it_admin',
             'alert_type'         => 'role_assignment_dispute',
             'severity'           => 'info',
@@ -110,7 +110,7 @@ class MyCredentialsController extends Controller
 
         // F8 : also email each active IT Admin so the dispute doesn't sit
         // unactioned if the dept feed is missed.
-        $itAdmins = \App\Models\User::where('tenant_id', $user->tenant_id)
+        $itAdmins = \App\Models\User::where('tenant_id', $user->effectiveTenantId())
             ->where('department', 'it_admin')
             ->where('is_active', true)
             ->get();
@@ -141,7 +141,7 @@ class MyCredentialsController extends Controller
         $user = $request->user();
         abort_unless($user && $credential->user_id === $user->id, 403,
             'You can only upload renewals to your own credentials.');
-        abort_if($credential->tenant_id !== $user->tenant_id, 403);
+        abort_if($credential->tenant_id !== $user->effectiveTenantId(), 403);
 
         // Reject renewal of an already-superseded row : the user should renew
         // the tip-of-chain row, not a historical entry. Likewise reject if the

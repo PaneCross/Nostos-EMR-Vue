@@ -35,7 +35,7 @@ class ClinicalDashboardController extends Controller
             'participant:id,mrn,first_name,last_name',
             'author:id,first_name,last_name,department'
         )
-            ->where('tenant_id', $user->tenant_id)
+            ->where('tenant_id', $user->effectiveTenantId())
             ->orderByDesc('visit_date')
             ->orderByDesc('created_at');
 
@@ -87,7 +87,7 @@ class ClinicalDashboardController extends Controller
 
         // Fetch recent vitals and deduplicate to one per participant (newest first)
         $latestVitals = Vital::with('participant:id,mrn,first_name,last_name')
-            ->where('tenant_id', $user->tenant_id)
+            ->where('tenant_id', $user->effectiveTenantId())
             ->orderByDesc('recorded_at')
             ->orderByDesc('id')
             ->limit(1000)
@@ -138,21 +138,21 @@ class ClinicalDashboardController extends Controller
         $soon = now()->addDays(14);
 
         $overdue = Assessment::with('participant:id,mrn,first_name,last_name')
-            ->where('tenant_id', $user->tenant_id)
+            ->where('tenant_id', $user->effectiveTenantId())
             ->whereNotNull('next_due_date')
             ->where('next_due_date', '<', $now)
             ->orderBy('next_due_date')
             ->get();
 
         $dueSoon = Assessment::with('participant:id,mrn,first_name,last_name')
-            ->where('tenant_id', $user->tenant_id)
+            ->where('tenant_id', $user->effectiveTenantId())
             ->whereNotNull('next_due_date')
             ->whereBetween('next_due_date', [$now, $soon])
             ->orderBy('next_due_date')
             ->get();
 
         $recent = Assessment::with('participant:id,mrn,first_name,last_name')
-            ->where('tenant_id', $user->tenant_id)
+            ->where('tenant_id', $user->effectiveTenantId())
             ->where('completed_at', '>=', now()->subDays(30))
             ->orderByDesc('completed_at')
             ->limit(30)
@@ -175,14 +175,14 @@ class ClinicalDashboardController extends Controller
 
         // Most recent non-archived care plan per participant, keyed by participant_id
         $carePlansMap = CarePlan::with('goals')
-            ->where('tenant_id', $user->tenant_id)
+            ->where('tenant_id', $user->effectiveTenantId())
             ->whereIn('status', ['active', 'draft', 'under_review'])
             ->orderByDesc('updated_at')
             ->get()
             ->groupBy('participant_id')
             ->map(fn ($plans) => $plans->first());
 
-        $participants = Participant::where('tenant_id', $user->tenant_id)
+        $participants = Participant::where('tenant_id', $user->effectiveTenantId())
             ->where('is_active', true)
             ->orderBy('last_name')
             ->orderBy('first_name')

@@ -65,7 +65,7 @@ class StaffCredentialController extends Controller
     /** Scope: same tenant as the acting user. */
     private function assertSameTenant(User $staff, Request $request): void
     {
-        abort_if($staff->tenant_id !== $request->user()->tenant_id, 403);
+        abort_if($staff->tenant_id !== $request->user()->effectiveTenantId(), 403);
     }
 
     public function index(Request $request, User $user): InertiaResponse
@@ -199,7 +199,7 @@ class StaffCredentialController extends Controller
         $isAdmin = $u->isSuperAdmin() || in_array($u->department, ['it_admin', 'qa_compliance', 'executive'], true);
         $isSelf  = $u->id === $credential->user_id;
         abort_unless($isAdmin || $isSelf, 403);
-        abort_if($credential->tenant_id !== $u->tenant_id, 403);
+        abort_if($credential->tenant_id !== $u->effectiveTenantId(), 403);
         abort_unless($credential->document_path && Storage::disk('local')->exists($credential->document_path), 404);
 
         return response()->file(
@@ -272,7 +272,7 @@ class StaffCredentialController extends Controller
     public function updateCredential(Request $request, StaffCredential $credential): JsonResponse
     {
         $this->gate($request);
-        abort_if($credential->tenant_id !== $request->user()->tenant_id, 403);
+        abort_if($credential->tenant_id !== $request->user()->effectiveTenantId(), 403);
 
         $v = $request->validate([
             'credential_definition_id' => ['nullable', 'integer',
@@ -402,7 +402,7 @@ class StaffCredentialController extends Controller
     public function bulkRenew(Request $request): JsonResponse
     {
         $this->gate($request);
-        $tenantId = $request->user()->tenant_id;
+        $tenantId = $request->user()->effectiveTenantId();
 
         $v = $request->validate([
             'credential_ids'      => ['required', 'array', 'min:1', 'max:200'],
@@ -500,7 +500,7 @@ class StaffCredentialController extends Controller
     {
         $this->gate($request);
         $cred = StaffCredential::onlyTrashed()
-            ->forTenant($request->user()->tenant_id)
+            ->forTenant($request->user()->effectiveTenantId())
             ->findOrFail($credentialId);
 
         $cred->restore();
@@ -530,7 +530,7 @@ class StaffCredentialController extends Controller
     public function bulkEdit(Request $request): JsonResponse
     {
         $this->gate($request);
-        $tenantId = $request->user()->tenant_id;
+        $tenantId = $request->user()->effectiveTenantId();
 
         $v = $request->validate([
             'credential_ids'      => ['required', 'array', 'min:1', 'max:200'],
@@ -617,7 +617,7 @@ class StaffCredentialController extends Controller
     public function verifyCredential(Request $request, StaffCredential $credential): JsonResponse
     {
         $this->gate($request);
-        abort_if($credential->tenant_id !== $request->user()->tenant_id, 403);
+        abort_if($credential->tenant_id !== $request->user()->effectiveTenantId(), 403);
 
         if ($credential->cms_status !== 'pending') {
             return response()->json([
@@ -667,7 +667,7 @@ class StaffCredentialController extends Controller
     public function destroyCredential(Request $request, StaffCredential $credential): JsonResponse
     {
         $this->gate($request);
-        abort_if($credential->tenant_id !== $request->user()->tenant_id, 403);
+        abort_if($credential->tenant_id !== $request->user()->effectiveTenantId(), 403);
 
         $old = $credential->toArray();
         $credential->delete();
@@ -723,7 +723,7 @@ class StaffCredentialController extends Controller
     public function destroyTraining(Request $request, StaffTrainingRecord $record): JsonResponse
     {
         $this->gate($request);
-        abort_if($record->tenant_id !== $request->user()->tenant_id, 403);
+        abort_if($record->tenant_id !== $request->user()->effectiveTenantId(), 403);
 
         $old = $record->toArray();
         $record->delete();

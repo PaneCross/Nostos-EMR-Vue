@@ -34,7 +34,7 @@ class PanelController extends Controller
         $this->gate();
         $u = Auth::user();
 
-        $participants = Participant::where('tenant_id', $u->tenant_id)
+        $participants = Participant::where('tenant_id', $u->effectiveTenantId())
             ->where('primary_care_user_id', $u->id)
             ->where('enrollment_status', 'enrolled')
             ->select(['id','mrn','first_name','last_name','dob','gender','site_id'])
@@ -74,7 +74,7 @@ class PanelController extends Controller
 
         $rows = DB::table('emr_participants')
             ->join('shared_users', 'shared_users.id', '=', 'emr_participants.primary_care_user_id')
-            ->where('emr_participants.tenant_id', $u->tenant_id)
+            ->where('emr_participants.tenant_id', $u->effectiveTenantId())
             ->where('emr_participants.enrollment_status', 'enrolled')
             ->groupBy('shared_users.id', 'shared_users.first_name', 'shared_users.last_name')
             ->select([
@@ -104,11 +104,11 @@ class PanelController extends Controller
         ]);
 
         $participant = Participant::findOrFail($validated['participant_id']);
-        abort_if($participant->tenant_id !== $u->tenant_id, 403);
+        abort_if($participant->tenant_id !== $u->effectiveTenantId(), 403);
 
         if (! empty($validated['pcp_user_id'])) {
             $pcp = User::find($validated['pcp_user_id']);
-            abort_if(! $pcp || $pcp->tenant_id !== $u->tenant_id, 422);
+            abort_if(! $pcp || $pcp->tenant_id !== $u->effectiveTenantId(), 422);
         }
 
         $oldPcp = $participant->primary_care_user_id;
@@ -142,9 +142,9 @@ class PanelController extends Controller
 
         $from = User::findOrFail($validated['from_pcp_user_id']);
         $to   = User::findOrFail($validated['to_pcp_user_id']);
-        abort_if($from->tenant_id !== $u->tenant_id || $to->tenant_id !== $u->tenant_id, 403);
+        abort_if($from->tenant_id !== $u->effectiveTenantId() || $to->tenant_id !== $u->effectiveTenantId(), 403);
 
-        $count = Participant::where('tenant_id', $u->tenant_id)
+        $count = Participant::where('tenant_id', $u->effectiveTenantId())
             ->where('primary_care_user_id', $from->id)
             ->where('enrollment_status', 'enrolled')
             ->update(['primary_care_user_id' => $to->id]);

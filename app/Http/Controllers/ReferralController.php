@@ -52,7 +52,7 @@ class ReferralController extends Controller
      */
     public function index(Request $request): Response
     {
-        $tenantId = $request->user()->tenant_id;
+        $tenantId = $request->user()->effectiveTenantId();
 
         // Load all referrals for the tenant (including terminal for history)
         $referrals = Referral::forTenant($tenantId)
@@ -94,7 +94,7 @@ class ReferralController extends Controller
 
         $referral = Referral::create([
             ...$request->validated(),
-            'tenant_id'           => $request->user()->tenant_id,
+            'tenant_id'           => $request->user()->effectiveTenantId(),
             'created_by_user_id'  => $request->user()->id,
             'status'              => 'new',
         ]);
@@ -294,7 +294,7 @@ class ReferralController extends Controller
     private function authorizeTenant(Referral|Participant $model, $user): void
     {
         abort_if(
-            $model->tenant_id !== $user->tenant_id,
+            $model->tenant_id !== $user->effectiveTenantId(),
             403,
             'Access denied: resource belongs to a different organization.',
         );

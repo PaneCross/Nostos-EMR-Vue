@@ -29,7 +29,7 @@ class ReferralNoteController extends Controller
 
         // Tenant guard : reject cross-tenant referrals (defensive; route model
         // binding already constrains to this tenant's data in practice).
-        abort_if($referral->tenant_id !== $user->tenant_id, 403);
+        abort_if($referral->tenant_id !== $user->effectiveTenantId(), 403);
 
         // Write permission : same roles that can transition referral status.
         abort_unless(
@@ -40,7 +40,7 @@ class ReferralNoteController extends Controller
         );
 
         $note = ReferralNote::create([
-            'tenant_id'       => $user->tenant_id,
+            'tenant_id'       => $user->effectiveTenantId(),
             'referral_id'     => $referral->id,
             'user_id'         => $user->id,
             'content'         => $request->validated()['content'],

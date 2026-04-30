@@ -33,7 +33,7 @@ class RoiRequestController extends Controller
 
     private function requireSameTenant($resource, $user): void
     {
-        abort_if($resource->tenant_id !== $user->tenant_id, 403);
+        abort_if($resource->tenant_id !== $user->effectiveTenantId(), 403);
     }
 
     public function index(Request $request, Participant $participant): JsonResponse
@@ -42,7 +42,7 @@ class RoiRequestController extends Controller
         $u = Auth::user();
         $this->requireSameTenant($participant, $u);
 
-        $rows = RoiRequest::forTenant($u->tenant_id)
+        $rows = RoiRequest::forTenant($u->effectiveTenantId())
             ->where('participant_id', $participant->id)
             ->with('fulfilledBy:id,first_name,last_name')
             ->orderByDesc('requested_at')->get();
@@ -70,7 +70,7 @@ class RoiRequestController extends Controller
             : now();
 
         $roi = RoiRequest::create(array_merge($validated, [
-            'tenant_id'      => $u->tenant_id,
+            'tenant_id'      => $u->effectiveTenantId(),
             'participant_id' => $participant->id,
             'requested_at'   => $requestedAt,
             'due_by'         => $requestedAt->copy()->addDays(RoiRequest::RESPONSE_DEADLINE_DAYS),

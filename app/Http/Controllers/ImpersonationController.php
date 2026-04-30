@@ -56,7 +56,7 @@ class ImpersonationController extends Controller
 
         $superAdmin = Auth::user();
 
-        $users = User::where('tenant_id', $superAdmin->tenant_id)
+        $users = User::where('tenant_id', $superAdmin->effectiveTenantId())
             ->where('id', '!=', $superAdmin->id)
             ->where('is_active', true)
             ->orderBy('last_name')
@@ -88,7 +88,7 @@ class ImpersonationController extends Controller
         $superAdmin = Auth::user();
 
         // Tenant isolation: cannot impersonate users from a different tenant
-        if ($user->tenant_id !== $superAdmin->tenant_id) {
+        if ($user->tenant_id !== $superAdmin->effectiveTenantId()) {
             abort(403, 'Cannot impersonate a user from a different tenant.');
         }
 

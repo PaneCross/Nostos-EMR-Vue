@@ -57,7 +57,7 @@ class EdiBatchController extends Controller
         }
 
         // Axios data-fetch from the mounted React component → return JSON list.
-        $tenantId = $request->user()->tenant_id;
+        $tenantId = $request->user()->effectiveTenantId();
 
         $batches = EdiBatch::forTenant($tenantId)
             ->with('createdBy:id,first_name,last_name')
@@ -81,7 +81,7 @@ class EdiBatchController extends Controller
     public function download(Request $request, EdiBatch $batch): Response
     {
         $this->authorizeFinance($request);
-        abort_if($batch->tenant_id !== $request->user()->tenant_id, 403);
+        abort_if($batch->tenant_id !== $request->user()->effectiveTenantId(), 403);
 
         AuditLog::record(
             action: 'edi_batch.download',
@@ -111,7 +111,7 @@ class EdiBatchController extends Controller
     public function acknowledge(Request $request, EdiBatch $batch): JsonResponse
     {
         $this->authorizeFinance($request);
-        abort_if($batch->tenant_id !== $request->user()->tenant_id, 403);
+        abort_if($batch->tenant_id !== $request->user()->effectiveTenantId(), 403);
 
         $ediContent = $request->input('edi_content') ?? $request->getContent();
 

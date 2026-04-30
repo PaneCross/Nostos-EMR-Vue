@@ -50,7 +50,7 @@ class PrimaryCareDashboardController extends Controller
     public function schedule(): JsonResponse
     {
         $this->requireDept();
-        $tenantId = Auth::user()->tenant_id;
+        $tenantId = Auth::user()->effectiveTenantId();
 
         $types = [
             'clinic_visit', 'telehealth', 'lab', 'imaging',
@@ -99,11 +99,11 @@ class PrimaryCareDashboardController extends Controller
 
         // Fake a user object scoped to primary_care for the forUser() scope
         $scopeUser = (object) [
-            'tenant_id'  => $user->tenant_id,
+            'tenant_id'  => $user->effectiveTenantId(),
             'department' => 'primary_care',
         ];
 
-        $alerts = Alert::where('tenant_id', $user->tenant_id)
+        $alerts = Alert::where('tenant_id', $user->effectiveTenantId())
             ->whereJsonContains('target_departments', 'primary_care')
             ->where('is_active', true)
             ->with(['participant:id,first_name,last_name'])
@@ -139,7 +139,7 @@ class PrimaryCareDashboardController extends Controller
     public function docs(): JsonResponse
     {
         $this->requireDept();
-        $tenantId = Auth::user()->tenant_id;
+        $tenantId = Auth::user()->effectiveTenantId();
 
         // Unsigned draft notes for this department
         $unsignedNotes = ClinicalNote::where('tenant_id', $tenantId)
@@ -210,7 +210,7 @@ class PrimaryCareDashboardController extends Controller
     public function vitals(): JsonResponse
     {
         $this->requireDept();
-        $tenantId = Auth::user()->tenant_id;
+        $tenantId = Auth::user()->effectiveTenantId();
 
         $vitals = Vital::where('tenant_id', $tenantId)
             ->with(['participant:id,first_name,last_name', 'recordedBy:id,first_name,last_name'])
@@ -251,7 +251,7 @@ class PrimaryCareDashboardController extends Controller
     public function orders(Request $request): JsonResponse
     {
         $this->requireDept();
-        $tenantId = Auth::user()->tenant_id;
+        $tenantId = Auth::user()->effectiveTenantId();
 
         $pendingOrders = ClinicalOrder::forTenant($tenantId)
             ->forDepartment('primary_care')
@@ -289,7 +289,7 @@ class PrimaryCareDashboardController extends Controller
     public function wounds(): JsonResponse
     {
         $this->requireDept();
-        $tenantId = Auth::user()->tenant_id;
+        $tenantId = Auth::user()->effectiveTenantId();
 
         $wounds = WoundRecord::forTenant($tenantId)
             ->open()
@@ -333,7 +333,7 @@ class PrimaryCareDashboardController extends Controller
     public function labResults(): JsonResponse
     {
         $this->requireDept();
-        $tenantId = Auth::user()->tenant_id;
+        $tenantId = Auth::user()->effectiveTenantId();
 
         $labs = LabResult::forTenant($tenantId)
             ->abnormal()
@@ -378,7 +378,7 @@ class PrimaryCareDashboardController extends Controller
     {
         $this->requireDept();
         $user = Auth::user();
-        $tenantId = $user->tenant_id;
+        $tenantId = $user->effectiveTenantId();
 
         $query = \Illuminate\Support\Facades\DB::table('emr_care_gaps')
             ->where('emr_care_gaps.tenant_id', $tenantId)
@@ -407,7 +407,7 @@ class PrimaryCareDashboardController extends Controller
     {
         $this->requireDept();
         $user = Auth::user();
-        $tenantId = $user->tenant_id;
+        $tenantId = $user->effectiveTenantId();
 
         $scores = \App\Models\PredictiveRiskScore::forTenant($tenantId)->high()
             ->where('computed_at', '>=', now()->subDays(7))
@@ -443,7 +443,7 @@ class PrimaryCareDashboardController extends Controller
     {
         $this->requireDept();
         $user = Auth::user();
-        $tenantId = $user->tenant_id;
+        $tenantId = $user->effectiveTenantId();
 
         $plans = \App\Models\AnticoagulationPlan::forTenant($tenantId)->active()
             ->where('agent', 'warfarin')

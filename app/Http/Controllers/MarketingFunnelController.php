@@ -32,7 +32,7 @@ class MarketingFunnelController extends Controller
         $from = $request->query('from', Carbon::now()->subYear()->toDateString());
         $to   = $request->query('to',   Carbon::now()->toDateString());
 
-        $referrals = Referral::forTenant($u->tenant_id)
+        $referrals = Referral::forTenant($u->effectiveTenantId())
             ->whereBetween('referral_date', [$from, $to])
             ->get(['id', 'referral_source', 'status', 'decline_reason']);
 

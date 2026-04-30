@@ -43,7 +43,7 @@ class HomeCareDashboardController extends Controller
     public function schedule(): JsonResponse
     {
         $this->requireDept();
-        $tenantId = Auth::user()->tenant_id;
+        $tenantId = Auth::user()->effectiveTenantId();
 
         $appointments = Appointment::where('tenant_id', $tenantId)
             ->where('appointment_type', 'home_visit')
@@ -84,7 +84,7 @@ class HomeCareDashboardController extends Controller
     public function adlAlerts(): JsonResponse
     {
         $this->requireDept();
-        $tenantId = Auth::user()->tenant_id;
+        $tenantId = Auth::user()->effectiveTenantId();
 
         $alerts = Alert::where('tenant_id', $tenantId)
             ->whereJsonContains('target_departments', 'home_care')
@@ -130,7 +130,7 @@ class HomeCareDashboardController extends Controller
     public function goals(): JsonResponse
     {
         $this->requireDept();
-        $tenantId = Auth::user()->tenant_id;
+        $tenantId = Auth::user()->effectiveTenantId();
 
         $goals = CarePlanGoal::whereHas('carePlan', fn ($q) => $q
                 ->where('tenant_id', $tenantId)
@@ -165,7 +165,7 @@ class HomeCareDashboardController extends Controller
     public function sdrs(): JsonResponse
     {
         $this->requireDept();
-        $tenantId = Auth::user()->tenant_id;
+        $tenantId = Auth::user()->effectiveTenantId();
 
         $sdrs = Sdr::where('tenant_id', $tenantId)
             ->forDepartment('home_care')
@@ -205,7 +205,7 @@ class HomeCareDashboardController extends Controller
     public function wounds(): JsonResponse
     {
         $this->requireDept();
-        $tenantId = Auth::user()->tenant_id;
+        $tenantId = Auth::user()->effectiveTenantId();
 
         $wounds = WoundRecord::forTenant($tenantId)
             ->open()
@@ -245,7 +245,7 @@ class HomeCareDashboardController extends Controller
     public function restraintOverdue(): JsonResponse
     {
         $this->requireDept();
-        $tenantId = Auth::user()->tenant_id;
+        $tenantId = Auth::user()->effectiveTenantId();
 
         $rows = \App\Models\RestraintEpisode::forTenant($tenantId)->active()
             ->with('participant:id,mrn,first_name,last_name')
@@ -273,7 +273,7 @@ class HomeCareDashboardController extends Controller
     public function activeInfections(): JsonResponse
     {
         $this->requireDept();
-        $tenantId = Auth::user()->tenant_id;
+        $tenantId = Auth::user()->effectiveTenantId();
 
         $rows = \App\Models\InfectionCase::forTenant($tenantId)
             ->whereNull('resolution_date')
@@ -302,7 +302,7 @@ class HomeCareDashboardController extends Controller
     public function highRiskCaseload(): JsonResponse
     {
         $this->requireDept();
-        $tenantId = Auth::user()->tenant_id;
+        $tenantId = Auth::user()->effectiveTenantId();
 
         $rows = \App\Models\PredictiveRiskScore::forTenant($tenantId)->high()
             ->where('computed_at', '>=', now()->subDays(7))

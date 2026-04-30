@@ -50,7 +50,7 @@ class HpmsController extends Controller
     public function index(Request $request): InertiaResponse
     {
         $this->authorizeFinance($request);
-        $tenantId    = $request->user()->tenant_id;
+        $tenantId    = $request->user()->effectiveTenantId();
 
         $submissions = HpmsSubmission::forTenant($tenantId)
             ->with('createdBy:id,first_name,last_name')
@@ -76,7 +76,7 @@ class HpmsController extends Controller
     public function generate(Request $request): JsonResponse
     {
         $this->authorizeFinance($request);
-        $tenantId = $request->user()->tenant_id;
+        $tenantId = $request->user()->effectiveTenantId();
 
         $data = $request->validate([
             'type'    => ['required', Rule::in(array_keys(HpmsSubmission::SUBMISSION_TYPES))],
@@ -126,7 +126,7 @@ class HpmsController extends Controller
     public function download(Request $request, HpmsSubmission $submission): Response
     {
         $this->authorizeFinance($request);
-        abort_if($submission->tenant_id !== $request->user()->tenant_id, 403);
+        abort_if($submission->tenant_id !== $request->user()->effectiveTenantId(), 403);
 
         AuditLog::record(
             action: 'billing.hpms.download',
@@ -155,7 +155,7 @@ class HpmsController extends Controller
     public function markSubmitted(Request $request, HpmsSubmission $submission): JsonResponse
     {
         $this->authorizeFinance($request);
-        abort_if($submission->tenant_id !== $request->user()->tenant_id, 403);
+        abort_if($submission->tenant_id !== $request->user()->effectiveTenantId(), 403);
 
         abort_if($submission->status === 'submitted', 409, 'Submission is already marked as submitted.');
 

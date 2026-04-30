@@ -42,7 +42,7 @@ class BehavioralHealthDashboardController extends Controller
     public function schedule(): JsonResponse
     {
         $this->requireDept();
-        $tenantId = Auth::user()->tenant_id;
+        $tenantId = Auth::user()->effectiveTenantId();
 
         $appointments = Appointment::where('tenant_id', $tenantId)
             ->whereIn('appointment_type', ['behavioral_health', 'telehealth'])
@@ -79,7 +79,7 @@ class BehavioralHealthDashboardController extends Controller
     public function assessments(): JsonResponse
     {
         $this->requireDept();
-        $tenantId = Auth::user()->tenant_id;
+        $tenantId = Auth::user()->effectiveTenantId();
 
         $bhTypes = ['phq9_depression', 'gad7_anxiety'];
 
@@ -129,7 +129,7 @@ class BehavioralHealthDashboardController extends Controller
     public function sdrs(): JsonResponse
     {
         $this->requireDept();
-        $tenantId = Auth::user()->tenant_id;
+        $tenantId = Auth::user()->effectiveTenantId();
 
         $sdrs = Sdr::where('tenant_id', $tenantId)
             ->forDepartment('behavioral_health')
@@ -167,7 +167,7 @@ class BehavioralHealthDashboardController extends Controller
     public function goals(): JsonResponse
     {
         $this->requireDept();
-        $tenantId = Auth::user()->tenant_id;
+        $tenantId = Auth::user()->effectiveTenantId();
 
         $goals = CarePlanGoal::whereHas('carePlan', fn ($q) => $q
                 ->where('tenant_id', $tenantId)

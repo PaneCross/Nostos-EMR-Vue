@@ -33,7 +33,7 @@ class AmendmentRequestController extends Controller
     {
         $this->gateStaff();
         $u = Auth::user();
-        $rows = AmendmentRequest::forTenant($u->tenant_id)
+        $rows = AmendmentRequest::forTenant($u->effectiveTenantId())
             ->with(['participant:id,mrn,first_name,last_name', 'reviewer:id,first_name,last_name'])
             ->orderByRaw("CASE status WHEN 'pending' THEN 0 WHEN 'under_review' THEN 1 ELSE 2 END")
             ->orderBy('deadline_at')
@@ -52,7 +52,7 @@ class AmendmentRequestController extends Controller
     {
         $this->gateStaff();
         $u = Auth::user();
-        abort_if($participant->tenant_id !== $u->tenant_id, 403);
+        abort_if($participant->tenant_id !== $u->effectiveTenantId(), 403);
 
         $validated = $request->validate([
             'target_record_type'      => 'nullable|string|max:60',
@@ -87,7 +87,7 @@ class AmendmentRequestController extends Controller
     {
         $this->gateStaff();
         $u = Auth::user();
-        abort_if($amendmentRequest->tenant_id !== $u->tenant_id, 403);
+        abort_if($amendmentRequest->tenant_id !== $u->effectiveTenantId(), 403);
 
         $validated = $request->validate([
             'status'             => 'required|in:under_review,accepted,denied,withdrawn',

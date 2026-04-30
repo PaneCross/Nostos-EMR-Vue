@@ -38,7 +38,7 @@ class FinanceDashboardController extends Controller
      */
     public function dashboard(Request $request): InertiaResponse
     {
-        $tenantId  = $request->user()->tenant_id;
+        $tenantId  = $request->user()->effectiveTenantId();
         $monthYear = now()->format('Y-m'); // current YYYY-MM for capitation lookup
 
         // KPI 1: Total CMS capitation this month (sum all participants for the tenant)
@@ -106,7 +106,7 @@ class FinanceDashboardController extends Controller
      */
     public function exportCsv(Request $request): Response
     {
-        $tenantId = $request->user()->tenant_id;
+        $tenantId = $request->user()->effectiveTenantId();
         $type     = $request->query('type', 'encounters');
 
         $rows    = [];

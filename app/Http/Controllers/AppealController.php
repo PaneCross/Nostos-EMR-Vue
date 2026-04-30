@@ -50,7 +50,7 @@ class AppealController extends Controller
     {
         $user = $request->user();
 
-        $query = Appeal::forTenant($user->tenant_id)
+        $query = Appeal::forTenant($user->effectiveTenantId())
             ->with([
                 'participant:id,mrn,first_name,last_name',
                 'denialNotice:id,sdr_id,reason_code,issued_at',
@@ -97,7 +97,7 @@ class AppealController extends Controller
     public function show(Request $request, Appeal $appeal): InertiaResponse|JsonResponse
     {
         $user = $request->user();
-        abort_if($appeal->tenant_id !== $user->tenant_id, 403);
+        abort_if($appeal->tenant_id !== $user->effectiveTenantId(), 403);
 
         $appeal->load([
             'participant:id,mrn,first_name,last_name,dob',
@@ -123,7 +123,7 @@ class AppealController extends Controller
     {
         $user = $request->user();
         $notice = ServiceDenialNotice::where('id', $request->validated('service_denial_notice_id'))
-            ->where('tenant_id', $user->tenant_id)
+            ->where('tenant_id', $user->effectiveTenantId())
             ->firstOrFail();
 
         if (! $notice->appealWindowOpen()) {
@@ -146,7 +146,7 @@ class AppealController extends Controller
     /** POST /appeals/{appeal}/acknowledge */
     public function acknowledge(Request $request, Appeal $appeal): JsonResponse
     {
-        abort_if($appeal->tenant_id !== $request->user()->tenant_id, 403);
+        abort_if($appeal->tenant_id !== $request->user()->effectiveTenantId(), 403);
         $appeal = $this->appealService->acknowledge($appeal, $request->user());
         return response()->json($appeal);
     }
@@ -154,7 +154,7 @@ class AppealController extends Controller
     /** POST /appeals/{appeal}/begin-review */
     public function beginReview(Request $request, Appeal $appeal): JsonResponse
     {
-        abort_if($appeal->tenant_id !== $request->user()->tenant_id, 403);
+        abort_if($appeal->tenant_id !== $request->user()->effectiveTenantId(), 403);
         $appeal = $this->appealService->beginReview($appeal, $request->user());
         return response()->json($appeal);
     }
@@ -162,7 +162,7 @@ class AppealController extends Controller
     /** POST /appeals/{appeal}/decide */
     public function decide(DecideAppealRequest $request, Appeal $appeal): JsonResponse
     {
-        abort_if($appeal->tenant_id !== $request->user()->tenant_id, 403);
+        abort_if($appeal->tenant_id !== $request->user()->effectiveTenantId(), 403);
         $appeal = $this->appealService->decide(
             $appeal,
             $request->validated('outcome'),
@@ -175,7 +175,7 @@ class AppealController extends Controller
     /** POST /appeals/{appeal}/request-external */
     public function requestExternal(Request $request, Appeal $appeal): JsonResponse
     {
-        abort_if($appeal->tenant_id !== $request->user()->tenant_id, 403);
+        abort_if($appeal->tenant_id !== $request->user()->effectiveTenantId(), 403);
         $validated = $request->validate(['narrative' => ['nullable', 'string', 'max:4000']]);
         $appeal = $this->appealService->requestExternalReview($appeal, $request->user(), $validated['narrative'] ?? null);
         return response()->json($appeal);
@@ -184,7 +184,7 @@ class AppealController extends Controller
     /** POST /appeals/{appeal}/withdraw */
     public function withdraw(Request $request, Appeal $appeal): JsonResponse
     {
-        abort_if($appeal->tenant_id !== $request->user()->tenant_id, 403);
+        abort_if($appeal->tenant_id !== $request->user()->effectiveTenantId(), 403);
         $validated = $request->validate(['narrative' => ['nullable', 'string', 'max:4000']]);
         $appeal = $this->appealService->withdraw($appeal, $request->user(), $validated['narrative'] ?? null);
         return response()->json($appeal);
@@ -193,7 +193,7 @@ class AppealController extends Controller
     /** POST /appeals/{appeal}/close */
     public function close(Request $request, Appeal $appeal): JsonResponse
     {
-        abort_if($appeal->tenant_id !== $request->user()->tenant_id, 403);
+        abort_if($appeal->tenant_id !== $request->user()->effectiveTenantId(), 403);
         $validated = $request->validate(['narrative' => ['nullable', 'string', 'max:4000']]);
         $appeal = $this->appealService->close($appeal, $request->user(), $validated['narrative'] ?? null);
         return response()->json($appeal);
@@ -204,7 +204,7 @@ class AppealController extends Controller
     /** GET /denial-notices/{notice}/download : stream the PDF */
     public function downloadNoticePdf(Request $request, ServiceDenialNotice $notice)
     {
-        abort_if($notice->tenant_id !== $request->user()->tenant_id, 403);
+        abort_if($notice->tenant_id !== $request->user()->effectiveTenantId(), 403);
         abort_unless($notice->pdf_document_id, 404, 'Notice PDF has not been generated.');
         $doc = $notice->pdfDocument;
         abort_unless($doc && Storage::disk('local')->exists($doc->file_path), 404);
@@ -214,7 +214,7 @@ class AppealController extends Controller
     /** GET /appeals/{appeal}/acknowledgment.pdf : stream ack letter */
     public function downloadAckPdf(Request $request, Appeal $appeal)
     {
-        abort_if($appeal->tenant_id !== $request->user()->tenant_id, 403);
+        abort_if($appeal->tenant_id !== $request->user()->effectiveTenantId(), 403);
         abort_unless($appeal->acknowledgment_pdf_document_id, 404);
         $doc = $appeal->acknowledgmentPdf;
         abort_unless($doc && Storage::disk('local')->exists($doc->file_path), 404);
@@ -224,7 +224,7 @@ class AppealController extends Controller
     /** GET /appeals/{appeal}/decision.pdf : stream decision letter */
     public function downloadDecisionPdf(Request $request, Appeal $appeal)
     {
-        abort_if($appeal->tenant_id !== $request->user()->tenant_id, 403);
+        abort_if($appeal->tenant_id !== $request->user()->effectiveTenantId(), 403);
         abort_unless($appeal->decision_pdf_document_id, 404);
         $doc = $appeal->decisionPdf;
         abort_unless($doc && Storage::disk('local')->exists($doc->file_path), 404);

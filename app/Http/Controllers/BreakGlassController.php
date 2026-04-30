@@ -44,7 +44,7 @@ class BreakGlassController extends Controller
         $user = Auth::user();
 
         // Tenant isolation check
-        abort_if($participant->tenant_id !== $user->tenant_id, 403);
+        abort_if($participant->tenant_id !== $user->effectiveTenantId(), 403);
 
         $validated = $request->validate([
             'justification' => 'required|string',
@@ -79,7 +79,7 @@ class BreakGlassController extends Controller
             abort(403);
         }
 
-        $tenantId = $user->tenant_id;
+        $tenantId = $user->effectiveTenantId();
 
         $query = BreakGlassEvent::forTenant($tenantId)
             ->with([
@@ -121,7 +121,7 @@ class BreakGlassController extends Controller
         }
 
         // Tenant isolation
-        abort_if($event->tenant_id !== $user->tenant_id, 403);
+        abort_if($event->tenant_id !== $user->effectiveTenantId(), 403);
 
         abort_if($event->isAcknowledged(), 409, 'Event already acknowledged.');
 

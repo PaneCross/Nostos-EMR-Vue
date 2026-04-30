@@ -41,7 +41,7 @@ class EhiExportController extends Controller
 
     private function authorizeExport(Participant $participant, $user): void
     {
-        abort_if($participant->tenant_id !== $user->tenant_id, 403);
+        abort_if($participant->tenant_id !== $user->effectiveTenantId(), 403);
 
         $canExport = $user->department === 'it_admin'
             || ($user->department === 'enrollment' && $user->isAdmin())
@@ -142,7 +142,7 @@ class EhiExportController extends Controller
     public function download(Request $request, Participant $participant, string $token): BinaryFileResponse
     {
         $user   = $request->user();
-        abort_if($participant->tenant_id !== $user->tenant_id, 403);
+        abort_if($participant->tenant_id !== $user->effectiveTenantId(), 403);
 
         $export = EhiExport::where('token', $token)
             ->where('participant_id', $participant->id)

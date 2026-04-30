@@ -45,7 +45,7 @@ class ParticipantFlagController extends Controller
 
         $flag = ParticipantFlag::create(array_merge($request->validated(), [
             'participant_id'    => $participant->id,
-            'tenant_id'         => $user->tenant_id,
+            'tenant_id'         => $user->effectiveTenantId(),
             'created_by_user_id'=> $user->id,
             'is_active'         => true,
         ]));
@@ -108,6 +108,6 @@ class ParticipantFlagController extends Controller
 
     private function authorizeForTenant(Participant $participant, $user): void
     {
-        abort_if($participant->tenant_id !== $user->tenant_id, 403);
+        abort_if($participant->tenant_id !== $user->effectiveTenantId(), 403);
     }
 }

@@ -21,14 +21,14 @@ class AdverseDrugEventController extends Controller
         abort_unless($u->isSuperAdmin() || in_array($u->department, $allow, true), 403);
     }
 
-    private function requireSameTenant($r, $u): void { abort_if($r->tenant_id !== $u->tenant_id, 403); }
+    private function requireSameTenant($r, $u): void { abort_if($r->tenant_id !== $u->effectiveTenantId(), 403); }
 
     public function index(Request $request, Participant $participant): JsonResponse
     {
         $this->gate();
         $u = Auth::user();
         $this->requireSameTenant($participant, $u);
-        $events = AdverseDrugEvent::forTenant($u->tenant_id)
+        $events = AdverseDrugEvent::forTenant($u->effectiveTenantId())
             ->where('participant_id', $participant->id)
             ->with('medication:id,drug_name')
             ->orderByDesc('onset_date')->get();

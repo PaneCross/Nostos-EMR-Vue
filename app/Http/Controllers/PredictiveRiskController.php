@@ -22,9 +22,9 @@ class PredictiveRiskController extends Controller
     {
         $this->gate();
         $u = Auth::user();
-        abort_if($participant->tenant_id !== $u->tenant_id, 403);
+        abort_if($participant->tenant_id !== $u->effectiveTenantId(), 403);
 
-        $latest = PredictiveRiskScore::forTenant($u->tenant_id)
+        $latest = PredictiveRiskScore::forTenant($u->effectiveTenantId())
             ->where('participant_id', $participant->id)
             ->orderByDesc('computed_at')->limit(20)->get()
             ->groupBy('risk_type');
@@ -40,7 +40,7 @@ class PredictiveRiskController extends Controller
     {
         $this->gate();
         $u = Auth::user();
-        abort_if($participant->tenant_id !== $u->tenant_id, 403);
+        abort_if($participant->tenant_id !== $u->effectiveTenantId(), 403);
         $scores = $svc->score($participant);
         return response()->json(['scores' => $scores]);
     }
@@ -56,7 +56,7 @@ class PredictiveRiskController extends Controller
         if (! $request->wantsJson()) return \Inertia\Inertia::render('Dashboards/HighRisk');
         // latest row per participant per risk_type : cheap approximation:
         // grab scores from last 24h only, since job runs daily.
-        $rows = PredictiveRiskScore::forTenant($u->tenant_id)
+        $rows = PredictiveRiskScore::forTenant($u->effectiveTenantId())
             ->high()
             ->where('computed_at', '>=', now()->subDay())
             ->with('participant:id,mrn,first_name,last_name')

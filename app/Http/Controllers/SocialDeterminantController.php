@@ -21,7 +21,7 @@ class SocialDeterminantController extends Controller
 {
     private function authorizeForTenant(Participant $participant, $user): void
     {
-        abort_if($participant->tenant_id !== $user->tenant_id, 403);
+        abort_if($participant->tenant_id !== $user->effectiveTenantId(), 403);
     }
 
     /**
@@ -63,7 +63,7 @@ class SocialDeterminantController extends Controller
 
         $record = SocialDeterminant::create(array_merge($validated, [
             'participant_id'      => $participant->id,
-            'tenant_id'           => $user->tenant_id,
+            'tenant_id'           => $user->effectiveTenantId(),
             'assessed_by_user_id' => $user->id,
             'assessed_at'         => $validated['assessed_at'] ?? now(),
         ]));
@@ -90,12 +90,12 @@ class SocialDeterminantController extends Controller
         $criticalFood    = in_array($validated['food_security'],     ['food_insecure'], true);
         if ($criticalHousing || $criticalFood) {
             $prefs = app(\App\Services\NotificationPreferenceService::class);
-            if ($prefs->shouldNotify($user->tenant_id, 'designation.social_work_supervisor.sdoh_critical', $participant->site_id)) {
-                $supervisor = \App\Models\User::where('tenant_id', $user->tenant_id)
+            if ($prefs->shouldNotify($user->effectiveTenantId(), 'designation.social_work_supervisor.sdoh_critical', $participant->site_id)) {
+                $supervisor = \App\Models\User::where('tenant_id', $user->effectiveTenantId())
                     ->withDesignation('social_work_supervisor')->where('is_active', true)->first();
                 if ($supervisor) {
                     \App\Models\Alert::create([
-                        'tenant_id'          => $user->tenant_id,
+                        'tenant_id'          => $user->effectiveTenantId(),
                         'participant_id'     => $participant->id,
                         'source_module'      => 'sdoh',
                         'alert_type'         => 'social_work_supervisor_sdoh_critical',

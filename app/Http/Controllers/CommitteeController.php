@@ -32,7 +32,7 @@ class CommitteeController extends Controller
     {
         $this->gate();
         $u = Auth::user();
-        $committees = Committee::forTenant($u->tenant_id)
+        $committees = Committee::forTenant($u->effectiveTenantId())
             ->withCount(['members', 'meetings'])
             ->with(['meetings' => fn ($q) => $q->orderByDesc('scheduled_date')->limit(3)])
             ->orderBy('name')->get();
@@ -58,7 +58,7 @@ class CommitteeController extends Controller
             'meeting_cadence' => 'nullable|string|max:40',
         ]);
         $committee = Committee::create(array_merge($validated, [
-            'tenant_id' => $u->tenant_id,
+            'tenant_id' => $u->effectiveTenantId(),
             'is_active' => true,
         ]));
         AuditLog::record(
@@ -74,7 +74,7 @@ class CommitteeController extends Controller
     {
         $this->gate();
         $u = Auth::user();
-        abort_unless($committee->tenant_id === $u->tenant_id, 404);
+        abort_unless($committee->tenant_id === $u->effectiveTenantId(), 404);
         $validated = $request->validate([
             'user_id'       => 'nullable|integer',
             'external_name' => 'nullable|string|max:150',
@@ -95,7 +95,7 @@ class CommitteeController extends Controller
     {
         $this->gate();
         $u = Auth::user();
-        abort_unless($committee->tenant_id === $u->tenant_id, 404);
+        abort_unless($committee->tenant_id === $u->effectiveTenantId(), 404);
         $validated = $request->validate([
             'scheduled_date' => 'required|date',
             'location'       => 'nullable|string|max:150',
@@ -117,7 +117,7 @@ class CommitteeController extends Controller
     {
         $this->gate();
         $u = Auth::user();
-        abort_unless($meeting->committee->tenant_id === $u->tenant_id, 404);
+        abort_unless($meeting->committee->tenant_id === $u->effectiveTenantId(), 404);
         $validated = $request->validate([
             'minutes'         => 'nullable|string|max:20000',
             'attendees_json'  => 'nullable|array',
@@ -133,7 +133,7 @@ class CommitteeController extends Controller
     {
         $this->gate();
         $u = Auth::user();
-        abort_unless($meeting->committee->tenant_id === $u->tenant_id, 404);
+        abort_unless($meeting->committee->tenant_id === $u->effectiveTenantId(), 404);
         $validated = $request->validate([
             'motion_text'   => 'required|string|max:500',
             'votes_yes'     => 'required|integer|min:0',

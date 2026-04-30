@@ -33,14 +33,14 @@ class DiseaseRegistryController extends Controller
             abort_if($component === null, 404);
             return \Inertia\Inertia::render("Registries/{$component}");
         }
-        return response()->json($this->svc->cohort($u->tenant_id, $registry));
+        return response()->json($this->svc->cohort($u->effectiveTenantId(), $registry));
     }
 
     public function export(Request $request, string $registry): Response
     {
         $this->gate();
         $u = Auth::user();
-        $csv = $this->svc->toCsv($u->tenant_id, $registry);
+        $csv = $this->svc->toCsv($u->effectiveTenantId(), $registry);
         return response($csv, 200, [
             'Content-Type'        => 'text/csv',
             'Content-Disposition' => "attachment; filename=\"registry-{$registry}.csv\"",

@@ -42,7 +42,7 @@ class ActivitiesDashboardController extends Controller
     public function schedule(): JsonResponse
     {
         $this->requireDept();
-        $tenantId = Auth::user()->tenant_id;
+        $tenantId = Auth::user()->effectiveTenantId();
 
         $appointments = Appointment::where('tenant_id', $tenantId)
             ->whereIn('appointment_type', ['activities', 'day_center_attendance'])
@@ -88,7 +88,7 @@ class ActivitiesDashboardController extends Controller
     public function goals(): JsonResponse
     {
         $this->requireDept();
-        $tenantId = Auth::user()->tenant_id;
+        $tenantId = Auth::user()->effectiveTenantId();
 
         $goals = CarePlanGoal::whereHas('carePlan', fn ($q) => $q
                 ->where('tenant_id', $tenantId)
@@ -123,7 +123,7 @@ class ActivitiesDashboardController extends Controller
     public function sdrs(): JsonResponse
     {
         $this->requireDept();
-        $tenantId = Auth::user()->tenant_id;
+        $tenantId = Auth::user()->effectiveTenantId();
 
         $sdrs = Sdr::where('tenant_id', $tenantId)
             ->forDepartment('activities')
@@ -161,7 +161,7 @@ class ActivitiesDashboardController extends Controller
     public function docs(): JsonResponse
     {
         $this->requireDept();
-        $tenantId = Auth::user()->tenant_id;
+        $tenantId = Auth::user()->effectiveTenantId();
 
         // Activity notes use note_type='activity_notes' : map to department scope
         $notes = ClinicalNote::where('tenant_id', $tenantId)
