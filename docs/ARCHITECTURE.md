@@ -318,6 +318,73 @@ When CMS shows up for a survey, you turn these on, hit print, and walk in with a
 
 ---
 
+### 5.11 Documentation standard (every file is readable cold)
+
+This codebase will outlive the people who built it. Every file is written
+to be readable without context. Rules :
+
+- **PHP class** — every class gets a header block with purpose, lifecycle,
+  CMS/HIPAA rule it enforces (if relevant), and the route list (if it's a
+  controller). Use the `// ─── ClassName ─── ` divider pattern.
+- **PHP public method** — JSDoc `/** */` block, OR an inline comment for
+  non-obvious logic. Trivial getters can skip it.
+- **PHP business rules** — complex query scopes, `boot()` hooks, and rule
+  constants must explain WHY, not just WHAT. If a line enforces a CMS or
+  HIPAA rule, cite the regulation inline.
+- **Vue file** — header comment with layout, data loading strategy, key
+  props the component expects.
+- **Vue composables / non-trivial helpers** — one-line comment per
+  function ; every `watch` / `onMounted` explains why it exists.
+- **Factories** — state methods explain what scenario they simulate (so
+  test authors can pick the right one).
+- **No silent magic.** If a line enforces a CMS / HIPAA / PACE rule, say
+  so inline. Don't leave the regulation reference implicit.
+- **Section dividers in long files** — `// ── Section ─────` to separate
+  logical blocks.
+
+Examples of the standard in practice : `app/Models/Participant.php`,
+`app/Services/EnrollmentService.php`, `app/Http/Controllers/AppointmentController.php`.
+
+### 5.12 Frontend style rules
+
+- **No em dashes anywhere in user-facing UI or code comments.** Use
+  commas, hyphens (`-`), colons, or periods instead. Exception : box-
+  drawing dividers (─) in comment headers are fine, those are different
+  Unicode characters.
+- **No emojis in user-facing UI.** Use Heroicons (already installed).
+  Standard typographic symbols (✕ for close, ✓ for check, ⌘ for keyboard
+  hints) are acceptable.
+- **Every utility class in a Tailwind expression needs a `dark:`
+  variant** unless it's already a dark-friendly slate or the global
+  `app.css` `@layer base` rule covers it (form inputs).
+- **Every datetime serialized to JSON uses `toIso8601String()`,** never
+  `toDateTimeString()`. The latter omits the timezone offset and
+  JavaScript misinterprets it as local time.
+
+### 5.13 Carbon 3 gotcha
+
+Carbon 3 changed `diffInHours` and `diffInDays` to return SIGNED values.
+The right patterns :
+
+```php
+// Days remaining until a future date (safe sign)
+$daysRemaining = now()->diffInDays($futureDate);
+
+// Hours since a past event (always positive)
+$hoursAgo = abs((int) now()->diffInHours($pastDate));
+```
+
+Doing it backwards (`$futureDate->diffInDays(now())`) returns negative
+values that silently break expiry / overdue checks.
+
+### 5.14 Test fixture ordering
+
+`Event::fake()` intercepts ALL Eloquent events including `creating`. If
+called BEFORE `Participant::factory()->create()`, the MRN-generating
+hook on `Participant::boot()` never fires and the test fails on the NOT
+NULL constraint. Fix : call `Event::fake()` AFTER all model fixture
+creation in `setUp()`.
+
 ## 6. Glossary — acronyms
 
 Whenever you see one of these in code or comments, this is what it means.
