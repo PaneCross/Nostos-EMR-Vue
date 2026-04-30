@@ -81,7 +81,11 @@ RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cac
 # Health-check endpoint — Laravel ships /up out of the box (see bootstrap/app.php).
 ENV HEALTHCHECK_PATH=/up
 
-USER www-data
+# IMPORTANT : do NOT set `USER www-data` here. The serversideup image uses
+# s6-overlay as PID 1 (it manages nginx + php-fpm + healthcheck). s6-overlay
+# refuses to run as anything other than PID 1 / root, then drops privileges
+# to www-data internally for the actual web processes. Setting USER above
+# breaks the container with "s6-overlay-suexec: fatal: can only run as pid 1".
 
 # Port 8080 is the serversideup default ; matches fly.toml internal_port.
 EXPOSE 8080
