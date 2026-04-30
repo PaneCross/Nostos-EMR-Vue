@@ -1,132 +1,201 @@
-# Demo deployment to Fly.io
+# Demo deployment notes
 
-Living doc for the `nostosemr-demo` Fly.io deployment. **This is a demo
-environment with seeded fake data.** Real PHI must NEVER be entered here —
-the host is not BAA-eligible. When we sign a real client we'll migrate to
-HIPAA-eligible infra (AWS / Azure / Aptible) ; that's a separate project
-documented elsewhere.
+The repo has Fly.io deploy artefacts in place (Dockerfile, fly.toml,
+.github/workflows/fly-deploy.yml, app/Console/Commands/DemoSeedIfEmpty.php),
+but as of the 2026-04-30 click-through session **the live deployment was
+torn down** : the Fly.io setup wasn't free enough for heavy testing, and
+TJ wants to keep developing locally on Docker until the EMR is ready to
+share with PACE contacts.
 
-## What's where
+When the time comes to redeploy, the recommended path is **Option C** below
+(Render + Neon + Upstash, all permanent free tiers). The Fly.io path is
+still wired up and works ; it's just not cost-free, which matters for an
+indefinite demo with hard testing.
 
-| Piece | Location | Free? |
-|---|---|---|
-| Web app (Laravel + Vue) | Fly.io shared VM, `lax` region, 1 GB RAM | ~$2-3/mo if it stays warm, $0 if always idle (auto-stop) |
-| Postgres | Fly Postgres, smallest tier | ~$2/mo, sometimes covered by free credit |
-| Redis (sessions / cache) | Upstash via Fly extension | Generous free tier |
-| Domain | Whatever TJ owns (or `*.fly.dev` for free) | $0 with `.fly.dev`, ~$12/yr custom |
+## Status as of 2026-04-30
 
-Total : **$0 to ~$5/mo for a low-traffic demo.**
+- Fly apps `nostos-emr-vue` and `nostos-emr-vue-db` : **destroyed**.
+- Cost going forward : **$0** until next deploy.
+- Repo files left in place (still useful as reference / future redeploy) :
+  - `Dockerfile`
+  - `.dockerignore`
+  - `fly.toml` (restored to free-tier-friendly defaults)
+  - `.github/workflows/fly-deploy.yml`
+  - `app/Console/Commands/DemoSeedIfEmpty.php`
 
-## What TJ has to do (one time, ~10 minutes)
+---
 
-1. **Sign up at https://fly.io.** Email + password, or GitHub OAuth.
-   Add a credit card (required even on free tier ; Fly gives free
-   allowances but won't provision without a card on file).
+## Option A : just keep developing locally (current state)
 
-2. **Install the CLI on your machine.** From WSL2 :
-   ```bash
-   curl -L https://fly.io/install.sh | sh
-   ```
-   That puts `flyctl` (alias `fly`) at `~/.fly/bin/flyctl`.
+No hosting. TJ runs `./start.sh` on his WSL2 + Docker setup ; Claude Code
+edits files locally ; tests run on the Sail container. **This is where
+we are right now.**
 
-3. **Log in once.** Opens a browser :
-   ```bash
-   fly auth login
-   ```
-   After login the CLI stores a token at `~/.fly/config.yml`. Once that
-   exists, Claude Code can run every subsequent `fly` command on its own.
+---
 
-4. **Tell Claude Code "go deploy"** in chat. Claude does the rest of the
-   provisioning (`fly launch`, `fly postgres create`, secrets, deploy,
-   seed). When Claude needs the deploy token for GitHub Actions, it'll
-   tell you the one command to run + paste into the GitHub UI.
+## Option B : redeploy to Fly.io (for sale demos, ~$0-3/mo idle)
 
-That's it. Future code changes : `git push origin main` auto-deploys via
-`.github/workflows/fly-deploy.yml`.
-
-## What Claude does (after the bootstrap)
-
-Each step below is a single `fly` command Claude runs via the Bash tool.
-They're listed here so the reasoning is auditable.
-
-### Initial provisioning (one-time)
+Has caveats — see "Lessons learned" below. If you go this route :
 
 ```bash
-# 1) Create the app (no deploy yet — we want to set secrets first)
-fly launch --no-deploy --copy-config --name nostosemr-demo --region lax
+# (one-time) install + auth flyctl
+curl -L https://fly.io/install.sh | sh
+fly auth login
 
-# 2) Provision Postgres in the same region
-fly postgres create --name nostosemr-demo-db --region lax \
-    --vm-size shared-cpu-1x --volume-size 1 --initial-cluster-size 1
+# Bump fly.toml's web VM to 2 GB temporarily (the seeder OOMs at 1 GB).
+# Then :
+fly launch --no-deploy --copy-config --name nostos-emr-vue --region lax
 
-# 3) Attach Postgres to the app — this writes DATABASE_URL into Fly secrets
-fly postgres attach nostosemr-demo-db --app nostosemr-demo
+# Provision Postgres
+fly postgres create --name nostos-emr-vue-db --region lax \
+    --vm-size shared-cpu-1x --initial-cluster-size 1 --volume-size 1
+fly postgres attach nostos-emr-vue-db --app nostos-emr-vue \
+    --database-name nostos_emr
 
-# 4) Provision Redis (Upstash)
-fly redis create --name nostosemr-demo-redis --region lax
+# IMPORTANT : bump Postgres memory or the seeder OOMs the DB
+fly machine update <pg-machine-id> -a nostos-emr-vue-db --vm-memory 1024 --yes
+fly machine update <pg-machine-id> -a nostos-emr-vue-db --autostart --yes
 
-# 5) Set the rest of the production secrets
-fly secrets set --app nostosemr-demo \
-    APP_KEY=base64:$(php artisan --no-ansi key:generate --show) \
-    APP_ENV=production \
-    APP_DEBUG=false \
-    APP_URL=https://nostosemr-demo.fly.dev \
-    SESSION_DRIVER=redis \
-    CACHE_STORE=redis \
-    QUEUE_CONNECTION=sync \
-    DB_CONNECTION=pgsql \
-    LOG_CHANNEL=stderr \
-    LOG_LEVEL=info
+# Set DB connection fields (fly attach writes DATABASE_URL but the project
+# reads DB_HOST/DB_PORT/etc., which Fly doesn't auto-set)
+fly secrets set --app nostos-emr-vue --stage \
+    DB_HOST=nostos-emr-vue-db.flycast \
+    DB_PORT=5432 \
+    DB_DATABASE=nostos_emr \
+    DB_USERNAME=<from-attach-output> \
+    DB_PASSWORD=<from-attach-output>
 
-# 6) First deploy
+# Set the rest of production secrets
+fly secrets set --app nostos-emr-vue --stage \
+    APP_KEY=base64:<openssl rand -base64 32> \
+    APP_ENV=production APP_DEBUG=false \
+    APP_URL=https://nostos-emr-vue.fly.dev \
+    SESSION_DRIVER=database CACHE_STORE=database QUEUE_CONNECTION=database \
+    DB_CONNECTION=pgsql LOG_CHANNEL=stderr LOG_LEVEL=info \
+    BROADCAST_CONNECTION=null FILESYSTEM_DISK=local MAIL_MAILER=log
+
+# Deploy. The release_command runs migrations + DemoSeedIfEmpty inside
+# a Fly deploy machine (no SSH timeout) so the seed completes cleanly.
 fly deploy
 
-# 7) Seed the demo data (runs inside the deployed VM)
-fly ssh console --app nostosemr-demo \
-    -C "php artisan db:seed --class=DemoEnvironmentSeeder --force"
+# After the seed completes, drop web VM back to 1 GB for cheaper idle :
+# edit fly.toml memory = "1gb" and `fly deploy` again.
+
+# Generate auto-deploy token for GitHub Actions :
+fly tokens create deploy --app nostos-emr-vue --expiry 8760h \
+    --name 'github-actions-deploy'
+# Paste output into github.com/PaneCross/Nostos-EMR-Vue/settings/secrets/actions
+# under the name FLY_API_TOKEN.
 ```
 
-### Day-to-day (Claude or TJ)
+Cost at idle with `auto_stop_machines = "stop"` and `min_machines_running = 0`:
+$0 for the web VM (parks itself), ~$2/mo for Postgres (always-on).
 
-```bash
-# Manual deploy (auto-deploy via GH Actions also works)
-fly deploy
+---
 
-# Tail logs
-fly logs
+## Option C : redeploy to Render + Neon + Upstash (permanent $0, recommended for next launch)
 
-# Run one-off artisan commands
-fly ssh console -C "php artisan tinker"
+Three vendors, all permanent free tiers, no card required for any.
 
-# Reset demo data (wipes + re-seeds)
-fly ssh console -C "php artisan migrate:fresh --seed --force"
+| Piece | Vendor | Free tier | Catch |
+|---|---|---|---|
+| Web app | Render.com | Always free, 512 MB | Sleeps after 15 min idle, ~30s cold start on next request |
+| Postgres | Neon.tech | Always free, 0.5 GB | Sufficient for demo seed (~50 MB) ; auto-pauses when idle |
+| Redis (optional) | Upstash | 10k commands/day free | Skip for demo ; database driver works fine |
 
-# Check app status / cost
-fly status
-fly billing show
-```
+### Setup outline (estimate ~1 hour)
 
-## Cost / scaling notes
+1. **Sign up at neon.tech**, create a new project. Copy the connection
+   string (looks like `postgresql://user:pass@ep-xxx.us-east.aws.neon.tech/neondb`).
 
-- `auto_stop_machines = "stop"` + `min_machines_running = 0` in `fly.toml`
-  means the web VM parks itself after a few minutes of no traffic and
-  costs $0 while idle. First request after idle takes 1-3 seconds to
-  cold-start. Fine for demos, would be unacceptable for a real app.
-- Postgres has no auto-stop ; it bills continuously. The smallest tier
-  (`shared-cpu-1x` / 1 GB volume) is ~$1.94/mo at the time of writing.
-- If a demo session needs to feel snappy (no cold start), bump
-  `min_machines_running = 1` in `fly.toml` for that day. Adds ~$3/mo
-  while it's on.
+2. **Sign up at render.com**, create a new "Web Service" pointed at the
+   GitHub repo. Render auto-detects the Dockerfile.
 
-## Future-proofing
+3. Set the same env vars as Option B but :
+   - Use Neon's connection string for `DB_HOST`, `DB_PORT`, `DB_DATABASE`,
+     `DB_USERNAME`, `DB_PASSWORD`
+   - Set `APP_URL=https://your-render-url.onrender.com` (or custom domain)
+   - All other vars same as Option B
 
-When we sign a real PACE client :
+4. Render runs the `Dockerfile` and exposes the app. Add a "pre-deploy
+   command" of `php artisan migrate --force && php artisan demo:seed-if-empty`
+   so the demo seed runs once on first deploy.
 
-1. Migrate to a HIPAA-eligible host (likely AWS Fargate or Aptible).
-2. Sign the BAA.
-3. Move the `production` deploy there ; keep the Fly.io app as `staging`
-   or sales-demo.
+5. Auto-deploy is automatic on Render — every push to `main` triggers a
+   redeploy, no GitHub Actions workflow needed (Render does it itself).
 
-The Dockerfile here is portable to any container host (ECS, Cloud Run,
-Aptible, etc.) — no Fly-specific code in it. `fly.toml` is the only
-Fly-coupled file.
+### Trade-offs vs Fly.io
+
+- **Render free tier sleeps after 15 min of inactivity.** First request
+  after sleep takes ~30 seconds to wake the dyno. Set expectation with
+  PACE contacts : "first click takes 30 seconds, after that it's snappy."
+- **Neon free Postgres also auto-pauses** after 5 min idle. Wake takes
+  another few seconds. So a truly cold demo : ~30s for the web app +
+  a few seconds for Postgres on the first DB query. Total <60s.
+- After the first request everything is fast for as long as traffic
+  keeps flowing.
+
+---
+
+## Lessons learned from the 2026-04-30 attempt
+
+Six production-only bugs surfaced during the Fly deploy. All fixed and
+committed ; future deploys won't hit these again, but worth knowing :
+
+1. **`USER www-data` in Dockerfile broke s6-overlay** (the serversideup
+   base image's init system requires PID 1 = root). Fixed by removing
+   the directive.
+
+2. **serversideup's s6-overlay incompatible with Fly.io's machine runtime**
+   even after the USER fix : "s6-overlay-suexec : fatal : can only run as
+   pid 1". Switched base to `webdevops/php-nginx:8.4-alpine`.
+
+3. **`richarvey/nginx-php-fpm:3.1.6` (intermediate attempt) ships PHP 8.2,**
+   but our composer.lock requires PHP 8.4. Switched to webdevops which
+   has a clean 8.4 tag.
+
+4. **`fakerphp/faker` was in `require-dev`** so `composer install --no-dev`
+   stripped it ; production seeders need it for factories. Moved to
+   `require`.
+
+5. **Laravel's `config/database.php` reads `DB_URL`,** not Fly's
+   auto-attached `DATABASE_URL`. Set the individual `DB_HOST` / `DB_PORT`
+   / etc. fields explicitly.
+
+6. **`storage/framework/*` was excluded from build context** (dev artefacts
+   owned by laravel.test container, unreadable by host docker). Added
+   `RUN mkdir -p` for the runtime dirs in Dockerfile.
+
+7. **HTTPS scheme** : behind Fly's TLS proxy Laravel saw plain HTTP and
+   emitted `http://` asset URLs. Fixed via `URL::forceScheme('https')`
+   in `AppServiceProvider::boot()` when `app()->environment('production')`.
+
+8. **SSH session timeout (~3 min) was killing the demo seed.** Worked
+   around by moving the seed into a `php artisan demo:seed-if-empty`
+   custom command and calling it from `fly.toml`'s `[deploy]
+   release_command` — the deploy machine has a 30 min window vs SSH's 3.
+
+9. **Postgres OOM at 256 MB** during the seeder — bumped to 1 GB.
+   `fly.toml` web VM bumped to 2 GB during seed, dropped back to 1 GB
+   after for cost.
+
+All of these are now baked into the repo. A clean redeploy to either Fly
+or Render shouldn't hit any of them.
+
+---
+
+## When NOT to use Fly.io / Render / Neon
+
+These are **demo / pilot** infrastructure. None are HIPAA-eligible by
+default. The moment a real PACE contact enters real patient data, you
+need :
+
+- A signed BAA with the hosting provider.
+- Encryption at rest + in transit (most modern hosts have this, but
+  it's part of what the BAA formalises).
+- Audit logging (already built into NostosEMR via `shared_audit_logs`).
+
+For a real client deployment, migrate to one of : AWS (Fargate / ECS,
+sign BAA), Azure App Service (sign BAA), Google Cloud Run (sign BAA),
+or a HIPAA-by-default vendor like Aptible. That's a separate project,
+~$200-500/mo for a small hosted EMR.
