@@ -125,26 +125,31 @@ class SuperAdminPanelController extends Controller
             'emr_integration_log'          => 'Integration Events',
         ];
 
+        // Frontend contract : `{label, count}` per row, keyed by label (so
+        // dropping the `table` key in favor of `label` is intentional - the
+        // Vue template at SuperAdmin/Index.vue:285 renders `row.label`).
         $counts = [];
         foreach ($tables as $table => $label) {
             try {
                 $counts[] = [
-                    'table' => $label,
+                    'label' => $label,
                     'count' => DB::table($table)->count(),
                 ];
             } catch (\Exception) {
-                $counts[] = ['table' => $label, 'count' => null];
+                $counts[] = ['label' => $label, 'count' => 0];
             }
         }
 
-        $failedJobs    = DB::table('failed_jobs')->count();
-        $pendingJobs   = DB::table('jobs')->count();
+        $failedJobs  = DB::table('failed_jobs')->count();
+        $pendingJobs = DB::table('jobs')->count();
 
+        // Frontend contract : `queue_stats: Record<string, number>` keyed by
+        // queue name. Vue template iterates (count, queue) for the cards.
         return response()->json([
             'table_counts' => $counts,
-            'queues' => [
-                'failed_jobs'  => $failedJobs,
-                'pending_jobs' => $pendingJobs,
+            'queue_stats'  => [
+                'pending'     => $pendingJobs,
+                'failed'      => $failedJobs,
             ],
         ]);
     }
