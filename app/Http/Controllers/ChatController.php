@@ -653,10 +653,11 @@ class ChatController extends Controller
         $this->requireMembership($request->user(), $channel);
         $this->assertMessageBelongsToChannel($channel, $message);
 
-        $existing = $message->reads()->where('user_id', $request->user()->id)->exists();
-        $this->chatService->markRead($message, $request->user());
+        // markRead returns true only when THIS call wrote the row (won the
+        // race). Concurrent IntersectionObserver hits won't both broadcast.
+        $wasFirstRead = $this->chatService->markRead($message, $request->user());
 
-        if (! $existing) {
+        if ($wasFirstRead) {
             broadcast(new MessageRead(
                 $channel->id,
                 $message->id,

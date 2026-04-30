@@ -528,21 +528,24 @@ class ChatService
     /**
      * Mark a message as read by $reader. Idempotent : second call is a no-op.
      * On first read, writes the audit row (PHI access trail).
+     *
+     * Returns true if this was the first read (audit was written), false if
+     * the row already existed. Uses firstOrCreate() so two concurrent
+     * IntersectionObserver hits don't race the unique constraint :
+     * the DB resolves the race atomically and one of the two callers gets
+     * "already existed" without an exception.
      */
-    public function markRead(ChatMessage $message, User $reader): void
+    public function markRead(ChatMessage $message, User $reader): bool
     {
-        $existing = ChatMessageRead::where('message_id', $message->id)
-            ->where('user_id', $reader->id)
-            ->first();
-        if ($existing) {
-            return; // already audited
-        }
+        $row = ChatMessageRead::firstOrCreate(
+            ['message_id' => $message->id, 'user_id' => $reader->id],
+            ['read_at' => now()],
+        );
 
-        ChatMessageRead::create([
-            'message_id' => $message->id,
-            'user_id'    => $reader->id,
-            'read_at'    => now(),
-        ]);
+        // wasRecentlyCreated is true only when this call won the race.
+        if (! $row->wasRecentlyCreated) {
+            return false;
+        }
 
         AuditLog::record(
             action:       'chat.message_read',
@@ -552,6 +555,8 @@ class ChatService
             resourceId:   $message->id,
             description:  sprintf('User %d first-read message %d.', $reader->id, $message->id),
         );
+
+        return true;
     }
 
     // ── Mute / snooze ────────────────────────────────────────────────────────
