@@ -19,7 +19,7 @@
 // Plan reference : docs/plans/chat_v2_plan.md §9.
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch, nextTick, type Component } from 'vue'
 import { Head, usePage } from '@inertiajs/vue3'
 import axios from 'axios'
 import AppShell from '@/Layouts/AppShell.vue'
@@ -27,6 +27,11 @@ import {
     BoltIcon,
     PencilSquareIcon,
     StarIcon as StarSolid,
+    HandThumbUpIcon as HandThumbUpSolid,
+    CheckCircleIcon as CheckCircleSolid,
+    EyeIcon as EyeSolid,
+    HeartIcon as HeartSolid,
+    QuestionMarkCircleIcon as QuestionMarkCircleSolid,
 } from '@heroicons/vue/24/solid'
 import {
     BellSlashIcon,
@@ -35,6 +40,11 @@ import {
     StarIcon as StarOutline,
     ChevronDownIcon,
     ChevronRightIcon,
+    HandThumbUpIcon as HandThumbUpOutline,
+    CheckCircleIcon as CheckCircleOutline,
+    EyeIcon as EyeOutline,
+    HeartIcon as HeartOutline,
+    QuestionMarkCircleIcon as QuestionMarkCircleOutline,
 } from '@heroicons/vue/24/outline'
 
 // ── Types ──────────────────────────────────────────────────────────────────────
@@ -97,13 +107,26 @@ const CHANNEL_GROUP_ORDER: Array<{ key: string; label: string; types: string[] }
     { key: 'dm',              label: 'Direct Messages',      types: ['direct', 'group_dm'] },
 ]
 
-const REACTION_PALETTE: Array<{ code: string; emoji: string; label: string }> = [
-    { code: 'thumbs_up', emoji: '👍', label: 'Thumbs up' },
-    { code: 'check',     emoji: '✅', label: 'Done / agreed' },
-    { code: 'eyes',      emoji: '👀', label: 'Looking' },
-    { code: 'heart',     emoji: '❤️', label: 'Heart' },
-    { code: 'question',  emoji: '❓', label: 'Question' },
+// Reactions use Heroicons (on theme with the rest of the app). The "active"
+// state on a reaction is the solid variant ; the resting palette is outline.
+// Each entry pairs the semantic code with both icon variants and a tooltip.
+interface ReactionPaletteItem {
+    code: string
+    label: string
+    iconOutline: Component
+    iconSolid: Component
+}
+const REACTION_PALETTE: ReactionPaletteItem[] = [
+    { code: 'thumbs_up', label: 'Thumbs up',      iconOutline: HandThumbUpOutline,        iconSolid: HandThumbUpSolid },
+    { code: 'check',     label: 'Done / agreed', iconOutline: CheckCircleOutline,        iconSolid: CheckCircleSolid },
+    { code: 'eyes',      label: 'Looking',       iconOutline: EyeOutline,                iconSolid: EyeSolid },
+    { code: 'heart',     label: 'Heart',         iconOutline: HeartOutline,              iconSolid: HeartSolid },
+    { code: 'question',  label: 'Question',      iconOutline: QuestionMarkCircleOutline, iconSolid: QuestionMarkCircleSolid },
 ]
+
+function paletteFor(code: string): ReactionPaletteItem | undefined {
+    return REACTION_PALETTE.find(p => p.code === code)
+}
 
 // ── Page props + auth ─────────────────────────────────────────────────────────
 
@@ -122,6 +145,56 @@ const input          = ref('')
 const isUrgent       = ref(false)
 const sending        = ref(false)
 const editingId      = ref<number | null>(null)
+
+// Per-channel draft state. Switching channels saves the current channel's
+// composer state and restores the destination's. Persisted to localStorage
+// so the drafts survive a page refresh — same pattern Slack uses.
+interface ChannelDraft { text: string; urgent: boolean; editingId: number | null }
+const drafts = ref<Record<number, ChannelDraft>>({})
+const DRAFTS_KEY = 'nostos_chat_drafts'
+
+function loadDraftsFromLocal() {
+    try {
+        const raw = localStorage.getItem(DRAFTS_KEY)
+        if (raw) drafts.value = JSON.parse(raw)
+    } catch { /* ignore */ }
+}
+
+function persistDrafts() {
+    try { localStorage.setItem(DRAFTS_KEY, JSON.stringify(drafts.value)) } catch { /* ignore */ }
+}
+
+function captureCurrentDraft() {
+    if (! activeChannel.value) return
+    const id = activeChannel.value.id
+    if (input.value.trim() === '' && editingId.value === null) {
+        // Empty draft : clean up the entry so we don't accumulate stale keys.
+        if (drafts.value[id]) {
+            delete drafts.value[id]
+            persistDrafts()
+        }
+        return
+    }
+    drafts.value[id] = {
+        text: input.value,
+        urgent: isUrgent.value,
+        editingId: editingId.value,
+    }
+    persistDrafts()
+}
+
+function restoreDraftFor(channelId: number) {
+    const d = drafts.value[channelId]
+    if (d) {
+        input.value = d.text
+        isUrgent.value = d.urgent
+        editingId.value = d.editingId
+    } else {
+        input.value = ''
+        isUrgent.value = false
+        editingId.value = null
+    }
+}
 
 // Channel-create modals + drawers
 const showCreateRoleGroup = ref(false)
@@ -400,8 +473,14 @@ function toggleGroup(key: string) {
     persistCollapsed()
 }
 
-function emojiFor(code: string): string {
-    return REACTION_PALETTE.find(p => p.code === code)?.emoji ?? '?'
+/**
+ * Look up the count + my_reaction state for a given reaction code on a
+ * specific message. Returns undefined when no one has reacted with that
+ * code yet ; the always-visible palette uses this to render a faded
+ * resting state vs. an active highlighted state.
+ */
+function reactionFor(m: Message, code: string): Reaction | undefined {
+    return m.reactions.find(r => r.reaction === code)
 }
 
 // ── Grouped channels ──────────────────────────────────────────────────────────
@@ -446,12 +525,18 @@ async function loadMessages(channelId: number, page = 1) {
 }
 
 async function selectChannel(c: Channel) {
+    // Save the OUTGOING channel's composer state before swapping.
+    captureCurrentDraft()
+
     activeChannel.value = c
-    editingId.value = null
     showSearch.value = false
     showPinPanel.value = false
     showSettings.value = false
     mentionOpen.value = false
+
+    // Restore the INCOMING channel's draft (if any).
+    restoreDraftFor(c.id)
+
     await loadMessages(c.id)
     await axios.post(`/chat/channels/${c.id}/read`)
     // Load lookups in parallel so the @mention typeahead is ready as soon
@@ -484,6 +569,11 @@ async function send() {
         }
         input.value = ''
         isUrgent.value = false
+        // Wipe the persisted draft for this channel since we just sent it.
+        if (activeChannel.value) {
+            delete drafts.value[activeChannel.value.id]
+            persistDrafts()
+        }
         await loadMessages(activeChannel.value.id, 1)
     } catch (e: any) {
         if (e.response?.status === 422) {
@@ -642,6 +732,7 @@ function stopPolling() {
 
 onMounted(async () => {
     loadCollapsedFromLocal()
+    loadDraftsFromLocal()
     await loadChannels()
     if (! hasAutoSelected.value && channels.value.length > 0) {
         const first = grouped.value.flatMap(g => g.items)[0]
@@ -653,6 +744,17 @@ onMounted(async () => {
 onUnmounted(() => {
     if (echoChannelRef.value) (window as any).Echo?.leave?.(echoChannelRef.value)
     stopPolling()
+    // Capture any in-flight draft so a navigation-away doesn't lose it.
+    captureCurrentDraft()
+})
+
+// Debounced persist on every keystroke. Slack-style : the draft survives
+// even if the tab crashes or the user closes the browser.
+let draftSaveTimer: ReturnType<typeof setTimeout> | null = null
+watch([input, isUrgent, editingId], () => {
+    if (! activeChannel.value) return
+    if (draftSaveTimer) clearTimeout(draftSaveTimer)
+    draftSaveTimer = setTimeout(() => captureCurrentDraft(), 400)
 })
 
 // ── Channel-create flows ──────────────────────────────────────────────────────
@@ -942,36 +1044,33 @@ function observeForRead(el: HTMLElement | null, messageId: number) {
                                         </template>
                                     </p>
 
-                                    <!-- Reactions -->
+                                    <!-- Reactions : always-visible palette ; the user clicks
+                                         any icon to toggle. Active state = solid icon + pill,
+                                         resting state = outline icon + neutral. -->
                                     <div class="mt-1.5 flex flex-wrap items-center gap-1">
-                                        <button
-                                            v-for="r in m.reactions"
-                                            :key="r.reaction"
-                                            @click="toggleReaction(m.id, r.reaction)"
-                                            :class="[
-                                                'rounded px-1.5 py-0.5 text-xs flex items-center gap-1 border',
-                                                r.my_reaction
-                                                    ? 'bg-indigo-50 dark:bg-indigo-900/30 border-indigo-300 dark:border-indigo-700 text-indigo-800 dark:text-indigo-200'
-                                                    : 'bg-slate-50 dark:bg-slate-700/50 border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-300',
-                                            ]"
-                                        >
-                                            <span>{{ emojiFor(r.reaction) }}</span>
-                                            <span class="font-mono text-[10px]">{{ r.count }}</span>
-                                        </button>
-                                        <details class="inline-block">
-                                            <summary class="rounded px-1.5 py-0.5 text-xs cursor-pointer text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 list-none">+ react</summary>
-                                            <div class="absolute z-10 mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded shadow-lg p-1 flex gap-1">
-                                                <button
-                                                    v-for="p in REACTION_PALETTE"
-                                                    :key="p.code"
-                                                    @click="toggleReaction(m.id, p.code)"
-                                                    :title="p.label"
-                                                    class="rounded p-1 hover:bg-slate-100 dark:hover:bg-slate-700 text-base"
-                                                >{{ p.emoji }}</button>
-                                            </div>
-                                        </details>
-                                        <button @click="openReceipts(m.id)" class="ml-2 text-[10px] text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:underline">
-                                            👁 {{ m.read_count }}/{{ m.total_members }}
+                                        <template v-for="p in REACTION_PALETTE" :key="p.code">
+                                            <button
+                                                @click="toggleReaction(m.id, p.code)"
+                                                :title="p.label + (reactionFor(m, p.code)?.count ? ' (' + reactionFor(m, p.code)!.count + ')' : '')"
+                                                :class="[
+                                                    'rounded px-1.5 py-0.5 inline-flex items-center gap-1 border transition-colors',
+                                                    reactionFor(m, p.code)?.my_reaction
+                                                        ? 'bg-indigo-50 dark:bg-indigo-900/30 border-indigo-300 dark:border-indigo-700 text-indigo-700 dark:text-indigo-300'
+                                                        : reactionFor(m, p.code)?.count
+                                                          ? 'bg-slate-50 dark:bg-slate-700/50 border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'
+                                                          : 'border-transparent text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/40',
+                                                ]"
+                                            >
+                                                <component
+                                                    :is="reactionFor(m, p.code)?.my_reaction ? p.iconSolid : p.iconOutline"
+                                                    class="w-3.5 h-3.5"
+                                                />
+                                                <span v-if="reactionFor(m, p.code)?.count" class="font-mono text-[10px]">{{ reactionFor(m, p.code)!.count }}</span>
+                                            </button>
+                                        </template>
+                                        <button @click="openReceipts(m.id)" class="ml-2 text-[10px] text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:underline inline-flex items-center gap-0.5">
+                                            <EyeOutline class="w-3 h-3" />
+                                            {{ m.read_count }}/{{ m.total_members }}
                                         </button>
                                     </div>
                                 </div>
@@ -1187,7 +1286,13 @@ function observeForRead(el: HTMLElement | null, messageId: number) {
                 <div v-if="receipts.reactions.length > 0">
                     <h4 class="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400 mb-1">Reactions</h4>
                     <ul class="text-xs space-y-0.5">
-                        <li v-for="r in receipts.reactions" :key="r.user_id + r.reaction" class="flex justify-between"><span>{{ r.name }} {{ emojiFor(r.reaction) }}</span><span class="text-slate-400">{{ formatTime(r.reacted_at) }}</span></li>
+                        <li v-for="r in receipts.reactions" :key="r.user_id + r.reaction" class="flex justify-between items-center">
+                            <span class="inline-flex items-center gap-1">
+                                {{ r.name }}
+                                <component :is="paletteFor(r.reaction)?.iconSolid" class="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+                            </span>
+                            <span class="text-slate-400">{{ formatTime(r.reacted_at) }}</span>
+                        </li>
                     </ul>
                 </div>
                 <button @click="showReceipts = null" class="px-3 py-1.5 text-sm rounded bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200 w-full">Close</button>
