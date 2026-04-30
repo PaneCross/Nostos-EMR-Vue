@@ -31,7 +31,7 @@ primary_region = "lax"
 # Public-facing port 80 / 443 → internal port 8080 (serversideup default).
 # Fly handles Let's Encrypt automatically once a custom domain is added.
 [http_service]
-  internal_port = 8080
+  internal_port = 80
   force_https = true
   auto_stop_machines = "stop"     # Free-tier-friendly : park when idle.
   auto_start_machines = true      # Wake on first request (~1-3s cold start).

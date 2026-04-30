@@ -61,11 +61,15 @@ COPY . .
 RUN composer dump-autoload --classmap-authoritative
 
 # ── Stage 3 : final runtime image ────────────────────────────────────────────
-FROM serversideup/php:8.4-fpm-nginx-alpine AS final
-
-# serversideup runs as the unprivileged "www-data" user by default on port 8080.
-# We need to be root briefly to install our app, then drop back.
-USER root
+# Switched off serversideup/php:*-fpm-nginx-alpine because its s6-overlay
+# entrypoint refuses to run on Fly.io machines : "s6-overlay-suexec: fatal:
+# can only run as pid 1" even when started as root. Fly's machine runtime
+# wraps containers in a way that breaks s6's PID 1 check.
+#
+# This image (richarvey/nginx-php-fpm) bundles nginx + php-fpm under
+# supervisord (which doesn't care about PID 1) and works cleanly on Fly.
+# It's also smaller and a common pick for Laravel on container hosts.
+FROM richarvey/nginx-php-fpm:3.1.6 AS final
 
 WORKDIR /var/www/html
 
@@ -75,17 +79,17 @@ COPY --from=node-builder /app/public/build/ /var/www/html/public/build/
 
 # Make sure storage + bootstrap/cache are writable by php-fpm. Sail does
 # this in dev via the volume mount ; we have to bake it in.
-RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache \
+RUN chown -R nginx:nginx /var/www/html/storage /var/www/html/bootstrap/cache \
  && chmod -R ug+rwX /var/www/html/storage /var/www/html/bootstrap/cache
 
-# Health-check endpoint — Laravel ships /up out of the box (see bootstrap/app.php).
-ENV HEALTHCHECK_PATH=/up
+# Tell richarvey's image where Laravel's public dir lives (it defaults to
+# /var/www/html which already matches, but being explicit is safer when
+# upstream defaults change). WEBROOT must point at the public/ folder
+# so nginx serves index.php through laravel's front controller.
+ENV WEBROOT=/var/www/html/public
+ENV SKIP_COMPOSER=1
+ENV PHP_ERRORS_STDERR=1
+ENV REAL_IP_HEADER=1
 
-# IMPORTANT : do NOT set `USER www-data` here. The serversideup image uses
-# s6-overlay as PID 1 (it manages nginx + php-fpm + healthcheck). s6-overlay
-# refuses to run as anything other than PID 1 / root, then drops privileges
-# to www-data internally for the actual web processes. Setting USER above
-# breaks the container with "s6-overlay-suexec: fatal: can only run as pid 1".
-
-# Port 8080 is the serversideup default ; matches fly.toml internal_port.
-EXPOSE 8080
+# Port 80 is the richarvey default. fly.toml internal_port matches.
+EXPOSE 80
