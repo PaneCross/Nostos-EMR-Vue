@@ -333,10 +333,10 @@ const nonLifeThreateningAllergies = computed(() =>
 
 // ── Display maps ──────────────────────────────────────────────────────────────
 const STATUS_COLORS: Record<string, string> = {
-  enrolled:    'bg-green-100 text-green-800',
-  referred:    'bg-blue-100 text-blue-800',
-  intake:      'bg-indigo-100 text-indigo-800',
-  pending:     'bg-yellow-100 text-yellow-800',
+  enrolled:    'bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-300',
+  referred:    'bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300',
+  intake:      'bg-indigo-100 dark:bg-indigo-900/40 text-indigo-800 dark:text-indigo-300',
+  pending:     'bg-yellow-100 dark:bg-yellow-900/40 text-yellow-800 dark:text-yellow-300',
   disenrolled: 'bg-gray-200 dark:bg-slate-700 text-gray-700 dark:text-slate-300',
   deceased:    'bg-gray-300 dark:bg-slate-700 text-gray-600 dark:text-slate-400',
 }
@@ -432,7 +432,7 @@ const DIRECTIVE_TYPE_LABELS: Record<string, string> = {
                   "{{ participant.preferred_name }}"
                 </span>
               </h1>
-              <span :class="['text-xs px-2.5 py-1 rounded-full font-semibold uppercase tracking-wide shrink-0', STATUS_COLORS[participant.enrollment_status] ?? 'bg-gray-200 text-gray-700']">
+              <span :class="['text-xs px-2.5 py-1 rounded-full font-semibold uppercase tracking-wide shrink-0', STATUS_COLORS[participant.enrollment_status] ?? 'bg-gray-200 dark:bg-slate-700 text-gray-700 dark:text-slate-300']">
                 {{ participant.enrollment_status }}
               </span>
               <span

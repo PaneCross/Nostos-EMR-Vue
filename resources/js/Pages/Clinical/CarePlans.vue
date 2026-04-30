@@ -218,7 +218,7 @@ const STATUS_LABEL: Record<string, string> = {
                                     v-if="ppt.care_plan"
                                     :class="[
                                         'inline-flex px-2 py-0.5 rounded-full text-xs font-medium',
-                                        STATUS_BADGE[ppt.care_plan.status] ?? 'bg-gray-100 text-gray-600',
+                                        STATUS_BADGE[ppt.care_plan.status] ?? 'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300',
                                     ]"
                                 >
                                     {{ STATUS_LABEL[ppt.care_plan.status] ?? ppt.care_plan.status }}

@@ -23,7 +23,7 @@ const transitioning = ref<number | null>(null)
 
 function statusColor(s: string): string {
   switch (s) {
-    case 'draft':     return 'bg-gray-100 dark:bg-slate-700 text-gray-700'
+    case 'draft':     return 'bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-slate-200'
     case 'submitted': return 'bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300'
     case 'approved':  return 'bg-green-100 dark:bg-green-900/60 text-green-700 dark:text-green-300'
     case 'denied':    return 'bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300'

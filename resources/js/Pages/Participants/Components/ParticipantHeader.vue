@@ -425,7 +425,7 @@ const sectionHdr = 'text-xs font-bold text-slate-500 dark:text-slate-400 upperca
           <span
             v-if="riskBand"
             :title="`Predictive acute-event risk: ${riskScore}/100 (${riskBand})`"
-            :class="['inline-flex items-center px-2 py-0.5 rounded border text-xs font-medium', RISK_CHIP_CLASS[riskBand] ?? 'bg-gray-100 text-gray-600']"
+            :class="['inline-flex items-center px-2 py-0.5 rounded border text-xs font-medium', RISK_CHIP_CLASS[riskBand] ?? 'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300']"
           >
             Risk · {{ riskBand }}<span v-if="riskScore !== null" class="ml-1 opacity-70">({{ riskScore }})</span>
           </span>
@@ -456,7 +456,7 @@ const sectionHdr = 'text-xs font-bold text-slate-500 dark:text-slate-400 upperca
           <span
             v-if="eligibilityStatus"
             :title="`Latest 270/271 eligibility ${eligibilityStatus} (checked ${eligibilityCheckedAt})`"
-            :class="['inline-flex items-center px-2 py-0.5 rounded border text-xs font-medium', ELIG_CHIP_CLASS[eligibilityStatus] ?? 'bg-gray-100 text-gray-600']"
+            :class="['inline-flex items-center px-2 py-0.5 rounded border text-xs font-medium', ELIG_CHIP_CLASS[eligibilityStatus] ?? 'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300']"
             data-testid="chip-eligibility"
             @click="emit('tab-change', 'insurance')"
           >

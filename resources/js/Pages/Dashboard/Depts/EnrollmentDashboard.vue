@@ -27,9 +27,9 @@ const COLUMN_COLORS: Record<string, string> = {
     new:                 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300',
     intake_scheduled:    'bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300',
     intake_in_progress:  'bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300',
-    intake_complete:     'bg-teal-100 text-teal-700 dark:text-teal-300',
+    intake_complete:     'bg-teal-100 dark:bg-teal-900/60 text-teal-700 dark:text-teal-300',
     eligibility_pending: 'bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300',
-    pending_enrollment:  'bg-orange-100 text-orange-700',
+    pending_enrollment:  'bg-orange-100 dark:bg-orange-900/60 text-orange-700 dark:text-orange-300',
     enrolled:            'bg-green-100 dark:bg-green-900/60 text-green-700 dark:text-green-300',
 }
 

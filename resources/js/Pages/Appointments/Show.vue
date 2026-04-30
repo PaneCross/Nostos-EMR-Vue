@@ -106,7 +106,7 @@ async function transition(action: 'confirm' | 'complete' | 'cancel' | 'no-show')
                         </Link>
                     </p>
                 </div>
-                <span :class="['inline-flex px-3 py-1 rounded-full text-xs font-medium', STATUS_CLASS[appointment.status] ?? 'bg-slate-100']">
+                <span :class="['inline-flex px-3 py-1 rounded-full text-xs font-medium', STATUS_CLASS[appointment.status] ?? 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300']">
                     {{ typeLabel(appointment.status) }}
                 </span>
             </div>

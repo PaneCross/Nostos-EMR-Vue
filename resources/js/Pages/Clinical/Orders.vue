@@ -318,7 +318,7 @@ const STATUS_BADGE: Record<string, string> = {
                                     v-if="order.priority"
                                     :class="[
                                         'inline-flex px-2 py-0.5 rounded-full text-xs font-semibold uppercase',
-                                        PRIORITY_BADGE[order.priority] ?? 'bg-gray-100 dark:bg-slate-700 text-gray-600',
+                                        PRIORITY_BADGE[order.priority] ?? 'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300',
                                     ]"
                                 >
                                     {{ order.priority }}
@@ -331,7 +331,7 @@ const STATUS_BADGE: Record<string, string> = {
                                 <span
                                     :class="[
                                         'inline-flex px-2 py-0.5 rounded-full text-xs font-medium capitalize',
-                                        STATUS_BADGE[order.status] ?? 'bg-gray-100 dark:bg-slate-700 text-gray-600',
+                                        STATUS_BADGE[order.status] ?? 'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300',
                                     ]"
                                 >
                                     {{ order.status }}

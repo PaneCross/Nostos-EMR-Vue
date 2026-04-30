@@ -70,7 +70,7 @@ async function markHhs(id: number) {
 }
 
 function statusColor(s: string) {
-  if (s === 'closed') return 'bg-gray-100 dark:bg-slate-700 text-gray-600'
+  if (s === 'closed') return 'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300'
   if (s === 'hhs_notified') return 'bg-green-100 dark:bg-green-900/60 text-green-700 dark:text-green-300'
   if (s === 'individuals_notified') return 'bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300'
   return 'bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300'

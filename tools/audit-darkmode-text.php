@@ -46,15 +46,23 @@ foreach ($files as $file) {
         // Skip script + style blocks (rough — assumes <template> is the rest)
         if (preg_match('/^\s*(import|const|function|<script|<\/script>|<style|<\/style>|\s*\/\/|\s*\*|\}\s*$)/', $line)) continue;
 
-        // Category 1 : light-mode text color but no dark counterpart on same line.
-        if (preg_match('/text-(?:slate|gray|zinc|neutral|stone)-[6-9]00/', $line)
+        // Category 1 : NON-hover/focus light-mode text color but no dark
+        // counterpart on same line. We strip hover:/focus: prefixed colors
+        // before checking so a `text-gray-400 hover:text-gray-600` doesn't
+        // false-positive on the hover variant.
+        $stripped = preg_replace('#(hover|focus|active|group-hover|peer-hover|dark):text-[a-z0-9/-]+#', '', $line);
+        if (preg_match('/text-(?:slate|gray|zinc|neutral|stone)-[6-9]00/', $stripped)
             && ! preg_match('/dark:text-/', $line)) {
             $findings[] = ['file' => $file, 'line' => $lineNum, 'cat' => 1,
                 'reason' => 'text-{shade}-[6-9]00 with no dark: pair', 'snippet' => trim($line)];
         }
 
-        // Category 2 : light bg without dark counterpart.
-        if (preg_match('/bg-(?:slate|gray|zinc|white|red|amber|emerald|indigo|rose|orange|blue)-(?:50|100)\b/', $line)
+        // Category 2 : NON-hover/focus light bg without dark counterpart.
+        // Also strip file: + placeholder: pseudo-classes (those style the
+        // input's file-button or placeholder, not the wider element, and the
+        // light bg there is intentional - dark variants would look awkward).
+        $strippedBg = preg_replace('#(hover|focus|active|group-hover|peer-hover|dark|file|placeholder|checked):bg-[a-z0-9/-]+#', '', $line);
+        if (preg_match('/bg-(?:slate|gray|zinc|white|red|amber|emerald|indigo|rose|orange|blue|green|yellow|purple|violet)-(?:50|100)\b/', $strippedBg)
             && ! preg_match('/dark:bg-/', $line)
             && ! preg_match('/(class|className)\s*=\s*"[^"]*\b(prose|input|select|textarea)\b/', $line)) {
             $findings[] = ['file' => $file, 'line' => $lineNum, 'cat' => 2,

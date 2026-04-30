@@ -68,12 +68,12 @@ const FLAG_CONFIG: Record<string, { label: string; classes: string; dotColor: st
     },
     stretcher: {
         label:    'Stretcher',
-        classes:  'bg-orange-100 text-orange-800 ring-orange-600/20',
+        classes:  'bg-orange-100 dark:bg-orange-900/40 text-orange-800 dark:text-orange-300 ring-orange-600/20',
         dotColor: 'bg-orange-500',
     },
     oxygen: {
         label:    'Oxygen',
-        classes:  'bg-teal-100 text-teal-800 dark:text-teal-300 ring-teal-600/20',
+        classes:  'bg-teal-100 dark:bg-teal-900/40 text-teal-800 dark:text-teal-300 ring-teal-600/20',
         dotColor: 'bg-teal-500',
     },
     behavioral: {
@@ -122,7 +122,7 @@ const behavioralParticipants = computed(() =>
 const statChips = computed(() => [
     { label: 'Active Census',  count: props.stats.total_active,     color: 'bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300',     filter: '' },
     { label: 'Wheelchair',     count: props.stats.needs_wheelchair, color: 'bg-blue-50 dark:bg-blue-950/60 border-blue-200 dark:border-blue-800 text-blue-800 dark:text-blue-300',         filter: 'wheelchair' },
-    { label: 'Stretcher',      count: props.stats.needs_stretcher,  color: 'bg-orange-50 border-orange-200 text-orange-800',   filter: 'stretcher' },
+    { label: 'Stretcher',      count: props.stats.needs_stretcher,  color: 'bg-orange-50 dark:bg-orange-950/60 border-orange-200 dark:border-orange-800 text-orange-800 dark:text-orange-300',   filter: 'stretcher' },
     { label: 'Oxygen',         count: props.stats.needs_oxygen,     color: 'bg-teal-50 dark:bg-teal-950/60 border-teal-200 text-teal-800 dark:text-teal-300',         filter: 'oxygen' },
     { label: 'Behavioral',     count: props.stats.has_behavioral,   color: 'bg-red-50 dark:bg-red-950/60 border-red-200 dark:border-red-800 text-red-800 dark:text-red-300',            filter: 'behavioral' },
     { label: 'No Flags',       count: props.stats.no_flags,         color: 'bg-green-50 dark:bg-green-950/60 border-green-200 dark:border-green-800 text-green-800 dark:text-green-300',      filter: 'none' },

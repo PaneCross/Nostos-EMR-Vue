@@ -195,7 +195,7 @@ function applyFilter(val: string) {
                                 </span>
                             </td>
                             <td class="px-4 py-3">
-                                <span :class="['inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium', STATUS_CLASSES[a.status] ?? 'bg-slate-100 text-slate-700']">
+                                <span :class="['inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium', STATUS_CLASSES[a.status] ?? 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300']">
                                     {{ STATUS_LABELS[a.status] ?? a.status }}
                                 </span>
                             </td>
