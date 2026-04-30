@@ -1436,6 +1436,35 @@ Route::middleware('auth')->group(function () {
         Route::post('/channels/{channel}/read',    [ChatController::class, 'markRead'])->name('read');
         Route::post('/direct/{user}',              [ChatController::class, 'directMessage'])->name('direct');
         Route::get('/unread-count',                [ChatController::class, 'unreadCount'])->name('unread');
+
+        // ── Chat v2 endpoints ──────────────────────────────────────────────
+        // Role-group (specialized) channel management
+        Route::post('/role-group-channels',                       [ChatController::class, 'createRoleGroup'])->name('role_group.create');
+        Route::patch('/role-group-channels/{channel}',            [ChatController::class, 'updateRoleGroup'])->name('role_group.update');
+        Route::delete('/role-group-channels/{channel}',           [ChatController::class, 'archiveRoleGroup'])->name('role_group.archive');
+
+        // Group DM (user-created multi-member) management
+        Route::post('/group-dm-channels',                         [ChatController::class, 'createGroupDm'])->name('group_dm.create');
+        Route::patch('/group-dm-channels/{channel}',              [ChatController::class, 'renameGroupDm'])->name('group_dm.rename');
+        Route::post('/group-dm-channels/{channel}/members',       [ChatController::class, 'addGroupDmMember'])->name('group_dm.member.add');
+        Route::delete('/group-dm-channels/{channel}/members/{user}', [ChatController::class, 'removeGroupDmMember'])->name('group_dm.member.remove');
+
+        // Message-level features
+        Route::post('/channels/{channel}/messages/{message}/react',   [ChatController::class, 'addReaction'])->name('message.react');
+        Route::delete('/channels/{channel}/messages/{message}/react', [ChatController::class, 'removeReaction'])->name('message.react.remove');
+        Route::post('/channels/{channel}/messages/{message}/read',    [ChatController::class, 'markMessageRead'])->name('message.read');
+        Route::patch('/channels/{channel}/messages/{message}',        [ChatController::class, 'editMessage'])->name('message.edit');
+        Route::delete('/channels/{channel}/messages/{message}',       [ChatController::class, 'deleteMessage'])->name('message.delete');
+        Route::post('/channels/{channel}/messages/{message}/pin',     [ChatController::class, 'pinMessage'])->name('message.pin');
+        Route::delete('/channels/{channel}/messages/{message}/pin',   [ChatController::class, 'unpinMessage'])->name('message.unpin');
+        Route::get('/channels/{channel}/messages/{message}/details',  [ChatController::class, 'messageDetails'])->name('message.details');
+
+        // Channel-level features
+        Route::get('/channels/{channel}/pins',     [ChatController::class, 'listPins'])->name('pins.list');
+        Route::get('/channels/{channel}/search',   [ChatController::class, 'searchMessages'])->name('search');
+        Route::get('/channels/{channel}/settings', [ChatController::class, 'settings'])->name('settings');
+        Route::post('/channels/{channel}/mute',    [ChatController::class, 'mute'])->name('mute');
+        Route::delete('/channels/{channel}/mute',  [ChatController::class, 'unmute'])->name('unmute');
     });
 
     // ─── Phase 7C: Profile / Notification Preferences ─────────────────────────

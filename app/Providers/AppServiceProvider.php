@@ -7,6 +7,7 @@ use App\Listeners\SyncFlagsToTransport;
 use App\Models\AdlRecord;
 use App\Models\User;
 use App\Observers\AdlRecordObserver;
+use App\Observers\UserJobTitleObserver;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
@@ -64,6 +65,10 @@ class AppServiceProvider extends ServiceProvider
 
         // ADL threshold breach observer
         AdlRecord::observe(AdlRecordObserver::class);
+
+        // Chat v2 : auto-add / auto-remove from role-group channels when a
+        // user's job_title or department changes. See ChatService::syncRoleGroupMemberships().
+        User::observe(UserJobTitleObserver::class);
 
         // Force HTTPS asset/url generation in production. On Fly.io the app
         // sits behind their TLS-terminating proxy and receives plain HTTP,

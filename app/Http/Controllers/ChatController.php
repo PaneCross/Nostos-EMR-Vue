@@ -19,17 +19,27 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\ChannelMembersChanged;
 use App\Events\ChatActivityEvent;
+use App\Events\MessageDeleted;
+use App\Events\MessageEdited;
+use App\Events\MessagePinned;
+use App\Events\MessageReacted;
+use App\Events\MessageRead;
+use App\Events\MessageUnpinned;
 use App\Events\NewChatMessage;
 use App\Models\AuditLog;
 use App\Models\ChatChannel;
+use App\Models\ChatChannelMute;
 use App\Models\ChatMessage;
+use App\Models\ChatMessagePin;
 use App\Models\User;
 use App\Services\AlertService;
 use App\Services\ChatService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response as InertiaResponse;
 
@@ -114,12 +124,18 @@ class ChatController extends Controller
 
         $channels = ChatChannel::active()
             ->forUser($user)
-            ->with(['memberships' => fn ($q) => $q->where('user_id', $user->id)])
+            ->with([
+                'memberships' => fn ($q) => $q->where('user_id', $user->id),
+                'mutes'       => fn ($q) => $q->where('user_id', $user->id),
+                'roleTargets',
+                'departmentTargets',
+            ])
             ->orderBy('channel_type')
             ->orderBy('name')
             ->get()
             ->map(function (ChatChannel $ch) use ($user) {
                 $membership = $ch->memberships->first();
+                $mute       = $ch->mutes->first();
                 $unreadQuery = $ch->messages()
                     ->withoutTrashed()
                     ->when($membership?->last_read_at, fn ($q) => $q->where('sent_at', '>', $membership->last_read_at));
@@ -127,13 +143,28 @@ class ChatController extends Controller
                 $unread       = (clone $unreadQuery)->count();
                 $urgentUnread = (clone $unreadQuery)->where('priority', 'urgent')->count();
 
+                // Unread @mentions of THIS user since their last read.
+                $unreadMentions = (clone $unreadQuery)
+                    ->whereHas('mentions', fn ($q) => $q->where('mentioned_user_id', $user->id))
+                    ->count();
+
                 return [
                     'id'                  => $ch->id,
                     'channel_type'        => $ch->channel_type,
                     'name'                => $ch->displayName($user),
+                    'description'         => $ch->description,
+                    'site_wide'           => $ch->site_wide,
                     'unread_count'        => $unread,
                     'urgent_unread_count' => $urgentUnread,
+                    'unread_mentions_count' => $unreadMentions,
                     'is_active'           => $ch->is_active,
+                    'is_muted'            => $mute && ($mute->snoozed_until === null || $mute->snoozed_until->isFuture()),
+                    'snoozed_until'       => $mute?->snoozed_until?->toIso8601String(),
+                    'targets'             => $ch->channel_type === 'role_group' ? [
+                        'roles'       => $ch->roleTargets->pluck('job_title_code')->all(),
+                        'departments' => $ch->departmentTargets->pluck('department')->all(),
+                        'site_wide'   => $ch->site_wide,
+                    ] : null,
                 ];
             });
 
@@ -148,12 +179,15 @@ class ChatController extends Controller
     {
         $this->requireMembership($request->user(), $channel);
 
+        /** @var \App\Models\User $viewer */
+        $viewer = $request->user();
+
         $messages = $channel->messages()
             ->withTrashed()
-            ->with('sender')
+            ->with(['sender', 'reactions', 'reads', 'pin', 'mentions'])
             ->orderBy('sent_at', 'desc')
             ->paginate(50)
-            ->through(fn (ChatMessage $m) => $m->toApiArray());
+            ->through(fn (ChatMessage $m) => $m->toApiArray($viewer));
 
         return response()->json([
             'messages'     => $messages->items(),
@@ -189,6 +223,12 @@ class ChatController extends Controller
         ]);
 
         $message->load('sender');
+
+        // Parse @mentions out of message_text and store rows for the four
+        // mention forms (user / role / dept / all). Mentions ride alongside
+        // the broadcast so subscribers can render highlights immediately.
+        $this->chatService->parseAndStoreMentions($message);
+        $message->load(['mentions', 'reactions', 'reads', 'pin']);
 
         // Broadcast message to all channel members via Reverb
         broadcast(new NewChatMessage($message));
@@ -235,7 +275,7 @@ class ChatController extends Controller
             'ip_address'    => $request->ip(),
         ]);
 
-        return response()->json(['message' => $message->toApiArray()], 201);
+        return response()->json(['message' => $message->toApiArray($user)], 201);
     }
 
     /**
@@ -317,6 +357,534 @@ class ChatController extends Controller
         return response()->json(['unread_count' => $total]);
     }
 
+    // ── Chat v2 : role-group channel management ──────────────────────────────
+
+    /**
+     * Create a specialized (role-group) channel. Permissioned per
+     * docs/plans/chat_v2_plan.md §11.2.
+     */
+    public function createRoleGroup(Request $request): JsonResponse
+    {
+        /** @var \App\Models\User $user */
+        $user = $request->user();
+
+        $data = $request->validate([
+            'name'                  => ['required', 'string', 'max:120'],
+            'description'           => ['nullable', 'string', 'max:500'],
+            'job_title_codes'       => ['required', 'array', 'min:1'],
+            'job_title_codes.*'     => ['string', 'max:60'],
+            'departments'           => ['present', 'array'],
+            'departments.*'         => ['string', 'max:30'],
+            'site_wide'             => ['sometimes', 'boolean'],
+        ]);
+
+        $siteWide = (bool) ($data['site_wide'] ?? false);
+        $departments = $data['departments'];
+
+        // Permission gate : section 11.2 of the plan.
+        $this->requireRoleGroupCreatePermission($user, $departments, $siteWide);
+
+        $channel = $this->chatService->createRoleGroupChannel(
+            $user->effectiveTenantId(),
+            $user,
+            $data['name'],
+            $data['description'] ?? null,
+            $data['job_title_codes'],
+            $departments,
+            $siteWide,
+        );
+
+        return response()->json([
+            'channel' => [
+                'id'           => $channel->id,
+                'channel_type' => $channel->channel_type,
+                'name'         => $channel->name,
+                'description'  => $channel->description,
+                'site_wide'    => $channel->site_wide,
+            ],
+        ], 201);
+    }
+
+    public function updateRoleGroup(Request $request, ChatChannel $channel): JsonResponse
+    {
+        $this->authorizeChannelManage($request->user(), $channel);
+        if ($channel->channel_type !== 'role_group') {
+            abort(404);
+        }
+
+        $data = $request->validate([
+            'name'              => ['sometimes', 'string', 'max:120'],
+            'description'       => ['nullable', 'string', 'max:500'],
+            'job_title_codes'   => ['sometimes', 'array', 'min:1'],
+            'job_title_codes.*' => ['string', 'max:60'],
+            'departments'       => ['sometimes', 'array'],
+            'departments.*'     => ['string', 'max:30'],
+            'site_wide'         => ['sometimes', 'boolean'],
+        ]);
+
+        DB::transaction(function () use ($channel, $data, $request) {
+            if (array_key_exists('name', $data)) {
+                $channel->name = $data['name'];
+            }
+            if (array_key_exists('description', $data)) {
+                $channel->description = $data['description'];
+            }
+            if (array_key_exists('site_wide', $data)) {
+                $channel->site_wide = (bool) $data['site_wide'];
+            }
+            $channel->save();
+
+            if (array_key_exists('job_title_codes', $data)) {
+                $channel->roleTargets()->delete();
+                foreach ($data['job_title_codes'] as $code) {
+                    $channel->roleTargets()->create(['job_title_code' => $code]);
+                }
+            }
+            if (array_key_exists('departments', $data)) {
+                $channel->departmentTargets()->delete();
+                if (! $channel->site_wide) {
+                    foreach ($data['departments'] as $dept) {
+                        $channel->departmentTargets()->create(['department' => $dept]);
+                    }
+                }
+            }
+
+            // Re-resolve membership : add new matchers, remove non-matchers.
+            $newMemberIds = $this->chatService->resolveRoleGroupMembers(
+                $channel->tenant_id,
+                $channel->roleTargets()->pluck('job_title_code')->all(),
+                $channel->departmentTargets()->pluck('department')->all(),
+                $channel->site_wide,
+            );
+
+            $existingIds = $channel->memberships()->pluck('user_id')->all();
+            $toAdd       = array_diff($newMemberIds, $existingIds);
+            $toRemove    = array_diff($existingIds, $newMemberIds);
+
+            if (! empty($toAdd)) {
+                $this->chatService->addMembersToChannel($channel, $toAdd);
+            }
+            if (! empty($toRemove)) {
+                $channel->memberships()->whereIn('user_id', $toRemove)->delete();
+            }
+
+            AuditLog::record(
+                action:       'chat.channel_updated',
+                tenantId:     $channel->tenant_id,
+                userId:       $request->user()->id,
+                resourceType: 'chat_channel',
+                resourceId:   $channel->id,
+                description:  sprintf('Channel %d retargeted ; +%d / -%d members.', $channel->id, count($toAdd), count($toRemove)),
+            );
+
+            broadcast(new ChannelMembersChanged($channel->id, array_values($toAdd), array_values($toRemove)));
+        });
+
+        return response()->json(['ok' => true]);
+    }
+
+    public function archiveRoleGroup(Request $request, ChatChannel $channel): JsonResponse
+    {
+        $this->authorizeChannelManage($request->user(), $channel);
+        if ($channel->channel_type !== 'role_group') {
+            abort(404);
+        }
+        $channel->update(['is_active' => false]);
+
+        AuditLog::record(
+            action:       'chat.channel_archived',
+            tenantId:     $channel->tenant_id,
+            userId:       $request->user()->id,
+            resourceType: 'chat_channel',
+            resourceId:   $channel->id,
+            description:  sprintf('Channel %d archived.', $channel->id),
+        );
+
+        return response()->json(['ok' => true]);
+    }
+
+    // ── Group DM management ──────────────────────────────────────────────────
+
+    public function createGroupDm(Request $request): JsonResponse
+    {
+        /** @var \App\Models\User $user */
+        $user = $request->user();
+
+        $data = $request->validate([
+            'name'             => ['nullable', 'string', 'max:120'],
+            'member_user_ids'  => ['required', 'array', 'min:2'],
+            'member_user_ids.*'=> ['integer', 'exists:shared_users,id'],
+        ]);
+
+        $channel = $this->chatService->createGroupDmChannel(
+            $user->effectiveTenantId(),
+            $user,
+            $data['name'] ?? null,
+            $data['member_user_ids'],
+        );
+
+        return response()->json([
+            'channel' => [
+                'id'           => $channel->id,
+                'channel_type' => $channel->channel_type,
+                'name'         => $channel->name,
+            ],
+        ], 201);
+    }
+
+    public function renameGroupDm(Request $request, ChatChannel $channel): JsonResponse
+    {
+        $this->requireMembership($request->user(), $channel);
+        if ($channel->channel_type !== 'group_dm') {
+            abort(404);
+        }
+
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:120'],
+        ]);
+
+        $oldName = $channel->name;
+        $channel->update(['name' => $data['name']]);
+
+        AuditLog::record(
+            action:       'chat.channel_renamed',
+            tenantId:     $channel->tenant_id,
+            userId:       $request->user()->id,
+            resourceType: 'chat_channel',
+            resourceId:   $channel->id,
+            description:  sprintf('Renamed group DM from "%s" to "%s".', $oldName ?? '(unnamed)', $data['name']),
+        );
+
+        return response()->json(['ok' => true]);
+    }
+
+    public function addGroupDmMember(Request $request, ChatChannel $channel): JsonResponse
+    {
+        $this->requireMembership($request->user(), $channel);
+        if ($channel->channel_type !== 'group_dm') {
+            abort(404);
+        }
+
+        $data = $request->validate([
+            'user_id' => ['required', 'integer', 'exists:shared_users,id'],
+        ]);
+
+        // Tenant guard.
+        $target = User::findOrFail($data['user_id']);
+        if ($target->tenant_id !== $channel->tenant_id) {
+            abort(403, 'Cannot add a user from another organisation.');
+        }
+
+        $this->chatService->addMembersToChannel($channel, [$target->id]);
+
+        AuditLog::record(
+            action:       'chat.member_added_by_user',
+            tenantId:     $channel->tenant_id,
+            userId:       $request->user()->id,
+            resourceType: 'chat_channel',
+            resourceId:   $channel->id,
+            description:  sprintf('User %d added user %d to group DM.', $request->user()->id, $target->id),
+        );
+
+        broadcast(new ChannelMembersChanged($channel->id, [$target->id], []));
+
+        return response()->json(['ok' => true]);
+    }
+
+    public function removeGroupDmMember(Request $request, ChatChannel $channel, User $user): JsonResponse
+    {
+        $this->requireMembership($request->user(), $channel);
+        if ($channel->channel_type !== 'group_dm') {
+            abort(404);
+        }
+
+        $channel->memberships()->where('user_id', $user->id)->delete();
+
+        $isSelf = $user->id === $request->user()->id;
+        AuditLog::record(
+            action:       $isSelf ? 'chat.member_self_left' : 'chat.member_removed_by_user',
+            tenantId:     $channel->tenant_id,
+            userId:       $request->user()->id,
+            resourceType: 'chat_channel',
+            resourceId:   $channel->id,
+            description:  $isSelf
+                ? sprintf('User %d left group DM.', $user->id)
+                : sprintf('User %d removed user %d from group DM.', $request->user()->id, $user->id),
+        );
+
+        broadcast(new ChannelMembersChanged($channel->id, [], [$user->id]));
+
+        return response()->json(['ok' => true]);
+    }
+
+    // ── Reactions ────────────────────────────────────────────────────────────
+
+    public function addReaction(Request $request, ChatChannel $channel, ChatMessage $message): JsonResponse
+    {
+        $this->requireMembership($request->user(), $channel);
+        $this->assertMessageBelongsToChannel($channel, $message);
+
+        $data = $request->validate(['reaction' => ['required', 'string', 'max:16']]);
+
+        $added = $this->chatService->toggleReaction($message, $request->user(), $data['reaction']);
+
+        broadcast(new MessageReacted(
+            $channel->id,
+            $message->id,
+            $request->user()->id,
+            $data['reaction'],
+            $added ? 'added' : 'removed',
+        ));
+
+        return response()->json(['action' => $added ? 'added' : 'removed']);
+    }
+
+    public function removeReaction(Request $request, ChatChannel $channel, ChatMessage $message): JsonResponse
+    {
+        // Same path as addReaction (toggleReaction handles both directions),
+        // but kept as a separate route for REST clarity.
+        return $this->addReaction($request, $channel, $message);
+    }
+
+    // ── Read receipts ────────────────────────────────────────────────────────
+
+    public function markMessageRead(Request $request, ChatChannel $channel, ChatMessage $message): JsonResponse
+    {
+        $this->requireMembership($request->user(), $channel);
+        $this->assertMessageBelongsToChannel($channel, $message);
+
+        $existing = $message->reads()->where('user_id', $request->user()->id)->exists();
+        $this->chatService->markRead($message, $request->user());
+
+        if (! $existing) {
+            broadcast(new MessageRead(
+                $channel->id,
+                $message->id,
+                $request->user()->id,
+                now()->toIso8601String(),
+            ));
+        }
+
+        return response()->json(['ok' => true]);
+    }
+
+    public function messageDetails(Request $request, ChatChannel $channel, ChatMessage $message): JsonResponse
+    {
+        $this->requireMembership($request->user(), $channel);
+        $this->assertMessageBelongsToChannel($channel, $message);
+
+        $message->load(['reads.user', 'reactions.user', 'channel.memberships.user']);
+
+        return response()->json([
+            'sent_at'      => $message->sent_at?->toIso8601String(),
+            'reads'        => $message->reads->map(fn ($r) => [
+                'user_id' => $r->user_id,
+                'name'    => $r->user?->fullName(),
+                'read_at' => $r->read_at?->toIso8601String(),
+            ])->values(),
+            'reactions'    => $message->reactions->map(fn ($r) => [
+                'user_id'    => $r->user_id,
+                'name'       => $r->user?->fullName(),
+                'reaction'   => $r->reaction,
+                'reacted_at' => $r->reacted_at?->toIso8601String(),
+            ])->values(),
+            'total_members' => $channel->memberships()->count(),
+        ]);
+    }
+
+    // ── Edit / delete ────────────────────────────────────────────────────────
+
+    public function editMessage(Request $request, ChatChannel $channel, ChatMessage $message): JsonResponse
+    {
+        $this->requireMembership($request->user(), $channel);
+        $this->assertMessageBelongsToChannel($channel, $message);
+
+        $data = $request->validate([
+            'message_text' => ['required', 'string', 'max:4000'],
+        ]);
+
+        $message = $this->chatService->editMessage($message, $request->user(), $data['message_text']);
+
+        broadcast(new MessageEdited($message));
+
+        return response()->json(['message' => $message->toApiArray($request->user())]);
+    }
+
+    public function deleteMessage(Request $request, ChatChannel $channel, ChatMessage $message): JsonResponse
+    {
+        $this->requireMembership($request->user(), $channel);
+        $this->assertMessageBelongsToChannel($channel, $message);
+
+        $this->chatService->deleteMessage($message, $request->user());
+
+        broadcast(new MessageDeleted(
+            $channel->id,
+            $message->id,
+            $request->user()->id,
+            now()->toIso8601String(),
+        ));
+
+        return response()->json(['ok' => true]);
+    }
+
+    // ── Pins ─────────────────────────────────────────────────────────────────
+
+    public function pinMessage(Request $request, ChatChannel $channel, ChatMessage $message): JsonResponse
+    {
+        $this->requireMembership($request->user(), $channel);
+        $this->assertMessageBelongsToChannel($channel, $message);
+
+        $override = (bool) $request->boolean('override');
+        $pin = $this->chatService->pinMessage($message, $request->user(), $override);
+
+        broadcast(new MessagePinned(
+            $channel->id,
+            $message->id,
+            $request->user()->id,
+            $pin->pinned_at->toIso8601String(),
+        ));
+
+        return response()->json(['pinned_at' => $pin->pinned_at->toIso8601String()]);
+    }
+
+    public function unpinMessage(Request $request, ChatChannel $channel, ChatMessage $message): JsonResponse
+    {
+        $this->requireMembership($request->user(), $channel);
+        $this->assertMessageBelongsToChannel($channel, $message);
+
+        $this->chatService->unpinMessage($message, $request->user());
+
+        broadcast(new MessageUnpinned($channel->id, $message->id));
+
+        return response()->json(['ok' => true]);
+    }
+
+    public function listPins(Request $request, ChatChannel $channel): JsonResponse
+    {
+        $this->requireMembership($request->user(), $channel);
+
+        $pins = $channel->pins()
+            ->with(['message.sender', 'pinnedBy'])
+            ->orderBy('pinned_at', 'desc')
+            ->get()
+            ->map(function (ChatMessagePin $p) {
+                return [
+                    'message_id'    => $p->message_id,
+                    'message_text'  => $p->message?->isDeleted() ? null : $p->message?->message_text,
+                    'sender_name'   => $p->message?->sender?->fullName(),
+                    'sent_at'       => $p->message?->sent_at?->toIso8601String(),
+                    'pinned_by'     => $p->pinnedBy?->fullName(),
+                    'pinned_at'     => $p->pinned_at->toIso8601String(),
+                ];
+            });
+
+        return response()->json([
+            'pins'        => $pins,
+            'soft_cap'    => ChatMessagePin::SOFT_CAP,
+            'at_cap'      => $pins->count() >= ChatMessagePin::SOFT_CAP,
+        ]);
+    }
+
+    // ── Mute / snooze ────────────────────────────────────────────────────────
+
+    public function mute(Request $request, ChatChannel $channel): JsonResponse
+    {
+        $this->requireMembership($request->user(), $channel);
+
+        $data = $request->validate([
+            'snoozed_until' => ['nullable', 'date'],
+        ]);
+
+        $until = isset($data['snoozed_until'])
+            ? Carbon::parse($data['snoozed_until'])
+            : null;
+
+        $this->chatService->muteChannel($channel, $request->user(), $until);
+
+        return response()->json(['ok' => true]);
+    }
+
+    public function unmute(Request $request, ChatChannel $channel): JsonResponse
+    {
+        $this->requireMembership($request->user(), $channel);
+        $this->chatService->unmuteChannel($channel, $request->user());
+        return response()->json(['ok' => true]);
+    }
+
+    // ── Search ───────────────────────────────────────────────────────────────
+
+    public function searchMessages(Request $request, ChatChannel $channel): JsonResponse
+    {
+        $this->requireMembership($request->user(), $channel);
+
+        $q     = trim((string) $request->query('q', ''));
+        $limit = min(50, max(10, (int) $request->query('limit', 30)));
+
+        if (strlen($q) < 2) {
+            return response()->json(['matches' => []]);
+        }
+
+        $matches = $channel->messages()
+            ->withoutTrashed()
+            ->whereRaw('LOWER(message_text) LIKE ?', ['%' . strtolower($q) . '%'])
+            ->with('sender')
+            ->orderBy('sent_at', 'desc')
+            ->limit($limit)
+            ->get()
+            ->map(fn (ChatMessage $m) => [
+                'id'           => $m->id,
+                'sender_name'  => $m->sender?->fullName(),
+                'message_text' => $m->message_text,
+                'sent_at'      => $m->sent_at?->toIso8601String(),
+            ]);
+
+        return response()->json(['matches' => $matches]);
+    }
+
+    // ── Channel Settings (with audit timeline) ──────────────────────────────
+
+    public function settings(Request $request, ChatChannel $channel): JsonResponse
+    {
+        $this->requireMembership($request->user(), $channel);
+
+        $channel->load(['memberships.user', 'roleTargets', 'departmentTargets', 'mutes' => fn ($q) => $q->where('user_id', $request->user()->id)]);
+
+        $audit = AuditLog::where('resource_type', 'chat_channel')
+            ->where('resource_id', $channel->id)
+            ->orderBy('created_at', 'desc')
+            ->limit(200)
+            ->get(['id', 'action', 'user_id', 'description', 'created_at'])
+            ->map(fn ($row) => [
+                'action'      => $row->action,
+                'description' => $row->description,
+                'actor_id'    => $row->user_id,
+                'at'          => optional($row->created_at)->toIso8601String(),
+            ]);
+
+        return response()->json([
+            'channel' => [
+                'id'           => $channel->id,
+                'channel_type' => $channel->channel_type,
+                'name'         => $channel->name,
+                'description'  => $channel->description,
+                'site_wide'    => $channel->site_wide,
+                'targets'      => $channel->channel_type === 'role_group' ? [
+                    'roles'       => $channel->roleTargets->pluck('job_title_code')->all(),
+                    'departments' => $channel->departmentTargets->pluck('department')->all(),
+                    'site_wide'   => $channel->site_wide,
+                ] : null,
+                'members'      => $channel->memberships->map(fn ($m) => [
+                    'user_id'   => $m->user_id,
+                    'name'      => $m->user?->fullName(),
+                    'department' => $m->user?->department,
+                    'job_title' => $m->user?->job_title,
+                    'joined_at' => $m->joined_at?->toIso8601String(),
+                ])->values(),
+            ],
+            'audit_timeline' => $audit,
+        ]);
+    }
+
     // ── Internal helpers ──────────────────────────────────────────────────────
 
     /**
@@ -331,5 +899,60 @@ class ChatController extends Controller
         if (! $isMember) {
             abort(403, 'You are not a member of this channel.');
         }
+    }
+
+    /**
+     * Asserts the message belongs to the channel ; defends against scoped-binding
+     * gaps where a route otherwise resolves any ChatMessage by primary key.
+     */
+    private function assertMessageBelongsToChannel(ChatChannel $channel, ChatMessage $message): void
+    {
+        if ($message->channel_id !== $channel->id) {
+            abort(404);
+        }
+    }
+
+    /**
+     * Authorize "manage" (rename / retarget / archive) on a channel. Delegates
+     * to ChatChannel::canManage() which encodes the §11.2 matrix.
+     */
+    private function authorizeChannelManage(User $actor, ChatChannel $channel): void
+    {
+        if (! $channel->canManage($actor)) {
+            abort(403, 'You do not have permission to manage this channel.');
+        }
+    }
+
+    /**
+     * Permission check at role-group create time. Mirrors §11.2 :
+     *   - Site-wide : exec / it_admin admin / super_admin only.
+     *   - Per-dept  : admin of any target dept, OR exec, OR it_admin admin,
+     *                 OR super_admin.
+     */
+    private function requireRoleGroupCreatePermission(User $actor, array $departments, bool $siteWide): void
+    {
+        if ($actor->isSuperAdmin() || $actor->isDeptSuperAdmin()) {
+            return;
+        }
+
+        $isExec        = $actor->department === 'executive';
+        $isItAdmin     = $actor->role === 'admin' && $actor->department === 'it_admin';
+
+        if ($siteWide) {
+            if (! $isExec && ! $isItAdmin) {
+                abort(403, 'Site-wide specialized chats require executive or IT admin authorization.');
+            }
+            return;
+        }
+
+        if ($isExec || $isItAdmin) {
+            return;
+        }
+
+        if ($actor->role === 'admin' && in_array($actor->department, $departments, true)) {
+            return;
+        }
+
+        abort(403, 'Only department admins can create specialized chats for their department.');
     }
 }

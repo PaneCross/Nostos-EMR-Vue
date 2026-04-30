@@ -461,6 +461,14 @@ class DemoEnvironmentSeeder extends Seeder
         $this->call(PredictiveRiskScoreDemoSeeder::class);
         $this->call(QualityMeasureSnapshotsDemoSeeder::class);
 
+        // ─── Chat v2 demo channels ─────────────────────────────────────────────
+        // Two role-group channels (one multi-dept, one site-wide) + one group
+        // DM, each with a few sample messages so the chat UI lights up with
+        // real Chat v2 surfaces on a fresh demo install.
+        $this->command->info('');
+        $this->command->info('  Seeding Chat v2 demo channels (role-groups + group DM)...');
+        $this->call(ChatV2DemoSeeder::class);
+
         // ─── Participant Photos ────────────────────────────────────────────────
         // Downloads pravatar.cc placeholder images for the first 15 enrolled
         // participants so the photo upload feature is visually testable.

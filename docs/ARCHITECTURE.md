@@ -385,6 +385,68 @@ hook on `Participant::boot()` never fires and the test fails on the NOT
 NULL constraint. Fix : call `Event::fake()` AFTER all model fixture
 creation in `setUp()`.
 
+### 5.15 Chat v2 — channel taxonomy + auto-add
+
+Six channel types live in `emr_chat_channels.channel_type` :
+
+| Type | Created when | Membership |
+|---|---|---|
+| `direct` | `getOrCreateDmChannel()` from a DM action | exactly two users |
+| `group_dm` | user calls `POST /chat/group-dm-channels` | creator + any tenant peers ; freely managed by any member |
+| `department` | tenant setup | every active user in the dept |
+| `role_group` | dept admin / executive / it_admin / super_admin via `POST /chat/role-group-channels` | every active user matching JobTitle + (department targets OR site-wide) |
+| `participant_idt` | participant enrollment | the 6 IDT departments by default |
+| `broadcast` | tenant setup | every active user in the tenant |
+
+**Role-group auto-add hook.** `UserJobTitleObserver` fires on `User::created`
+and `User::updated` (filtered to `job_title` / `department` / `is_active`
+changes). It calls `ChatService::syncRoleGroupMemberships($user)` which :
+1. Finds every role-group channel where `User.job_title` matches
+   `roleTargets` AND (`site_wide=true` OR `User.department` matches
+   `departmentTargets`).
+2. Adds the user to channels they're not already in.
+3. Removes them from role-group channels they no longer match.
+4. Writes one audit row per add (`chat.member_added_by_role`) and one
+   per remove (`chat.member_removed_by_role`).
+
+New members see the **full message history** of the channel because we
+never date-gate the `messages()` query against `joined_at`. This is
+flagged at channel creation via a confirmation dialog so the creator
+explicitly acknowledges the implication for clinical conversations.
+
+### 5.16 Chat v2 — append-only messages with edit window
+
+Messages on `emr_chat_messages` are `SoftDeletes` for HIPAA 6-year
+retention. Two columns support the edit + delete audit trail :
+
+- `original_message_text` is set on the FIRST edit only, so the
+  historical record of what was first sent survives all subsequent
+  edits.
+- `deleted_by_user_id` captures the actor when soft-delete fires
+  alongside the standard `deleted_at` timestamp.
+
+Edit window : 5 minutes (`ChatMessage::EDIT_WINDOW_MINUTES`). Past that
+the controller returns 422. Soft-deleted messages cannot be edited.
+
+### 5.17 Chat v2 — audit-honest action vocabulary
+
+Every chat action that creates or mutates state writes to
+`shared_audit_logs`. Action codes (16 total) are grouped :
+
+- Channel lifecycle : `chat.channel_created`, `chat.channel_updated`,
+  `chat.channel_renamed`, `chat.channel_archived`
+- Membership : `chat.member_added_by_role`, `chat.member_removed_by_role`,
+  `chat.member_added_by_user`, `chat.member_removed_by_user`,
+  `chat.member_self_left`
+- Messages : `chat.message_read` (PHI access trail, written on first
+  read of every message), `chat.message_edited`, `chat.message_deleted`,
+  `chat.message_pinned`, `chat.message_unpinned`,
+  `chat.pin_cap_override`, `chat.broadcast_pin_acknowledged`
+
+The Channel Settings drawer in the UI queries `shared_audit_logs`
+filtered by `resource_type='chat_channel'` + `resource_id=<channel.id>`
+and renders the chronological timeline to all current members.
+
 ## 6. Glossary — acronyms
 
 Whenever you see one of these in code or comments, this is what it means.
