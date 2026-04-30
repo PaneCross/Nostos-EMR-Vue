@@ -94,7 +94,9 @@ class SuperAdminPanelController extends Controller
             return [
                 'id'                => $tenant->id,
                 'name'              => $tenant->name,
+                'slug'               => $tenant->slug,
                 'transport_mode'    => $tenant->transport_mode,
+                'is_active'          => (bool) $tenant->is_active,
                 'user_count'        => $userCount,
                 'participant_count' => $participantCount,
                 'site_count'        => $siteCount,
@@ -103,6 +105,101 @@ class SuperAdminPanelController extends Controller
         });
 
         return response()->json(['tenants' => $data]);
+    }
+
+    /**
+     * Per-tenant detail view : everything the Super Admin needs to inspect or
+     * adjust a single tenant. Returns the tenant config + recent activity stats
+     * + a count of in-flight transport requests (relevant when switching
+     * transport_mode so SA can see what they're disrupting).
+     */
+    public function tenantShow(Tenant $tenant): JsonResponse
+    {
+        $this->requireNostosSuperAdmin();
+
+        $userCount        = User::where('tenant_id', $tenant->id)->count();
+        $userActiveCount  = User::where('tenant_id', $tenant->id)->where('is_active', true)->count();
+        $participantCount = DB::table('emr_participants')->where('tenant_id', $tenant->id)->whereNull('deleted_at')->count();
+        $enrolledCount    = DB::table('emr_participants')->where('tenant_id', $tenant->id)->whereNull('deleted_at')->where('enrollment_status', 'enrolled')->count();
+        $siteCount        = Site::where('tenant_id', $tenant->id)->count();
+
+        // Last 30 days activity
+        $since = now()->subDays(30);
+        $recentNotes        = DB::table('emr_clinical_notes')->where('tenant_id', $tenant->id)->where('created_at', '>=', $since)->count();
+        $recentAppts        = DB::table('emr_appointments')->where('tenant_id', $tenant->id)->where('created_at', '>=', $since)->count();
+        $recentTransports   = DB::table('emr_transport_requests')->where('tenant_id', $tenant->id)->where('created_at', '>=', $since)->count();
+        $lastLogin          = User::where('tenant_id', $tenant->id)->whereNotNull('last_login_at')->max('last_login_at');
+
+        // In-flight (non-terminal) transport requests : matters when switching
+        // transport_mode because the active workflow changes underneath them.
+        $inFlightTransports = DB::table('emr_transport_requests')
+            ->where('tenant_id', $tenant->id)
+            ->whereNotIn('status', ['completed', 'cancelled', 'no_show'])
+            ->count();
+
+        return response()->json([
+            'tenant' => [
+                'id'                  => $tenant->id,
+                'name'                => $tenant->name,
+                'slug'                => $tenant->slug,
+                'transport_mode'      => $tenant->transport_mode,
+                'cms_contract_id'     => $tenant->cms_contract_id,
+                'state'               => $tenant->state,
+                'timezone'            => $tenant->timezone,
+                'auto_logout_minutes' => $tenant->auto_logout_minutes,
+                'is_active'           => (bool) $tenant->is_active,
+                'created_at'          => $tenant->created_at?->toIso8601String(),
+            ],
+            'stats' => [
+                'site_count'          => $siteCount,
+                'user_count'          => $userCount,
+                'user_active_count'   => $userActiveCount,
+                'participant_count'   => $participantCount,
+                'enrolled_count'      => $enrolledCount,
+                'last_login_at'       => $lastLogin,
+                'recent_notes_30d'    => $recentNotes,
+                'recent_appts_30d'    => $recentAppts,
+                'recent_transports_30d' => $recentTransports,
+                'in_flight_transports'  => $inFlightTransports,
+            ],
+        ]);
+    }
+
+    /**
+     * Update tenant configuration. Critical knobs : transport_mode (direct vs.
+     * broker workflow), is_active (kill-switch), auto_logout_minutes (HIPAA
+     * inactivity timeout), name + cms_contract_id (administrative). slug is
+     * intentionally NOT editable post-creation - it's part of every record's
+     * URL and changing it would orphan bookmarks.
+     */
+    public function tenantUpdate(Request $request, Tenant $tenant): JsonResponse
+    {
+        $this->requireNostosSuperAdmin();
+
+        $v = $request->validate([
+            'name'                => ['sometimes', 'string', 'max:200'],
+            'transport_mode'      => ['sometimes', \Illuminate\Validation\Rule::in(['direct', 'broker'])],
+            'cms_contract_id'     => ['sometimes', 'nullable', 'string', 'max:50'],
+            'state'               => ['sometimes', 'nullable', 'string', 'size:2'],
+            'timezone'            => ['sometimes', 'nullable', 'string', 'max:50'],
+            'auto_logout_minutes' => ['sometimes', 'integer', 'min:5', 'max:480'],
+            'is_active'           => ['sometimes', 'boolean'],
+        ]);
+
+        $old = $tenant->only(array_keys($v));
+        $tenant->update($v);
+
+        \App\Models\AuditLog::record(
+            action:       'super_admin.tenant_updated',
+            resourceType: 'Tenant',
+            resourceId:   $tenant->id,
+            tenantId:     $tenant->id,
+            userId:       $request->user()->id,
+            oldValues:    $old,
+            newValues:    $v,
+        );
+
+        return response()->json(['tenant' => $tenant->fresh()]);
     }
 
     /**

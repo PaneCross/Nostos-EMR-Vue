@@ -14,6 +14,7 @@ import {
     PlusCircleIcon,
     CheckCircleIcon,
     ExclamationTriangleIcon,
+    XMarkIcon,
 } from '@heroicons/vue/24/outline'
 
 interface Summary {
@@ -26,6 +27,7 @@ interface TenantRow {
     id: number
     name: string
     slug: string
+    transport_mode: 'direct' | 'broker'
     site_count: number
     user_count: number
     participant_count: number
@@ -35,6 +37,31 @@ interface TenantRow {
 interface HealthRow {
     label: string
     count: number
+}
+
+interface TenantDetailStats {
+    site_count: number
+    user_count: number
+    user_active_count: number
+    participant_count: number
+    enrolled_count: number
+    last_login_at: string | null
+    recent_notes_30d: number
+    recent_appts_30d: number
+    recent_transports_30d: number
+    in_flight_transports: number
+}
+interface TenantDetail {
+    id: number
+    name: string
+    slug: string
+    transport_mode: 'direct' | 'broker'
+    cms_contract_id: string | null
+    state: string | null
+    timezone: string | null
+    auto_logout_minutes: number
+    is_active: boolean
+    created_at: string | null
 }
 
 interface HealthData {
@@ -70,6 +97,84 @@ const activeTab = ref<Tab>('tenants')
 const tenants = ref<TenantRow[]>([])
 const tenantsLoading = ref(false)
 const tenantsLoaded = ref(false)
+
+// Tenant detail modal state
+const tenantDetail = ref<TenantDetail | null>(null)
+const tenantStats = ref<TenantDetailStats | null>(null)
+const tenantDetailLoading = ref(false)
+const tenantDetailError = ref<string | null>(null)
+const tenantSaving = ref(false)
+const tenantSaveError = ref<string | null>(null)
+const tenantSaveSuccess = ref<string | null>(null)
+const tenantEditDraft = ref<Partial<TenantDetail>>({})
+
+async function openTenantDetail(t: TenantRow) {
+    tenantDetail.value = null
+    tenantStats.value = null
+    tenantDetailError.value = null
+    tenantSaveError.value = null
+    tenantSaveSuccess.value = null
+    tenantDetailLoading.value = true
+    try {
+        const { data } = await axios.get(`/super-admin-panel/tenants/${t.id}`)
+        tenantDetail.value = data.tenant
+        tenantStats.value = data.stats
+        tenantEditDraft.value = { ...data.tenant }
+    } catch (e: any) {
+        tenantDetailError.value = e?.response?.data?.message ?? 'Failed to load tenant detail.'
+    } finally {
+        tenantDetailLoading.value = false
+    }
+}
+
+function closeTenantDetail() {
+    tenantDetail.value = null
+    tenantStats.value = null
+    tenantEditDraft.value = {}
+}
+
+async function saveTenantEdit() {
+    if (!tenantDetail.value) return
+    tenantSaving.value = true
+    tenantSaveError.value = null
+    tenantSaveSuccess.value = null
+
+    // Confirm if transport mode is being switched and there are in-flight rides
+    const switchingTransport = tenantEditDraft.value.transport_mode !== tenantDetail.value.transport_mode
+    const inFlight = tenantStats.value?.in_flight_transports ?? 0
+    if (switchingTransport && inFlight > 0) {
+        const ok = confirm(
+            `Switching transport mode from "${tenantDetail.value.transport_mode}" to "${tenantEditDraft.value.transport_mode}" while ${inFlight} transport request(s) are in-flight. ` +
+            `Existing requests will keep their current state but new ones will use the new workflow. Continue?`
+        )
+        if (!ok) {
+            tenantSaving.value = false
+            return
+        }
+    }
+
+    try {
+        const { data } = await axios.patch(`/super-admin-panel/tenants/${tenantDetail.value.id}`, tenantEditDraft.value)
+        tenantDetail.value = { ...tenantDetail.value, ...data.tenant }
+        // Sync the row in the parent list too
+        const idx = tenants.value.findIndex(x => x.id === data.tenant.id)
+        if (idx >= 0) {
+            tenants.value[idx] = {
+                ...tenants.value[idx],
+                name: data.tenant.name,
+                transport_mode: data.tenant.transport_mode,
+                is_active: data.tenant.is_active,
+            } as TenantRow
+        }
+        tenantSaveSuccess.value = 'Saved.'
+    } catch (e: any) {
+        tenantSaveError.value = e?.response?.data?.message
+            ?? Object.values(e?.response?.data?.errors ?? {}).flat().join(' ')
+            ?? 'Save failed.'
+    } finally {
+        tenantSaving.value = false
+    }
+}
 
 // Health tab
 const health = ref<HealthData | null>(null)
@@ -225,32 +330,167 @@ onMounted(() => loadTenants())
             <div v-if="activeTab === 'tenants'">
                 <div v-if="tenantsLoading" class="py-16 text-center text-gray-500 dark:text-slate-400 text-sm">Loading tenants...</div>
                 <div v-else class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 overflow-hidden shadow-sm">
+                    <p class="px-4 py-2 text-xs text-gray-500 dark:text-slate-400 border-b border-gray-200 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-900/30">
+                        Click any tenant row to inspect stats and adjust configuration (transport mode, auto-logout, active status, etc.).
+                    </p>
                     <table class="w-full text-sm">
                         <thead class="bg-gray-50 dark:bg-slate-700/50">
                             <tr>
-                                <th class="text-left px-4 py-3 font-semibold text-gray-700 dark:text-slate-300">Organization</th>
-                                <th class="text-left px-4 py-3 font-semibold text-gray-700 dark:text-slate-300">Sites</th>
-                                <th class="text-left px-4 py-3 font-semibold text-gray-700 dark:text-slate-300">Users</th>
-                                <th class="text-left px-4 py-3 font-semibold text-gray-700 dark:text-slate-300">Participants</th>
-                                <th class="text-left px-4 py-3 font-semibold text-gray-700 dark:text-slate-300">Created</th>
+                                <th class="text-left px-4 py-3 font-semibold text-gray-700 dark:text-slate-200">Organization</th>
+                                <th class="text-left px-4 py-3 font-semibold text-gray-700 dark:text-slate-200">Transport</th>
+                                <th class="text-left px-4 py-3 font-semibold text-gray-700 dark:text-slate-200">Sites</th>
+                                <th class="text-left px-4 py-3 font-semibold text-gray-700 dark:text-slate-200">Users</th>
+                                <th class="text-left px-4 py-3 font-semibold text-gray-700 dark:text-slate-200">Participants</th>
+                                <th class="text-left px-4 py-3 font-semibold text-gray-700 dark:text-slate-200">Status</th>
+                                <th class="text-left px-4 py-3 font-semibold text-gray-700 dark:text-slate-200">Created</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-100 dark:divide-slate-700">
-                            <tr v-for="t in tenants" :key="t.id" class="hover:bg-gray-50 dark:hover:bg-slate-700/50">
+                            <tr v-for="t in tenants" :key="t.id"
+                                @click="openTenantDetail(t)"
+                                class="hover:bg-indigo-50 dark:hover:bg-slate-700/60 cursor-pointer transition-colors">
                                 <td class="px-4 py-3">
                                     <div class="font-medium text-gray-900 dark:text-slate-100">{{ t.name }}</div>
                                     <div class="text-xs text-gray-500 dark:text-slate-400 font-mono">{{ t.slug }}</div>
                                 </td>
-                                <td class="px-4 py-3 text-gray-600 dark:text-slate-400">{{ t.site_count }}</td>
-                                <td class="px-4 py-3 text-gray-600 dark:text-slate-400">{{ t.user_count }}</td>
-                                <td class="px-4 py-3 text-gray-600 dark:text-slate-400">{{ t.participant_count }}</td>
-                                <td class="px-4 py-3 text-gray-600 dark:text-slate-400">{{ formatDate(t.created_at) }}</td>
+                                <td class="px-4 py-3">
+                                    <span :class="[
+                                        'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium',
+                                        t.transport_mode === 'broker'
+                                            ? 'bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-300'
+                                            : 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300'
+                                    ]">{{ t.transport_mode }}</span>
+                                </td>
+                                <td class="px-4 py-3 text-gray-600 dark:text-slate-300">{{ t.site_count }}</td>
+                                <td class="px-4 py-3 text-gray-600 dark:text-slate-300">{{ t.user_count }}</td>
+                                <td class="px-4 py-3 text-gray-600 dark:text-slate-300">{{ t.participant_count }}</td>
+                                <td class="px-4 py-3">
+                                    <span v-if="t.is_active !== false" class="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300">Active</span>
+                                    <span v-else class="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-rose-100 dark:bg-rose-900/40 text-rose-700 dark:text-rose-300">Inactive</span>
+                                </td>
+                                <td class="px-4 py-3 text-gray-600 dark:text-slate-300">{{ formatDate(t.created_at) }}</td>
                             </tr>
                             <tr v-if="tenants.length === 0">
-                                <td colspan="5" class="py-12 text-center text-gray-500 dark:text-slate-400">No tenants found.</td>
+                                <td colspan="7" class="py-12 text-center text-gray-500 dark:text-slate-400">No tenants found.</td>
                             </tr>
                         </tbody>
                     </table>
+                </div>
+
+                <!-- Tenant detail / edit modal -->
+                <div v-if="tenantDetail || tenantDetailLoading" role="dialog" aria-modal="true" aria-label="Tenant configuration"
+                    @keydown.escape.window="closeTenantDetail"
+                    class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 overflow-y-auto"
+                    @click.self="closeTenantDetail">
+                    <div class="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-700 max-w-3xl w-full p-6 my-8 max-h-[90vh] overflow-y-auto">
+                        <div v-if="tenantDetailLoading" class="text-center py-12 text-gray-500 dark:text-slate-400">Loading tenant...</div>
+                        <div v-else-if="tenantDetailError" class="text-rose-600 dark:text-rose-400 text-sm">{{ tenantDetailError }}</div>
+                        <div v-else-if="tenantDetail">
+                            <div class="flex items-start justify-between mb-4">
+                                <div>
+                                    <h2 class="text-xl font-bold text-gray-900 dark:text-slate-100">{{ tenantDetail.name }}</h2>
+                                    <p class="text-xs text-gray-500 dark:text-slate-400 font-mono mt-0.5">{{ tenantDetail.slug }}</p>
+                                </div>
+                                <button @click="closeTenantDetail" class="text-gray-400 hover:text-gray-600 dark:hover:text-slate-200" aria-label="Close dialog">
+                                    <XMarkIcon class="w-5 h-5" aria-hidden="true" />
+                                </button>
+                            </div>
+
+                            <!-- Stats grid -->
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-2 mb-6">
+                                <div class="rounded-lg border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 p-3">
+                                    <div class="text-xs text-gray-500 dark:text-slate-400">Sites</div>
+                                    <div class="text-lg font-bold text-gray-900 dark:text-slate-100 tabular-nums">{{ tenantStats?.site_count }}</div>
+                                </div>
+                                <div class="rounded-lg border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 p-3">
+                                    <div class="text-xs text-gray-500 dark:text-slate-400">Users (active)</div>
+                                    <div class="text-lg font-bold text-gray-900 dark:text-slate-100 tabular-nums">{{ tenantStats?.user_active_count }} / {{ tenantStats?.user_count }}</div>
+                                </div>
+                                <div class="rounded-lg border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 p-3">
+                                    <div class="text-xs text-gray-500 dark:text-slate-400">Participants (enrolled)</div>
+                                    <div class="text-lg font-bold text-gray-900 dark:text-slate-100 tabular-nums">{{ tenantStats?.enrolled_count }} / {{ tenantStats?.participant_count }}</div>
+                                </div>
+                                <div class="rounded-lg border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 p-3">
+                                    <div class="text-xs text-gray-500 dark:text-slate-400">Last login</div>
+                                    <div class="text-xs font-bold text-gray-900 dark:text-slate-100">{{ tenantStats?.last_login_at ? formatDate(tenantStats.last_login_at) : 'never' }}</div>
+                                </div>
+                                <div class="rounded-lg border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 p-3">
+                                    <div class="text-xs text-gray-500 dark:text-slate-400">Notes (30d)</div>
+                                    <div class="text-lg font-bold text-gray-900 dark:text-slate-100 tabular-nums">{{ tenantStats?.recent_notes_30d }}</div>
+                                </div>
+                                <div class="rounded-lg border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 p-3">
+                                    <div class="text-xs text-gray-500 dark:text-slate-400">Appts (30d)</div>
+                                    <div class="text-lg font-bold text-gray-900 dark:text-slate-100 tabular-nums">{{ tenantStats?.recent_appts_30d }}</div>
+                                </div>
+                                <div class="rounded-lg border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 p-3">
+                                    <div class="text-xs text-gray-500 dark:text-slate-400">Transports (30d)</div>
+                                    <div class="text-lg font-bold text-gray-900 dark:text-slate-100 tabular-nums">{{ tenantStats?.recent_transports_30d }}</div>
+                                </div>
+                                <div class="rounded-lg border border-gray-200 dark:border-slate-700 p-3"
+                                    :class="(tenantStats?.in_flight_transports ?? 0) > 0 ? 'bg-amber-50 dark:bg-amber-950/30' : 'bg-gray-50 dark:bg-slate-800'">
+                                    <div class="text-xs text-gray-500 dark:text-slate-400">In-flight transports</div>
+                                    <div class="text-lg font-bold tabular-nums" :class="(tenantStats?.in_flight_transports ?? 0) > 0 ? 'text-amber-700 dark:text-amber-300' : 'text-gray-900 dark:text-slate-100'">{{ tenantStats?.in_flight_transports }}</div>
+                                </div>
+                            </div>
+
+                            <!-- Edit form -->
+                            <h3 class="text-sm font-bold text-gray-900 dark:text-slate-100 mb-2 border-t border-gray-200 dark:border-slate-700 pt-4">Configuration</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                <label class="block">
+                                    <span class="text-xs font-medium text-gray-700 dark:text-slate-300">Display name</span>
+                                    <input v-model="tenantEditDraft.name" type="text" maxlength="200"
+                                        class="w-full mt-1 px-3 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm" />
+                                </label>
+                                <label class="block">
+                                    <span class="text-xs font-medium text-gray-700 dark:text-slate-300">CMS contract ID</span>
+                                    <input v-model="tenantEditDraft.cms_contract_id" type="text" maxlength="50"
+                                        class="w-full mt-1 px-3 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm font-mono" />
+                                </label>
+                                <label class="block">
+                                    <span class="text-xs font-medium text-gray-700 dark:text-slate-300">State (2-letter)</span>
+                                    <input v-model="tenantEditDraft.state" type="text" maxlength="2"
+                                        class="w-full mt-1 px-3 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm uppercase" />
+                                </label>
+                                <label class="block">
+                                    <span class="text-xs font-medium text-gray-700 dark:text-slate-300">Timezone</span>
+                                    <input v-model="tenantEditDraft.timezone" type="text" placeholder="America/Los_Angeles"
+                                        class="w-full mt-1 px-3 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm" />
+                                </label>
+                                <label class="block">
+                                    <span class="text-xs font-medium text-gray-700 dark:text-slate-300">Transport mode</span>
+                                    <select v-model="tenantEditDraft.transport_mode"
+                                        class="w-full mt-1 px-3 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm">
+                                        <option value="direct">direct (in-house fleet)</option>
+                                        <option value="broker">broker (outside dispatcher)</option>
+                                    </select>
+                                    <p class="text-xs text-gray-500 dark:text-slate-400 mt-1">
+                                        Switch routes new transport requests through a different workflow. In-flight rides keep their existing path.
+                                    </p>
+                                </label>
+                                <label class="block">
+                                    <span class="text-xs font-medium text-gray-700 dark:text-slate-300">Auto-logout (minutes)</span>
+                                    <input v-model.number="tenantEditDraft.auto_logout_minutes" type="number" min="5" max="480"
+                                        class="w-full mt-1 px-3 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm" />
+                                    <p class="text-xs text-gray-500 dark:text-slate-400 mt-1">HIPAA inactivity timeout. 5 - 480 minutes.</p>
+                                </label>
+                                <label class="flex items-center gap-2 col-span-1 md:col-span-2 mt-2">
+                                    <input v-model="tenantEditDraft.is_active" type="checkbox" class="rounded text-indigo-600" />
+                                    <span class="text-sm text-gray-700 dark:text-slate-300">Tenant active (uncheck = kill-switch ; staff lose access)</span>
+                                </label>
+                            </div>
+
+                            <p v-if="tenantSaveError" class="text-xs text-rose-600 dark:text-rose-400 mt-3">{{ tenantSaveError }}</p>
+                            <p v-if="tenantSaveSuccess" class="text-xs text-emerald-600 dark:text-emerald-400 mt-3">{{ tenantSaveSuccess }}</p>
+
+                            <div class="flex justify-end gap-2 mt-5 pt-4 border-t border-gray-200 dark:border-slate-700">
+                                <button @click="closeTenantDetail" class="px-4 py-2 rounded-lg text-sm text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800">Close</button>
+                                <button @click="saveTenantEdit" :disabled="tenantSaving"
+                                    class="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium disabled:opacity-50">
+                                    {{ tenantSaving ? 'Saving...' : 'Save changes' }}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 

@@ -1452,7 +1452,9 @@ Route::middleware('auth')->group(function () {
 
     Route::prefix('super-admin-panel')->group(function () {
         Route::get('/',         [SuperAdminPanelController::class, 'index'])->name('super-admin-panel.index');
-        Route::get('/tenants',  [SuperAdminPanelController::class, 'tenants'])->name('super-admin-panel.tenants');
+        Route::get('/tenants',                [SuperAdminPanelController::class, 'tenants'])    ->name('super-admin-panel.tenants');
+        Route::get('/tenants/{tenant}',       [SuperAdminPanelController::class, 'tenantShow']) ->name('super-admin-panel.tenants.show');
+        Route::patch('/tenants/{tenant}',     [SuperAdminPanelController::class, 'tenantUpdate'])->name('super-admin-panel.tenants.update');
         Route::get('/health',   [SuperAdminPanelController::class, 'health'])->name('super-admin-panel.health');
         Route::post('/onboard', [SuperAdminPanelController::class, 'onboard'])->name('super-admin-panel.onboard');
     });
