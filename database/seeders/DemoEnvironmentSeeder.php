@@ -234,6 +234,13 @@ class DemoEnvironmentSeeder extends Seeder
         $this->call(DayCenterScheduleSeeder::class);
         $this->call(ProSurveySeeder::class);
         $this->call(QualityMeasureSeeder::class);
+        // 90 days of weekly snapshots so /dashboards/quality renders trendlines
+        // instead of empty cards. Idempotent.
+        $this->call(QualityMeasureSnapshotsDemoSeeder::class);
+        // Fresh predictive-risk scores in the 24-hour window the high-risk
+        // dashboard reads from. Without this the page is always empty in dev
+        // (scoring job runs daily in prod but never fires locally).
+        $this->call(PredictiveRiskScoreDemoSeeder::class);
 
         // ─── Phase 7C: Chat Channels ───────────────────────────────────────────
         // Auto-create 14 department channels + 1 broadcast channel for the tenant.

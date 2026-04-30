@@ -28,17 +28,20 @@ onMounted(async () => {
 function cardData(measureId: string) {
   const rows = snapshots.value[measureId] ?? []
   const labels = rows.map((r: any) => String(r.computed_at).slice(0, 10))
-  const data = rows.map((r: any) => parseFloat(r.rate ?? 0))
+  // Column on emr_quality_measure_snapshots is rate_pct (decimal:2), not rate.
+  const data = rows.map((r: any) => parseFloat(r.rate_pct ?? r.rate ?? 0))
   return {
     labels,
-    datasets: [{ label: 'Rate', data, borderColor: 'rgb(59, 130, 246)', backgroundColor: 'rgba(59, 130, 246, 0.15)', fill: true }],
+    datasets: [{ label: 'Rate (%)', data, borderColor: 'rgb(59, 130, 246)', backgroundColor: 'rgba(59, 130, 246, 0.15)', fill: true }],
   }
 }
 
-function latestRate(measureId: string): number | null {
+function latestRate(measureId: string): string {
   const rows = snapshots.value[measureId] ?? []
   const last = rows[rows.length - 1]
-  return last ? parseFloat(last.rate ?? 0) : null
+  if (! last) return '—'
+  const v = parseFloat(last.rate_pct ?? last.rate ?? 0)
+  return Number.isFinite(v) ? `${v.toFixed(1)}%` : '—'
 }
 
 const byCategory = computed(() => {
@@ -71,7 +74,7 @@ const byCategory = computed(() => {
             <div class="flex items-baseline justify-between mb-2">
               <h3 class="text-sm font-semibold text-gray-900 dark:text-slate-100">{{ m.name ?? m.measure_id }}</h3>
               <span class="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                {{ latestRate(m.measure_id) ?? '-' }}
+                {{ latestRate(m.measure_id) }}
               </span>
             </div>
             <LineChart
