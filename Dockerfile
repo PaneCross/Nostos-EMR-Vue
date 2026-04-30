@@ -81,6 +81,19 @@ WORKDIR /app
 COPY --from=composer-builder /app/ /app/
 COPY --from=node-builder /app/public/build/ /app/public/build/
 
+# Create the framework runtime directory structure that .dockerignore
+# excluded from the build context (those dirs hold ephemeral cache /
+# session / view files; they need to EXIST but not be populated).
+RUN mkdir -p \
+    /app/storage/framework/cache/data \
+    /app/storage/framework/sessions \
+    /app/storage/framework/views \
+    /app/storage/framework/testing \
+    /app/storage/logs \
+    /app/storage/app/public \
+    /app/storage/app/private \
+    /app/bootstrap/cache
+
 # webdevops runs as the "application" user (uid 1000) by default — give it
 # write access to the framework's runtime directories.
 RUN chown -R application:application /app/storage /app/bootstrap/cache \
